@@ -370,7 +370,7 @@ if($sql_num_results > 0)
 						openssl_public_decrypt(base64_decode($crypt2), $public_key_to_2, $public_key);				
 						$public_key_to = $public_key_to_1 . $public_key_to_2;
 
-						if(strlen($public_key) > 450 && strlen($public_key_to) > 450 && $public_key !== $public_key_to) // Filter to/from self public keys
+						if(strlen($public_key) > 300 && strlen($public_key_to) > 300 && $public_key !== $public_key_to) // Filter to/from self public keys
 						{
 							// Public key not found, insert into final transaction history
 							$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from` , `public_key_to` , `crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
