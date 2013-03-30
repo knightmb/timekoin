@@ -232,7 +232,16 @@ function call_script($script, $priority = 1)
 		// Normal Priority
 		if(getenv("OS") == "Windows_NT")
 		{
-			pclose(popen("start php-win $script", "r"));// This will execute without waiting for it to finish
+			$php_location = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,"field_data");
+
+			if(empty($php_location) == TRUE)
+			{
+				pclose(popen("start php-win $script", "r"));// This will execute without waiting for it to finish
+			}
+			else
+			{
+				pclose(popen("set PATH=%PATH%;$php_location&& start php-win $script", "r"));// This will execute without waiting for it to finish
+			}
 		}
 		else
 		{
@@ -244,7 +253,16 @@ function call_script($script, $priority = 1)
 		// Below Normal Priority
 		if(getenv("OS") == "Windows_NT")
 		{
-			pclose(popen("start /BELOWNORMAL php-win $script", "r"));// This will execute without waiting for it to finish
+			$php_location = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,"field_data");
+			
+			if(empty($php_location) == TRUE)
+			{			
+				pclose(popen("start /BELOWNORMAL php-win $script", "r"));// This will execute without waiting for it to finish
+			}
+			else
+			{
+				pclose(popen("set PATH=%PATH%;$php_location&& start /BELOWNORMAL php-win $script", "r"));// This will execute without waiting for it to finish				
+			}
 		}
 		else
 		{
@@ -1132,6 +1150,13 @@ function initialization_database()
 	{
 		// Does not exist, create it
 		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('super_peer', '0')");
+	}
+
+	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,0);
+	if($new_record_check === FALSE)
+	{
+		// Does not exist, create it
+		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('php_location', '')");
 	}	
 //**************************************
 	// Check for an empty generation IP address,
@@ -1612,4 +1637,21 @@ function do_updates()
 	return $update_status;
 }
 //***********************************************************************************
+function find_file($dir, $pattern)
+{
+	// Get a list of all matching files in the current directory
+	$files = glob("$dir/$pattern");
+
+	// Find a list of all directories in the current directory
+	//foreach (glob("$dir/{.[^.]*,*}", GLOB_BRACE|GLOB_ONLYDIR) as $sub_dir)
+	foreach (glob("$dir/{*}", GLOB_BRACE|GLOB_ONLYDIR) as $sub_dir)
+	{
+		$arr = find_file($sub_dir, $pattern);  // Resursive call
+		$files = array_merge($files, $arr); // Merge array with files from subdirectory
+	}
+
+	return $files;
+}
+//***********************************************************************************
+
 ?>

@@ -199,7 +199,7 @@ function options_screen()
 	}
 	
 return '<FORM ACTION="index.php?menu=options&password=change" METHOD="post">
-<table border="0"><tr><td align="right">
+<table border="0"><tr><td style="width:325px" valign="bottom" align="right">
 Current Username: <input type="text" name="current_username" /></br>
 New Username: <input type="text" name="new_username" /></br>
 Confirm Username: <input type="text" name="confirm_username" />
@@ -211,7 +211,7 @@ New Password: <input type="password" name="new_password" /></br>
 Confirm Password: <input type="password" name="confirm_password" /></br></br>
 <input type="submit" name="Submit" value="Change" />
 </FORM>
-</td><td style="width:275px" valign="bottom" align="right">' . $confirm_message . $form_action .'
+</td><td style="width:305px" valign="bottom" align="right">' . $confirm_message . $form_action .'
 <input type="submit" name="Submit2" value="Generate New Keys" /></FORM></td></tr>
 </table>';
 } 
@@ -223,9 +223,10 @@ $home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_na
 $peerlist_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_peerlist' LIMIT 1"),0,"field_data");
 $queue_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_queue' LIMIT 1"),0,"field_data");
 $server_hash_code = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_hash_code' LIMIT 1"),0,"field_data");
+$php_location = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,"field_data");
 
 return '<table border="0"><tr><td><strong>Refresh Rates (seconds) for Realtime Pages [0 = disable]</strong></br></br><FORM ACTION="index.php?menu=options&refresh=change" METHOD="post"></td></tr>
-<tr><td align="right">
+<tr><td style="width:415px" valign="bottom" align="right">
 Home: <input type="text" name="home_update" size="2" value="' . $home_update . '" /></br>
 Peerlist: <input type="text" name="peerlist_update" size="2" value="' . $peerlist_update . '" /></br>
 Transaction Queue: <input type="text" name="queue_update" size="2" value="' . $queue_update . '" /></td></tr>
@@ -235,8 +236,16 @@ Transaction Queue: <input type="text" name="queue_update" size="2" value="' . $q
 <tr><td align="right">
 <input type="submit" name="Submit2" value="Save" />
 </FORM>
-</td><td style="width:200px" valign="bottom" align="right"><FORM ACTION="index.php?menu=options&upgrade=check" METHOD="post"><input type="submit" name="Submit3" value="Check for Updates" /></FORM></td></tr>
-</table>';
+</td><td style="width:215px" valign="bottom" align="right"><FORM ACTION="index.php?menu=options&upgrade=check" METHOD="post"><input type="submit" name="Submit3" value="Check for Updates" /></FORM></td></tr>
+</table>
+<table border="0"><tr><td colspan="2" style="width:630px"><hr></hr></td></tr>
+<tr><td><FORM ACTION="index.php?menu=options&find=edit_php" METHOD="post">
+<strong>PHP File Path:</strong> <input type="text" size="40" name="php_file_path" value="' . $php_location . '" /><input type="submit" name="edit_php_location" value="Change" /></FORM></td>
+<td><FORM ACTION="index.php?menu=options&find=php" METHOD="post"><input type="submit" name="find_php_location" value="Find PHP" /></FORM></td></tr>
+</table>
+';
+
+
 } 
 //***********************************************************
 //***********************************************************

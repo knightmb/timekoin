@@ -1091,6 +1091,68 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_text = options_screen2();
 		}
 
+		if($_GET["find"] == "edit_php")
+		{
+			// Save manual php program location entry
+			$sql = "UPDATE `options` SET `field_data` = '" . addslashes($_POST["php_file_path"]) . "' WHERE `options`.`field_name` = 'php_location' LIMIT 1";
+
+			if(mysql_query($sql) == TRUE)
+			{
+				$body_text = options_screen2();
+				$body_text .= '<font color="blue"><strong>PHP File Location Saved!</strong></font>';
+			}
+			else
+			{
+				$body_text .= '<strong>PHP File Location ERROR.</strong>';
+			}
+		}
+
+		if($_GET["find"] == "php")
+		{
+			set_time_limit(300); // This could take a while
+
+			// Search the entire hard drive looking for the php program
+			if(getenv("OS") == "Windows_NT")
+			{
+				$find_php = find_file('C:/Program*', 'php-win.exe');
+
+				if(empty($find_php[0]) == TRUE)
+				{
+					$find_php = find_file('C:', 'php-win.exe');
+				}
+
+				// Filter strings
+				$symbols = array("/");
+				$find_php[0] = str_replace($symbols, "\\", $find_php[0]);
+
+				// Filter for path setting
+				$symbols = array("php-win.exe");
+				$find_php[0] = str_replace($symbols, "", $find_php[0]);
+			}
+			else
+			{
+				$find_php = find_file('/usr', 'php');
+			}
+
+			if(empty($find_php[0]) == TRUE)
+			{
+				// PHP File not found
+				$body_text = options_screen2();
+				$body_text .= '<font color="red"><strong>Could NOT located PHP program file!</strong></font>';
+			}
+			else
+			{
+				// Save the found php path
+				$sql = "UPDATE `options` SET `field_data` = '" . addslashes($find_php[0]) . "' WHERE `options`.`field_name` = 'php_location' LIMIT 1";
+
+				if(mysql_query($sql) == TRUE)
+				{
+					$body_text = options_screen2();
+					$body_text .= '<font color="blue"><strong>PHP File Location Found & Saved!</strong></font>';
+				}
+			}
+		}
+
 		if($_GET["newkeys"] == "confirm")
 		{
 			if(generate_new_keys() == TRUE)
