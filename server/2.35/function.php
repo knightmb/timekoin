@@ -421,6 +421,25 @@ function walkhistory($block_start = 0, $block_end = 0)
 }
 //***********************************************************************************
 //***********************************************************************************
+function tk_decrypt($key, $crypt_data)
+{
+	if(function_exists('openssl_public_decrypt_blah') == TRUE)
+	{
+		openssl_public_decrypt($crypt_data, $decrypt, $key);
+	}
+	else
+	{
+		require_once('RSA.php');
+		$rsa = new Crypt_RSA();
+		$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
+		$rsa->loadKey($key);
+		$decrypt = $rsa->decrypt($crypt_data);
+	}
+
+	return $decrypt;
+}
+//***********************************************************************************
+//***********************************************************************************
 function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0)
 {
 	if($block_start == 0 && $block_end == 0)
@@ -439,7 +458,6 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
-
 	$crypto_balance = 0;	
 
 	for ($i = 0; $i < $sql_num_results; $i++)
@@ -447,7 +465,7 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 		$sql_row = mysql_fetch_row($sql_result);
 
 		$public_key_from = $sql_row[1];
-		$public_key_to = $sql_row[2];		
+		$public_key_to = $sql_row[2];
 		$crypt1 = $sql_row[3];
 		$crypt2 = $sql_row[4];
 		$crypt3 = $sql_row[5];
@@ -458,7 +476,7 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 		{
 			// Currency Generation
 			// Decrypt transaction information
-			openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key_from);
+			$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3));
 
 			$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 
@@ -468,8 +486,8 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 		if($attribute == "T")
 		{
 			// Decrypt transaction information
-			openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key_from);
-
+			$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3));
+			
 			$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 
 			$crypto_balance += $transaction_amount_sent;
@@ -511,7 +529,7 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 		if($attribute == "T")
 		{
 			// Decrypt transaction information
-			openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key_from);
+			$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3));
 
 			$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 
@@ -1384,6 +1402,7 @@ function activate($component = "SYSTEM", $on_or_off = 1)
 //***********************************************************************************
 //***********************************************************************************
 //
+/*
 function generate_new_keys()
 {
 	// Create the keypair @ 1536 bit!!
@@ -1425,7 +1444,45 @@ function generate_new_keys()
 
 	return 0;
 }
+ */
 //***********************************************************************************
+//***********************************************************************************	
+function generate_new_keys()
+{
+	require_once('RSA.php');
+
+	$rsa = new Crypt_RSA();
+
+	extract($rsa->createKey(1536));
+
+	if(empty($privatekey) == FALSE && empty($publickey) == FALSE)
+	{
+		$sql = "UPDATE `my_keys` SET `field_data` = '$privatekey' WHERE `my_keys`.`field_name` = 'server_private_key' LIMIT 1";
+
+		if(mysql_query($sql) == TRUE)
+		{
+			// Private Key Update Success
+			$sql = "UPDATE `my_keys` SET `field_data` = '$publickey' WHERE `my_keys`.`field_name` = 'server_public_key' LIMIT 1";
+			
+			if(mysql_query($sql) == TRUE)
+			{
+				// Blank reverse crypto data field
+				mysql_query("UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
+
+				// Public Key Update Success				
+				return 1;
+			}
+		}
+	}
+	else
+	{
+		// Key Pair Creation Error
+		return 0;
+	}
+
+	return 0;
+}
+//***********************************************************************************	
 //***********************************************************************************
 function check_for_updates()
 {
