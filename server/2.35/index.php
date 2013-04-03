@@ -242,7 +242,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($script_loop_active > 0)
 		{
 			// Transclerk should still be active
-			if((time() - $script_last_heartbeat) > 200)
+			if((time() - $script_last_heartbeat) > 300)
 			{
 				// Script has stop was unexpected
 				$body_string .= '<tr><td align="center"><img src="img/hr.gif" alt="" /></td><td><font color="red"><strong>Transaction Clerk</strong></font></td>

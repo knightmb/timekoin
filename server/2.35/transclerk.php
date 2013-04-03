@@ -526,9 +526,9 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 					if(empty($no_cycles_ahead) == TRUE) // No data ahead, lots of blank space
 					{
 						// Is this a Super Peer?
-						$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 1, "transclerk.php?action=super_peer");
+						$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 3, "transclerk.php?action=super_peer");
 						
-						if($poll_peer == 1)// This is a super peer that will allow mass downloading of transactions
+						if($poll_peer >= 1)// This is a super peer that will allow mass downloading of transactions
 						{
 							// How far behind in the transaction history are we?
 							$total_trans_hash = mysql_result(mysql_query("SELECT COUNT(attribute) FROM `transaction_history` WHERE `attribute` = 'H'"),0);
@@ -538,18 +538,39 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 								// Far enough behind to use a boost, how close to the end?
 								if($block_number + 750 < transaction_cycle(0, TRUE))
 								{
+									if($poll_peer == 1) // Sanity check on cycles allowed to donwload
+									{
+										$super_peer_cycles = 500;
+									}
+									else if($poll_peer > 1 && $poll_peer < 500)
+									{
+										$super_peer_cycles = $poll_peer;
+									}
+									else
+									{
+										// Something wrong? Default to 2 cycles download
+										$super_peer_cycles = 2;
+									}
+									
 									// Not too close to the end, start at the current transaction cycle
-									// and donwload 500 transaction cycles going forward.
-									write_log("Connecting with SUPER Peer: $ip_address$domain:$port_number/$subfolder", "TC");
+									// and donwload X transaction cycles going forward.
+									write_log("Connecting with SUPER Peer ($super_peer_cycles Transaction Cycles Limit): $ip_address$domain:$port_number/$subfolder", "TC");
+									
 									set_time_limit(270); // Increase script processing time
 									
 									$super_transaction_cycle = $block_number;
 
-									while($super_transaction_cycle < $block_number + 500)
+									while($super_transaction_cycle < $block_number + $super_peer_cycles)
 									{
 										$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 200000, "transclerk.php?action=transaction_data&block_number=$super_transaction_cycle");
 
 										$tc = 1;
+
+										// Check cycle time to avoid over-run near the end
+										if(($next_generation_cycle - time()) < 30)
+										{
+											break;
+										}
 
 										while(empty($poll_peer) == FALSE)
 										{
@@ -589,13 +610,13 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 										$super_transaction_cycle++;
 
-									} // 500 Transaction Cycles Ahead Loop
+									} // Transaction Cycles Ahead Loop
+
+									write_log("Detach SUPER Peer: $ip_address$domain:$port_number/$subfolder", "TC");
 
 								} // End first valid range check
 
 							} // End second valid range check
-						
-							write_log("Detach SUPER Peer: $ip_address$domain:$port_number/$subfolder", "TC");
 						
 						} // End Super Peer Check
 
