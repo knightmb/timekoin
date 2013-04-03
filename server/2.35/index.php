@@ -850,6 +850,10 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["code"] == "99")
 		{
 			$server_code = '</br><font color="blue"><strong>Timekoin Already Active...</strong></font></br></br>';
+		}
+		if($_GET["code"] == "98")
+		{
+			$server_code = '</br><font color="red"><strong>PHP File Path Missing...</strong></font></br></br>';
 		}		
 		if($_GET["code"] == "2")
 		{
@@ -1114,7 +1118,7 @@ if($_SESSION["valid_login"] == TRUE)
 			// Search the entire hard drive looking for the php program
 			if(getenv("OS") == "Windows_NT")
 			{
-				$find_php = find_file('C:/Program*', 'php-win.exe');
+				$find_php = find_file('C:/wamp', 'php-win.exe');
 
 				if(empty($find_php[0]) == TRUE)
 				{
@@ -1138,7 +1142,7 @@ if($_SESSION["valid_login"] == TRUE)
 			{
 				// PHP File not found
 				$body_text = options_screen2();
-				$body_text .= '<font color="red"><strong>Could NOT located PHP program file!</strong></font>';
+				$body_text .= '<font color="red"><strong>Could NOT locate PHP program file!</strong></font>';
 			}
 			else
 			{
@@ -1584,7 +1588,9 @@ if($_SESSION["valid_login"] == TRUE)
 						}
 
 						// Transaction Amount
-						openssl_public_decrypt(base64_decode($sql_row["crypt_data3"]), $transaction_info, $sql_row["public_key_from"]);
+						//openssl_public_decrypt(base64_decode($sql_row["crypt_data3"]), $transaction_info, $sql_row["public_key_from"]);
+						$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($sql_row["crypt_data3"]));
+
 						$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
 
 						if($sql_row["attribute"] == 'G')
@@ -1688,9 +1694,13 @@ if($_SESSION["valid_login"] == TRUE)
 			$sql_result = mysql_query($sql);			
 			$sql_row = mysql_fetch_array($sql_result);
 
-			openssl_public_decrypt(base64_decode($sql_row["crypt_data1"]), $crypt1_data, $sql_row["public_key_from"]);
-			openssl_public_decrypt(base64_decode($sql_row["crypt_data2"]), $crypt2_data, $sql_row["public_key_from"]);
-			openssl_public_decrypt(base64_decode($sql_row["crypt_data3"]), $transaction_info, $sql_row["public_key_from"]);
+			//openssl_public_decrypt(base64_decode($sql_row["crypt_data1"]), $crypt1_data, $sql_row["public_key_from"]);
+			//openssl_public_decrypt(base64_decode($sql_row["crypt_data2"]), $crypt2_data, $sql_row["public_key_from"]);
+			//openssl_public_decrypt(base64_decode($sql_row["crypt_data3"]), $transaction_info, $sql_row["public_key_from"]);
+
+			$crypt1_data = tk_decrypt($sql_row["public_key_from"], base64_decode($sql_row["crypt_data1"]));
+			$crypt2_data = tk_decrypt($sql_row["public_key_from"], base64_decode($sql_row["crypt_data2"]));
+			$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($sql_row["crypt_data3"]));
 
 			$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
 			$timestamp_created = find_string("TIME=", "---HASH", $transaction_info);
@@ -1854,7 +1864,9 @@ if($_SESSION["valid_login"] == TRUE)
 					$sql_row = mysql_fetch_array($sql_result);
 					$crypt3 = $sql_row["crypt_data3"];
 
-					openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $sql_row["public_key_from"]);
+					//openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $sql_row["public_key_from"]);
+					$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($crypt3));
+
 					$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
 
 					// Any encoded messages?
@@ -1907,7 +1919,8 @@ if($_SESSION["valid_login"] == TRUE)
 					{
 						$crypt3 = $sql_row["crypt_data3"];
 
-						openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $sql_row["public_key_from"]);
+						//openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $sql_row["public_key_from"]);
+						$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($crypt3));
 
 						$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
 
@@ -1987,12 +2000,16 @@ if($_SESSION["valid_login"] == TRUE)
 			$public_key_trans = $sql_row["public_key"];
 			
 			// Decode the public key this transaction is being sent to
-			openssl_public_decrypt(base64_decode($crypt1), $public_key_to_1, $public_key_trans);
-			openssl_public_decrypt(base64_decode($crypt2), $public_key_to_2, $public_key_trans);				
+			//openssl_public_decrypt(base64_decode($crypt1), $public_key_to_1, $public_key_trans);
+			//openssl_public_decrypt(base64_decode($crypt2), $public_key_to_2, $public_key_trans);				
+			$public_key_to_1 = tk_decrypt($public_key_trans, base64_decode($crypt1));
+			$public_key_to_2 = tk_decrypt($public_key_trans, base64_decode($crypt2));
+			
 			$public_key_trans_to = $public_key_to_1 . $public_key_to_2;
 			
 			// Decode Amount
-			openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key_trans);
+			//openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key_trans);
+			$transaction_info = tk_decrypt($public_key_trans, base64_decode($crypt3));
 
 			$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
 

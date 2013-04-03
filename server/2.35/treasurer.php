@@ -62,8 +62,11 @@ if($sql_num_results > 0)
 			$attribute = $sql_row["attribute"];			
 
 			// Check to see if transaction is saved in the transaction history
-			openssl_public_decrypt(base64_decode($crypt1), $public_key_to_1, $public_key);
-			openssl_public_decrypt(base64_decode($crypt2), $public_key_to_2, $public_key);				
+			//openssl_public_decrypt(base64_decode($crypt1), $public_key_to_1, $public_key);
+			//openssl_public_decrypt(base64_decode($crypt2), $public_key_to_2, $public_key);				
+			$public_key_to_1 = tk_decrypt($public_key, base64_decode($crypt1));
+			$public_key_to_2 = tk_decrypt($public_key, base64_decode($crypt2));
+
 			$public_key_to = $public_key_to_1 . $public_key_to_2;
 
 			$found_transaction_history = mysql_result(mysql_query("SELECT timestamp, public_key_from, public_key_to, hash FROM `transaction_history` WHERE `public_key_from` = '$public_key' 
@@ -255,7 +258,8 @@ if($sql_num_results > 0)
 							$hash_check = $sql_row["hash"];
 
 							// Check generation amount to make sure it has not been tampered with
-							openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key);
+							//openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key);
+							$transaction_info = tk_decrypt($public_key, base64_decode($crypt3));
 
 							$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 							$transaction_amount_sent_test = intval($transaction_amount_sent);
@@ -340,7 +344,8 @@ if($sql_num_results > 0)
 				$crypt3 = $sql_row["crypt_data3"];
 
 				// How much is this public key trying to send to another public key?
-				openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key);
+				//openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key);
+				$transaction_info = tk_decrypt($public_key, base64_decode($crypt3));
 
 				$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 
@@ -366,8 +371,11 @@ if($sql_num_results > 0)
 					if(hash('sha256', $crypt1 . $crypt2 . $crypt3) == $hash_check)
 					{
 						// Find destination public key
-						openssl_public_decrypt(base64_decode($crypt1), $public_key_to_1, $public_key);
-						openssl_public_decrypt(base64_decode($crypt2), $public_key_to_2, $public_key);				
+						//openssl_public_decrypt(base64_decode($crypt1), $public_key_to_1, $public_key);
+						//openssl_public_decrypt(base64_decode($crypt2), $public_key_to_2, $public_key);				
+						$public_key_to_1 = tk_decrypt($public_key, base64_decode($crypt1));
+						$public_key_to_2 = tk_decrypt($public_key, base64_decode($crypt2));
+						
 						$public_key_to = $public_key_to_1 . $public_key_to_2;
 
 						if(strlen($public_key) > 300 && strlen($public_key_to) > 300 && $public_key !== $public_key_to) // Filter to/from self public keys

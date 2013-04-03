@@ -59,8 +59,9 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 //***********************************************************************************
 //***********************************************************************************
 // Script finished, set status to 0
-mysql_query("UPDATE `main_loop_status` SET `field_data` = 0 WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
+mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
 
 // Record when this script finished
-mysql_query("UPDATE `main_loop_status` SET `field_data` = " . time() . " WHERE `main_loop_status`.`field_name` = 'balance_last_heartbeat' LIMIT 1");
+mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'balance_last_heartbeat' LIMIT 1");
+
 ?>

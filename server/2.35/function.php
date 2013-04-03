@@ -421,9 +421,28 @@ function walkhistory($block_start = 0, $block_end = 0)
 }
 //***********************************************************************************
 //***********************************************************************************
+function tk_encrypt($key, $crypt_data)
+{
+	if(function_exists('openssl_private_encrypt') == TRUE)
+	{
+		openssl_private_encrypt($crypt_data, $encrypted_data, $key);
+	}
+	else
+	{
+		require_once('RSA.php');
+		$rsa = new Crypt_RSA();
+		$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
+		$rsa->loadKey($key);
+		$encrypted_data = $rsa->encrypt($crypt_data);
+	}
+
+	return $encrypted_data;
+}
+//***********************************************************************************
+//***********************************************************************************
 function tk_decrypt($key, $crypt_data)
 {
-	if(function_exists('openssl_public_decrypt_blah') == TRUE)
+	if(function_exists('openssl_public_decrypt') == TRUE)
 	{
 		openssl_public_decrypt($crypt_data, $decrypt, $key);
 	}
@@ -894,9 +913,11 @@ function db_cache_balance($my_public_key)
 function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $amount, $message)
 {
 	$arr1 = str_split($send_to_public_key, 181);
-	openssl_private_encrypt($arr1[0], $encryptedData1, $my_private_key);
-	$encryptedData64_1 = base64_encode($encryptedData1);
-	openssl_private_encrypt($arr1[1], $encryptedData2, $my_private_key);
+	//openssl_private_encrypt($arr1[0], $encryptedData1, $my_private_key);	
+	$encryptedData1 = tk_encrypt($my_private_key, $arr1[0]);
+	$encryptedData64_1 = base64_encode($encryptedData1);	
+	//openssl_private_encrypt($arr1[1], $encryptedData2, $my_private_key);
+	$encryptedData2 = tk_encrypt($my_private_key, $arr1[1]);
 	$encryptedData64_2 = base64_encode($encryptedData2);
 
 	if(empty($message) == TRUE)
@@ -916,7 +937,9 @@ function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $a
 		$transaction_data = "AMOUNT=$amount---TIME=" . time() . "---HASH=" . hash('sha256', $encryptedData64_1 . $encryptedData64_2) . "---MSG=$message";
 	}
 
-	openssl_private_encrypt($transaction_data, $encryptedData3, $my_private_key);
+	//openssl_private_encrypt($transaction_data, $encryptedData3, $my_private_key);
+	$encryptedData3 = tk_encrypt($my_private_key, $transaction_data);
+
 	$encryptedData64_3 = base64_encode($encryptedData3);
 	$triple_hash_check = hash('sha256', $encryptedData64_1 . $encryptedData64_2 . $encryptedData64_3);
 
@@ -1399,52 +1422,6 @@ function activate($component = "SYSTEM", $on_or_off = 1)
 
 	return FALSE;
 }
-//***********************************************************************************
-//***********************************************************************************
-//
-/*
-function generate_new_keys()
-{
-	// Create the keypair @ 1536 bit!!
-	$res = openssl_pkey_new(array(
-		'private_key_bits' => 1536,
-		'private_key_type' => OPENSSL_KEYTYPE_RSA,
-	));
-
-	// Get private key
-	openssl_pkey_export($res, $privateKey);
-
-	// Get public key
-	$pubKey=openssl_pkey_get_details($res);
-	$pubKey=$pubKey["key"];
-
-	if(empty($privateKey) == FALSE && empty($pubKey) == FALSE)
-	{
-		$sql = "UPDATE `my_keys` SET `field_data` = '$privateKey' WHERE `my_keys`.`field_name` = 'server_private_key' LIMIT 1";
-
-		if(mysql_query($sql) == TRUE)
-		{
-			// Private Key Update Success
-			$sql = "UPDATE `my_keys` SET `field_data` = '$pubKey' WHERE `my_keys`.`field_name` = 'server_public_key' LIMIT 1";
-			if(mysql_query($sql) == TRUE)
-			{
-				// Blank reverse crypto data field
-				mysql_query("UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
-
-				// Public Key Update Success				
-				return 1;
-			}
-		}
-	}
-	else
-	{
-		// Open SSL Error
-		return 0;
-	}
-
-	return 0;
-}
- */
 //***********************************************************************************
 //***********************************************************************************	
 function generate_new_keys()

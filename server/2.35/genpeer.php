@@ -338,13 +338,16 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 				{
 					// Not found, add to queue
 					// Check to make sure this public key isn't forged or made up to win the list
-					openssl_public_decrypt(base64_decode($crypt1), $transaction_info, $public_key);
+					//openssl_public_decrypt(base64_decode($crypt1), $transaction_info, $public_key);
+					$transaction_info = tk_decrypt($public_key, base64_decode($crypt1));
+
 
 					if($transaction_info == $crypt2)
 					{
 						// Check the IP/Domain field and poll the IP to see if
 						// there is a valid Timekoin server at the address.
-						openssl_public_decrypt(base64_decode($crypt3), $crypt3_data, $public_key);
+						//openssl_public_decrypt(base64_decode($crypt3), $crypt3_data, $public_key);
+						$crypt3_data = tk_decrypt($public_key, base64_decode($crypt3));
 
 						$peer_ip = find_string("---ip=", "---domain", $crypt3_data);
 						$peer_domain = find_string("---domain=", "---subfolder", $crypt3_data);
@@ -360,7 +363,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 						// Poll the address that was encrypted to check for valid Timekoin server
 						$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 256, "genpeer.php?action=gen_key_crypt"));
-						openssl_public_decrypt($gen_key_crypt, $gen_key_crypt, $public_key);
+						//openssl_public_decrypt($gen_key_crypt, $gen_key_crypt, $public_key);
+						$gen_key_crypt = tk_decrypt($public_key, $gen_key_crypt);
 
 						if(empty($peer_domain) == FALSE)
 						{
@@ -403,13 +407,15 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 					// This peer is already in the generation list, so normally it would
 					// not be sending another election request unless to update the
 					// IP address from which it generates currency from.
-					openssl_public_decrypt(base64_decode($crypt1), $transaction_info, $public_key);
+					//openssl_public_decrypt(base64_decode($crypt1), $transaction_info, $public_key);
+					$transaction_info = tk_decrypt($public_key, base64_decode($crypt1));
 
 					if($transaction_info == $crypt2)
 					{
 						// Check the IP/Domain field and poll the IP to see if
 						// there is a valid Timekoin server at the address.
-						openssl_public_decrypt(base64_decode($crypt3), $crypt3_data, $public_key);
+						//openssl_public_decrypt(base64_decode($crypt3), $crypt3_data, $public_key);
+						$crypt3_data = tk_decrypt($public_key, base64_decode($crypt3));
 
 						$peer_ip = find_string("---ip=", "---domain", $crypt3_data);
 						$peer_domain = find_string("---domain=", "---subfolder", $crypt3_data);
@@ -424,7 +430,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 						// Poll the address that was encrypted to check for valid Timekoin server
 						$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 256, "genpeer.php?action=gen_key_crypt"));
-						openssl_public_decrypt($gen_key_crypt, $gen_key_crypt, $public_key);
+						//openssl_public_decrypt($gen_key_crypt, $gen_key_crypt, $public_key);
+						$gen_key_crypt = tk_decrypt($public_key, $gen_key_crypt);
 
 						if(empty($peer_domain) == FALSE)
 						{
