@@ -217,10 +217,22 @@ if($_GET["action"] == "exchange")
 		$my_server_subfolder = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_subfolder' LIMIT 1"),0,"field_data");
 		$my_server_port_number = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
 
+		if(empty($my_server_domain) == TRUE)
+		{
+			// No domain used
+			$my_server_domain = "NA";
+		}
+
 		$ip_address = $_SERVER['REMOTE_ADDR'];
 		$domain = filter_sql($_GET["domain"]);
 		$subfolder = filter_sql($_GET["subfolder"]);
 		$port_number = intval($_GET["port_number"]);
+
+		if(is_domain_valid($domain) == FALSE)
+		{
+			// Someone is using an IP address or Localhost :p
+			$domain = NULL;
+		}
 
 		// Check to make sure that this peer is not already in our active peer list
 		$duplicate_check1 = mysql_result(mysql_query("SELECT * FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' LIMIT 1"),0,"join_peer_list");
@@ -446,7 +458,6 @@ if($active_peers < $max_active_peers)
 				// Ask to be added to the other server's peerlist
 				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 10, "peerlist.php?action=join");
 
-
 				if($poll_peer == "OK")
 				{
 					// Add this peer to the active list
@@ -527,6 +538,12 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 {
 	$my_server_domain = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,"field_data");
 
+	if(empty($my_server_domain) == TRUE)
+	{
+		// No domain used
+		$my_server_domain = "NA";
+	}
+
 	// Add more possible peers to the new peer list by polling what the active peers have
 	$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND() LIMIT 10";
 	$sql_result = mysql_query($sql);
@@ -560,11 +577,17 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 			$peer_subfolder = find_string("-----subfolder$peer_counter=", "-----port_number$peer_counter", $poll_peer);
 			$peer_port_number = find_string("-----port_number$peer_counter=", "-----", $poll_peer);
 
+			if(is_domain_valid($peer_domain) == FALSE)
+			{
+				// Someone is using an IP address or Localhost :p
+				$peer_domain = NULL;
+			}
+
 			if(empty($peer_port_number) == TRUE && empty($peer_subfolder) == TRUE)
 			{
 				// No more peers, end this loop early
 				break;
-			}			
+			}
 
 			if(empty($peer_IP) == TRUE && empty($peer_domain) == TRUE) // Check for blank fields in both IP/Domain
 			{

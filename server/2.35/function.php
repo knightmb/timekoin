@@ -1148,6 +1148,32 @@ function is_private_ip($ip, $ignore = FALSE)
 	return $result;
 }
 //***********************************************************************************
+function is_domain_valid($domain)
+{
+	$result = TRUE;
+	
+	if(empty($domain) == TRUE)
+	{
+		$result = FALSE;		
+	}
+
+	if(filter_var($domain, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) == TRUE)
+	{
+		$result = FALSE;
+	}
+
+	if(filter_var($domain, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
+	{
+		$result = FALSE;
+	}
+
+	if(strtolower($domain) == "localhost")
+	{
+		$result = FALSE;
+	}
+
+	return $result;
+}
 //***********************************************************************************
 function initialization_database()
 {

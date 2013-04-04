@@ -72,7 +72,7 @@ else
 // Can we work on the transactions in the database?
 // Not allowed 60 seconds before and 60 seconds after transaction cycle.
 // Don't build anything if a foundation check is already going on.
-if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle) > 60 && $foundation_task == 0)
+if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle) > 45 && $foundation_task == 0)
 {
 //***********************************************************************************
 	// Does my current history hash match all my peers?
@@ -297,6 +297,8 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 			$sql = "SELECT * FROM `transaction_foundation` ORDER BY `block`";
 			$sql_result = mysql_query($sql);
 
+			$build_success = 0;
+
 			for ($i = 0; $i < $current_foundation_block; $i++)
 			{
 				$sql_row = mysql_fetch_array($sql_result);
@@ -377,11 +379,16 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 								write_log("FAILED to Clear Balance Index Table after Transaction Foundation Block #$i was Created", "FO");
 							}
 
-							// Break out of this loop in case there is a lot
-							// of history to catch up on. We don't want to tie
-							// up the server with building many transaction foundations
-							// in a row.
-							break;
+							$build_success++;
+
+							if($build_success >= 5)
+							{
+								// Break out of this loop in case there is a lot
+								// of history to catch up on. We don't want to tie
+								// up the server with building many transaction foundations
+								// in a row.
+								break;
+							}
 						}
 					}
 					else

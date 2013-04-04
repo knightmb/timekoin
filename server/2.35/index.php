@@ -1510,7 +1510,7 @@ if($_SESSION["valid_login"] == TRUE)
 //****************************************************************************
 	if($_GET["menu"] == "history")
 	{
-		$my_public_key = mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,"field_data");		
+		$my_public_key = my_public_key();
 		set_time_limit(120);
 
 		if($_GET["trans_browse"] == "open")
@@ -1829,28 +1829,40 @@ if($_SESSION["valid_login"] == TRUE)
 				{
 					$filter_results;
 					$filter_GUI;
+					$sent_to_selected_trans;
+					$sent_to_selected_gen;
+					$sent_to_selected_both;
 
 					switch($_POST['filter'])
 					{
 						case "transactions":
 							$filter_results = "AND `attribute` = 'T'";
-							$filter_GUI = "Transactions";						
+							$filter_GUI = "Transactions";
+							$sent_to_selected_trans = "SELECTED";
 							break;
 
 						case "generation":
 							$filter_results = "AND `attribute` = 'G'";
-							$filter_GUI = "Currency Generation";						
+							$filter_GUI = "Currency Generation";
+							$sent_to_selected_gen = "SELECTED";
 							break;
+
+						case "all":
+							$filter_GUI = "Transactions & Currency Generation";
+							$sent_to_selected_both = "SELECTED";
+							break;							
 					}
 				}
 				else
 				{
-					$filter_GUI = "Transactions & Currency Generation";
+					$filter_results = "AND `attribute` = 'T'";
+					$filter_GUI = "Transactions";
+					$sent_to_selected_trans = "SELECTED";
 				}
 
 				$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> ' . $filter_GUI . ' <font color="green">Sent To</font> This Server</strong></br>
-					<FORM ACTION="index.php?menu=history&receive=listmore" METHOD="post"><select name="filter"><option value="transactions">Transactions Only</option>
-					<option value="generation">Generation Only</option><option value="all" SELECTED>Both</option></option></select></br>
+					<FORM ACTION="index.php?menu=history&receive=listmore" METHOD="post"><select name="filter"><option value="transactions" ' . $sent_to_selected_trans . '>Transactions Only</option>
+					<option value="generation" ' . $sent_to_selected_gen . '>Generation Only</option><option value="all" ' . $sent_to_selected_both . '>Both</option></option></select></br>
 					</br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
 					<th>Sent From</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
 
@@ -1906,7 +1918,7 @@ if($_SESSION["valid_login"] == TRUE)
 					<th>Sent To</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
 
 				// Find the last X transactions from to this public key
-				$sql = "SELECT timestamp, public_key_from, public_key_to, crypt_data3 FROM `transaction_history` WHERE `public_key_from` = '$my_public_key' ORDER BY `transaction_history`.`timestamp` DESC LIMIT $show_last";
+				$sql = "SELECT timestamp, public_key_from, public_key_to, crypt_data3 FROM `transaction_history` WHERE `public_key_from` = '$my_public_key' AND `public_key_to` != '$my_public_key' ORDER BY `transaction_history`.`timestamp` DESC LIMIT $show_last";
 				
 				$sql_result = mysql_query($sql);
 				$sql_num_results = mysql_num_rows($sql_result);
@@ -1914,32 +1926,29 @@ if($_SESSION["valid_login"] == TRUE)
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
 					$sql_row = mysql_fetch_array($sql_result);
+					$crypt3 = $sql_row["crypt_data3"];
 
-					if($sql_row["public_key_from"] != $sql_row["public_key_to"])
-					{
-						$crypt3 = $sql_row["crypt_data3"];
+					//openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $sql_row["public_key_from"]);
+					$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($crypt3));
 
-						//openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $sql_row["public_key_from"]);
-						$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($crypt3));
+					$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
 
-						$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
+					// Any encoded messages?
+					$inside_message = find_string("---MSG=", "", $transaction_info, TRUE);				
 
-						// Any encoded messages?
-						$inside_message = find_string("---MSG=", "", $transaction_info, TRUE);				
+					// Everyone else
+					$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:150px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($sql_row["public_key_to"]) . '</p>';
 
-						// Everyone else
-						$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:150px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($sql_row["public_key_to"]) . '</p>';
+					// How many cycles back did this take place?
+					$cycles_back = intval((time() - $sql_row["timestamp"]) / 300);
 
-						// How many cycles back did this take place?
-						$cycles_back = intval((time() - $sql_row["timestamp"]) / 300);
+					$body_string .= '<tr>
+					<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>' 
+					. $public_key_from . '</td>
+					<td class="style2"><p style="font-size: 11px;">' . $transaction_amount . '</p></td>
+					<td class="style2"><p style="font-size: 11px;">' . $cycles_back . '</p></td>
+					<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $inside_message . '</p></td></tr>';
 
-						$body_string .= '<tr>
-						<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>' 
-						. $public_key_from . '</td>
-						<td class="style2"><p style="font-size: 11px;">' . $transaction_amount . '</p></td>
-						<td class="style2"><p style="font-size: 11px;">' . $cycles_back . '</p></td>
-						<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $inside_message . '</p></td></tr>';
-					}
 				}
 
 				$body_string .= '<tr><td colspan="5"><FORM ACTION="index.php?menu=history&send=listmore" METHOD="post"><input type="text" size="5" name="show_more_send" value="' . $show_last .'" /><input type="submit" name="Submit2" value="Show Last" /></FORM></td></tr>';
