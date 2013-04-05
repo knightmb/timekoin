@@ -248,7 +248,15 @@ while(1) // Begin Infinite Loop :)
 		// Check if script is already running
 		if($script_loop_active == 0)
 		{
-			call_script("treasurer.php");
+			if(extension_loaded('openssl') == TRUE || extension_loaded('gmp') == TRUE)
+			{
+				call_script("treasurer.php", 0);
+			}
+			else
+			{
+				// No CLI Extensions, Windows issue :(
+				call_script("treasurer.php", 2);
+			}			
 		}
 
 		sleep(2); // 2 seconds for sanity reasons
@@ -275,7 +283,15 @@ while(1) // Begin Infinite Loop :)
 		// Check if script is already running
 		if($script_loop_active == 0)
 		{
-			call_script("balance.php", 0);
+			if(extension_loaded('openssl') == TRUE || extension_loaded('gmp') == TRUE)
+			{
+				call_script("balance.php", 0);
+			}
+			else
+			{
+				// No CLI Extensions, Windows issue :(
+				call_script("balance.php", 2);
+			}
 		}		
 
 		sleep(1); // 1 second for sanity reasons

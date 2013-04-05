@@ -35,8 +35,8 @@ $next_transaction_cycle = transaction_cycle(1);
 $foundation_active = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,"field_data"));
 
 // Can we work on the key balances in the database?
-// Not allowed 120 seconds before and 45 seconds after transaction cycle.
-if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cycle) > 45 && $foundation_active == 0)
+// Not allowed 120 seconds before and 40 seconds after transaction cycle.
+if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cycle) > 40 && $foundation_active == 0)
 {
 	// 2000 Transaction Cycles Back in time to index
 	$time_2000 = time() - 600000;

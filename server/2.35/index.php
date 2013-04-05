@@ -970,6 +970,7 @@ if($_SESSION["valid_login"] == TRUE)
 			<strong>Max Peer Query</strong> is the per 10 seconds limit imposed on each individual peer before being banned for 24 hours.</br></br>
 			<strong>Allow LAN Peers</strong> controls if LAN peers will be allowed to populate the peer list.</br></br>
 			<strong>Allow Ambient Peer Restarts</strong> controls if other peers can restart Timekoin from unknown failures.</br></br>
+			<strong>Super Peer</strong> will enable peers to download bulk transactions from your server.</br></br>
 			<strong>Variance</strong> of 15 seconds or less with the other peers is good.</br></br>
 			<strong>Ping</strong> response time greater than 3000 ms will timeout during data exchanges.';
 
@@ -1073,7 +1074,17 @@ if($_SESSION["valid_login"] == TRUE)
 						$sql = "UPDATE `options` SET `field_data` = '" . $hash_code . "' WHERE `options`.`field_name` = 'server_hash_code' LIMIT 1";
 						if(mysql_query($sql) == TRUE)
 						{						
-							$refresh_change = TRUE;
+							$super_peer_limit = intval($_POST["super_peer_limit"]);
+
+							if($super_peer_limit > 0 && $super_peer_limit < 10) { $super_peer_limit = 10; }
+							if($super_peer_limit > 500) { $super_peer_limit = 500; }
+
+							$sql = "UPDATE `options` SET `field_data` = '$super_peer_limit' WHERE `options`.`field_name` = 'super_peer' LIMIT 1";
+							if(mysql_query($sql) == TRUE)
+							{							
+								mysql_query("UPDATE `main_loop_status` SET `field_data` = '$super_peer_limit' WHERE `main_loop_status`.`field_name` = 'super_peer' LIMIT 1");
+								$refresh_change = TRUE;
+							}							
 						}						
 					}
 				}
@@ -1083,7 +1094,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			if($refresh_change == TRUE)
 			{
-				$body_text .= '<font color="blue"><strong>Refresh Settings & Hash Code Update Saved!</strong></font></br>';
+				$body_text .= '<font color="blue"><strong>Refresh Settings, Hash Code, & Super Peer Limit Saved!</strong></font></br>';
 			}
 			else
 			{
@@ -1161,7 +1172,7 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			if(generate_new_keys() == TRUE)
 			{
-				$body_text .= '<font color="blue"><strong>New Private & Public Key Pair Generated!</strong></font></br>';
+				$body_text .= '<font color="green"><strong>New Private & Public Key Pair Generated!</strong></font></br>';
 			}
 			else
 			{
@@ -1173,7 +1184,9 @@ if($_SESSION["valid_login"] == TRUE)
 			</br></br>Remember that usernames and passwords are Case Sensitive.
 			</br></br><strong>Generate New Keys</strong> will create a new random key pair and save it in the database.
 			</br></br><strong>Check for Updates</strong> will check for any program updates that can be downloaded directly into Timekoin.
-			</br></br><strong>Hash Code</strong> is a private code you create for any external program or server that request access to more advanced features of your Timekoin server.';
+			</br></br><strong>Hash Code</strong> is a private code you create for any external program or server that request access to more advanced features of your Timekoin server.
+			</br></br><strong>Super Peer Limit</strong> controls how many transaction cycles other peers will download in bulk.
+			</br></br><strong>PHP File Path</strong> is for Windows OS users having path issues with PHP. Leave blank to turn off this option.';
 
 		if($_GET["upgrade"] == "check" || $_GET["upgrade"] == "doupgrade")
 		{
@@ -1588,7 +1601,6 @@ if($_SESSION["valid_login"] == TRUE)
 						}
 
 						// Transaction Amount
-						//openssl_public_decrypt(base64_decode($sql_row["crypt_data3"]), $transaction_info, $sql_row["public_key_from"]);
 						$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($sql_row["crypt_data3"]));
 
 						$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
@@ -1693,10 +1705,6 @@ if($_SESSION["valid_login"] == TRUE)
 			$sql = "SELECT * FROM `transaction_history` WHERE `timestamp` = '" . $_POST["timestamp"] . "' AND `hash` = '" . $_POST["hash"] . "'";
 			$sql_result = mysql_query($sql);			
 			$sql_row = mysql_fetch_array($sql_result);
-
-			//openssl_public_decrypt(base64_decode($sql_row["crypt_data1"]), $crypt1_data, $sql_row["public_key_from"]);
-			//openssl_public_decrypt(base64_decode($sql_row["crypt_data2"]), $crypt2_data, $sql_row["public_key_from"]);
-			//openssl_public_decrypt(base64_decode($sql_row["crypt_data3"]), $transaction_info, $sql_row["public_key_from"]);
 
 			$crypt1_data = tk_decrypt($sql_row["public_key_from"], base64_decode($sql_row["crypt_data1"]));
 			$crypt2_data = tk_decrypt($sql_row["public_key_from"], base64_decode($sql_row["crypt_data2"]));
@@ -1876,7 +1884,6 @@ if($_SESSION["valid_login"] == TRUE)
 					$sql_row = mysql_fetch_array($sql_result);
 					$crypt3 = $sql_row["crypt_data3"];
 
-					//openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $sql_row["public_key_from"]);
 					$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($crypt3));
 
 					$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
@@ -1918,7 +1925,7 @@ if($_SESSION["valid_login"] == TRUE)
 					<th>Sent To</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
 
 				// Find the last X transactions from to this public key
-				$sql = "SELECT timestamp, public_key_from, public_key_to, crypt_data3 FROM `transaction_history` WHERE `public_key_from` = '$my_public_key' AND `public_key_to` != '$my_public_key' ORDER BY `transaction_history`.`timestamp` DESC LIMIT $show_last";
+				$sql = "SELECT timestamp, public_key_from, public_key_to, crypt_data3 FROM `transaction_history` WHERE `public_key_from` = '$my_public_key' AND `attribute` = 'T' ORDER BY `transaction_history`.`timestamp` DESC LIMIT $show_last";
 				
 				$sql_result = mysql_query($sql);
 				$sql_num_results = mysql_num_rows($sql_result);
@@ -1928,7 +1935,6 @@ if($_SESSION["valid_login"] == TRUE)
 					$sql_row = mysql_fetch_array($sql_result);
 					$crypt3 = $sql_row["crypt_data3"];
 
-					//openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $sql_row["public_key_from"]);
 					$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($crypt3));
 
 					$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
@@ -1948,7 +1954,6 @@ if($_SESSION["valid_login"] == TRUE)
 					<td class="style2"><p style="font-size: 11px;">' . $transaction_amount . '</p></td>
 					<td class="style2"><p style="font-size: 11px;">' . $cycles_back . '</p></td>
 					<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $inside_message . '</p></td></tr>';
-
 				}
 
 				$body_string .= '<tr><td colspan="5"><FORM ACTION="index.php?menu=history&send=listmore" METHOD="post"><input type="text" size="5" name="show_more_send" value="' . $show_last .'" /><input type="submit" name="Submit2" value="Show Last" /></FORM></td></tr>';
@@ -2009,15 +2014,12 @@ if($_SESSION["valid_login"] == TRUE)
 			$public_key_trans = $sql_row["public_key"];
 			
 			// Decode the public key this transaction is being sent to
-			//openssl_public_decrypt(base64_decode($crypt1), $public_key_to_1, $public_key_trans);
-			//openssl_public_decrypt(base64_decode($crypt2), $public_key_to_2, $public_key_trans);				
 			$public_key_to_1 = tk_decrypt($public_key_trans, base64_decode($crypt1));
 			$public_key_to_2 = tk_decrypt($public_key_trans, base64_decode($crypt2));
 			
 			$public_key_trans_to = $public_key_to_1 . $public_key_to_2;
 			
 			// Decode Amount
-			//openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key_trans);
 			$transaction_info = tk_decrypt($public_key_trans, base64_decode($crypt3));
 
 			$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);

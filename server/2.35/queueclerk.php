@@ -161,7 +161,6 @@ if($_GET["action"] == "input_transaction")
 				// Decrypt transaction information for regular transaction data
 				// and check to make sure the public key that is being sent to
 				// has not been tampered with.
-				//openssl_public_decrypt(base64_decode($transaction_crypt3), $transaction_info, $transaction_public_key);
 				$transaction_info = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt3));
 
 				$inside_transaction_hash = find_string("HASH=", "", $transaction_info, TRUE);
@@ -394,7 +393,6 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 					if($transaction_attribute == "R")
 					{
 						// Check to make sure this public key isn't forged or made up to win the list
-						//openssl_public_decrypt(base64_decode($transaction_crypt1), $inside_transaction_hash, $transaction_public_key);
 						$inside_transaction_hash = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt1));
 						
 						$final_hash_compare = $transaction_crypt2;
@@ -407,7 +405,6 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 							// Decrypt transaction information for regular transaction data
 							// and check to make sure the public key that is being sent to
 							// has not been tampered with.
-							//openssl_public_decrypt(base64_decode($transaction_crypt3), $transaction_info, $transaction_public_key);
 							$transaction_info = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt3));
 
 							$inside_transaction_hash = find_string("HASH=", "", $transaction_info, TRUE);

@@ -118,7 +118,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 						// This is then stored as a data field that is easy to access and quickly output to any
 						// peer that is going to query this one as a potential generating peer.
 						$arr1 = str_split($my_public_key, 181);
-						//openssl_private_encrypt($arr1[0], $encryptedPublicKey, $my_private_key);
+
 						$encryptedPublicKey = tk_encrypt($my_private_key, $arr1[0]);
 						
 						$encryptedPublicKey = base64_encode($encryptedPublicKey);
@@ -135,13 +135,11 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 
 					$crypt3_data = "---ip=$my_generation_IP---domain=$my_domain---subfolder=$my_subfolder---port=$my_port---end";
 
-					//openssl_private_encrypt($crypt3_data, $encryptedData3, $my_private_key);
 					$encryptedData3 = tk_encrypt($my_private_key, $crypt3_data);
 					
 					$encryptedData64_3 = base64_encode($encryptedData3);
 
 					// Encrypt Generation Request into Crypt1 field
-					//openssl_private_encrypt($generation_request, $encryptedData1, $my_private_key);
 					$encryptedData1 = tk_encrypt($my_private_key, $generation_request);
 
 					$encryptedData64_1 = base64_encode($encryptedData1);
@@ -177,16 +175,13 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 					//Not found, add it to transaction queue
 					$arr1 = str_split($my_public_key, 181);
 
-					//openssl_private_encrypt($arr1[0], $encryptedData1, $my_private_key);
 					$encryptedData1 = tk_encrypt($my_private_key, $arr1[0]);
 
 					$encryptedData64_1 = base64_encode($encryptedData1);
-					//openssl_private_encrypt($arr1[1], $encryptedData2, $my_private_key);
 					$encryptedData2 = tk_encrypt($my_private_key, $arr1[1]);					
 					
 					$encryptedData64_2 = base64_encode($encryptedData2);
 					$transaction_data = "AMOUNT=$allowed_amount---TIME=" . time() . "---HASH=" . hash('sha256', $encryptedData64_1 . $encryptedData64_2);
-					//openssl_private_encrypt($transaction_data, $encryptedData3, $my_private_key);
 					$encryptedData3 = tk_encrypt($my_private_key, $transaction_data);
 					
 					$encryptedData64_3 = base64_encode($encryptedData3);

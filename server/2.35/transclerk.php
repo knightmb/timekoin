@@ -542,7 +542,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 									{
 										$super_peer_cycles = 500;
 									}
-									else if($poll_peer > 1 && $poll_peer < 500)
+									else if($poll_peer > 1 && $poll_peer <= 500)
 									{
 										$super_peer_cycles = $poll_peer;
 									}

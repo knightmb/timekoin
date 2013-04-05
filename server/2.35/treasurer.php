@@ -44,8 +44,8 @@ $sql_num_results = mysql_num_rows($sql_result);
 if($sql_num_results > 0)
 {
 	// Can we copy my transaction queue to the main queue in the allowed time?
-	// Not allowed 120 seconds before and 30 seconds after transaction cycle.
-	if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycle) > 30)
+	// Not allowed 120 seconds before and 25 seconds after transaction cycle.
+	if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycle) > 25)
 	{
 		$firewall_blocked = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'firewall_blocked_peer' LIMIT 1"),0,"field_data");
 		
@@ -62,8 +62,6 @@ if($sql_num_results > 0)
 			$attribute = $sql_row["attribute"];			
 
 			// Check to see if transaction is saved in the transaction history
-			//openssl_public_decrypt(base64_decode($crypt1), $public_key_to_1, $public_key);
-			//openssl_public_decrypt(base64_decode($crypt2), $public_key_to_2, $public_key);				
 			$public_key_to_1 = tk_decrypt($public_key, base64_decode($crypt1));
 			$public_key_to_2 = tk_decrypt($public_key, base64_decode($crypt2));
 
@@ -210,7 +208,7 @@ if($sql_num_results > 0)
 //*****************************************************************************************************
 //*****************************************************************************************************
 // Find all transactions between the Previous Transaction Cycle and the Current
-$sql = "SELECT * FROM `transaction_queue` WHERE `timestamp` >= $previous_generation_cycle AND `timestamp` < $current_generation_cycle ORDER BY `attribute`";
+$sql = "SELECT * FROM `transaction_queue` WHERE `timestamp` >= $previous_generation_cycle AND `timestamp` < $current_generation_cycle ORDER BY `attribute`, `hash`";
 
 $sql_result = mysql_query($sql);
 $sql_num_results = mysql_num_rows($sql_result);
@@ -258,7 +256,6 @@ if($sql_num_results > 0)
 							$hash_check = $sql_row["hash"];
 
 							// Check generation amount to make sure it has not been tampered with
-							//openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key);
 							$transaction_info = tk_decrypt($public_key, base64_decode($crypt3));
 
 							$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
@@ -344,7 +341,6 @@ if($sql_num_results > 0)
 				$crypt3 = $sql_row["crypt_data3"];
 
 				// How much is this public key trying to send to another public key?
-				//openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key);
 				$transaction_info = tk_decrypt($public_key, base64_decode($crypt3));
 
 				$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
@@ -371,8 +367,6 @@ if($sql_num_results > 0)
 					if(hash('sha256', $crypt1 . $crypt2 . $crypt3) == $hash_check)
 					{
 						// Find destination public key
-						//openssl_public_decrypt(base64_decode($crypt1), $public_key_to_1, $public_key);
-						//openssl_public_decrypt(base64_decode($crypt2), $public_key_to_2, $public_key);				
 						$public_key_to_1 = tk_decrypt($public_key, base64_decode($crypt1));
 						$public_key_to_2 = tk_decrypt($public_key, base64_decode($crypt2));
 						

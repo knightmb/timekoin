@@ -70,7 +70,7 @@ else
 }
 
 // Can we work on the transactions in the database?
-// Not allowed 60 seconds before and 60 seconds after transaction cycle.
+// Not allowed 60 seconds before and 45 seconds after transaction cycle.
 // Don't build anything if a foundation check is already going on.
 if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle) > 45 && $foundation_task == 0)
 {
@@ -109,7 +109,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 		{
 			// How frequent the transaction foundation checks are set by the user
 			$trans_history_check = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'trans_history_check' LIMIT 1"),0,"field_data"));
-			$rand_freq = 60; // Rare - Default if no user set value
+			$rand_freq = 65; // Rare - Default if no user set value
 
 			if($trans_history_check == 1)
 			{

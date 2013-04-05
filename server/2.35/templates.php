@@ -224,6 +224,12 @@ $peerlist_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `fiel
 $queue_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_queue' LIMIT 1"),0,"field_data");
 $server_hash_code = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_hash_code' LIMIT 1"),0,"field_data");
 $php_location = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,"field_data");
+$super_peer = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'super_peer' LIMIT 1"),0,"field_data");
+
+if($super_peer == 1)
+{
+	$super_peer = 500;
+}
 
 return '<table border="0"><tr><td><strong>Refresh Rates (seconds) for Realtime Pages [0 = disable]</strong></br></br><FORM ACTION="index.php?menu=options&refresh=change" METHOD="post"></td></tr>
 <tr><td style="width:415px" valign="bottom" align="right">
@@ -233,8 +239,9 @@ Transaction Queue: <input type="text" name="queue_update" size="2" value="' . $q
 <tr><td><hr></hr></td></tr>
 <tr><td align="right"><strong>Hash Code for External Access [0 = disable]</br><font color="blue">Must be letters or numbers, no spaces.</font></strong></br><input type="text" name="hash_code" size="32" value="' . $server_hash_code . '" /></td></tr>
 <tr><td><hr></hr></td></tr>
+<tr><td align="right"><strong>Super Peer Limit (10 - 500)</strong></br><input type="text" name="super_peer_limit" size="3" value="' . $super_peer . '" /></br></td></tr>
 <tr><td align="right">
-<input type="submit" name="Submit2" value="Save" />
+<input type="submit" name="Submit2" value="Save Options" />
 </FORM>
 </td><td style="width:215px" valign="bottom" align="right"><FORM ACTION="index.php?menu=options&upgrade=check" METHOD="post"><input type="submit" name="Submit3" value="Check for Updates" /></FORM></td></tr>
 </table>
@@ -244,7 +251,6 @@ Transaction Queue: <input type="text" name="queue_update" size="2" value="' . $q
 <td><FORM ACTION="index.php?menu=options&find=php" METHOD="post"><input type="submit" name="find_php_location" value="Find PHP" /></FORM></td></tr>
 </table>
 ';
-
 
 } 
 //***********************************************************
@@ -292,7 +298,7 @@ else
 	$gen_hash = '<font color="red">' . $gen_hash . '</font>';
 }
 
-if($super_peer_mode == 1)
+if($super_peer_mode >= 1)
 {
 	$super_peer_check_1 = "CHECKED";
 }

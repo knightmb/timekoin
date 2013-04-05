@@ -215,62 +215,27 @@ function queue_hash()
 //***********************************************************************************
 function my_public_key()
 {
-	return mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,"field_data");
+	return mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,1);
 }
-//***********************************************************************************
 //***********************************************************************************
 function my_private_key()
 {
-	return mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_private_key' LIMIT 1"),0,"field_data");
+	return mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_private_key' LIMIT 1"),0,1);
 }
 //***********************************************************************************
-//***********************************************************************************
-function call_script($script, $priority = 1)
+function my_subfolder()
 {
-	if($priority == 1)
-	{
-		// Normal Priority
-		if(getenv("OS") == "Windows_NT")
-		{
-			$php_location = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,"field_data");
-
-			if(empty($php_location) == TRUE)
-			{
-				pclose(popen("start php-win $script", "r"));// This will execute without waiting for it to finish
-			}
-			else
-			{
-				pclose(popen("set PATH=%PATH%;$php_location&& start php-win $script", "r"));// This will execute without waiting for it to finish
-			}
-		}
-		else
-		{
-			exec("php $script &> /dev/null &"); // This will execute without waiting for it to finish
-		}
-	}
-	else
-	{
-		// Below Normal Priority
-		if(getenv("OS") == "Windows_NT")
-		{
-			$php_location = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,"field_data");
-			
-			if(empty($php_location) == TRUE)
-			{			
-				pclose(popen("start /BELOWNORMAL php-win $script", "r"));// This will execute without waiting for it to finish
-			}
-			else
-			{
-				pclose(popen("set PATH=%PATH%;$php_location&& start /BELOWNORMAL php-win $script", "r"));// This will execute without waiting for it to finish				
-			}
-		}
-		else
-		{
-			exec("nice php $script &> /dev/null &"); // This will execute without waiting for it to finish
-		}
-	}
-
-	return;
+	return mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_subfolder' LIMIT 1"),0,1);
+}
+//***********************************************************************************
+function my_port_number()
+{
+	return mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,1);
+}
+//***********************************************************************************
+function my_domain()
+{
+	return mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,1);
 }
 //***********************************************************************************
 //***********************************************************************************
@@ -317,6 +282,60 @@ function poll_peer($ip_address, $domain, $subfolder, $port_number, $max_length, 
 	}
 
 	return $poll_data;
+}
+//***********************************************************************************
+//***********************************************************************************
+function call_script($script, $priority = 1)
+{
+	if($priority == 1)
+	{
+		// Normal Priority
+		if(getenv("OS") == "Windows_NT")
+		{
+			$php_location = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,"field_data");
+
+			if(empty($php_location) == TRUE)
+			{
+				pclose(popen("start php-win $script", "r"));// This will execute without waiting for it to finish
+			}
+			else
+			{
+				pclose(popen("set PATH=%PATH%;$php_location&& start php-win $script", "r"));// This will execute without waiting for it to finish
+			}
+		}
+		else
+		{
+			exec("php $script &> /dev/null &"); // This will execute without waiting for it to finish
+		}
+	}
+	else if($priority == 2)
+	{
+		// No PHP CLI Extensions for some odd reason
+		poll_peer(NULL, "localhost", my_subfolder(), my_port_number(), 1, $script);
+	}
+	else
+	{
+		// Below Normal Priority
+		if(getenv("OS") == "Windows_NT")
+		{
+			$php_location = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,"field_data");
+			
+			if(empty($php_location) == TRUE)
+			{			
+				pclose(popen("start /BELOWNORMAL php-win $script", "r"));// This will execute without waiting for it to finish
+			}
+			else
+			{
+				pclose(popen("set PATH=%PATH%;$php_location&& start /BELOWNORMAL php-win $script", "r"));// This will execute without waiting for it to finish				
+			}
+		}
+		else
+		{
+			exec("nice php $script &> /dev/null &"); // This will execute without waiting for it to finish
+		}
+	}
+
+	return;
 }
 //***********************************************************************************
 //***********************************************************************************
@@ -440,6 +459,21 @@ function tk_encrypt($key, $crypt_data)
 }
 //***********************************************************************************
 //***********************************************************************************
+function set_decrypt_mode()
+{
+	if(function_exists('openssl_public_decrypt') == TRUE)
+	{
+		$GLOBALS['decrypt_mode'] = 1;
+	}
+	else
+	{
+		$GLOBALS['decrypt_mode'] = 2;
+	}
+	
+	return;
+}
+//***********************************************************************************
+//***********************************************************************************
 function tk_decrypt($key, $crypt_data)
 {
 	if(function_exists('openssl_public_decrypt') == TRUE)
@@ -461,6 +495,16 @@ function tk_decrypt($key, $crypt_data)
 //***********************************************************************************
 function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0)
 {
+	set_decrypt_mode(); // Figure out which decrypt method can be used
+
+	if($GLOBALS['decrypt_mode'] == 2)
+	{
+		//Initialize objects for Internal RSA decrypt
+		require_once('RSA.php');
+		$rsa = new Crypt_RSA();
+		$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
+	}
+
 	if($block_start == 0 && $block_end == 0)
 	{
 		// Find every Time Koin sent to this public Key
@@ -495,7 +539,15 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 		{
 			// Currency Generation
 			// Decrypt transaction information
-			$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3));
+			if($GLOBALS['decrypt_mode'] == 2)
+			{
+				$rsa->loadKey($public_key_from);
+				$transaction_info = $rsa->decrypt(base64_decode($crypt3));
+			}
+			else
+			{
+				openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key_from);
+			}
 
 			$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 
@@ -505,8 +557,16 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 		if($attribute == "T")
 		{
 			// Decrypt transaction information
-			$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3));
-			
+			if($GLOBALS['decrypt_mode'] == 2)
+			{
+				$rsa->loadKey($public_key_from);
+				$transaction_info = $rsa->decrypt(base64_decode($crypt3));
+			}
+			else
+			{
+				openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key_from);
+			}
+	
 			$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 
 			$crypto_balance += $transaction_amount_sent;
@@ -548,7 +608,15 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 		if($attribute == "T")
 		{
 			// Decrypt transaction information
-			$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3));
+			if($GLOBALS['decrypt_mode'] == 2)
+			{
+				$rsa->loadKey($public_key_from);
+				$transaction_info = $rsa->decrypt(base64_decode($crypt3));
+			}
+			else
+			{
+				openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key_from);
+			}			
 
 			$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 
@@ -563,6 +631,8 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 //***********************************************************************************
 function check_crypt_balance($public_key)
 {
+	$time_start = time();
+
 	if(empty($public_key) == TRUE)
 	{
 		return 0;
@@ -610,7 +680,6 @@ function check_crypt_balance($public_key)
 		VALUES ('$previous_foundation_block', '$public_key_hash', '$index_balance1')";
 		
 		mysql_query($sql);
-
 		return ($index_balance1 + $index_balance2);
 	}
 	else
@@ -621,7 +690,6 @@ function check_crypt_balance($public_key)
 		$start_time_range = $previous_foundation_block * 500;
 		$end_time_range = transaction_cycle(0, TRUE);
 		$index_balance = check_crypt_balance_range($public_key, $start_time_range, $end_time_range);		
-
 		return ($crypto_balance + $index_balance);
 	}
 }
@@ -913,10 +981,10 @@ function db_cache_balance($my_public_key)
 function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $amount, $message)
 {
 	$arr1 = str_split($send_to_public_key, 181);
-	//openssl_private_encrypt($arr1[0], $encryptedData1, $my_private_key);	
+
 	$encryptedData1 = tk_encrypt($my_private_key, $arr1[0]);
 	$encryptedData64_1 = base64_encode($encryptedData1);	
-	//openssl_private_encrypt($arr1[1], $encryptedData2, $my_private_key);
+
 	$encryptedData2 = tk_encrypt($my_private_key, $arr1[1]);
 	$encryptedData64_2 = base64_encode($encryptedData2);
 
@@ -937,7 +1005,6 @@ function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $a
 		$transaction_data = "AMOUNT=$amount---TIME=" . time() . "---HASH=" . hash('sha256', $encryptedData64_1 . $encryptedData64_2) . "---MSG=$message";
 	}
 
-	//openssl_private_encrypt($transaction_data, $encryptedData3, $my_private_key);
 	$encryptedData3 = tk_encrypt($my_private_key, $transaction_data);
 
 	$encryptedData64_3 = base64_encode($encryptedData3);
@@ -1455,17 +1522,20 @@ function generate_new_keys()
 	require_once('RSA.php');
 
 	$rsa = new Crypt_RSA();
-
 	extract($rsa->createKey(1536));
 
 	if(empty($privatekey) == FALSE && empty($publickey) == FALSE)
 	{
-		$sql = "UPDATE `my_keys` SET `field_data` = '$privatekey' WHERE `my_keys`.`field_name` = 'server_private_key' LIMIT 1";
+		$symbols = array("\r");
+		$new_publickey = str_replace($symbols, "", $publickey);
+		$new_privatekey = str_replace($symbols, "", $privatekey);
+
+		$sql = "UPDATE `my_keys` SET `field_data` = '$new_privatekey' WHERE `my_keys`.`field_name` = 'server_private_key' LIMIT 1";
 
 		if(mysql_query($sql) == TRUE)
 		{
 			// Private Key Update Success
-			$sql = "UPDATE `my_keys` SET `field_data` = '$publickey' WHERE `my_keys`.`field_name` = 'server_public_key' LIMIT 1";
+			$sql = "UPDATE `my_keys` SET `field_data` = '$new_publickey' WHERE `my_keys`.`field_name` = 'server_public_key' LIMIT 1";
 			
 			if(mysql_query($sql) == TRUE)
 			{
