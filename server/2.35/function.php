@@ -44,9 +44,9 @@ function log_ip($attribute, $multiple = 1)
 	if($attribute == "TC")
 	{
 		// Is Super Peer Enabled?
-		$super_peer_mode = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'super_peer' LIMIT 1"),0,"field_data");
+		$super_peer_mode = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'super_peer' LIMIT 1"),0,0);
 
-		if($super_peer_mode == 1)
+		if($super_peer_mode > 0)
 		{
 			// Only count 1 in 3 IP for Transaction Clerk to avoid
 			// accidental banning of peers accessing high volume data.

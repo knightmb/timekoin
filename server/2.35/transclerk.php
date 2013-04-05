@@ -55,7 +55,7 @@ if($_GET["action"] == "block_hash" && $_GET["block_number"] >= 0)
 	$time1 = transaction_cycle(0 - $current_generation_block + 1 + $block_number);
 	$time2 = transaction_cycle(0 - $current_generation_block + 2 + $block_number);	
 
-	echo mysql_result(mysql_query("SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 AND `attribute` = 'H' LIMIT 1"),0,"hash");
+	echo mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 AND `attribute` = 'H' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
 	log_ip("TC");
@@ -147,7 +147,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 	if($sql_num_results > 0 && $sql_num_results < 4) // Write out some test hashes and compare to verify sha256 accuracy
 	{
 		// Beginning transaction should be in, check to make sure
-		$beginning_transaction = mysql_result(mysql_query("SELECT timestamp, public_key_from, hash FROM `transaction_history` WHERE `public_key_from` = '$generation_arbitrary' AND `hash` = '$generation_arbitrary' LIMIT 1"),0,"timestamp");
+		$beginning_transaction = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `public_key_from` = '$generation_arbitrary' AND `hash` = '$generation_arbitrary' LIMIT 1"),0,0);
 
 		if($beginning_transaction == TRANSACTION_EPOCH)
 		{
@@ -187,7 +187,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 			$current_generation_block++;
 			$second_generation_cycle = transaction_cycle((0 - $current_generation_block + 1));
-			$hash_check = mysql_result(mysql_query("SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` = '$second_generation_cycle' AND `attribute` = 'H' LIMIT 1"),0,"hash");
+			$hash_check = mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` = '$second_generation_cycle' AND `attribute` = 'H' LIMIT 1"),0,0);
 
 			// Now let's check the results to make sure they match what should be expected
 			if($hash_check == SHA256TEST)
@@ -229,12 +229,12 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 			if($transaction_history_block_check > 0 && $foundation_block_check == 0)
 			{
-				write_log("Starting History Check from Block #$transaction_history_block_check", "TC");
+				write_log("Starting History Check from Transaction Cycle #$transaction_history_block_check", "TC");
 			}
 			else
 			{
 				$foundation_block_check_start = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_block_check_start' LIMIT 1"),0,"field_data"));
-				write_log("Resuming History Check from Block #$foundation_block_check_start", "TC");
+				write_log("Resuming History Check from Transaction Cycle #$foundation_block_check_start", "TC");
 			}
 
 			// Update database with ERROR_CHECK hash
@@ -297,7 +297,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			}
 			else
 			{
-				if(empty($poll_peer) == FALSE && strlen($poll_peer) > 5 && $poll_peer != "ERROR_CHECK")
+				if(empty($poll_peer) == FALSE && strlen($poll_peer) > 30 && $poll_peer != "ERROR_CHECK")
 				{
 					$trans_list_hash_different++;
 
@@ -355,7 +355,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				$hash_number = transaction_cycle(-10, TRUE);
 			}
 
-			write_log("Resuming History Check from Block #$hash_number", "TC");
+			write_log("Resuming History Check from Transaction Cycle #$hash_number", "TC");
 		}
 		else
 		{
@@ -454,7 +454,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			$time1 = transaction_cycle(0 - $current_generation_block + $hash_number);
 			$time2 = transaction_cycle(0 - $current_generation_block + 1 + $hash_number);
 
-			$sql = "SELECT timestamp, hash FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash`";
+			$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash`";
 
 			$sql_result = mysql_query($sql);
 			$sql_num_results = mysql_num_rows($sql_result);
@@ -505,7 +505,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 				if(mysql_query($sql) == FALSE)
 				{
-					//Something didn't work, database error
+					//Something didn't work, database error?
 					write_log("Error removing corrupted transaction data WHERE timestamp >= $time1 AND timestamp < $time2", "TC");
 				}
 				else
@@ -521,7 +521,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 					// Check for blank data ahead (Super Peer Mode)
 					$time1_ahead = transaction_cycle(0 - $current_generation_block + 1 + $hash_number);
 					$time2_ahead = transaction_cycle(0 - $current_generation_block + 2 + $hash_number);
-					$no_cycles_ahead = mysql_result(mysql_query("SELECT timestamp, attribute FROM `transaction_history` WHERE timestamp >= $time1_ahead AND timestamp < $time2_ahead AND `attribute` = 'H'"),0,0);
+					$no_cycles_ahead = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE timestamp >= $time1_ahead AND timestamp < $time2_ahead AND `attribute` = 'H'"),0,0);
 
 					if(empty($no_cycles_ahead) == TRUE) // No data ahead, lots of blank space
 					{
@@ -548,7 +548,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 									}
 									else
 									{
-										// Something wrong? Default to 2 cycles download
+										// Something wrong? Default to 2 cycles bulk download
 										$super_peer_cycles = 2;
 									}
 									
@@ -557,7 +557,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 									write_log("Connecting with SUPER Peer ($super_peer_cycles Transaction Cycles Limit): $ip_address$domain:$port_number/$subfolder", "TC");
 									
 									set_time_limit(270); // Increase script processing time
-									
+
 									$super_transaction_cycle = $block_number;
 
 									while($super_transaction_cycle < $block_number + $super_peer_cycles)
@@ -575,13 +575,13 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 										while(empty($poll_peer) == FALSE)
 										{
 											$transaction_timestamp = filter_sql(find_string("-----timestamp$tc=", "-----public_key_from$tc", $poll_peer));
-											$transaction_public_key_from = find_string("-----public_key_from$tc=", "-----public_key_to$tc", $poll_peer);
-											$transaction_public_key_to = find_string("-----public_key_to$tc=", "-----crypt1data$tc", $poll_peer);
+											$transaction_public_key_from = filter_sql(find_string("-----public_key_from$tc=", "-----public_key_to$tc", $poll_peer));
+											$transaction_public_key_to = filter_sql(find_string("-----public_key_to$tc=", "-----crypt1data$tc", $poll_peer));
 											$transaction_crypt1 = filter_sql(find_string("-----crypt1data$tc=", "-----crypt2data$tc", $poll_peer));
 											$transaction_crypt2 = filter_sql(find_string("-----crypt2data$tc=", "-----crypt3data$tc", $poll_peer));
 											$transaction_crypt3 = filter_sql(find_string("-----crypt3data$tc=", "-----hash$tc", $poll_peer));
 											$transaction_hash = filter_sql(find_string("-----hash$tc=", "-----attribute$tc", $poll_peer));
-											$transaction_attribute = find_string("-----attribute$tc=", "-----end$tc", $poll_peer);
+											$transaction_attribute = filter_sql(find_string("-----attribute$tc=", "-----end$tc", $poll_peer));
 
 											if(empty($transaction_public_key_from) == TRUE && empty($transaction_public_key_to) == TRUE)
 											{
@@ -592,14 +592,14 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 											$transaction_public_key_from = filter_sql(base64_decode($transaction_public_key_from));
 											$transaction_public_key_to = filter_sql(base64_decode($transaction_public_key_to));
 
-											$found_duplicate = mysql_result(mysql_query("SELECT timestamp, public_key_from, hash FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `public_key_from` = '$transaction_public_key_from' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+											$found_duplicate = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
 
 											// Check for valid attribute
 											if($transaction_attribute == "G" || $transaction_attribute == "T" || $transaction_attribute == "H")
 											{
 												if(empty($found_duplicate) == TRUE)
 												{
-													mysql_query("INSERT INTO `transaction_history` (`timestamp`,`public_key_from`,`public_key_to`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
+													mysql_query("INSERT DELAYED INTO `transaction_history` (`timestamp`,`public_key_from`,`public_key_to`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
 													VALUES ('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')");
 												}
 											}
@@ -608,6 +608,9 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 										} // End while loop
 
+										// Jump ahead transaction cycle checking start position for next cycle
+										mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . ($super_transaction_cycle - 1) . "' WHERE `main_loop_status`.`field_name` = 'block_check_start' LIMIT 1");										
+										
 										$super_transaction_cycle++;
 
 									} // Transaction Cycles Ahead Loop
@@ -647,7 +650,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 						$transaction_public_key_from = filter_sql(base64_decode($transaction_public_key_from));
 						$transaction_public_key_to = filter_sql(base64_decode($transaction_public_key_to));
 
-						$found_duplicate = mysql_result(mysql_query("SELECT timestamp, public_key_from, hash FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `public_key_from` = '$transaction_public_key_from' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+						$found_duplicate = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `public_key_from` = '$transaction_public_key_from' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
 
 						// Check for valid attribute
 						if($transaction_attribute == "G" || $transaction_attribute == "T" || $transaction_attribute == "H")
@@ -676,10 +679,10 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 					// Double check the new hash against the last block transanstion(s) in case of tampering
 					$time3 = transaction_cycle(0 - $current_generation_block + 1 + $hash_number);
 					$time4 = transaction_cycle(0 - $current_generation_block + 2 + $hash_number);
-					$double_check_hash = mysql_result(mysql_query("SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time3 AND `timestamp` < $time4 AND `attribute` = 'H' LIMIT 1"),0,"hash");
+					$double_check_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time3 AND `timestamp` < $time4 AND `attribute` = 'H' LIMIT 1"),0,0);
 
 					// Build Hash from previous transaction block data
-					$sql = "SELECT timestamp, hash FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash`";
+					$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash`";
 					$sql_result = mysql_query($sql);
 					$sql_num_results = mysql_num_rows($sql_result);
 					$build_hash = 0;
@@ -729,7 +732,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				$sql = "DELETE QUICK FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2";
 				mysql_query($sql);
 
-				write_log("Too Much Peer Conflict for Transaction Block #$block_number. This will remain empty until repaired.", "TC");
+				write_log("Too Much Peer Conflict for Transaction Cycle #$block_number. This will remain empty until repaired.", "TC");
 
 				break; // Break loop because future transaction blocks won't compare without the previous being corrected
 			}
@@ -752,7 +755,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 		{
 			if($error_check_active == FALSE)
 			{
-				write_log("Automatic History Check Complete. No Errors Found from Block #" . ($hash_number - ($hash_check_counter - 1)) . " to Block #" . $hash_number, "TC");
+				write_log("Automatic History Check Complete. No Errors Found from Transaction Cycle #" . ($hash_number - ($hash_check_counter - 1)) . " to #" . $hash_number, "TC");
 			}
 
 			// The number of block checks equals the number in sync
@@ -785,7 +788,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			$sql = "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1";
 			mysql_query($sql);
 
-			write_log("Manual History Check Complete. No Errors Found with Block #$transaction_history_block_check to Block #" . ($transaction_history_block_check + $hash_check_counter - 1), "TC");
+			write_log("Manual History Check Complete. No Errors Found with Transaction Cycle #$transaction_history_block_check to #" . ($transaction_history_block_check + $hash_check_counter - 1), "TC");
 		}
 
 		// Flag that high speed peer checking should be used
@@ -831,7 +834,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 65, "transclerk.php?action=block_hash&block_number=$random_block");
 
-				if(empty($poll_peer) == FALSE && strlen($poll_peer) > 32)
+				if(empty($poll_peer) == FALSE && strlen($poll_peer) > 60)
 				{
 					// Do a real hash compare
 					$current_generation_block = transaction_cycle(0, TRUE);
@@ -839,7 +842,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 					$time1 = transaction_cycle(0 - $current_generation_block + $random_block);
 					$time2 = transaction_cycle(0 - $current_generation_block + 1 + $random_block);	
 
-					$sql = "SELECT timestamp, hash FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash`";
+					$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash`";
 
 					$sql_result = mysql_query($sql);
 					$sql_num_results = mysql_num_rows($sql_result);

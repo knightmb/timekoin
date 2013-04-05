@@ -28,7 +28,7 @@ if($_GET["action"] == "block_hash" && $_GET["block_number"] >= 0)
 {
 	$block_number = intval($_GET["block_number"]);
 
-	echo mysql_result(mysql_query("SELECT * FROM `transaction_foundation` WHERE `block` = $block_number LIMIT 1"),0,"hash");
+	echo mysql_result(mysql_query("SELECT hash FROM `transaction_foundation` WHERE `block` = $block_number LIMIT 1"),0,0);
 
 	// Log inbound IP activity
 	log_ip("FO");
@@ -102,7 +102,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 			$rand_block = rand(0,$previous_foundation_block);
 		}
 		
-		$current_foundation_hash = mysql_result(mysql_query("SELECT * FROM `transaction_foundation` WHERE `block` = $rand_block LIMIT 1"),0,"hash");
+		$current_foundation_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_foundation` WHERE `block` = $rand_block LIMIT 1"),0,0);
 
 		// Make sure we even have a hash to compare against
 		if(empty($current_foundation_hash) == FALSE)
@@ -164,7 +164,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 				}
 				else
 				{
-					write_log("Transaction Foundation #$rand_block did NOT pass verification test. Transactions in this Foundation need repair.", "FO");
+					write_log("Transaction Foundation #$rand_block did NOT pass verification test. Transactions in this Foundation will be repaired.", "FO");
 					$repair_block = TRUE;
 				}
 			}
@@ -231,7 +231,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 
 			if($repair_block == TRUE)
 			{
-				write_log("Invalid Foundation Block Found, Starting Repair for #$rand_block", "FO");
+				write_log("Invalid Transaction Foundation Found, Starting Repair for #$rand_block", "FO");
 				
 				// Start by removing the transaction foundation block hash
 				$sql = "DELETE QUICK FROM `transaction_foundation` WHERE `transaction_foundation`.`block` = $rand_block LIMIT 1";
@@ -336,7 +336,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 						// Break out of loop; doing anything until transclerk is finished with this range
 						break;
 					}
-					write_log("Building a New Transaction Foundation for Block #$i", "FO");
+					write_log("Building New Transaction Foundation #$i", "FO");
 
 					// Start the process to rebuild the transaction foundation
 					// but walk the history of that range first to check for errors.
@@ -371,12 +371,12 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 						if(mysql_query($sql) == TRUE)
 						{
 							// Success
-							write_log("New Transaction Foundation for Block #$i Complete", "FO");
+							write_log("New Transaction Foundation #$i Complete", "FO");
 
 							// Wipe Balance Index table to reset index creation of public key balances
 							if(mysql_query("TRUNCATE TABLE `balance_index`") == FALSE)
 							{
-								write_log("FAILED to Clear Balance Index Table after Transaction Foundation Block #$i was Created", "FO");
+								write_log("FAILED to Clear Balance Index Table after Transaction Foundation #$i was Created", "FO");
 							}
 
 							$build_success++;
@@ -393,7 +393,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 					}
 					else
 					{
-						write_log("Transaction History Walk FAILED. A Transaction History Check has been scheduled to Examine Transaction Block #$do_history_walk", "FO");
+						write_log("Transaction History Walk FAILED. A Transaction History Check has been scheduled to Examine Transaction Cycle #$do_history_walk", "FO");
 						
 						// The history walk failed due to an error somewhere, can't continue.
 						// Schedule a block check at the location -1 in hopes that it will be cleared up for the next loop
