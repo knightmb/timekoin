@@ -94,7 +94,7 @@ if($sql_num_results > 0)
 
 				if(empty($found_public_key_queue) == TRUE)
 				{
-					if($firewall_blocked == "1" || rand(1,3) != 2)// Mix outbound transaction broadcasting and regular polling
+					if($firewall_blocked == "1" || rand(1,4) != 2)// Mix outbound transaction broadcasting and regular polling
 					{
 						if($attribute == "T" || $attribute == "G")
 						{

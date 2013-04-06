@@ -5,7 +5,7 @@ define("TRANSACTION_EPOCH","1338576300"); // Epoch timestamp: 1338576300
 define("ARBITRARY_KEY","01110100011010010110110101100101"); // Space filler for non-encryption data
 define("SHA256TEST","8c49a2b56ebd8fc49a17956dc529943eb0d73c00ee6eafa5d8b3ba1274eb3ea4"); // Known SHA256 Test Result
 define("TIMEKOIN_VERSION","2.35"); // This Timekoin Software Version
-define("NEXT_VERSION","current_version11.txt"); // What file to check for future versions
+define("NEXT_VERSION","current_version12.txt"); // What file to check for future versions
 
 error_reporting(E_ERROR | E_CORE_ERROR | E_COMPILE_ERROR); // Disable most error reporting except for fatal errors
 ini_set('display_errors', FALSE);
@@ -58,7 +58,7 @@ function log_ip($attribute, $multiple = 1)
 	}
 	
 	// Log IP Address Access
-	$sql = "INSERT INTO `ip_activity` (`timestamp` ,`ip`, `attribute`) VALUES ";
+	$sql = "INSERT DELAYED INTO `ip_activity` (`timestamp` ,`ip`, `attribute`) VALUES ";
 	while($multiple >= 1)
 	{
 		if($multiple == 1)
@@ -175,7 +175,7 @@ function transaction_history_hash()
 
 	$hash .= $current_history_foundation;
 
-	$sql = "SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $current_foundation_cycle AND `timestamp` < $next_foundation_cycle AND `attribute` = 'H' ORDER BY `timestamp`";
+	$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $current_foundation_cycle AND `timestamp` < $next_foundation_cycle AND `attribute` = 'H' ORDER BY `timestamp`";
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 
@@ -292,7 +292,7 @@ function call_script($script, $priority = 1)
 		// Normal Priority
 		if(getenv("OS") == "Windows_NT")
 		{
-			$php_location = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,"field_data");
+			$php_location = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,0);
 
 			if(empty($php_location) == TRUE)
 			{
@@ -318,7 +318,7 @@ function call_script($script, $priority = 1)
 		// Below Normal Priority
 		if(getenv("OS") == "Windows_NT")
 		{
-			$php_location = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,"field_data");
+			$php_location = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,0);
 			
 			if(empty($php_location) == TRUE)
 			{			
@@ -478,10 +478,12 @@ function tk_decrypt($key, $crypt_data)
 {
 	if(function_exists('openssl_public_decrypt') == TRUE)
 	{
+		// Use OpenSSL if it is working
 		openssl_public_decrypt($crypt_data, $decrypt, $key);
 	}
 	else
 	{
+		// Use built in Code
 		require_once('RSA.php');
 		$rsa = new Crypt_RSA();
 		$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
@@ -516,7 +518,7 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 		// Covert block to time.
 		$start_time_range = TRANSACTION_EPOCH + ($block_start * 300);
 		$end_time_range = TRANSACTION_EPOCH + ($block_end * 300);
-		$sql = "SELECT * FROM `transaction_history` WHERE `public_key_to` = '$public_key' AND `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range'";
+		$sql = "SELECT public_key_from, public_key_to, crypt_data1, crypt_data2, crypt_data3, hash, attribute FROM `transaction_history` WHERE `public_key_to` = '$public_key' AND `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range'";
 	}
 
 	$sql_result = mysql_query($sql);
@@ -527,13 +529,13 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 	{
 		$sql_row = mysql_fetch_row($sql_result);
 
-		$public_key_from = $sql_row[1];
-		$public_key_to = $sql_row[2];
-		$crypt1 = $sql_row[3];
-		$crypt2 = $sql_row[4];
-		$crypt3 = $sql_row[5];
-		$hash = $sql_row[6];
-		$attribute = $sql_row[7];
+		$public_key_from = $sql_row[0];
+		$public_key_to = $sql_row[1];
+		$crypt1 = $sql_row[2];
+		$crypt2 = $sql_row[3];
+		$crypt3 = $sql_row[4];
+		$hash = $sql_row[5];
+		$attribute = $sql_row[6];
 
 		if($attribute == "G" && $public_key_from == $public_key_to)
 		{
@@ -587,7 +589,7 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 	else
 	{
 		// Find every Time Koin sent to this public Key in a certain time range
-		$sql = "SELECT * FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range'";
+		$sql = "SELECT public_key_from, public_key_to, crypt_data1, crypt_data2, crypt_data3, hash, attribute FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range'";
 	}
 
 	$sql_result = mysql_query($sql);
@@ -597,13 +599,13 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 	{
 		$sql_row = mysql_fetch_row($sql_result);
 
-		$public_key_from = $sql_row[1];
-		$public_key_to = $sql_row[2];		
-		$crypt1 = $sql_row[3];
-		$crypt2 = $sql_row[4];
-		$crypt3 = $sql_row[5];
-		$hash = $sql_row[6];
-		$attribute = $sql_row[7];
+		$public_key_from = $sql_row[0];
+		$public_key_to = $sql_row[1];		
+		$crypt1 = $sql_row[2];
+		$crypt2 = $sql_row[3];
+		$crypt3 = $sql_row[4];
+		$hash = $sql_row[5];
+		$attribute = $sql_row[6];
 
 		if($attribute == "T")
 		{
@@ -631,8 +633,6 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 //***********************************************************************************
 function check_crypt_balance($public_key)
 {
-	$time_start = time();
-
 	if(empty($public_key) == TRUE)
 	{
 		return 0;
@@ -676,10 +676,9 @@ function check_crypt_balance($public_key)
 		$index_balance2 = check_crypt_balance_range($public_key, $start_time_range, $end_time_range);
 
 		// Store index in database for future access
-		$sql = "INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`)
-		VALUES ('$previous_foundation_block', '$public_key_hash', '$index_balance1')";
-		
-		mysql_query($sql);
+		mysql_query("INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`)
+		VALUES ('$previous_foundation_block', '$public_key_hash', '$index_balance1')");
+
 		return ($index_balance1 + $index_balance2);
 	}
 	else
@@ -948,14 +947,12 @@ function db_cache_balance($my_public_key)
 	if($my_server_balance === FALSE)
 	{
 		// Does not exist, needs to be created
-		$sql = "INSERT INTO `timekoin`.`balance_index` (`block` ,`public_key_hash` ,`balance`)VALUES ('0', 'server_timekoin_balance', '0')";
-		mysql_query($sql);
+		mysql_query("INSERT INTO `timekoin`.`balance_index` (`block` ,`public_key_hash` ,`balance`)VALUES ('0', 'server_timekoin_balance', '0')");
 
 		// Update record with the latest balance
 		$display_balance = check_crypt_balance($my_public_key);
 
-		$sql = "UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$display_balance' WHERE `balance_index`.`public_key_hash` = 'server_timekoin_balance' LIMIT 1";
-		mysql_query($sql);
+		mysql_query("UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$display_balance' WHERE `balance_index`.`public_key_hash` = 'server_timekoin_balance' LIMIT 1");
 	}
 	else
 	{
@@ -965,8 +962,7 @@ function db_cache_balance($my_public_key)
 			// Update record with the latest balance
 			$display_balance = check_crypt_balance($my_public_key);
 
-			$sql = "UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$display_balance' WHERE `balance_index`.`public_key_hash` = 'server_timekoin_balance' LIMIT 1";
-			mysql_query($sql);
+			mysql_query("UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$display_balance' WHERE `balance_index`.`public_key_hash` = 'server_timekoin_balance' LIMIT 1");
 		}
 		else
 		{
@@ -1010,8 +1006,8 @@ function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $a
 	$encryptedData64_3 = base64_encode($encryptedData3);
 	$triple_hash_check = hash('sha256', $encryptedData64_1 . $encryptedData64_2 . $encryptedData64_3);
 
-	$sql = "INSERT INTO `my_transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
-VALUES ('" . time() . "', '$my_public_key', '$encryptedData64_1', '$encryptedData64_2' , '$encryptedData64_3', '$triple_hash_check' , 'T')";
+	$sql = "INSERT INTO `my_transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`) VALUES 
+		('" . time() . "', '$my_public_key', '$encryptedData64_1', '$encryptedData64_2' , '$encryptedData64_3', '$triple_hash_check' , 'T')";
 
 	if(mysql_query($sql) == TRUE)
 	{
@@ -1562,7 +1558,7 @@ function check_for_updates()
 	// Poll timekoin.com for any program updates
 	$context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
 	ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
-	ini_set('default_socket_timeout', 30); // Timeout for request in seconds
+	ini_set('default_socket_timeout', 15); // Timeout for request in seconds
 
 	$update_check1 = 'Checking for Updates....</br></br>';
 
@@ -1579,7 +1575,7 @@ function check_for_updates()
 	}
 	else
 	{
-		$update_check1 .= '<strong>ERROR: Could Not Contact https://timekoin.com</strong>';
+		$update_check1 .= '<strong>ERROR: Could Not Contact Secure Server https://timekoin.com</strong>';
 	}
 
 	return $update_check1;
@@ -1645,7 +1641,7 @@ function get_update_script($php_script, $poll_version, $context)
 }
 //***********************************************************************************
 //***********************************************************************************
-function run_script_update($script_name, $script_php, $poll_version, $context, $css_update = 0, $image_update = 0)
+function run_script_update($script_name, $script_php, $poll_version, $context, $php_format = 1, $sub_folder = "")
 {
 	$php_file = get_update_script($script_php, $poll_version, $context);
 	
@@ -1665,17 +1661,23 @@ function run_script_update($script_name, $script_php, $poll_version, $context, $
 		else
 		{
 			$update_status .= $sha_check;
-			if($css_update == 1)
+			
+			if($php_format == 1)
 			{
-				$update_status .= install_update_script('css/' . $script_php, $php_file);
-			}
-			else if($image_update == 1)
-			{
-				$update_status .= install_update_script('img/' . $script_php, $php_file);
+				// PHP Files are downloaded as text, then renamed to the .php extension
+				$update_status .= install_update_script($script_php . '.php', $php_file);
 			}
 			else
 			{
-				$update_status .= install_update_script($script_php . '.php', $php_file);
+				if(empty($sub_folder) == FALSE)
+				{
+					// This file is installed to a sub-folder
+					$update_status .= install_update_script("$sub_folder/" . $script_php, $php_file);
+				}
+				else
+				{
+					$update_status .= install_update_script($script_php, $php_file);
+				}
 			}
 
 			return $update_status;
@@ -1699,16 +1701,16 @@ function do_updates()
 		//****************************************************
 		//Check for CSS updates
 		$update_status .= 'Checking for <strong>CSS Template</strong> Update...</br>';
-		$update_status .= run_script_update("CSS Template (admin.css)", "admin.css", $poll_version, $context, 1, 0);
+		$update_status .= run_script_update("CSS Template (admin.css)", "admin.css", $poll_version, $context, 0, "css");
 		//****************************************************
-		//Check for Graphic update (timekoin_blue.png)
-		$update_status .= 'Checking for <strong>Graphic File</strong> Update...</br>';
-		$update_status .= run_script_update("Timekoin Blue Icon (timekoin_blue.png)", "timekoin_blue.png", $poll_version, $context, 0, 1);
-		//Check for Graphic update (timekoin_green.png)
-		$update_status .= 'Checking for <strong>Graphic File</strong> Update...</br>';
-		$update_status .= run_script_update("Timekoin Green Icon (timekoin_green.png)", "timekoin_green.png", $poll_version, $context, 0, 1);		
 		//****************************************************
-		//balance.php File Update Checking
+		$update_status .= 'Checking for <strong>RSA Code</strong> Update...</br>';
+		$update_status .= run_script_update("RSA Code (RSA.php)", "RSA", $poll_version, $context);
+		//****************************************************
+		$update_status .= 'Checking for <strong>Openssl Template</strong> Update...</br>';
+		$update_status .= run_script_update("Openssl Template (openssl.cnf)", "openssl.cnf", $poll_version, $context, 0);
+		//****************************************************
+		//****************************************************
 		$update_status .= 'Checking for <strong>Balace Indexer</strong> Update...</br>';
 		$update_status .= run_script_update("Balance Indexer (balance.php)", "balance", $poll_version, $context);
 		//****************************************************
@@ -1761,7 +1763,7 @@ function do_updates()
 	}
 	else
 	{
-		$update_status .= '<strong>ERROR: Could Not Contact https://timekoin.com</strong>';
+		$update_status .= '<strong>ERROR: Could Not Contact Secure Server https://timekoin.com</strong>';
 	}
 
 	return $update_status;
