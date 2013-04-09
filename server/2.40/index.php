@@ -1540,19 +1540,6 @@ if($_SESSION["valid_login"] == TRUE)
 				$show_last = 10; // Default number of last items to show
 			}			
 
-			// Check if these graphic files exist
-			if(file_exists("img/timekoin_green.png") == TRUE)
-			{
-				// Use graphic
-				$timekoin_green = TRUE;			
-			}
-
-			if(file_exists("img/timekoin_blue.png") == TRUE)
-			{
-				// Use graphic
-				$timekoin_blue = TRUE;			
-			}			
-
 			$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transaction Cycles</strong>';
 
 			// Start the Transaction Browser section
@@ -1607,48 +1594,25 @@ if($_SESSION["valid_login"] == TRUE)
 
 						if($sql_row["attribute"] == 'G')
 						{
-							if($timekoin_green == TRUE)
-							{
-								$body_string .= '<td><FORM ACTION="index.php?menu=history&examine=transaction" METHOD="post">
-									<input type="hidden" name="show_more" value="' . $show_last . '">
-									<input type="hidden" name="trans_cycle" value="' . $jump_to_transaction . '">
-									<input type="hidden" name="timestamp" value="' . $sql_row["timestamp"] . '">
-									<input type="hidden" name="hash" value="' . $sql_row["hash"] . '">
-									<input type="image" src="img/timekoin_green.png" title="Amount: ' . $transaction_amount . '" name="submit2" border="0"></FORM></td>';
-							}
-							else
-							{
-								$body_string .= '<td style="background-color:#c8ffc8"><FORM ACTION="index.php?menu=history&examine=transaction" METHOD="post">
-									<input type="hidden" name="show_more" value="' . $show_last . '">
-									<input type="hidden" name="trans_cycle" value="' . $jump_to_transaction . '">
-									<input type="hidden" name="timestamp" value="' . $sql_row["timestamp"] . '">
-									<input type="hidden" name="hash" value="' . $sql_row["hash"] . '">
-									<input type="image" src="img/timekoin_logo.png" width="25" height="25" title="Amount: ' . $transaction_amount . '" name="submit2" border="0"></FORM></td>';
-							}
+
+							$body_string .= '<td><FORM ACTION="index.php?menu=history&examine=transaction" METHOD="post">
+							<input type="hidden" name="show_more" value="' . $show_last . '">
+							<input type="hidden" name="trans_cycle" value="' . $jump_to_transaction . '">
+							<input type="hidden" name="timestamp" value="' . $sql_row["timestamp"] . '">
+							<input type="hidden" name="hash" value="' . $sql_row["hash"] . '">
+							<input type="image" src="img/timekoin_green.png" title="Amount: ' . $transaction_amount . '" name="submit2" border="0"></FORM></td>';
 
 							$koin_kounter++;
 						}
 
 						if($sql_row["attribute"] == 'T')
 						{
-							if($timekoin_blue == TRUE)
-							{
-								$body_string .= '<td><FORM ACTION="index.php?menu=history&examine=transaction" METHOD="post">
-									<input type="hidden" name="show_more" value="' . $show_last . '">
-									<input type="hidden" name="trans_cycle" value="' . $jump_to_transaction . '">
-									<input type="hidden" name="timestamp" value="' . $sql_row["timestamp"] . '">
-									<input type="hidden" name="hash" value="' . $sql_row["hash"] . '">
-									<input type="image" src="img/timekoin_blue.png" title="Amount: ' . $transaction_amount . '" name="submit2" border="0"></FORM></td>';
-							}
-							else
-							{
-								$body_string .= '<td style="background-color:#b2b2ff"><FORM ACTION="index.php?menu=history&examine=transaction" METHOD="post">
-									<input type="hidden" name="show_more" value="' . $show_last . '">
-									<input type="hidden" name="trans_cycle" value="' . $jump_to_transaction . '">
-									<input type="hidden" name="timestamp" value="' . $sql_row["timestamp"] . '">
-									<input type="hidden" name="hash" value="' . $sql_row["hash"] . '">
-									<input type="image" src="img/timekoin_logo.png" width="25" height="25" title="Amount: ' . $transaction_amount . '" name="submit2" border="0"></FORM></td>';
-							}
+							$body_string .= '<td><FORM ACTION="index.php?menu=history&examine=transaction" METHOD="post">
+							<input type="hidden" name="show_more" value="' . $show_last . '">
+							<input type="hidden" name="trans_cycle" value="' . $jump_to_transaction . '">
+							<input type="hidden" name="timestamp" value="' . $sql_row["timestamp"] . '">
+							<input type="hidden" name="hash" value="' . $sql_row["hash"] . '">
+							<input type="image" src="img/timekoin_blue.png" title="Amount: ' . $transaction_amount . '" name="submit2" border="0"></FORM></td>';
 
 							$koin_kounter++;
 						}
@@ -1669,27 +1633,9 @@ if($_SESSION["valid_login"] == TRUE)
 
 			$body_string .= '</table></div>';
 
-			if($timekoin_green == TRUE)
-			{
-				$color_key1 = '<td><img src="img/timekoin_green.png" /></td>';
-			}
-			else
-			{
-				$color_key1 = '<td style="background-color:#c8ffc8"><img src="img/timekoin_logo.png" width="25" height="25" /></td>';
-			}
-
-			if($timekoin_blue == TRUE)
-			{
-				$color_key2 = '<td><img src="img/timekoin_blue.png" /></td>';
-			}
-			else
-			{
-				$color_key2 = '<td style="background-color:#b2b2ff"><img src="img/timekoin_logo.png" width="25" height="25" /></td>';
-			}
-
 			$text_bar = '<table border="0" cellspacing="0" cellpadding="0"><tr><td style="width:125px;"><strong>Color Chart:</strong></td>
-				<td>New Currency</td>' . $color_key1 . '
-				<td style="width:115px;" align="right">Transaction</td>' . $color_key2 . '
+				<td>New Currency</td><td><img src="img/timekoin_green.png" /></td>
+				<td style="width:115px;" align="right">Transaction</td><td><img src="img/timekoin_blue.png" /></td>
 				</tr></table>';
 			$quick_info = '<strong>Transaction History Browser</strong> allows the user to get a quick visual glance of past transactions.</br></br>
 				The color code graphic shows various types of transactions.</br></br>
@@ -1844,18 +1790,19 @@ if($_SESSION["valid_login"] == TRUE)
 					switch($_POST['filter'])
 					{
 						case "transactions":
-							$filter_results = "AND `attribute` = 'T'";
+							$filter_results = "T";
 							$filter_GUI = "Transactions";
 							$sent_to_selected_trans = "SELECTED";
 							break;
 
 						case "generation":
-							$filter_results = "AND `attribute` = 'G'";
+							$filter_results = "G";
 							$filter_GUI = "Currency Generation";
 							$sent_to_selected_gen = "SELECTED";
 							break;
 
 						case "all":
+							$filter_results = "ALL";
 							$filter_GUI = "Transactions & Currency Generation";
 							$sent_to_selected_both = "SELECTED";
 							break;							
@@ -1863,7 +1810,7 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 				else
 				{
-					$filter_results = "AND `attribute` = 'T'";
+					$filter_results = "T";
 					$filter_GUI = "Transactions";
 					$sent_to_selected_trans = "SELECTED";
 				}
@@ -1875,42 +1822,56 @@ if($_SESSION["valid_login"] == TRUE)
 					<th>Sent From</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
 
 				// Find the last X transactions sent to this public key
-				$sql = "SELECT timestamp, public_key_from, public_key_to, crypt_data3 FROM `transaction_history` WHERE `public_key_to` = '$my_public_key' $filter_results ORDER BY `transaction_history`.`timestamp` DESC LIMIT $show_last";
+				$sql = "SELECT timestamp, public_key_from, crypt_data3, attribute FROM `transaction_history` WHERE `public_key_to` = '$my_public_key' ORDER BY `transaction_history`.`timestamp` DESC";
 				$sql_result = mysql_query($sql);
 				$sql_num_results = mysql_num_rows($sql_result);
 
+				$result_limit = 0;
+
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
+					if($result_limit >= $show_last)
+					{
+						// Have the amount to show, break from the loop early
+						break;
+					}					
+					
 					$sql_row = mysql_fetch_array($sql_result);
-					$crypt3 = $sql_row["crypt_data3"];
-
-					$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($crypt3));
-
-					$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
-
-					// Any encoded messages?
-					$inside_message = find_string("---MSG=", "", $transaction_info, TRUE);
-
-					if($sql_row["public_key_from"] == $my_public_key)
+					
+					if($sql_row["attribute"] == $filter_results || $filter_results == "ALL")
 					{
-						// Self Generated
-						$public_key_from = '<td class="style2">Self Generated';
-					}
-					else
-					{
-						// Everyone else
-						$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:150px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($sql_row["public_key_from"]) . '</p>';
-					}
+						$crypt3 = $sql_row["crypt_data3"];
 
-					// How many cycles back did this take place?
-					$cycles_back = intval((time() - $sql_row["timestamp"]) / 300);
+						$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($crypt3));
 
-					$body_string .= '<tr>
-					<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>' 
-					. $public_key_from . '</td>
-					<td class="style2"><p style="font-size: 11px;">' . $transaction_amount . '</p></td>
-					<td class="style2"><p style="font-size: 11px;">' . $cycles_back . '</p></td>
-					<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $inside_message . '</p></td></tr>';
+						$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
+
+						// Any encoded messages?
+						$inside_message = find_string("---MSG=", "", $transaction_info, TRUE);
+
+						if($sql_row["public_key_from"] == $my_public_key)
+						{
+							// Self Generated
+							$public_key_from = '<td class="style2">Self Generated';
+						}
+						else
+						{
+							// Everyone else
+							$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:150px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($sql_row["public_key_from"]) . '</p>';
+						}
+
+						// How many cycles back did this take place?
+						$cycles_back = intval((time() - $sql_row["timestamp"]) / 300);
+
+						$body_string .= '<tr>
+						<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>' 
+						. $public_key_from . '</td>
+						<td class="style2"><p style="font-size: 11px;">' . $transaction_amount . '</p></td>
+						<td class="style2"><p style="font-size: 11px;">' . $cycles_back . '</p></td>
+						<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $inside_message . '</p></td></tr>';
+
+						$result_limit++;						
+					}
 				}
 				
 				$body_string .= '<tr><td colspan="5"><input type="text" size="5" name="show_more_receive" value="' . $show_last .'" /><input type="submit" name="Submit1" value="Show Last" /></FORM></td></tr>';
@@ -1925,35 +1886,48 @@ if($_SESSION["valid_login"] == TRUE)
 					<th>Sent To</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
 
 				// Find the last X transactions from to this public key
-				$sql = "SELECT timestamp, public_key_from, public_key_to, crypt_data3 FROM `transaction_history` WHERE `public_key_from` = '$my_public_key' AND `attribute` = 'T' ORDER BY `transaction_history`.`timestamp` DESC LIMIT $show_last";
-				
+				$sql = "SELECT timestamp, public_key_from, public_key_to, crypt_data3, attribute FROM `transaction_history` WHERE `public_key_from` = '$my_public_key' ORDER BY `transaction_history`.`timestamp` DESC";
+
 				$sql_result = mysql_query($sql);
 				$sql_num_results = mysql_num_rows($sql_result);
+				$result_limit = 0;
 
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
+					if($result_limit >= $show_last)
+					{
+						// Have the amount to show, break from the loop early
+						break;
+					}
+
 					$sql_row = mysql_fetch_array($sql_result);
-					$crypt3 = $sql_row["crypt_data3"];
 
-					$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($crypt3));
+					if($sql_row["attribute"] == "T")
+					{
+						$crypt3 = $sql_row["crypt_data3"];
 
-					$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
+						$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($crypt3));
 
-					// Any encoded messages?
-					$inside_message = find_string("---MSG=", "", $transaction_info, TRUE);				
+						$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
 
-					// Everyone else
-					$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:150px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($sql_row["public_key_to"]) . '</p>';
+						// Any encoded messages?
+						$inside_message = find_string("---MSG=", "", $transaction_info, TRUE);				
 
-					// How many cycles back did this take place?
-					$cycles_back = intval((time() - $sql_row["timestamp"]) / 300);
+						// Everyone else
+						$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:150px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($sql_row["public_key_to"]) . '</p>';
 
-					$body_string .= '<tr>
-					<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>' 
-					. $public_key_from . '</td>
-					<td class="style2"><p style="font-size: 11px;">' . $transaction_amount . '</p></td>
-					<td class="style2"><p style="font-size: 11px;">' . $cycles_back . '</p></td>
-					<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $inside_message . '</p></td></tr>';
+						// How many cycles back did this take place?
+						$cycles_back = intval((time() - $sql_row["timestamp"]) / 300);
+
+						$body_string .= '<tr>
+						<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>' 
+						. $public_key_from . '</td>
+						<td class="style2"><p style="font-size: 11px;">' . $transaction_amount . '</p></td>
+						<td class="style2"><p style="font-size: 11px;">' . $cycles_back . '</p></td>
+						<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $inside_message . '</p></td></tr>';
+
+						$result_limit++;
+					}
 				}
 
 				$body_string .= '<tr><td colspan="5"><FORM ACTION="index.php?menu=history&send=listmore" METHOD="post"><input type="text" size="5" name="show_more_send" value="' . $show_last .'" /><input type="submit" name="Submit2" value="Show Last" /></FORM></td></tr>';

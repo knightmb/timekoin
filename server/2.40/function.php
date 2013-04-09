@@ -984,26 +984,19 @@ function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $a
 	$encryptedData2 = tk_encrypt($my_private_key, $arr1[1]);
 	$encryptedData64_2 = base64_encode($encryptedData2);
 
-	if(empty($message) == TRUE)
-	{
-		$transaction_data = "AMOUNT=$amount---TIME=" . time() . "---HASH=" . hash('sha256', $encryptedData64_1 . $encryptedData64_2);
-	}
-	else
-	{
-		// Sanitization of message
-		// Filter symbols that might lead to a transaction hack attack
-		$symbols = array("|", "?", "="); // SQL + URL
-		$message = str_replace($symbols, "", $message);
+	// Sanitization of message
+	// Filter symbols or characters not allowed
+	$symbols = array("|", "?", "="); // SQL + URL
+	$message = str_replace($symbols, "", $message);
 
-		// Trim any message to 64 characters max and filter any sql
-		$message = filter_sql(substr($message, 0, 64));
-		
-		$transaction_data = "AMOUNT=$amount---TIME=" . time() . "---HASH=" . hash('sha256', $encryptedData64_1 . $encryptedData64_2) . "---MSG=$message";
-	}
+	// Trim any message to 64 characters max and filter any sql
+	$message = filter_sql(substr($message, 0, 64));
+
+	$transaction_data = "AMOUNT=$amount---TIME=" . time() . "---HASH=" . hash('sha256', $encryptedData64_1 . $encryptedData64_2) . "---MSG=$message";
 
 	$encryptedData3 = tk_encrypt($my_private_key, $transaction_data);
-
 	$encryptedData64_3 = base64_encode($encryptedData3);
+
 	$triple_hash_check = hash('sha256', $encryptedData64_1 . $encryptedData64_2 . $encryptedData64_3);
 
 	$sql = "INSERT INTO `my_transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`) VALUES 
