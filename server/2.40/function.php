@@ -946,7 +946,7 @@ function db_cache_balance($my_public_key)
 	if($my_server_balance === FALSE)
 	{
 		// Does not exist, needs to be created
-		mysql_query("INSERT INTO `timekoin`.`balance_index` (`block` ,`public_key_hash` ,`balance`)VALUES ('0', 'server_timekoin_balance', '0')");
+		mysql_query("INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`) VALUES ('0', 'server_timekoin_balance', '0')");
 
 		// Update record with the latest balance
 		$display_balance = check_crypt_balance($my_public_key);
