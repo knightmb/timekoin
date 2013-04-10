@@ -518,7 +518,7 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 		// Covert block to time.
 		$start_time_range = TRANSACTION_EPOCH + ($block_start * 300);
 		$end_time_range = TRANSACTION_EPOCH + ($block_end * 300);
-		$sql = "SELECT public_key_from, public_key_to, crypt_data1, crypt_data2, crypt_data3, hash, attribute FROM `transaction_history` WHERE `public_key_to` = '$public_key' AND `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range'";
+		$sql = "SELECT public_key_from, public_key_to, crypt_data1, crypt_data2, crypt_data3, hash, attribute FROM `transaction_history` WHERE `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range' AND `public_key_to` = '$public_key'";
 	}
 
 	$sql_result = mysql_query($sql);
@@ -589,7 +589,7 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 	else
 	{
 		// Find every Time Koin sent to this public Key in a certain time range
-		$sql = "SELECT public_key_from, public_key_to, crypt_data1, crypt_data2, crypt_data3, hash, attribute FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range'";
+		$sql = "SELECT public_key_from, public_key_to, crypt_data1, crypt_data2, crypt_data3, hash, attribute FROM `transaction_history` WHERE `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range' AND `public_key_from` = '$public_key'";
 	}
 
 	$sql_result = mysql_query($sql);
@@ -678,7 +678,6 @@ function check_crypt_balance($public_key)
 		// Store index in database for future access
 		mysql_query("INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`)
 		VALUES ('$previous_foundation_block', '$public_key_hash', '$index_balance1')");
-
 		return ($index_balance1 + $index_balance2);
 	}
 	else
