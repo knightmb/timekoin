@@ -2,7 +2,7 @@
 include 'templates.php';
 include 'function.php';
 set_time_limit(99);
-session_name("timekoin");
+session_name("tkclient");
 session_start();
 
 if($_SESSION["valid_login"] == FALSE && $_GET["action"] != "login")
@@ -69,7 +69,6 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 
 if($_SESSION["valid_login"] == TRUE)
 {
-
 //****************************************************************************
 	if(mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD) == FALSE)
 	{
@@ -82,6 +81,7 @@ if($_SESSION["valid_login"] == TRUE)
 		home_screen('ERROR','<font color="red"><strong>Could Not Select Database</strong></font>', '', '');
 		exit;
 	}
+//****************************************************************************
 //****************************************************************************
 	if($_GET["menu"] == "home" || empty($_GET["menu"]) == TRUE)
 	{
@@ -104,12 +104,6 @@ if($_SESSION["valid_login"] == TRUE)
 
 		home_screen("Realtime Status", $text_bar, $body_string, $quick_info , $home_update);
 		exit;
-	}
-//****************************************************************************
-//****************************************************************************
-	if($_GET["menu"] == "refresh_task")
-	{
-		refresh_task();
 	}
 //****************************************************************************
 //****************************************************************************
@@ -165,7 +159,8 @@ if($_SESSION["valid_login"] == TRUE)
 							VALUES ('first_contact_server', '---ip=" . $_POST["first_contact_ip$field_numbers"] . 
 							"---domain=" . $_POST["first_contact_domain$field_numbers"] . 
 							"---subfolder=" . $_POST["first_contact_subfolder$field_numbers"] . 
-							"---port=" . $_POST["first_contact_port$field_numbers"] . "---end')";
+							"---port=" . $_POST["first_contact_port$field_numbers"] . "---code=" . 
+							$_POST["first_contact_code$field_numbers"] . "---end')";
 
 						mysql_query($sql);
 					}
@@ -178,7 +173,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["edit"] == "peer")
 		{
 			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
-				<th>Domain</th><th>Subfolder</th><th>Port Number</th><th></th><th></th></tr>';			
+				<th>Domain</th><th>Subfolder</th><th>Port Number</th><th></th><th></th></tr>';
 
 			if($_GET["type"] == "new")
 			{
@@ -187,7 +182,7 @@ if($_SESSION["valid_login"] == TRUE)
 				 <td class="style2"><input type="text" name="edit_ip" size="13" /></td>
 				 <td class="style2"><input type="text" name="edit_domain" size="20" /></td>
 				 <td class="style2"><input type="text" name="edit_subfolder" size="10" /></td>
-				 <td class="style2"><input type="text" name="edit_port" size="5" /></td>			 
+				 <td class="style2"><input type="text" name="edit_port" size="5" /></td>
 				 <td><input type="image" src="img/save-icon.gif" title="Save New Peer" name="submit1" border="0"></FORM></td><td>
 				 <FORM ACTION="index.php?menu=peerlist" METHOD="post">
 				 <input type="image" src="img/hr.gif" title="Cancel" name="submit2" border="0"></FORM>
@@ -201,6 +196,8 @@ if($_SESSION["valid_login"] == TRUE)
 				$sql_result = mysql_query($sql);
 				$sql_num_results = mysql_num_rows($sql_result) + 2;
 				$counter = 1;
+				$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
+				<th>Domain</th><th>Subfolder</th><th>Port Number</th><th>Code</th><th></th></tr>';				
 				$body_string .= '<FORM ACTION="index.php?menu=peerlist&save=firstcontact" METHOD="post">';
 
 				for ($i = 0; $i < $sql_num_results; $i++)
@@ -210,12 +207,14 @@ if($_SESSION["valid_login"] == TRUE)
 					$peer_ip = find_string("---ip=", "---domain", $sql_row["field_data"]);
 					$peer_domain = find_string("---domain=", "---subfolder", $sql_row["field_data"]);
 					$peer_subfolder = find_string("---subfolder=", "---port", $sql_row["field_data"]);
-					$peer_port_number = find_string("---port=", "---end", $sql_row["field_data"]);
+					$peer_port_number = find_string("---port=", "---code", $sql_row["field_data"]);
+					$peer_port_code = find_string("---code=", "---end", $sql_row["field_data"]);
 				
 					$body_string .= '<tr><td class="style2"><input type="text" name="first_contact_ip' . $counter . '" size="13" value="' . $peer_ip . '" /></br></br></td>
 					<td class="style2" valign="top"><input type="text" name="first_contact_domain' . $counter . '" size="20" value="' . $peer_domain . '" /></td>
 					<td class="style2" valign="top"><input type="text" name="first_contact_subfolder' . $counter . '" size="10" value="' . $peer_subfolder . '" /></td>
-					<td class="style2" valign="top"><input type="text" name="first_contact_port' . $counter . '" size="5" value="' . $peer_port_number . '" /></td>			 
+					<td class="style2" valign="top"><input type="text" name="first_contact_port' . $counter . '" size="5" value="' . $peer_port_number . '" /></td>
+					<td class="style2" valign="top"><input type="text" name="first_contact_code' . $counter . '" size="10" value="' . $peer_port_code . '" /></td>
 					</td></tr>';
 
 					$counter++;
@@ -278,7 +277,7 @@ if($_SESSION["valid_login"] == TRUE)
 				<th><p style="font-size:11px;">IP Address</p></th><th><p style="font-size:11px;">Domain</p></th>
 				<th><p style="font-size:11px;">Subfolder</p></th><th><p style="font-size:11px;">Port Number</p></th>
 				<th><p style="font-size:11px;">Last Heartbeat</p></th><th><p style="font-size:11px;">Joined</p></th>
-				<th><p style="font-size:11px;">Failed Heartbeat</p></th><th></th><th></th></tr>';			
+				<th></th><th></th></tr>';			
 			
 			if($_GET["show"] == "reserve")
 			{
@@ -322,15 +321,13 @@ if($_SESSION["valid_login"] == TRUE)
 					$failed_column_name = 'poll_failures';
 				}
 
-
 				$body_string .= '<tr>
-				 <td class="style2"><p style="word-wrap:break-word; width:86px; font-size:11px;">' . $permanent1 . $sql_row["IP_Address"] . $permanent2 . '</p></td>
+				 <td class="style2"><p style="word-wrap:break-word; width:90px; font-size:11px;">' . $permanent1 . $sql_row["IP_Address"] . $permanent2 . '</p></td>
 				 <td class="style2"><p style="word-wrap:break-word; width:155px; font-size:11px;">' . $permanent1 . $sql_row["domain"] . $permanent2 . '</p></td>
 				 <td class="style2"><p style="word-wrap:break-word; width:60px; font-size:11px;">' . $permanent1 . $sql_row["subfolder"] . $permanent2 . '</p></td>
 				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["port_number"] . $permanent2 . '</p></td>
 				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $last_heartbeat . $permanent2 . '</p></td>
-				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $joined . $permanent2 . '</p></td>
-				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row[$failed_column_name] . $permanent2 . '</p></td>';
+				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $joined . $permanent2 . '</p></td>';
 
 				if($_GET["show"] == "reserve")
 				{
@@ -380,7 +377,7 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 			else
 			{
-				home_screen('Realtime Network Peer List', $peer_number_bar, $body_string , $quick_info, $home_update);
+				home_screen('Network Peer List', $peer_number_bar, $body_string , $quick_info);
 			}
 		}
 		exit;
@@ -1216,7 +1213,7 @@ if($_SESSION["valid_login"] == TRUE)
 		
 		$home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
 
-		home_screen('Realtime Transactions in Network Queue', $text_bar, $body_string , $quick_info, $home_update);
+		home_screen('Transactions in Network Queue', $text_bar, $body_string , $quick_info);
 		exit;
 	}
 //****************************************************************************	
@@ -1464,6 +1461,8 @@ if($_SESSION["valid_login"] == TRUE)
 	{
 		unset($_SESSION["valid_login"]);
 		unset($_SESSION["login_username"]);
+		mysql_query("TRUNCATE `active_peer_list`");
+		mysql_query("TRUNCATE `new_peers_list`");
 		header("Location: index.php");
 		exit;		
 	}

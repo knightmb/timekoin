@@ -4,14 +4,33 @@ define("NEXT_VERSION","tk_client_current_version0.txt"); // What file to check f
 
 error_reporting(E_ERROR | E_CORE_ERROR | E_COMPILE_ERROR); // Disable most error reporting except for fatal errors
 ini_set('display_errors', FALSE);
-
 //***********************************************************************************
 //***********************************************************************************
-function tk_client_task()
+function is_domain_valid($domain)
 {
-	// Repeat Task
+	$result = TRUE;
+	
+	if(empty($domain) == TRUE)
+	{
+		$result = FALSE;		
+	}
 
-	return;
+	if(filter_var($domain, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) == TRUE)
+	{
+		$result = FALSE;
+	}
+
+	if(filter_var($domain, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
+	{
+		$result = FALSE;
+	}
+
+	if(strtolower($domain) == "localhost")
+	{
+		$result = FALSE;
+	}
+
+	return $result;
 }
 //***********************************************************************************
 //***********************************************************************************
@@ -155,8 +174,6 @@ function tk_decrypt($key, $crypt_data)
 //***********************************************************************************
 function check_crypt_balance($public_key)
 {
-	write_log("Balance Check Started","debug");
-	
 	if(empty($public_key) == TRUE)
 	{
 		return 0;
@@ -164,15 +181,7 @@ function check_crypt_balance($public_key)
 
 	// Ask one of my active peers
 	ini_set('user_agent', 'Timekoin Client v' . TIMEKOIN_VERSION);
-	ini_set('default_socket_timeout', 5); // Timeout for request in seconds
-
-	$sql_result = mysql_query("SELECT * FROM `active_peer_list` ORDER BY RAND() LIMIT 1");
-	$sql_row = mysql_fetch_array($sql_result);
-
-	$ip_address = $sql_row["IP_Address"];
-	$domain = $sql_row["domain"];
-	$subfolder = $sql_row["subfolder"];
-	$port_number = $sql_row["port_number"];
+	ini_set('default_socket_timeout', 3); // Timeout for request in seconds
 
 	// Create map with request parameters
 	$params = array ('public_key' => base64_encode($public_key));
@@ -190,9 +199,27 @@ function check_crypt_balance($public_key)
 	// Create context resource for our request
 	$context = stream_context_create (array ( 'http' => $contextData ));
 
-	write_log("$ip_address, $domain, $subfolder, $port_number","db");
+	$sql_result = mysql_query("SELECT * FROM `active_peer_list` ORDER BY RAND()");
+	$sql_num_results = mysql_num_rows($sql_result);
 
-	return poll_peer($ip_address, $domain, $subfolder, $port_number, 20, "queueclerk.php?action=key_balance&hash=open", $context);
+	// First Contact Server Format
+	for ($i = 0; $i < $sql_num_results; $i++)
+	{
+		$sql_row = mysql_fetch_array($sql_result);
+		$ip_address = $sql_row["IP_Address"];
+		$domain = $sql_row["domain"];
+		$subfolder = $sql_row["subfolder"];
+		$port_number = $sql_row["port_number"];
+		$code = $sql_row["code"];
+		$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 20, "queueclerk.php?action=key_balance&hash=$code", $context));
+
+		if(empty($poll_peer) == FALSE)
+		{
+			return $poll_peer;
+		}
+	}
+
+	return 0;
 }
 //***********************************************************************************
 //***********************************************************************************
@@ -254,7 +281,6 @@ function tk_time_convert($time)
 //***********************************************************************************
 function db_cache_balance($my_public_key)
 {
-/*
 	// Check server balance via custom memory index
 	$my_server_balance = mysql_result(mysql_query("SELECT * FROM `balance_index` WHERE `public_key_hash` = 'server_timekoin_balance' LIMIT 1"),0,"balance");
 	$my_server_balance_last = mysql_result(mysql_query("SELECT * FROM `balance_index` WHERE `public_key_hash` = 'server_timekoin_balance' LIMIT 1"),0,"block");
@@ -262,7 +288,7 @@ function db_cache_balance($my_public_key)
 	if($my_server_balance === FALSE)
 	{
 		// Does not exist, needs to be created
-		mysql_query("INSERT INTO `timekoin`.`balance_index` (`block` ,`public_key_hash` ,`balance`)VALUES ('0', 'server_timekoin_balance', '0')");
+		mysql_query("INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`)VALUES ('0', 'server_timekoin_balance', '0')");
 
 		// Update record with the latest balance
 		$display_balance = check_crypt_balance($my_public_key);
@@ -271,7 +297,7 @@ function db_cache_balance($my_public_key)
 	}
 	else
 	{
-		if($my_server_balance_last < transaction_cycle(0) && time() - transaction_cycle(0) > 25) // Generate 25 seconds after cycle
+		if(time() - $my_server_balance_last > 30) // Update any balance older than 30 seconds
 		{
 			// Last generated balance is older than the current cycle, needs to be updated
 			// Update record with the latest balance
@@ -286,9 +312,6 @@ function db_cache_balance($my_public_key)
 	}
 
 	return $display_balance;
- */
-
-	return check_crypt_balance($my_public_key);
 }
 //***********************************************************************************
 //***********************************************************************************
@@ -365,34 +388,6 @@ function is_private_ip($ip, $ignore = FALSE)
 		}
 	}
 	
-	return $result;
-}
-//***********************************************************************************
-//***********************************************************************************
-function is_domain_valid($domain)
-{
-	$result = TRUE;
-	
-	if(empty($domain) == TRUE)
-	{
-		$result = FALSE;		
-	}
-
-	if(filter_var($domain, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) == TRUE)
-	{
-		$result = FALSE;
-	}
-
-	if(filter_var($domain, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
-	{
-		$result = FALSE;
-	}
-
-	if(strtolower($domain) == "localhost")
-	{
-		$result = FALSE;
-	}
-
 	return $result;
 }
 //***********************************************************************************

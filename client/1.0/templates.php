@@ -48,28 +48,6 @@ Password: <input type="password" name="timekoin_password" />
 } 
 //***********************************************************
 //***********************************************************
-function refresh_task()
-{
-	$refresh_header = '<meta http-equiv="refresh" content="' . rand(10,15) . '" />';
-
-?>
-<!DOCTYPE html>
-<html>
-<head>
-<title>Timekoin Client Task</title>
-<?PHP echo $refresh_header; ?>
-</head>
-<body>
-</body>
-</html>
-<?PHP
-
-// After self-refreshing HTML, carry out task below.
-tk_client_task();
-
-}
-//***********************************************************
-//***********************************************************
 function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 {
 	$home;
@@ -163,36 +141,13 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 <div class="box"><?PHP echo $quick_info; ?></div>
 </div>
 </div>
-<div id="footer"><p>Timekoin Crypto Currency Client v<?PHP echo TIMEKOIN_VERSION; ?> - <a href="http://timekoin.org">http://timekoin.org</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?> - ( You are logged in as <strong><?PHP echo $_SESSION["login_username"]; ?></strong> )</p><IFRAME src="index.php?menu=refresh_task" frameborder="0"></IFRAME></div>
+<div id="footer"><p>Timekoin Crypto Currency Client v<?PHP echo TIMEKOIN_VERSION; ?> - <a href="http://timekoin.org">http://timekoin.org</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?> - ( You are logged in as <strong><?PHP echo $_SESSION["login_username"]; ?></strong> )</p>
+<IFRAME src="task.php?task=refresh" frameborder="0"></IFRAME></div>
 </div>
 </body>
 </html>
 <?PHP
 } 
-//***********************************************************
-//***********************************************************
-function trans_percent_status()
-{
-	// Total number of transaction cycle hashes in database
-	$total_trans_hash = mysql_result(mysql_query("SELECT COUNT(attribute) FROM `transaction_history` WHERE `attribute` = 'H'"),0);
-
-	$percent_update = $total_trans_hash / transaction_cycle(0, TRUE) * 100;
-
-	if($percent_update == 100)
-	{
-		$status = '<font color="#818181"><strong>100%</strong></font>';
-	}
-	else if($percent_update < 100 && $percent_update >= 90)
-	{
-		$status = '<font color="#5858FA"><strong>' . number_format($percent_update, 3) . '%</font> (' . number_format(transaction_cycle(0, TRUE) - $total_trans_hash) . ' Transaction Cycles to Update)</strong>';
-	}
-	else
-	{
-		$status = '<font color="red"><strong>' . number_format($percent_update, 2) . '%</font> (' . number_format(transaction_cycle(0, TRUE) - $total_trans_hash) . ' Transaction Cycles to Update)</strong>';
-	}
-
-	return $status;
-}
 //***********************************************************
 //***********************************************************
 function options_screen()
