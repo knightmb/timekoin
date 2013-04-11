@@ -169,7 +169,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 	// How does my generation peer list compare to others?
 	// Ask all of my active peers
 	ini_set('user_agent', 'Timekoin Server (Genpeer) v' . TIMEKOIN_VERSION);	
-	ini_set('default_socket_timeout', 3); // Timeout for request in seconds
+	ini_set('default_socket_timeout', 2); // Timeout for request in seconds
 	
 	$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND()";
 

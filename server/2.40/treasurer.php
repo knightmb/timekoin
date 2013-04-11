@@ -103,7 +103,7 @@ if($sql_num_results > 0)
 							// that is accepting inbound connections and hopefully they will replicate
 							// out to the peer network.
 							ini_set('user_agent', 'Timekoin Server (Treasurer) v' . TIMEKOIN_VERSION);
-							ini_set('default_socket_timeout', 5); // Timeout for request in seconds
+							ini_set('default_socket_timeout', 3); // Timeout for request in seconds
 							
 							$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND() LIMIT 1";
 							$sql_row = mysql_fetch_array(mysql_query($sql));
