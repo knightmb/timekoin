@@ -239,7 +239,7 @@ while(1) // Begin Infinite Loop :)
 		// Check if script is already running
 		if($script_loop_active == 0)
 		{
-			call_script("generation.php");
+			call_script("generation.php", 0);
 		}
 
 		sleep(1); // 1 second for sanity reasons
@@ -250,13 +250,13 @@ while(1) // Begin Infinite Loop :)
 		{
 			if(extension_loaded('openssl') == TRUE || extension_loaded('gmp') == TRUE)
 			{
-				call_script("treasurer.php", 0);
+				call_script("treasurer.php");
 			}
 			else
 			{
 				// No CLI Extensions, Windows issue :(
 				call_script("treasurer.php", 2);
-			}			
+			}
 		}
 
 		sleep(2); // 2 seconds for sanity reasons
