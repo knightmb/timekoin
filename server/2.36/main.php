@@ -250,7 +250,7 @@ while(1) // Begin Infinite Loop :)
 		{
 			if(extension_loaded('openssl') == TRUE || extension_loaded('gmp') == TRUE)
 			{
-				call_script("treasurer.php", 0);
+				call_script("treasurer.php");
 			}
 			else
 			{
