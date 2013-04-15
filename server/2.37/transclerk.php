@@ -265,7 +265,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 	ini_set('default_socket_timeout', 3); // Timeout for request in seconds
 	ini_set('user_agent', 'Timekoin Server (Transclerk) v' . TIMEKOIN_VERSION);
 
-	$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND()";
+	$sql = perm_peer_mode();
 
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
@@ -336,7 +336,11 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 		}
 		else
 		{
-			if($hash_check_counter >= 2) // Limit lowest poll to 1
+			if($hash_check_counter <= 1) // Limit lowest poll to 1
+			{
+				$new_peer_poll_blocks = 1;
+			}
+			else
 			{
 				$new_peer_poll_blocks = $hash_check_counter - 1;
 			}
@@ -818,8 +822,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			$current_foundation_block = foundation_cycle(0, TRUE) * 500;
 			$random_block = rand($current_foundation_block, transaction_cycle(-1, TRUE));
 
-			$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND()";
-
+			$sql = perm_peer_mode();
 			$sql_result = mysql_query($sql);
 			$sql_num_results = mysql_num_rows($sql_result);
 

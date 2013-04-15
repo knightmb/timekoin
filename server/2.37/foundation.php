@@ -80,8 +80,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 	ini_set('default_socket_timeout', 3); // Timeout for request in seconds
 	ini_set('user_agent', 'Timekoin Server (Foundation) v' . TIMEKOIN_VERSION);
 
-	$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND()";
-
+	$sql = perm_peer_mode();
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 
@@ -109,11 +108,11 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 		{
 			// How frequent the transaction foundation checks are set by the user
 			$trans_history_check = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'trans_history_check' LIMIT 1"),0,"field_data"));
-			$rand_freq = 65; // Rare - Default if no user set value
+			$rand_freq = 99; // Rare - Default if no user set value
 
 			if($trans_history_check == 1)
 			{
-				$rand_freq = 35; // Normal
+				$rand_freq = 40; // Normal
 			}
 			else if($trans_history_check == 2)
 			{

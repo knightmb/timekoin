@@ -4,7 +4,7 @@ include 'status.php';
 define("TRANSACTION_EPOCH","1338576300"); // Epoch timestamp: 1338576300
 define("ARBITRARY_KEY","01110100011010010110110101100101"); // Space filler for non-encryption data
 define("SHA256TEST","8c49a2b56ebd8fc49a17956dc529943eb0d73c00ee6eafa5d8b3ba1274eb3ea4"); // Known SHA256 Test Result
-define("TIMEKOIN_VERSION","2.36"); // This Timekoin Software Version
+define("TIMEKOIN_VERSION","2.37"); // This Timekoin Software Version
 define("NEXT_VERSION","current_version14.txt"); // What file to check for future versions
 
 error_reporting(E_ERROR | E_CORE_ERROR | E_COMPILE_ERROR); // Disable most error reporting except for fatal errors
@@ -212,6 +212,19 @@ function queue_hash()
 	return $transaction_queue_hash;
 }
 //***********************************************************************************
+function perm_peer_mode()
+{
+	$perm_peer_priority = intval(mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'perm_peer_priority' LIMIT 1"),0,"field_data"));
+
+	if($perm_peer_priority == 1)
+	{
+		return "SELECT * FROM `active_peer_list` WHERE `join_peer_list` = 0 ORDER BY RAND()";
+	}
+	else
+	{
+		return "SELECT * FROM `active_peer_list` ORDER BY RAND()";
+	}
+}
 //***********************************************************************************
 function my_public_key()
 {
@@ -1217,6 +1230,11 @@ function is_private_ip($ip, $ignore = FALSE)
 		{
 			$result = TRUE;
 		}
+
+		if(filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_RES_RANGE) == FALSE)
+		{
+			$result = TRUE;
+		}
 	}
 	
 	return $result;
@@ -1237,6 +1255,11 @@ function is_domain_valid($domain)
 	}
 
 	if(filter_var($domain, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
+	{
+		$result = FALSE;
+	}
+
+	if(is_private_ip($domain) == FALSE)
 	{
 		$result = FALSE;
 	}
@@ -1298,6 +1321,13 @@ function initialization_database()
 	{
 		// Does not exist, create it
 		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('php_location', '')");
+	}
+
+	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'perm_peer_priority' LIMIT 1"),0,0);
+	if($new_record_check === FALSE)
+	{
+		// Does not exist, create it
+		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('perm_peer_priority', '0')");
 	}	
 //**************************************
 	// Check for an empty generation IP address,

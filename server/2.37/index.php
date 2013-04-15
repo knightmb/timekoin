@@ -718,7 +718,11 @@ if($_SESSION["valid_login"] == TRUE)
 										mysql_query($sql2);										
 										if(mysql_query($sql) == TRUE)
 										{
-											$server_code = '</br><font color="blue"><strong>Server Settings Updated...</strong></font></br></br>';
+											$sql = "UPDATE `options` SET `field_data` = '" . $_POST["perm_peer_priority"] . "' WHERE `options`.`field_name` = 'perm_peer_priority' LIMIT 1";
+											if(mysql_query($sql) == TRUE)
+											{											
+												$server_code = '</br><font color="blue"><strong>Server Settings Updated...</strong></font></br></br>';
+											}											
 										}
 									}									
 								}
