@@ -523,13 +523,10 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 {
 	set_decrypt_mode(); // Figure out which decrypt method can be used
 
-	if($GLOBALS['decrypt_mode'] == 2)
-	{
-		//Initialize objects for Internal RSA decrypt
-		require_once('RSA.php');
-		$rsa = new Crypt_RSA();
-		$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
-	}
+	//Initialize objects for Internal RSA decrypt
+	require_once('RSA.php');
+	$rsa = new Crypt_RSA();
+	$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
 
 	if($block_start == 0 && $block_end == 0)
 	{
@@ -573,6 +570,12 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 			else
 			{
 				openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key_from);
+
+				if(empty($transaction_info) == TRUE)
+				{
+					$rsa->loadKey($public_key_from);
+					$transaction_info = $rsa->decrypt(base64_decode($crypt3));
+				}
 			}
 
 			$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
@@ -591,6 +594,12 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 			else
 			{
 				openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key_from);
+
+				if(empty($transaction_info) == TRUE)
+				{
+					$rsa->loadKey($public_key_from);
+					$transaction_info = $rsa->decrypt(base64_decode($crypt3));
+				}
 			}
 	
 			$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
@@ -642,6 +651,12 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 			else
 			{
 				openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key_from);
+
+				if(empty($transaction_info) == TRUE)
+				{
+					$rsa->loadKey($public_key_from);
+					$transaction_info = $rsa->decrypt(base64_decode($crypt3));
+				}				
 			}			
 
 			$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
