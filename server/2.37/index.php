@@ -1848,18 +1848,19 @@ if($_SESSION["valid_login"] == TRUE)
 					switch($_POST['filter'])
 					{
 						case "transactions":
-							$filter_results = "AND `attribute` = 'T'";
+							$filter_results = "T";
 							$filter_GUI = "Transactions";
 							$sent_to_selected_trans = "SELECTED";
 							break;
 
 						case "generation":
-							$filter_results = "AND `attribute` = 'G'";
+							$filter_results = "G";
 							$filter_GUI = "Currency Generation";
 							$sent_to_selected_gen = "SELECTED";
 							break;
 
 						case "all":
+							$filter_results = "ALL";
 							$filter_GUI = "Transactions & Currency Generation";
 							$sent_to_selected_both = "SELECTED";
 							break;							
@@ -1867,7 +1868,7 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 				else
 				{
-					$filter_results = "AND `attribute` = 'T'";
+					$filter_results = "T";
 					$filter_GUI = "Transactions";
 					$sent_to_selected_trans = "SELECTED";
 				}
@@ -1879,42 +1880,56 @@ if($_SESSION["valid_login"] == TRUE)
 					<th>Sent From</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
 
 				// Find the last X transactions sent to this public key
-				$sql = "SELECT timestamp, public_key_from, public_key_to, crypt_data3 FROM `transaction_history` WHERE `public_key_to` = '$my_public_key' $filter_results ORDER BY `transaction_history`.`timestamp` DESC LIMIT $show_last";
+				$sql = "SELECT timestamp, public_key_from, crypt_data3, attribute FROM `transaction_history` WHERE `public_key_to` = '$my_public_key' ORDER BY `transaction_history`.`timestamp` DESC";
 				$sql_result = mysql_query($sql);
 				$sql_num_results = mysql_num_rows($sql_result);
 
+				$result_limit = 0;
+
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
+					if($result_limit >= $show_last)
+					{
+						// Have the amount to show, break from the loop early
+						break;
+					}					
+					
 					$sql_row = mysql_fetch_array($sql_result);
-					$crypt3 = $sql_row["crypt_data3"];
-
-					$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($crypt3));
-
-					$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
-
-					// Any encoded messages?
-					$inside_message = find_string("---MSG=", "", $transaction_info, TRUE);
-
-					if($sql_row["public_key_from"] == $my_public_key)
+					
+					if($sql_row["attribute"] == $filter_results || $filter_results == "ALL")
 					{
-						// Self Generated
-						$public_key_from = '<td class="style2">Self Generated';
-					}
-					else
-					{
-						// Everyone else
-						$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:150px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($sql_row["public_key_from"]) . '</p>';
-					}
+						$crypt3 = $sql_row["crypt_data3"];
 
-					// How many cycles back did this take place?
-					$cycles_back = intval((time() - $sql_row["timestamp"]) / 300);
+						$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($crypt3));
 
-					$body_string .= '<tr>
-					<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>' 
-					. $public_key_from . '</td>
-					<td class="style2"><p style="font-size: 11px;">' . $transaction_amount . '</p></td>
-					<td class="style2"><p style="font-size: 11px;">' . $cycles_back . '</p></td>
-					<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $inside_message . '</p></td></tr>';
+						$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
+
+						// Any encoded messages?
+						$inside_message = find_string("---MSG=", "", $transaction_info, TRUE);
+
+						if($sql_row["public_key_from"] == $my_public_key)
+						{
+							// Self Generated
+							$public_key_from = '<td class="style2">Self Generated';
+						}
+						else
+						{
+							// Everyone else
+							$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:150px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($sql_row["public_key_from"]) . '</p>';
+						}
+
+						// How many cycles back did this take place?
+						$cycles_back = intval((time() - $sql_row["timestamp"]) / 300);
+
+						$body_string .= '<tr>
+						<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>' 
+						. $public_key_from . '</td>
+						<td class="style2"><p style="font-size: 11px;">' . $transaction_amount . '</p></td>
+						<td class="style2"><p style="font-size: 11px;">' . $cycles_back . '</p></td>
+						<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $inside_message . '</p></td></tr>';
+
+						$result_limit++;						
+					}
 				}
 				
 				$body_string .= '<tr><td colspan="5"><input type="text" size="5" name="show_more_receive" value="' . $show_last .'" /><input type="submit" name="Submit1" value="Show Last" /></FORM></td></tr>';
@@ -1929,35 +1944,48 @@ if($_SESSION["valid_login"] == TRUE)
 					<th>Sent To</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
 
 				// Find the last X transactions from to this public key
-				$sql = "SELECT timestamp, public_key_from, public_key_to, crypt_data3 FROM `transaction_history` WHERE `public_key_from` = '$my_public_key' AND `attribute` = 'T' ORDER BY `transaction_history`.`timestamp` DESC LIMIT $show_last";
-				
+				$sql = "SELECT timestamp, public_key_from, public_key_to, crypt_data3, attribute FROM `transaction_history` WHERE `public_key_from` = '$my_public_key' ORDER BY `transaction_history`.`timestamp` DESC";
+
 				$sql_result = mysql_query($sql);
 				$sql_num_results = mysql_num_rows($sql_result);
+				$result_limit = 0;
 
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
+					if($result_limit >= $show_last)
+					{
+						// Have the amount to show, break from the loop early
+						break;
+					}
+
 					$sql_row = mysql_fetch_array($sql_result);
-					$crypt3 = $sql_row["crypt_data3"];
 
-					$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($crypt3));
+					if($sql_row["attribute"] == "T")
+					{
+						$crypt3 = $sql_row["crypt_data3"];
 
-					$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
+						$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($crypt3));
 
-					// Any encoded messages?
-					$inside_message = find_string("---MSG=", "", $transaction_info, TRUE);				
+						$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
 
-					// Everyone else
-					$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:150px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($sql_row["public_key_to"]) . '</p>';
+						// Any encoded messages?
+						$inside_message = find_string("---MSG=", "", $transaction_info, TRUE);				
 
-					// How many cycles back did this take place?
-					$cycles_back = intval((time() - $sql_row["timestamp"]) / 300);
+						// Everyone else
+						$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:150px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($sql_row["public_key_to"]) . '</p>';
 
-					$body_string .= '<tr>
-					<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>' 
-					. $public_key_from . '</td>
-					<td class="style2"><p style="font-size: 11px;">' . $transaction_amount . '</p></td>
-					<td class="style2"><p style="font-size: 11px;">' . $cycles_back . '</p></td>
-					<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $inside_message . '</p></td></tr>';
+						// How many cycles back did this take place?
+						$cycles_back = intval((time() - $sql_row["timestamp"]) / 300);
+
+						$body_string .= '<tr>
+						<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>' 
+						. $public_key_from . '</td>
+						<td class="style2"><p style="font-size: 11px;">' . $transaction_amount . '</p></td>
+						<td class="style2"><p style="font-size: 11px;">' . $cycles_back . '</p></td>
+						<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $inside_message . '</p></td></tr>';
+
+						$result_limit++;
+					}
 				}
 
 				$body_string .= '<tr><td colspan="5"><FORM ACTION="index.php?menu=history&send=listmore" METHOD="post"><input type="text" size="5" name="show_more_send" value="' . $show_last .'" /><input type="submit" name="Submit2" value="Show Last" /></FORM></td></tr>';
