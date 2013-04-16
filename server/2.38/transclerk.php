@@ -537,10 +537,10 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 							// How far behind in the transaction history are we?
 							$total_trans_hash = mysql_result(mysql_query("SELECT COUNT(attribute) FROM `transaction_history` WHERE `attribute` = 'H'"),0);
 
-							if(transaction_cycle(0, TRUE) - $total_trans_hash > 750)
+							if(transaction_cycle(0, TRUE) - $total_trans_hash > 500)
 							{
 								// Far enough behind to use a boost, how close to the end?
-								if($block_number + 750 < transaction_cycle(0, TRUE))
+								if($block_number + 500 < transaction_cycle(0, TRUE))
 								{
 									if($poll_peer == 1) // Sanity check on cycles allowed to donwload
 									{
@@ -566,7 +566,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 									while($super_transaction_cycle < $block_number + $super_peer_cycles)
 									{
-										$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 200000, "transclerk.php?action=transaction_data&block_number=$super_transaction_cycle");
+										$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 2000000, "transclerk.php?action=transaction_data&block_number=$super_transaction_cycle");
 
 										$tc = 1;
 
@@ -630,7 +630,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 					} // End blank data ahead check
 //************************************************************
 
-					$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 200000, "transclerk.php?action=transaction_data&block_number=$block_number");
+					$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 2000000, "transclerk.php?action=transaction_data&block_number=$block_number");
 
 					$tc = 1;
 

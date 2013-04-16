@@ -455,65 +455,24 @@ function walkhistory($block_start = 0, $block_end = 0)
 //***********************************************************************************
 function tk_encrypt($key, $crypt_data)
 {
-	if(function_exists('openssl_private_encrypt') == TRUE)
-	{
-		openssl_private_encrypt($crypt_data, $encrypted_data, $key);
-	}
-	else
-	{
-		require_once('RSA.php');
-		$rsa = new Crypt_RSA();
-		$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
-		$rsa->loadKey($key);
-		$encrypted_data = $rsa->encrypt($crypt_data);
-	}
+	require_once('RSA.php');
+	$rsa = new Crypt_RSA();
+	$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
+	$rsa->loadKey($key);
+	$encrypted_data = $rsa->encrypt($crypt_data);
 
 	return $encrypted_data;
 }
 //***********************************************************************************
 //***********************************************************************************
-function set_decrypt_mode()
-{
-	if(function_exists('openssl_public_decrypt') == TRUE)
-	{
-		$GLOBALS['decrypt_mode'] = 1;
-	}
-	else
-	{
-		$GLOBALS['decrypt_mode'] = 2;
-	}
-	
-	return;
-}
-//***********************************************************************************
-//***********************************************************************************
 function tk_decrypt($key, $crypt_data)
 {
-	if(function_exists('openssl_public_decrypt') == TRUE)
-	{
-		// Use OpenSSL if it is working
-		openssl_public_decrypt($crypt_data, $decrypt, $key);
-
-		if(empty($decrypt) == TRUE)
-		{
-			// OpenSSL can't decrypt this for some reason
-			// Use built in Code
-			require_once('RSA.php');
-			$rsa = new Crypt_RSA();
-			$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
-			$rsa->loadKey($key);
-			$decrypt = $rsa->decrypt($crypt_data);
-		}
-	}
-	else
-	{
-		// Use built in Code
-		require_once('RSA.php');
-		$rsa = new Crypt_RSA();
-		$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
-		$rsa->loadKey($key);
-		$decrypt = $rsa->decrypt($crypt_data);
-	}
+	// Use built in Code
+	require_once('RSA.php');
+	$rsa = new Crypt_RSA();
+	$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
+	$rsa->loadKey($key);
+	$decrypt = $rsa->decrypt($crypt_data);
 
 	return $decrypt;
 }
@@ -521,9 +480,7 @@ function tk_decrypt($key, $crypt_data)
 //***********************************************************************************
 function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0)
 {
-	set_decrypt_mode(); // Figure out which decrypt method can be used
-
-	//Initialize objects for Internal RSA decrypt
+	//Initialize objects for Internal RSA decrypt loops
 	require_once('RSA.php');
 	$rsa = new Crypt_RSA();
 	$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
@@ -531,7 +488,7 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 	if($block_start == 0 && $block_end == 0)
 	{
 		// Find every Time Koin sent to this public Key
-		$sql = "SELECT public_key_from, public_key_to, crypt_data1, crypt_data2, crypt_data3, hash, attribute FROM `transaction_history` WHERE `public_key_to` = '$public_key'";
+		$sql = "SELECT public_key_from, public_key_to, crypt_data3, hash, attribute FROM `transaction_history` WHERE `public_key_to` = '$public_key'";
 	}
 	else
 	{
@@ -539,7 +496,7 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 		// Covert block to time.
 		$start_time_range = TRANSACTION_EPOCH + ($block_start * 300);
 		$end_time_range = TRANSACTION_EPOCH + ($block_end * 300);
-		$sql = "SELECT public_key_from, public_key_to, crypt_data1, crypt_data2, crypt_data3, hash, attribute FROM `transaction_history` WHERE `public_key_to` = '$public_key' AND `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range'";
+		$sql = "SELECT public_key_from, public_key_to, crypt_data3, hash, attribute FROM `transaction_history` WHERE `public_key_to` = '$public_key' AND `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range'";
 	}
 
 	$sql_result = mysql_query($sql);
@@ -552,63 +509,28 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 
 		$public_key_from = $sql_row[0];
 		$public_key_to = $sql_row[1];
-		$crypt1 = $sql_row[2];
-		$crypt2 = $sql_row[3];
-		$crypt3 = $sql_row[4];
-		$hash = $sql_row[5];
-		$attribute = $sql_row[6];
+		$crypt3 = $sql_row[2];
+		$hash = $sql_row[3];
+		$attribute = $sql_row[4];
 
 		if($attribute == "G" && $public_key_from == $public_key_to)
 		{
-			// Currency Generation
-			// Decrypt transaction information
-			if($GLOBALS['decrypt_mode'] == 2)
-			{
-				$rsa->loadKey($public_key_from);
-				$transaction_info = $rsa->decrypt(base64_decode($crypt3));
-			}
-			else
-			{
-				openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key_from);
-
-				if(empty($transaction_info) == TRUE)
-				{
-					$rsa->loadKey($public_key_from);
-					$transaction_info = $rsa->decrypt(base64_decode($crypt3));
-				}
-			}
-
+			$rsa->loadKey($public_key_from);
+			$transaction_info = $rsa->decrypt(base64_decode($crypt3));
 			$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
-
 			$crypto_balance += $transaction_amount_sent;
 		}
 
 		if($attribute == "T")
 		{
-			// Decrypt transaction information
-			if($GLOBALS['decrypt_mode'] == 2)
-			{
-				$rsa->loadKey($public_key_from);
-				$transaction_info = $rsa->decrypt(base64_decode($crypt3));
-			}
-			else
-			{
-				openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key_from);
-
-				if(empty($transaction_info) == TRUE)
-				{
-					$rsa->loadKey($public_key_from);
-					$transaction_info = $rsa->decrypt(base64_decode($crypt3));
-				}
-			}
-	
+			$rsa->loadKey($public_key_from);
+			$transaction_info = $rsa->decrypt(base64_decode($crypt3));
 			$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
-
 			$crypto_balance += $transaction_amount_sent;
 		}
 	}
 //
-// Unset variable to free up RAM
+// Unset variable to free up RAM for new loop
 	unset($sql_result);
 
 // END - Find every TimeKoin sent to this public Key
@@ -617,12 +539,12 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 	if($block_start == 0 && $block_end == 0)
 	{
 		// Find every Time Koin sent to this public Key
-		$sql = "SELECT public_key_from, public_key_to, crypt_data1, crypt_data2, crypt_data3, hash, attribute FROM `transaction_history` WHERE `public_key_from` = '$public_key'";
+		$sql = "SELECT public_key_from, public_key_to, crypt_data3, hash, attribute FROM `transaction_history` WHERE `public_key_from` = '$public_key'";
 	}
 	else
 	{
 		// Find every Time Koin sent to this public Key in a certain time range
-		$sql = "SELECT public_key_from, public_key_to, crypt_data1, crypt_data2, crypt_data3, hash, attribute FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range'";
+		$sql = "SELECT public_key_from, public_key_to, crypt_data3, hash, attribute FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range'";
 	}
 
 	$sql_result = mysql_query($sql);
@@ -634,33 +556,16 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 
 		$public_key_from = $sql_row[0];
 		$public_key_to = $sql_row[1];		
-		$crypt1 = $sql_row[2];
-		$crypt2 = $sql_row[3];
-		$crypt3 = $sql_row[4];
-		$hash = $sql_row[5];
-		$attribute = $sql_row[6];
+		$crypt3 = $sql_row[2];
+		$hash = $sql_row[3];
+		$attribute = $sql_row[4];
 
 		if($attribute == "T")
 		{
 			// Decrypt transaction information
-			if($GLOBALS['decrypt_mode'] == 2)
-			{
-				$rsa->loadKey($public_key_from);
-				$transaction_info = $rsa->decrypt(base64_decode($crypt3));
-			}
-			else
-			{
-				openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key_from);
-
-				if(empty($transaction_info) == TRUE)
-				{
-					$rsa->loadKey($public_key_from);
-					$transaction_info = $rsa->decrypt(base64_decode($crypt3));
-				}				
-			}			
-
+			$rsa->loadKey($public_key_from);
+			$transaction_info = $rsa->decrypt(base64_decode($crypt3));
 			$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
-
 			$crypto_balance -= $transaction_amount_sent;
 		}
 	}
@@ -717,7 +622,6 @@ function check_crypt_balance($public_key)
 		// Store index in database for future access
 		mysql_query("INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`)
 		VALUES ('$previous_foundation_block', '$public_key_hash', '$index_balance1')");
-
 		return ($index_balance1 + $index_balance2);
 	}
 	else
@@ -1445,6 +1349,7 @@ function activate($component = "SYSTEM", $on_or_off = 1)
 	if($component != "TRANSCLERK") { $build_file = $build_file . ' define("TRANSCLERK_DISABLED","' . TRANSCLERK_DISABLED . '"); '; }
 	if($component != "TREASURER") { $build_file = $build_file . ' define("TREASURER_DISABLED","' . TREASURER_DISABLED . '"); '; }
 	if($component != "BALANCE") { $build_file = $build_file . ' define("BALANCE_DISABLED","' . BALANCE_DISABLED . '"); '; }
+	if($component != "API") { $build_file = $build_file . ' define("API_DISABLED","' . API_DISABLED . '"); '; }			
 
 	switch($component)
 	{
@@ -1546,6 +1451,17 @@ function activate($component = "SYSTEM", $on_or_off = 1)
 				$build_file = $build_file . ' define("BALANCE_DISABLED","0"); ';
 			}
 			break;
+
+		case "API":
+			if($on_or_off == 0)
+			{
+				$build_file = $build_file . ' define("API_DISABLED","1"); ';
+			}
+			else
+			{
+				$build_file = $build_file . ' define("API_DISABLED","0"); ';
+			}
+			break;			
 	}
 
 	$build_file = $build_file . ' ?' . '>';
@@ -1767,6 +1683,10 @@ function do_updates()
 		$update_status .= run_script_update("Openssl Template (openssl.cnf)", "openssl.cnf", $poll_version, $context, 0);
 		//****************************************************
 		//****************************************************
+		$update_status .= 'Checking for <strong>API Access</strong> Update...</br>';
+		$update_status .= run_script_update("API Access (api.php)", "api", $poll_version, $context);
+		//****************************************************
+		//****************************************************
 		$update_status .= 'Checking for <strong>Balace Indexer</strong> Update...</br>';
 		$update_status .= run_script_update("Balance Indexer (balance.php)", "balance", $poll_version, $context);
 		//****************************************************
@@ -1819,7 +1739,7 @@ function do_updates()
 	}
 	else
 	{
-		$update_status .= '<strong>ERROR: Could Not Contact Secure Server https://timekoin.com</strong>';
+		$update_status .= '<strong><font color="red">ERROR: Could Not Contact Secure Server https://timekoin.com</font></strong>';
 	}
 
 	return $update_status;

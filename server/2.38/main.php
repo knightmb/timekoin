@@ -248,7 +248,7 @@ while(1) // Begin Infinite Loop :)
 		// Check if script is already running
 		if($script_loop_active == 0)
 		{
-			if(extension_loaded('openssl') == TRUE || extension_loaded('gmp') == TRUE)
+			if(extension_loaded('gmp') == TRUE)
 			{
 				call_script("treasurer.php");
 			}
@@ -283,7 +283,7 @@ while(1) // Begin Infinite Loop :)
 		// Check if script is already running
 		if($script_loop_active == 0)
 		{
-			if(extension_loaded('openssl') == TRUE || extension_loaded('gmp') == TRUE)
+			if(extension_loaded('gmp') == TRUE)
 			{
 				call_script("balance.php", 0);
 			}
