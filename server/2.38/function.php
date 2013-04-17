@@ -323,7 +323,7 @@ function call_script($script, $priority = 1)
 	}
 	else if($priority == 2)
 	{
-		// No PHP CLI Extensions for some odd reason
+		// No PHP CLI Extensions for some odd reason, call from web server instead
 		poll_peer(NULL, "localhost", my_subfolder(), my_port_number(), 1, $script);
 	}
 	else
@@ -455,24 +455,66 @@ function walkhistory($block_start = 0, $block_end = 0)
 //***********************************************************************************
 function tk_encrypt($key, $crypt_data)
 {
-	require_once('RSA.php');
-	$rsa = new Crypt_RSA();
-	$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
-	$rsa->loadKey($key);
-	$encrypted_data = $rsa->encrypt($crypt_data);
+	if(function_exists('openssl_private_encrypt') == TRUE)
+	{
+		openssl_private_encrypt($crypt_data, $encrypted_data, $key, OPENSSL_PKCS1_PADDING);
+	}
+	else
+	{
+		require_once('RSA.php');
+		$rsa = new Crypt_RSA();
+		$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
+		$rsa->loadKey($key);
+		$encrypted_data = $rsa->encrypt($crypt_data);
+	}
 
 	return $encrypted_data;
 }
 //***********************************************************************************
 //***********************************************************************************
-function tk_decrypt($key, $crypt_data)
+function set_decrypt_mode()
 {
-	// Use built in Code
-	require_once('RSA.php');
-	$rsa = new Crypt_RSA();
-	$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
-	$rsa->loadKey($key);
-	$decrypt = $rsa->decrypt($crypt_data);
+	if(function_exists('openssl_public_decrypt') == TRUE)
+	{
+		$GLOBALS['decrypt_mode'] = 1;
+	}
+	else
+	{
+		$GLOBALS['decrypt_mode'] = 2;
+	}
+	return;
+}
+//***********************************************************************************
+//***********************************************************************************
+function tk_decrypt($key, $crypt_data, $skip_openssl_check = FALSE)
+{
+	$decrypt;
+
+	if($skip_openssl_check == TRUE || function_exists('openssl_public_decrypt') == TRUE)
+	{
+		// Use OpenSSL if it is working
+		openssl_public_decrypt($crypt_data, $decrypt, $key, OPENSSL_PKCS1_PADDING);
+
+		if(empty($decrypt) == TRUE)
+		{
+			// OpenSSL can't decrypt this for some reason
+			// Use built in Code instead
+			require_once('RSA.php');
+			$rsa = new Crypt_RSA();
+			$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
+			$rsa->loadKey($key);
+			$decrypt = $rsa->decrypt($crypt_data);
+		}
+	}
+	else
+	{
+		// Use built in Code
+		require_once('RSA.php');
+		$rsa = new Crypt_RSA();
+		$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
+		$rsa->loadKey($key);
+		$decrypt = $rsa->decrypt($crypt_data);
+	}
 
 	return $decrypt;
 }
@@ -480,10 +522,15 @@ function tk_decrypt($key, $crypt_data)
 //***********************************************************************************
 function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0)
 {
-	//Initialize objects for Internal RSA decrypt loops
-	require_once('RSA.php');
-	$rsa = new Crypt_RSA();
-	$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
+	set_decrypt_mode(); // Figure out which decrypt method can be best used
+
+	//Initialize objects for Internal RSA decrypt
+	if($GLOBALS['decrypt_mode'] == 2)
+	{
+		require_once('RSA.php');
+		$rsa = new Crypt_RSA();
+		$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
+	}
 
 	if($block_start == 0 && $block_end == 0)
 	{
@@ -501,7 +548,8 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
-	$crypto_balance = 0;	
+	$crypto_balance = 0;
+	$transaction_info;
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
@@ -515,22 +563,42 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 
 		if($attribute == "G" && $public_key_from == $public_key_to)
 		{
-			$rsa->loadKey($public_key_from);
-			$transaction_info = $rsa->decrypt(base64_decode($crypt3));
+			// Currency Generation
+			// Decrypt transaction information
+			if($GLOBALS['decrypt_mode'] == 2)
+			{
+				$rsa->loadKey($public_key_from);
+				$transaction_info = $rsa->decrypt(base64_decode($crypt3));
+			}
+			else
+			{
+				$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3), TRUE);
+			} 
+
 			$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 			$crypto_balance += $transaction_amount_sent;
 		}
 
 		if($attribute == "T")
 		{
-			$rsa->loadKey($public_key_from);
-			$transaction_info = $rsa->decrypt(base64_decode($crypt3));
+			// Decrypt transaction information
+
+			if($GLOBALS['decrypt_mode'] == 2)
+			{
+				$rsa->loadKey($public_key_from);
+				$transaction_info = $rsa->decrypt(base64_decode($crypt3));
+			}
+			else
+			{
+				$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3), TRUE);
+			}
+	
 			$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 			$crypto_balance += $transaction_amount_sent;
 		}
 	}
 //
-// Unset variable to free up RAM for new loop
+// Unset variable to free up RAM
 	unset($sql_result);
 
 // END - Find every TimeKoin sent to this public Key
@@ -563,8 +631,18 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 		if($attribute == "T")
 		{
 			// Decrypt transaction information
-			$rsa->loadKey($public_key_from);
-			$transaction_info = $rsa->decrypt(base64_decode($crypt3));
+			$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3));
+
+			if($GLOBALS['decrypt_mode'] == 2)
+			{
+				$rsa->loadKey($public_key_from);
+				$transaction_info = $rsa->decrypt(base64_decode($crypt3));
+			}
+			else
+			{
+				$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3), TRUE);
+			}
+
 			$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 			$crypto_balance -= $transaction_amount_sent;
 		}
