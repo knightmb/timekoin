@@ -90,7 +90,7 @@ if($sql_num_results > 0)
 			{
 				// Check to make sure there is not a duplicate transaction already
 				$found_public_key_queue = mysql_result(mysql_query("SELECT * FROM `transaction_queue` WHERE `public_key` = '$public_key' AND `hash` = '$hash_check' LIMIT 1"),0,"timestamp");
-				$timestamp = $current_generation_cycle + 1;
+				$timestamp = $current_generation_cycle + 4;
 
 				if(empty($found_public_key_queue) == TRUE)
 				{

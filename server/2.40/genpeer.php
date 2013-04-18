@@ -170,9 +170,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 	// Ask all of my active peers
 	ini_set('user_agent', 'Timekoin Server (Genpeer) v' . TIMEKOIN_VERSION);	
 	ini_set('default_socket_timeout', 2); // Timeout for request in seconds
-	
-	$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND()";
 
+	$sql = perm_peer_mode();
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 

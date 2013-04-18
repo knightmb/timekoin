@@ -9,5 +9,6 @@ define("QUEUECLERK_DISABLED","0");
 define("TRANSCLERK_DISABLED","0");
 define("TREASURER_DISABLED","0");
 define("BALANCE_DISABLED","0");
+define("API_DISABLED","0");
 
 ?>

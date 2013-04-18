@@ -265,7 +265,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 	ini_set('default_socket_timeout', 2); // Timeout for request in seconds
 	ini_set('user_agent', 'Timekoin Server (Transclerk) v' . TIMEKOIN_VERSION);
 
-	$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND()";
+	$sql = perm_peer_mode();
 
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
@@ -336,7 +336,11 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 		}
 		else
 		{
-			if($hash_check_counter >= 2) // Limit lowest poll to 1
+			if($hash_check_counter <= 1) // Limit lowest poll to 1
+			{
+				$new_peer_poll_blocks = 1;
+			}
+			else
 			{
 				$new_peer_poll_blocks = $hash_check_counter - 1;
 			}
@@ -533,10 +537,10 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 							// How far behind in the transaction history are we?
 							$total_trans_hash = mysql_result(mysql_query("SELECT COUNT(attribute) FROM `transaction_history` WHERE `attribute` = 'H'"),0);
 
-							if(transaction_cycle(0, TRUE) - $total_trans_hash > 750)
+							if(transaction_cycle(0, TRUE) - $total_trans_hash > 500)
 							{
 								// Far enough behind to use a boost, how close to the end?
-								if($block_number + 750 < transaction_cycle(0, TRUE))
+								if($block_number + 500 < transaction_cycle(0, TRUE))
 								{
 									if($poll_peer == 1) // Sanity check on cycles allowed to donwload
 									{
@@ -562,7 +566,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 									while($super_transaction_cycle < $block_number + $super_peer_cycles)
 									{
-										$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 200000, "transclerk.php?action=transaction_data&block_number=$super_transaction_cycle");
+										$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 2000000, "transclerk.php?action=transaction_data&block_number=$super_transaction_cycle");
 
 										$tc = 1;
 
@@ -626,7 +630,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 					} // End blank data ahead check
 //************************************************************
 
-					$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 200000, "transclerk.php?action=transaction_data&block_number=$block_number");
+					$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 2000000, "transclerk.php?action=transaction_data&block_number=$block_number");
 
 					$tc = 1;
 
@@ -818,8 +822,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			$current_foundation_block = foundation_cycle(0, TRUE) * 500;
 			$random_block = rand($current_foundation_block, transaction_cycle(-1, TRUE));
 
-			$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND()";
-
+			$sql = perm_peer_mode();
 			$sql_result = mysql_query($sql);
 			$sql_num_results = mysql_num_rows($sql_result);
 

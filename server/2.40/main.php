@@ -239,7 +239,7 @@ while(1) // Begin Infinite Loop :)
 		// Check if script is already running
 		if($script_loop_active == 0)
 		{
-			call_script("generation.php", 0);
+			call_script("generation.php");
 		}
 
 		sleep(1); // 1 second for sanity reasons
@@ -254,9 +254,9 @@ while(1) // Begin Infinite Loop :)
 			}
 			else
 			{
-				// No CLI Extensions, Windows issue :(
+				// No CLI Extensions, call script through web server instead
 				call_script("treasurer.php", 2);
-			}
+			}			
 		}
 
 		sleep(2); // 2 seconds for sanity reasons
@@ -289,7 +289,7 @@ while(1) // Begin Infinite Loop :)
 			}
 			else
 			{
-				// No CLI Extensions, Windows issue :(
+				// No CLI Extensions, call script through web server instead
 				call_script("balance.php", 2);
 			}
 		}		

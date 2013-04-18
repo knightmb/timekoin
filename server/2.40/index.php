@@ -718,7 +718,11 @@ if($_SESSION["valid_login"] == TRUE)
 										mysql_query($sql2);										
 										if(mysql_query($sql) == TRUE)
 										{
-											$server_code = '</br><font color="blue"><strong>Server Settings Updated...</strong></font></br></br>';
+											$sql = "UPDATE `options` SET `field_data` = '" . $_POST["perm_peer_priority"] . "' WHERE `options`.`field_name` = 'perm_peer_priority' LIMIT 1";
+											if(mysql_query($sql) == TRUE)
+											{											
+												$server_code = '</br><font color="blue"><strong>Server Settings Updated...</strong></font></br></br>';
+											}											
 										}
 									}									
 								}
@@ -867,7 +871,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["time"] == "poll")
 		{
 			ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
-			ini_set('default_socket_timeout', 3); // Timeout for request in seconds
+			ini_set('default_socket_timeout', 2); // Timeout for request in seconds
 			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
 				<tr><th>Peer</th><th>Time</th><th>Variance</th><th>Ping</th></tr>';
 
@@ -1594,7 +1598,6 @@ if($_SESSION["valid_login"] == TRUE)
 
 						if($sql_row["attribute"] == 'G')
 						{
-
 							$body_string .= '<td><FORM ACTION="index.php?menu=history&examine=transaction" METHOD="post">
 							<input type="hidden" name="show_more" value="' . $show_last . '">
 							<input type="hidden" name="trans_cycle" value="' . $jump_to_transaction . '">
@@ -1633,9 +1636,12 @@ if($_SESSION["valid_login"] == TRUE)
 
 			$body_string .= '</table></div>';
 
+			$color_key1 = '<td><img src="img/timekoin_green.png" /></td>';
+			$color_key2 = '<td><img src="img/timekoin_blue.png" /></td>';
+
 			$text_bar = '<table border="0" cellspacing="0" cellpadding="0"><tr><td style="width:125px;"><strong>Color Chart:</strong></td>
-				<td>New Currency</td><td><img src="img/timekoin_green.png" /></td>
-				<td style="width:115px;" align="right">Transaction</td><td><img src="img/timekoin_blue.png" /></td>
+				<td>New Currency</td>' . $color_key1 . '
+				<td style="width:115px;" align="right">Transaction</td>' . $color_key2 . '
 				</tr></table>';
 			$quick_info = '<strong>Transaction History Browser</strong> allows the user to get a quick visual glance of past transactions.</br></br>
 				The color code graphic shows various types of transactions.</br></br>

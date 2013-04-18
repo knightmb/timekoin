@@ -288,6 +288,7 @@ $allow_ambient_peer_restart = intval(mysql_result(mysql_query("SELECT * FROM `op
 $trans_history_check = intval(mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'trans_history_check' LIMIT 1"),0,"field_data"));
 $gen_list_no_sync = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'generation_peer_list_no_sync' LIMIT 1"),0,"field_data");
 $super_peer_mode = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'super_peer' LIMIT 1"),0,"field_data");
+$perm_peer_priority = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'perm_peer_priority' LIMIT 1"),0,"field_data");
 
 if($gen_list_no_sync == 0)
 {
@@ -296,6 +297,15 @@ if($gen_list_no_sync == 0)
 else
 {
 	$gen_hash = '<font color="red">' . $gen_hash . '</font>';
+}
+
+if($perm_peer_priority == 1)
+{
+	$perm_peer_priority_1 = "CHECKED";
+}
+else
+{
+	$perm_peer_priority_0 = "CHECKED";
 }
 
 if($super_peer_mode >= 1)
@@ -398,6 +408,7 @@ Max Peer Query: <input type="text" name="max_request" size="6" maxlength="4" val
 </br>Allow LAN Peers: <input type="radio" name="allow_LAN" value="0" ' . $LAN_disable . '>Disable <input type="radio" name="allow_LAN" value="1" ' . $LAN_enable . '>Enable
 </br></br>Allow Ambient Peer Restarts: <input type="radio" name="allow_ambient" value="0" ' . $ambient_restart_disable . '>Disable <input type="radio" name="allow_ambient" value="1" ' . $ambient_restart_enable . '>Enable
 </br></br>Super Peer: <input type="radio" name="super_peer" value="0" ' . $super_peer_check_0 . '>Disabled <input type="radio" name="super_peer" value="1" ' . $super_peer_check_1 . '> Enable
+</br></br>Permanent Peer Priority: <input type="radio" name="perm_peer_priority" value="0" ' . $perm_peer_priority_0 . '>Disabled <input type="radio" name="perm_peer_priority" value="1" ' . $perm_peer_priority_1 . '> Enable
 </br></br>Transaction History Checks: <input type="radio" name="trans_history_check" value="0" ' . $trans_history_check_0 . '>Rare <input type="radio" name="trans_history_check" value="1" ' . $trans_history_check_1 . '> Normal <input type="radio" name="trans_history_check" value="2" ' . $trans_history_check_2 . '>Frequent
 </td><td align="right">
 <input type="submit" name="Submit2" value="Change Server Settings" />

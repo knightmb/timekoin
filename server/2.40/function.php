@@ -5,7 +5,7 @@ define("TRANSACTION_EPOCH","1338576300"); // Epoch timestamp: 1338576300
 define("ARBITRARY_KEY","01110100011010010110110101100101"); // Space filler for non-encryption data
 define("SHA256TEST","8c49a2b56ebd8fc49a17956dc529943eb0d73c00ee6eafa5d8b3ba1274eb3ea4"); // Known SHA256 Test Result
 define("TIMEKOIN_VERSION","2.4"); // This Timekoin Software Version
-define("NEXT_VERSION","current_version14.txt"); // What file to check for future versions
+define("NEXT_VERSION","current_version16.txt"); // What file to check for future versions
 
 error_reporting(E_ERROR | E_CORE_ERROR | E_COMPILE_ERROR); // Disable most error reporting except for fatal errors
 ini_set('display_errors', FALSE);
@@ -191,7 +191,7 @@ function transaction_history_hash()
 //***********************************************************************************
 function queue_hash()
 {
-	$sql = "SELECT * FROM `transaction_queue` ORDER BY `hash`";
+	$sql = "SELECT public_key, crypt_data1, crypt_data2, crypt_data3, hash, attribute FROM `transaction_queue` ORDER BY `hash`";
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 
@@ -212,6 +212,19 @@ function queue_hash()
 	return $transaction_queue_hash;
 }
 //***********************************************************************************
+function perm_peer_mode()
+{
+	$perm_peer_priority = intval(mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'perm_peer_priority' LIMIT 1"),0,"field_data"));
+
+	if($perm_peer_priority == 1)
+	{
+		return "SELECT * FROM `active_peer_list` WHERE `join_peer_list` = 0 ORDER BY RAND()";
+	}
+	else
+	{
+		return "SELECT * FROM `active_peer_list` ORDER BY RAND()";
+	}
+}
 //***********************************************************************************
 function my_public_key()
 {
@@ -310,7 +323,7 @@ function call_script($script, $priority = 1)
 	}
 	else if($priority == 2)
 	{
-		// No PHP CLI Extensions for some odd reason
+		// No PHP CLI Extensions for some odd reason, call from web server instead
 		poll_peer(NULL, "localhost", my_subfolder(), my_port_number(), 1, $script);
 	}
 	else
@@ -444,7 +457,7 @@ function tk_encrypt($key, $crypt_data)
 {
 	if(function_exists('openssl_private_encrypt') == TRUE)
 	{
-		openssl_private_encrypt($crypt_data, $encrypted_data, $key);
+		openssl_private_encrypt($crypt_data, $encrypted_data, $key, OPENSSL_PKCS1_PADDING);
 	}
 	else
 	{
@@ -469,22 +482,23 @@ function set_decrypt_mode()
 	{
 		$GLOBALS['decrypt_mode'] = 2;
 	}
-	
 	return;
 }
 //***********************************************************************************
 //***********************************************************************************
-function tk_decrypt($key, $crypt_data)
+function tk_decrypt($key, $crypt_data, $skip_openssl_check = FALSE)
 {
-	if(function_exists('openssl_public_decrypt') == TRUE)
+	$decrypt;
+
+	if($skip_openssl_check == TRUE || function_exists('openssl_public_decrypt') == TRUE)
 	{
 		// Use OpenSSL if it is working
-		openssl_public_decrypt($crypt_data, $decrypt, $key);
+		openssl_public_decrypt($crypt_data, $decrypt, $key, OPENSSL_PKCS1_PADDING);
 
 		if(empty($decrypt) == TRUE)
 		{
 			// OpenSSL can't decrypt this for some reason
-			// Use built in Code
+			// Use built in Code instead
 			require_once('RSA.php');
 			$rsa = new Crypt_RSA();
 			$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
@@ -508,11 +522,11 @@ function tk_decrypt($key, $crypt_data)
 //***********************************************************************************
 function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0)
 {
-	set_decrypt_mode(); // Figure out which decrypt method can be used
+	set_decrypt_mode(); // Figure out which decrypt method can be best used
 
+	//Initialize objects for Internal RSA decrypt
 	if($GLOBALS['decrypt_mode'] == 2)
 	{
-		//Initialize objects for Internal RSA decrypt
 		require_once('RSA.php');
 		$rsa = new Crypt_RSA();
 		$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
@@ -521,7 +535,7 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 	if($block_start == 0 && $block_end == 0)
 	{
 		// Find every Time Koin sent to this public Key
-		$sql = "SELECT public_key_from, public_key_to, crypt_data1, crypt_data2, crypt_data3, hash, attribute FROM `transaction_history` WHERE `public_key_to` = '$public_key'";
+		$sql = "SELECT public_key_from, public_key_to, crypt_data3, hash, attribute FROM `transaction_history` WHERE `public_key_to` = '$public_key'";
 	}
 	else
 	{
@@ -529,12 +543,13 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 		// Covert block to time.
 		$start_time_range = TRANSACTION_EPOCH + ($block_start * 300);
 		$end_time_range = TRANSACTION_EPOCH + ($block_end * 300);
-		$sql = "SELECT public_key_from, public_key_to, crypt_data1, crypt_data2, crypt_data3, hash, attribute FROM `transaction_history` WHERE `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range' AND `public_key_to` = '$public_key'";
+		$sql = "SELECT public_key_from, public_key_to, crypt_data3, hash, attribute FROM `transaction_history` WHERE `public_key_to` = '$public_key' AND `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range'";
 	}
 
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
-	$crypto_balance = 0;	
+	$crypto_balance = 0;
+	$transaction_info;
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
@@ -542,11 +557,9 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 
 		$public_key_from = $sql_row[0];
 		$public_key_to = $sql_row[1];
-		$crypt1 = $sql_row[2];
-		$crypt2 = $sql_row[3];
-		$crypt3 = $sql_row[4];
-		$hash = $sql_row[5];
-		$attribute = $sql_row[6];
+		$crypt3 = $sql_row[2];
+		$hash = $sql_row[3];
+		$attribute = $sql_row[4];
 
 		if($attribute == "G" && $public_key_from == $public_key_to)
 		{
@@ -559,17 +572,17 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 			}
 			else
 			{
-				openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key_from);
-			}
+				$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3), TRUE);
+			} 
 
 			$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
-
 			$crypto_balance += $transaction_amount_sent;
 		}
 
 		if($attribute == "T")
 		{
 			// Decrypt transaction information
+
 			if($GLOBALS['decrypt_mode'] == 2)
 			{
 				$rsa->loadKey($public_key_from);
@@ -577,11 +590,10 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 			}
 			else
 			{
-				openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key_from);
+				$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3), TRUE);
 			}
 	
 			$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
-
 			$crypto_balance += $transaction_amount_sent;
 		}
 	}
@@ -595,12 +607,12 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 	if($block_start == 0 && $block_end == 0)
 	{
 		// Find every Time Koin sent to this public Key
-		$sql = "SELECT public_key_from, public_key_to, crypt_data1, crypt_data2, crypt_data3, hash, attribute FROM `transaction_history` WHERE `public_key_from` = '$public_key'";
+		$sql = "SELECT public_key_from, public_key_to, crypt_data3, hash, attribute FROM `transaction_history` WHERE `public_key_from` = '$public_key'";
 	}
 	else
 	{
 		// Find every Time Koin sent to this public Key in a certain time range
-		$sql = "SELECT public_key_from, public_key_to, crypt_data1, crypt_data2, crypt_data3, hash, attribute FROM `transaction_history` WHERE `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range' AND `public_key_from` = '$public_key'";
+		$sql = "SELECT public_key_from, public_key_to, crypt_data3, hash, attribute FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range'";
 	}
 
 	$sql_result = mysql_query($sql);
@@ -612,15 +624,15 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 
 		$public_key_from = $sql_row[0];
 		$public_key_to = $sql_row[1];		
-		$crypt1 = $sql_row[2];
-		$crypt2 = $sql_row[3];
-		$crypt3 = $sql_row[4];
-		$hash = $sql_row[5];
-		$attribute = $sql_row[6];
+		$crypt3 = $sql_row[2];
+		$hash = $sql_row[3];
+		$attribute = $sql_row[4];
 
 		if($attribute == "T")
 		{
 			// Decrypt transaction information
+			$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3));
+
 			if($GLOBALS['decrypt_mode'] == 2)
 			{
 				$rsa->loadKey($public_key_from);
@@ -628,11 +640,10 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 			}
 			else
 			{
-				openssl_public_decrypt(base64_decode($crypt3), $transaction_info, $public_key_from);
-			}			
+				$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3), TRUE);
+			}
 
 			$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
-
 			$crypto_balance -= $transaction_amount_sent;
 		}
 	}
@@ -995,18 +1006,16 @@ function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $a
 	$encryptedData64_2 = base64_encode($encryptedData2);
 
 	// Sanitization of message
-	// Filter symbols or characters not allowed
+	// Filter symbols that might lead to a transaction hack attack
 	$symbols = array("|", "?", "="); // SQL + URL
 	$message = str_replace($symbols, "", $message);
 
 	// Trim any message to 64 characters max and filter any sql
 	$message = filter_sql(substr($message, 0, 64));
-
 	$transaction_data = "AMOUNT=$amount---TIME=" . time() . "---HASH=" . hash('sha256', $encryptedData64_1 . $encryptedData64_2) . "---MSG=$message";
-
 	$encryptedData3 = tk_encrypt($my_private_key, $transaction_data);
-	$encryptedData64_3 = base64_encode($encryptedData3);
 
+	$encryptedData64_3 = base64_encode($encryptedData3);
 	$triple_hash_check = hash('sha256', $encryptedData64_1 . $encryptedData64_2 . $encryptedData64_3);
 
 	$sql = "INSERT INTO `my_transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`) VALUES 
@@ -1209,6 +1218,11 @@ function is_private_ip($ip, $ignore = FALSE)
 		{
 			$result = TRUE;
 		}
+
+		if(filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_RES_RANGE) == FALSE)
+		{
+			$result = TRUE;
+		}
 	}
 	
 	return $result;
@@ -1229,6 +1243,11 @@ function is_domain_valid($domain)
 	}
 
 	if(filter_var($domain, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
+	{
+		$result = FALSE;
+	}
+
+	if(is_private_ip($domain) == FALSE)
 	{
 		$result = FALSE;
 	}
@@ -1290,6 +1309,13 @@ function initialization_database()
 	{
 		// Does not exist, create it
 		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('php_location', '')");
+	}
+
+	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'perm_peer_priority' LIMIT 1"),0,0);
+	if($new_record_check === FALSE)
+	{
+		// Does not exist, create it
+		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('perm_peer_priority', '0')");
 	}	
 //**************************************
 	// Check for an empty generation IP address,
@@ -1392,6 +1418,7 @@ function activate($component = "SYSTEM", $on_or_off = 1)
 	if($component != "TRANSCLERK") { $build_file = $build_file . ' define("TRANSCLERK_DISABLED","' . TRANSCLERK_DISABLED . '"); '; }
 	if($component != "TREASURER") { $build_file = $build_file . ' define("TREASURER_DISABLED","' . TREASURER_DISABLED . '"); '; }
 	if($component != "BALANCE") { $build_file = $build_file . ' define("BALANCE_DISABLED","' . BALANCE_DISABLED . '"); '; }
+	if($component != "API") { $build_file = $build_file . ' define("API_DISABLED","' . API_DISABLED . '"); '; }			
 
 	switch($component)
 	{
@@ -1493,6 +1520,17 @@ function activate($component = "SYSTEM", $on_or_off = 1)
 				$build_file = $build_file . ' define("BALANCE_DISABLED","0"); ';
 			}
 			break;
+
+		case "API":
+			if($on_or_off == 0)
+			{
+				$build_file = $build_file . ' define("API_DISABLED","1"); ';
+			}
+			else
+			{
+				$build_file = $build_file . ' define("API_DISABLED","0"); ';
+			}
+			break;			
 	}
 
 	$build_file = $build_file . ' ?' . '>';
@@ -1693,7 +1731,7 @@ function do_updates()
 	// Poll timekoin.com for any program updates
 	$context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
 	ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
-	ini_set('default_socket_timeout', 30); // Timeout for request in seconds
+	ini_set('default_socket_timeout', 15); // Timeout for request in seconds
 
 	$poll_version = file_get_contents("https://timekoin.com/tkupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
 
@@ -1712,6 +1750,10 @@ function do_updates()
 		//****************************************************
 		$update_status .= 'Checking for <strong>Openssl Template</strong> Update...</br>';
 		$update_status .= run_script_update("Openssl Template (openssl.cnf)", "openssl.cnf", $poll_version, $context, 0);
+		//****************************************************
+		//****************************************************
+		$update_status .= 'Checking for <strong>API Access</strong> Update...</br>';
+		$update_status .= run_script_update("API Access (api.php)", "api", $poll_version, $context);
 		//****************************************************
 		//****************************************************
 		$update_status .= 'Checking for <strong>Balace Indexer</strong> Update...</br>';
@@ -1766,7 +1808,7 @@ function do_updates()
 	}
 	else
 	{
-		$update_status .= '<strong>ERROR: Could Not Contact Secure Server https://timekoin.com</strong>';
+		$update_status .= '<strong><font color="red">ERROR: Could Not Contact Secure Server https://timekoin.com</font></strong>';
 	}
 
 	return $update_status;
@@ -1778,7 +1820,6 @@ function find_file($dir, $pattern)
 	$files = glob("$dir/$pattern");
 
 	// Find a list of all directories in the current directory
-	//foreach (glob("$dir/{.[^.]*,*}", GLOB_BRACE|GLOB_ONLYDIR) as $sub_dir)
 	foreach (glob("$dir/{*}", GLOB_BRACE|GLOB_ONLYDIR) as $sub_dir)
 	{
 		$arr = find_file($sub_dir, $pattern);  // Resursive call
