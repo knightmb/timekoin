@@ -94,7 +94,7 @@ if($sql_num_results > 0)
 
 				if(empty($found_public_key_queue) == TRUE)
 				{
-					if($firewall_blocked == "1" || rand(1,4) != 2)// Mix outbound transaction broadcasting and regular polling
+					if($firewall_blocked == "1" || ($next_generation_cycle - time()) > 230)// Mix outbound transaction broadcasting and regular polling
 					{
 						if($attribute == "T" || $attribute == "G")
 						{
@@ -105,77 +105,98 @@ if($sql_num_results > 0)
 							ini_set('user_agent', 'Timekoin Server (Treasurer) v' . TIMEKOIN_VERSION);
 							ini_set('default_socket_timeout', 3); // Timeout for request in seconds
 							
-							$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND() LIMIT 1";
-							$sql_row = mysql_fetch_array(mysql_query($sql));
-							
-							$ip_address = $sql_row["IP_Address"];
-							$domain = $sql_row["domain"];
-							$subfolder = $sql_row["subfolder"];
-							$port_number = $sql_row["port_number"];
+							$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND()";
+							$sql_result = mysql_query($sql);
+							$sql_num_results = mysql_num_rows($sql_result);							
 
-							$qhash = $timestamp . base64_encode($public_key) . $crypt1 . $crypt2 . $crypt3 . $hash_check . $attribute;
-							$qhash = hash('md5', $qhash);
-
-							// Create map with request parameters
-							$params = array ('timestamp' => $timestamp, 
-								'public_key' => base64_encode($public_key), 
-								'crypt_data1' => $crypt1, 
-								'crypt_data2' => $crypt2, 
-								'crypt_data3' => $crypt3, 
-								'hash' => $hash_check, 
-								'attribute' => $attribute,
-								'qhash' => $qhash);
-							 
-							// Build Http query using params
-							$query = http_build_query($params);
-							 
-							// Create Http context details
-							$contextData = array (
-												 'method' => 'POST',
-												 'header' => "Connection: close\r\n".
-																 "Content-Length: ".strlen($query)."\r\n",
-												 'content'=> $query );
-							 
-							// Create context resource for our request
-							$context = stream_context_create (array ( 'http' => $contextData ));
-			
-							$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 5, "queueclerk.php?action=input_transaction", $context);
-
-							if($poll_peer == "OK")
+							// Broadcast to all active peers
+							for ($i = 0; $i < $sql_num_results; $i++)
 							{
-								// Insert to the peer remotely was accepted
-								switch($attribute)
+								$sql_row = mysql_fetch_array($sql_result);
+								$ip_address = $sql_row["IP_Address"];
+								$domain = $sql_row["domain"];
+								$subfolder = $sql_row["subfolder"];
+								$port_number = $sql_row["port_number"];
+
+								$qhash = $timestamp . base64_encode($public_key) . $crypt1 . $crypt2 . $crypt3 . $hash_check . $attribute;
+								$qhash = hash('md5', $qhash);
+
+								// Create map with request parameters
+								$params = array ('timestamp' => $timestamp, 
+									'public_key' => base64_encode($public_key), 
+									'crypt_data1' => $crypt1, 
+									'crypt_data2' => $crypt2, 
+									'crypt_data3' => $crypt3, 
+									'hash' => $hash_check, 
+									'attribute' => $attribute,
+									'qhash' => $qhash);
+								 
+								// Build Http query using params
+								$query = http_build_query($params);
+								 
+								// Create Http context details
+								$contextData = array (
+													 'method' => 'POST',
+													 'header' => "Connection: close\r\n".
+																	 "Content-Length: ".strlen($query)."\r\n",
+													 'content'=> $query );
+								 
+								// Create context resource for our request
+								$context = stream_context_create (array ( 'http' => $contextData ));
+				
+								$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 5, "queueclerk.php?action=input_transaction", $context);
+
+								if($poll_peer == "OK")
 								{
-									case "G":
-										write_log("Timekoin Generation Insert Accepted by remote Peer $ip_address$domain:$port_number/$subfolder", "G");
-										break;
+									// Insert to the peer remotely was accepted
+									switch($attribute)
+									{
+										case "G":
+											write_log("Timekoin Generation Insert Accepted by remote Peer $ip_address$domain:$port_number/$subfolder", "G");
+											break;
 
-									case "T":
-										write_log("Standard Transaction Insert Accepted by remote Peer $ip_address$domain:$port_number/$subfolder", "T");
-										break;							
+										case "T":
+											write_log("Standard Transaction Insert Accepted by remote Peer $ip_address$domain:$port_number/$subfolder", "T");
+											break;							
+									}
 								}
-							}
-							else
-							{
-								// Failed, probably due to no inbound connection allowed at the other peer
-								switch($attribute)
+								else if($poll_peer == "DUP")
 								{
-									case "G":
-										write_log("Timekoin Generation Insert FAILED for remote Peer $ip_address$domain:$port_number/$subfolder", "G");
-										break;
+									// Insert to the peer, transaction is already there
+									switch($attribute)
+									{
+										case "G":
+											write_log("Timekoin Generation Already Exist at remote Peer $ip_address$domain:$port_number/$subfolder", "G");
+											break;
 
-									case "T":
-										write_log("Standard Transaction Insert FAILED for remote Peer $ip_address$domain:$port_number/$subfolder", "T");
-										break;							
-								}
-							} // Failure/Success Check & Logging
+										case "T":
+											write_log("Standard Transaction Already Exist at remote Peer $ip_address$domain:$port_number/$subfolder", "T");
+											break;							
+									}
+								}								
+								else
+								{
+									// Failed, probably due to no inbound connection allowed at the other peer
+									switch($attribute)
+									{
+										case "G":
+											write_log("Timekoin Generation Insert FAILED for remote Peer $ip_address$domain:$port_number/$subfolder", "G");
+											break;
 
-						} // Transaction Attribute Check
+										case "T":
+											write_log("Standard Transaction Insert FAILED for remote Peer $ip_address$domain:$port_number/$subfolder", "T");
+											break;							
+									}
+								} // Failure/Success Check & Logging
+
+							} // Transaction Attribute Check
+
+						} // Cycle through Active Peers END
 
 					} // Firewall Mode Check
 					else
 					{
-						if($firewall_blocked == "0") // Firewall blocked peers can not queue generation/request
+						if($firewall_blocked == "0") // Firewall blocked peers can not queue election request
 						{
 							// Full Internet exposure					
 							$sql = "INSERT INTO `transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
