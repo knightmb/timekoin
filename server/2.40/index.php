@@ -985,6 +985,8 @@ if($_SESSION["valid_login"] == TRUE)
 //****************************************************************************
 	if($_GET["menu"] == "options")
 	{
+		$body_text;
+		
 		if($_GET["password"] == "change")
 		{
 			if(empty($_POST["current_username"]) == FALSE && empty($_POST["new_username"]) == FALSE && empty($_POST["confirm_username"]) == FALSE)
@@ -1184,7 +1186,89 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 		}
 
-		$quick_info = 'You may change the username and password individually or at the same time.
+		if($_GET["hashcode"] == "manage")
+		{
+			$hashcode;
+			$hashcode_name;
+			$hashcode_permissions;
+			$counter = 1;
+
+			$body_text = '<table border="0"><tr><td style="width:230px"><FORM ACTION="index.php?menu=options&hashcode=save" METHOD="post"></td></tr>';
+
+			while($counter <= 5)
+			{
+				$hashcode = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'hashcode$counter' LIMIT 1"),0,"field_data");
+				$hashcode_name = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'hashcode" . $counter . "_name' LIMIT 1"),0,"field_data");
+				$hashcode_permissions = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'hashcode" . $counter . "_permissions' LIMIT 1"),0,"field_data");
+
+				$body_text .= '<tr><td valign="bottom" align="right"><strong>Name: <input type="text" name="name'. $counter . '" size="15" value="' . $hashcode_name . '"/>
+				</br>Hashcode: <input type="text" name="hashcode'. $counter . '" size="15" value="' . $hashcode . '"/></strong></td>
+				<td><input type="checkbox" name="pk_balance'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_balance", TRUE) . '>pk_balance 
+				<input type="checkbox" name="pk_gen_amt'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_gen_amt", TRUE) . '>pk_gen_amt 
+				<input type="checkbox" name="pk_recv'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_recv", TRUE) . '>pk_recv 
+				<input type="checkbox" name="send_tk'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "send_tk", TRUE) . '>send_tk
+				</td></tr><tr><td colspan="2"><hr></hr></td></tr>';
+
+				$counter++;
+			}
+
+			$body_text .= '</table><input type="submit" name="save_hashcode" value="Save Settings" /></FORM>';
+		}
+
+		if($_GET["hashcode"] == "save")
+		{
+			// Clear all hashcode settings to allow new ones to be created
+			mysql_query("DELETE FROM `options` WHERE `options`.`field_name` LIKE 'hashcode%'");
+			$counter = 1;
+			$hash_code;
+
+			// Filter symbols that might lead to an HTML access error
+			$symbols = array("'", "%", "*", "$", "`", "?", "=", "~", "&", "#", "/", "+",);
+
+			while($counter <= 5)
+			{
+				if(empty($_POST["hashcode$counter"]) == FALSE)
+				{
+					// Sanitization of message !#$%&'*+-/=?^_`{|}~@.[] allowed 
+					$hash_code = filter_var($_POST["hashcode$counter"], FILTER_SANITIZE_EMAIL);
+					$hash_code = str_replace($symbols, "", $hash_code);
+
+					// Save hashcode
+					mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('hashcode$counter', '$hash_code')");
+
+					// Save hashcode name
+					mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('hashcode" . $counter . "_name', '" . $_POST["name$counter"] . "')");
+
+					// Save permissions
+					mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) 
+						VALUES ('hashcode" . $counter . "_permissions', '" . generate_hashcode_permissions($_POST["pk_balance$counter"], 
+						$_POST["pk_gen_amt$counter"], 
+						$_POST["pk_recv$counter"], 
+						$_POST["send_tk$counter"]) . "')");
+				}
+
+				$counter++;
+			}
+
+			$body_text = '<font color="blue">Settings Saved</font>';
+		}
+
+		if($_GET["upgrade"] == "check" || $_GET["upgrade"] == "doupgrade")
+		{
+			$quick_info = 'This will check with the Timekoin website for any software updates that can be installed.';
+
+			home_screen("Upgrade Timekoin Software", options_screen3(), "" , $quick_info);
+		}
+		else if($_GET["hashcode"] == "manage" || $_GET["hashcode"] == "save")
+		{
+			$quick_info = 'Manage which Hash Codes have access to desired external functions of the server API.</br></br>
+				Hash Codes can only be letters and/or numbers with no spaces.';
+
+			home_screen("Manage Hash Code Access", $body_text, NULL , $quick_info);
+		}
+		else
+		{		
+			$quick_info = 'You may change the username and password individually or at the same time.
 			</br></br>Remember that usernames and passwords are Case Sensitive.
 			</br></br><strong>Generate New Keys</strong> will create a new random key pair and save it in the database.
 			</br></br><strong>Check for Updates</strong> will check for any program updates that can be downloaded directly into Timekoin.
@@ -1192,12 +1276,6 @@ if($_SESSION["valid_login"] == TRUE)
 			</br></br><strong>Super Peer Limit</strong> controls how many transaction cycles other peers will download in bulk.
 			</br></br><strong>PHP File Path</strong> is for Windows OS users having path issues with PHP. Leave blank to turn off this option.';
 
-		if($_GET["upgrade"] == "check" || $_GET["upgrade"] == "doupgrade")
-		{
-			home_screen("Options & Personal Settings", options_screen3(), "" , $quick_info);			
-		}
-		else
-		{		
 			home_screen("Options & Personal Settings", options_screen(), $body_text , $quick_info);
 		}
 		exit;
@@ -1975,7 +2053,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$default_public_key_font = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
 		}
 
-		$my_public_key = mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,"field_data");
+		$my_public_key = my_public_key();
 
 		// Find the last X amount of transactions sent to this public key
 		$sql = "SELECT * FROM `transaction_queue` ORDER BY `transaction_queue`.`timestamp` DESC";
@@ -2028,7 +2106,14 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 				else
 				{
-					$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:195px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
+					if($public_key_trans_to == $my_public_key)
+					{
+						$public_key_to = '<td class="style2"><font color="green">My Public Key</font>';
+					}
+					else
+					{
+						$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:195px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
+					}
 				}
 				
 				$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:195px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans) . '</p>';

@@ -125,7 +125,7 @@ if($_GET["action"] == "input_transaction")
 		else
 		{
 			// A qhash is required to verify the transaction now
-			write_log("Queue Hash Data MisMatch from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
+			write_log("Queue Hash Data Empty from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
 			$hash_match = "mismatch";
 		}
 

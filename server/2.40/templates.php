@@ -222,7 +222,6 @@ function options_screen2()
 $home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
 $peerlist_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_peerlist' LIMIT 1"),0,"field_data");
 $queue_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_queue' LIMIT 1"),0,"field_data");
-$server_hash_code = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_hash_code' LIMIT 1"),0,"field_data");
 $php_location = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,"field_data");
 $super_peer = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'super_peer' LIMIT 1"),0,"field_data");
 
@@ -236,13 +235,11 @@ return '<table border="0"><tr><td><strong>Refresh Rates (seconds) for Realtime P
 Home: <input type="text" name="home_update" size="2" value="' . $home_update . '" /></br>
 Peerlist: <input type="text" name="peerlist_update" size="2" value="' . $peerlist_update . '" /></br>
 Transaction Queue: <input type="text" name="queue_update" size="2" value="' . $queue_update . '" /></td></tr>
-<tr><td><hr></hr></td></tr>
-<tr><td align="right"><strong>Hash Code for External Access [0 = disable]</br><font color="blue">Must be letters or numbers, no spaces.</font></strong></br><input type="text" name="hash_code" size="32" value="' . $server_hash_code . '" /></td></tr>
-<tr><td><hr></hr></td></tr>
+<tr><td></td></tr>
 <tr><td align="right"><strong>Super Peer Limit (10 - 500)</strong></br><input type="text" name="super_peer_limit" size="3" value="' . $super_peer . '" /></br></td></tr>
-<tr><td align="right">
-<input type="submit" name="Submit2" value="Save Options" />
-</FORM>
+<tr><td align="right"><input type="submit" name="Submit2" value="Save Options" /></FORM></td></tr>
+<tr><td><hr></hr></td></tr>
+<tr><td align="right"><FORM ACTION="index.php?menu=options&hashcode=manage" METHOD="post"><input type="submit" name="Submit3" value="Manage Hash Code Access" /></FORM></td>
 </td><td style="width:215px" valign="bottom" align="right"><FORM ACTION="index.php?menu=options&upgrade=check" METHOD="post"><input type="submit" name="Submit3" value="Check for Updates" /></FORM></td></tr>
 </table>
 <table border="0"><tr><td colspan="2" style="width:630px"><hr></hr></td></tr>

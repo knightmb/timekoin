@@ -1814,6 +1814,7 @@ function do_updates()
 	return $update_status;
 }
 //***********************************************************************************
+//***********************************************************************************
 function find_file($dir, $pattern)
 {
 	// Get a list of all matching files in the current directory
@@ -1829,5 +1830,106 @@ function find_file($dir, $pattern)
 	return $files;
 }
 //***********************************************************************************
+//***********************************************************************************
+function generate_hashcode_permissions($pk_balance, $pk_gen_amt, $pk_recv, $send_tk)
+{
+	$permissions_number;
 
+	if($pk_balance == 1) { $permissions_number += 1; }
+	if($pk_gen_amt == 1) { $permissions_number += 2; }
+	if($pk_recv == 1) { $permissions_number += 4; }
+	if($send_tk == 1) { $permissions_number += 8; }			
+
+	return $permissions_number;
+}
+//***********************************************************************************
+function check_hashcode_permissions($permissions_number, $pk_api_check, $checkbox = FALSE)
+{
+	// Check send_tk
+	if($pk_api_check == "send_tk")
+	{ 
+		if($permissions_number >= 8) // Permission Granted
+		{
+			if($checkbox == TRUE)
+			{
+				return "CHECKED";
+			}
+			else
+			{
+				return TRUE;
+			}
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	if($permissions_number - 8 >= 0) { $permissions_number -= 8; } // Subtract Active Permission
+
+	// Check pk_recv
+	if($pk_api_check == "pk_recv")
+	{ 
+		if($permissions_number >= 4) // Permission Granted
+		{
+			if($checkbox == TRUE)
+			{
+				return "CHECKED";
+			}
+			else
+			{
+				return TRUE;
+			}
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	if($permissions_number - 4 >= 0) { $permissions_number -= 4; } // Subtract Active Permission
+
+	// Check pk_gen_amt
+	if($pk_api_check == "pk_gen_amt")
+	{ 
+		if($permissions_number >= 2) // Permission Granted
+		{
+			if($checkbox == TRUE)
+			{
+				return "CHECKED";
+			}
+			else
+			{
+				return TRUE;
+			}
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	if($permissions_number - 2 >= 0) { $permissions_number -= 2; } // Subtract Active Permission
+
+	// Check pk_balance
+	if($pk_api_check == "pk_balance") // Permission Granted
+	{ 
+		if($permissions_number >= 1) // Permission Granted
+		{
+			if($checkbox == TRUE)
+			{
+				return "CHECKED";
+			}
+			else
+			{
+				return TRUE;
+			}
+		}
+		else
+		{
+			return FALSE;
+		}
+	}	
+
+	// Some other error
+	return FALSE;
+}
+//***********************************************************************************
 ?>
