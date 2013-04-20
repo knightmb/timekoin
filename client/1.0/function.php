@@ -1,9 +1,26 @@
 <?PHP
+define("TRANSACTION_EPOCH","1338576300"); // Epoch timestamp: 1338576300
 define("TIMEKOIN_VERSION","1.0"); // This Timekoin Software Version
 define("NEXT_VERSION","tk_client_current_version0.txt"); // What file to check for future versions
 
 error_reporting(E_ERROR | E_CORE_ERROR | E_COMPILE_ERROR); // Disable most error reporting except for fatal errors
 ini_set('display_errors', FALSE);
+//***********************************************************************************
+//***********************************************************************************
+function transaction_cycle($past_or_future = 0, $transacton_cycles_only = 0)
+{
+	$transacton_cycles = (time() - TRANSACTION_EPOCH) / 300;
+
+	// Return the last transaction cycle
+	if($transacton_cycles_only == TRUE)
+	{
+		return intval($transacton_cycles + $past_or_future);
+	}
+	else
+	{
+		return TRANSACTION_EPOCH + (intval($transacton_cycles + $past_or_future) * 300);
+	}
+}
 //***********************************************************************************
 //***********************************************************************************
 function is_domain_valid($domain)
@@ -76,6 +93,30 @@ function write_log($message, $type)
 }
 //***********************************************************************************
 //***********************************************************************************
+function queue_hash()
+{
+	$sql = "SELECT public_key, crypt_data1, crypt_data2, crypt_data3, hash, attribute FROM `transaction_queue` ORDER BY `hash`";
+	$sql_result = mysql_query($sql);
+	$sql_num_results = mysql_num_rows($sql_result);
+
+	$transaction_queue_hash = 0;
+
+	if($sql_num_results > 0)
+	{
+		for ($i = 0; $i < $sql_num_results; $i++)
+		{
+			$sql_row = mysql_fetch_array($sql_result);
+			$transaction_queue_hash .= $sql_row["public_key"] . $sql_row["crypt_data1"] . 
+				$sql_row["crypt_data2"] . $sql_row["crypt_data3"] . $sql_row["hash"] . $sql_row["attribute"];
+		}
+		
+		$transaction_queue_hash = hash('md5', $transaction_queue_hash);
+	}
+
+	return $transaction_queue_hash;
+}
+//***********************************************************************************
+//***********************************************************************************
 function my_public_key()
 {
 	return mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,1);
@@ -136,7 +177,7 @@ function tk_encrypt($key, $crypt_data)
 {
 	if(function_exists('openssl_private_encrypt') == TRUE)
 	{
-		openssl_private_encrypt($crypt_data, $encrypted_data, $key);
+		openssl_private_encrypt($crypt_data, $encrypted_data, $key, OPENSSL_PKCS1_PADDING);
 	}
 	else
 	{
@@ -151,12 +192,25 @@ function tk_encrypt($key, $crypt_data)
 }
 //***********************************************************************************
 //***********************************************************************************
-function tk_decrypt($key, $crypt_data)
+function tk_decrypt($key, $crypt_data, $skip_openssl_check = FALSE)
 {
-	if(function_exists('openssl_public_decrypt') == TRUE)
+	$decrypt;
+
+	if($skip_openssl_check == TRUE || function_exists('openssl_public_decrypt') == TRUE)
 	{
 		// Use OpenSSL if it is working
-		openssl_public_decrypt($crypt_data, $decrypt, $key);
+		openssl_public_decrypt($crypt_data, $decrypt, $key, OPENSSL_PKCS1_PADDING);
+
+		if(empty($decrypt) == TRUE)
+		{
+			// OpenSSL can't decrypt this for some reason
+			// Use built in Code instead
+			require_once('RSA.php');
+			$rsa = new Crypt_RSA();
+			$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
+			$rsa->loadKey($key);
+			$decrypt = $rsa->decrypt($crypt_data);
+		}
 	}
 	else
 	{
@@ -211,7 +265,7 @@ function check_crypt_balance($public_key)
 		$subfolder = $sql_row["subfolder"];
 		$port_number = $sql_row["port_number"];
 		$code = $sql_row["code"];
-		$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 20, "queueclerk.php?action=key_balance&hash=$code", $context));
+		$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 20, "api.php?action=pk_balance&hash=$code", $context));
 
 		if(empty($poll_peer) == FALSE)
 		{
@@ -317,46 +371,93 @@ function db_cache_balance($my_public_key)
 //***********************************************************************************
 function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $amount, $message)
 {
-	$arr1 = str_split($send_to_public_key, 181);
+	if(empty($my_private_key) == TRUE || empty($my_public_key) == TRUE || empty($send_to_public_key) == TRUE)
+	{
+		return FALSE;
+	}
 
+	ini_set('user_agent', 'Timekoin Client v' . TIMEKOIN_VERSION);
+	ini_set('default_socket_timeout', 3); // Timeout for request in seconds
+
+	$arr1 = str_split($send_to_public_key, 181);
 	$encryptedData1 = tk_encrypt($my_private_key, $arr1[0]);
 	$encryptedData64_1 = base64_encode($encryptedData1);	
 
 	$encryptedData2 = tk_encrypt($my_private_key, $arr1[1]);
 	$encryptedData64_2 = base64_encode($encryptedData2);
 
-	if(empty($message) == TRUE)
-	{
-		$transaction_data = "AMOUNT=$amount---TIME=" . time() . "---HASH=" . hash('sha256', $encryptedData64_1 . $encryptedData64_2);
-	}
-	else
-	{
-		// Sanitization of message
-		// Filter symbols that might lead to a transaction hack attack
-		$symbols = array("|", "?", "="); // SQL + URL
-		$message = str_replace($symbols, "", $message);
+	// Sanitization of message
+	// Filter symbols that might lead to a transaction hack attack
+	$symbols = array("|", "?", "="); // SQL + URL
+	$message = str_replace($symbols, "", $message);
 
-		// Trim any message to 64 characters max and filter any sql
-		$message = filter_sql(substr($message, 0, 64));
-		
-		$transaction_data = "AMOUNT=$amount---TIME=" . time() . "---HASH=" . hash('sha256', $encryptedData64_1 . $encryptedData64_2) . "---MSG=$message";
-	}
-
+	// Trim any message to 64 characters max and filter any sql
+	$message = filter_sql(substr($message, 0, 64));
+	$transaction_data = "AMOUNT=$amount---TIME=" . time() . "---HASH=" . hash('sha256', $encryptedData64_1 . $encryptedData64_2) . "---MSG=$message";
 	$encryptedData3 = tk_encrypt($my_private_key, $transaction_data);
 
 	$encryptedData64_3 = base64_encode($encryptedData3);
 	$triple_hash_check = hash('sha256', $encryptedData64_1 . $encryptedData64_2 . $encryptedData64_3);
 
-	$sql = "INSERT INTO `my_transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`) VALUES 
-		('" . time() . "', '$my_public_key', '$encryptedData64_1', '$encryptedData64_2' , '$encryptedData64_3', '$triple_hash_check' , 'T')";
+	$timestamp = transaction_cycle(0) + 1;	
+	$attribute = "T";
 
-	if(mysql_query($sql) == TRUE)
+	$qhash = $timestamp . base64_encode($my_public_key) . $encryptedData64_1 . $encryptedData64_2 . $encryptedData64_3 . $triple_hash_check . $attribute;
+	$qhash = hash('md5', $qhash);
+
+	// Create map with request parameters
+	$params = array ('timestamp' => $timestamp, 
+		'public_key' => base64_encode($my_public_key), 
+		'crypt_data1' => $encryptedData64_1, 
+		'crypt_data2' => $encryptedData64_2, 
+		'crypt_data3' => $encryptedData64_3, 
+		'hash' => $triple_hash_check, 
+		'attribute' => $attribute,
+		'qhash' => $qhash);
+	 
+	// Build Http query using params
+	$query = http_build_query($params);
+	 
+	// Create Http context details
+	$contextData = array (
+						 'method' => 'POST',
+						 'header' => "Connection: close\r\n".
+										 "Content-Length: ".strlen($query)."\r\n",
+						 'content'=> $query );
+	 
+	// Create context resource for our request
+	$context = stream_context_create (array ( 'http' => $contextData ));
+
+	// Try all Active Peer Servers
+	$sql_result = mysql_query("SELECT * FROM `active_peer_list` ORDER BY RAND()");
+	$sql_num_results = mysql_num_rows($sql_result);
+	$return_results;
+
+	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		// Success code
+		$sql_row = mysql_fetch_array($sql_result);
+		$ip_address = $sql_row["IP_Address"];
+		$domain = $sql_row["domain"];
+		$subfolder = $sql_row["subfolder"];
+		$port_number = $sql_row["port_number"];
+		$code = $sql_row["code"];
+
+		$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 5, "api.php?action=send_tk&hash=$code", $context));
+
+		if($poll_peer == "OK")
+		{
+			$return_results = TRUE;
+		}
+	}
+
+	if($return_results == TRUE)
+	{
+		// Success in sending transaction
 		return TRUE;
 	}
 	else
 	{
+		// No peer servers accepted the transaction data :(
 		return FALSE;
 	}
 }

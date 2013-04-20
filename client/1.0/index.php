@@ -95,7 +95,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$display_balance = db_cache_balance(my_public_key());
 		
-		$text_bar = '<table border="0"><tr><td style="width:260px"><strong>Current Balance: <font color="green">' . number_format($display_balance) . '</font></strong></td></tr>
+		$text_bar = '<table border="0"><tr><td style="width:260px"><strong>Current Billfold Balance: <font color="green">' . number_format($display_balance) . '</font></strong></td></tr>
 			<tr></table>';
 
 		$quick_info = 'Current Status...';
@@ -129,7 +129,7 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 			
 			$sql = "UPDATE `active_peer_list` SET `last_heartbeat` = UNIX_TIMESTAMP() ,`join_peer_list` = $join_peer_list , `failed_sent_heartbeat` = '0',
-				`IP_Address` = '" . $_POST["edit_ip"] . "', `domain` = '" . $_POST["edit_domain"] . "', `subfolder` = '" . $_POST["edit_subfolder"] . "', `port_number` = '" . $_POST["edit_port"] . "'
+				`IP_Address` = '" . $_POST["edit_ip"] . "', `domain` = '" . $_POST["edit_domain"] . "', `subfolder` = '" . $_POST["edit_subfolder"] . "', `port_number` = '" . $_POST["edit_port"] . "' , `code` = '" . $_POST["edit_code"] . "'
 				WHERE `active_peer_list`.`IP_Address` = '" . $_POST["update_ip"] . "' AND `active_peer_list`.`domain` = '" . $_POST["update_domain"] . "' LIMIT 1";
 			mysql_query($sql);
 		}
@@ -137,8 +137,8 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["save"] == "newpeer" && empty($_POST["edit_port"]) == FALSE)
 		{
 			// Manually insert new peer
-			$sql = "INSERT INTO `active_peer_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`last_heartbeat` ,`join_peer_list` ,`failed_sent_heartbeat`)
-				VALUES ('" . $_POST["edit_ip"] . "', '" . $_POST["edit_domain"] . "', '" . $_POST["edit_subfolder"] . "', '" . $_POST["edit_port"] . "', UNIX_TIMESTAMP() , UNIX_TIMESTAMP() , '0')";
+			$sql = "INSERT INTO `active_peer_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`last_heartbeat` ,`join_peer_list` ,`failed_sent_heartbeat` , `code`)
+				VALUES ('" . $_POST["edit_ip"] . "', '" . $_POST["edit_domain"] . "', '" . $_POST["edit_subfolder"] . "', '" . $_POST["edit_port"] . "', UNIX_TIMESTAMP() , UNIX_TIMESTAMP() , '0', '" . $_POST["edit_code"] . "')";
 			mysql_query($sql);
 		}
 
@@ -173,16 +173,17 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["edit"] == "peer")
 		{
 			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
-				<th>Domain</th><th>Subfolder</th><th>Port Number</th><th></th><th></th></tr>';
+				<th>Domain</th><th>Subfolder</th><th>Port Number</th><th>Code</th><th></th><th></th></tr>';
 
 			if($_GET["type"] == "new")
 			{
 				// Manually add a peer
 				$body_string .= '<FORM ACTION="index.php?menu=peerlist&save=newpeer" METHOD="post"><tr>
 				 <td class="style2"><input type="text" name="edit_ip" size="13" /></td>
-				 <td class="style2"><input type="text" name="edit_domain" size="20" /></td>
+				 <td class="style2"><input type="text" name="edit_domain" size="14" /></td>
 				 <td class="style2"><input type="text" name="edit_subfolder" size="10" /></td>
 				 <td class="style2"><input type="text" name="edit_port" size="5" /></td>
+				 <td class="style2"><input type="text" name="edit_code" size="5" value="guest"/></td>				 
 				 <td><input type="image" src="img/save-icon.gif" title="Save New Peer" name="submit1" border="0"></FORM></td><td>
 				 <FORM ACTION="index.php?menu=peerlist" METHOD="post">
 				 <input type="image" src="img/hr.gif" title="Cancel" name="submit2" border="0"></FORM>
@@ -243,9 +244,10 @@ if($_SESSION["valid_login"] == TRUE)
 				$body_string .= '<FORM ACTION="index.php?menu=peerlist&save=peer" METHOD="post"><tr>
 				<td class="style2"><input type="text" name="edit_ip" size="13" value="' . $sql_row["IP_Address"] . '" /></br></br>
 				<select name="perm_peer"><option value="expires" ' . $perm_peer2 . '>Purge When Inactive</option><option value="perm" ' . $perm_peer1 . '>Permanent Peer</select></td>
-				<td class="style2" valign="top"><input type="text" name="edit_domain" size="20" value="' . $sql_row["domain"] . '" /></td>
+				<td class="style2" valign="top"><input type="text" name="edit_domain" size="14" value="' . $sql_row["domain"] . '" /></td>
 				<td class="style2" valign="top"><input type="text" name="edit_subfolder" size="10" value="' . $sql_row["subfolder"] . '" /></td>
-				<td class="style2" valign="top"><input type="text" name="edit_port" size="5" value="' . $sql_row["port_number"] . '" /></td>			 
+				<td class="style2" valign="top"><input type="text" name="edit_port" size="5" value="' . $sql_row["port_number"] . '" /></td>
+				<td class="style2" valign="top"><input type="text" name="edit_code" size="5" value="' . $sql_row["code"] . '" /></td>
 				<td valign="top"><input type="hidden" name="update_ip" value="' . $sql_row["IP_Address"] . '">
 				<input type="hidden" name="update_domain" value="' . $sql_row["domain"] . '">
 				<input type="image" src="img/save-icon.gif" title="Save Settings" name="submit1" border="0"></FORM></td>
@@ -377,7 +379,7 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 			else
 			{
-				home_screen('Network Peer List', $peer_number_bar, $body_string , $quick_info);
+				home_screen('Network Peer List', $peer_number_bar, $body_string , $quick_info, $home_update);
 			}
 		}
 		exit;
@@ -644,7 +646,7 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 		}
 
-		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong>Current Server Balance: <font color="green">' . number_format($display_balance) . '</font></strong></td></tr>
+		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong>Current Billfold Balance: <font color="green">' . number_format($display_balance) . '</font></strong></td></tr>
 			<tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
 			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
 
@@ -1132,7 +1134,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$default_public_key_font = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
 		}
 
-		$my_public_key = mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,"field_data");
+		$my_public_key = my_public_key();
 
 		// Find the last X amount of transactions sent to this public key
 		$sql = "SELECT * FROM `transaction_queue` ORDER BY `transaction_queue`.`timestamp` DESC";
@@ -1185,7 +1187,14 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 				else
 				{
-					$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:195px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
+					if($public_key_trans_to == $my_public_key)
+					{
+						$public_key_to = '<td class="style2"><font color="green">My Public Key</font>';
+					}
+					else
+					{
+						$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:195px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
+					}
 				}
 				
 				$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:195px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans) . '</p>';
@@ -1213,7 +1222,7 @@ if($_SESSION["valid_login"] == TRUE)
 		
 		$home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
 
-		home_screen('Transactions in Network Queue', $text_bar, $body_string , $quick_info);
+		home_screen('Transactions in Network Queue', $text_bar, $body_string , $quick_info, $home_update);
 		exit;
 	}
 //****************************************************************************	
@@ -1227,7 +1236,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string = '<strong>Checking All Database Tables</strong></font></br></br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Check Database Results</th></tr><tr><td>';
 
-			$db_check = mysql_query("CHECK TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
+			$db_check = mysql_query("CHECK TABLE `activity_logs` , `my_keys` , `my_transaction_queue` , `options` , `transaction_queue`");
 			$db_check_info = mysql_fetch_array($db_check);
 			$db_check_count = 0;
 			
@@ -1258,7 +1267,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string = '<strong>Repair All Database Tables</strong></font></br></br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Repair Database Results</th></tr><tr><td>';
 
-			$db_check = mysql_query("REPAIR TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
+			$db_check = mysql_query("REPAIR TABLE `activity_logs` , `my_keys` , `my_transaction_queue` , `options` , `transaction_queue`");
 			$db_check_info = mysql_fetch_array($db_check);
 			$db_check_count = 0;
 			
@@ -1289,7 +1298,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string = '<strong>Optimize All Database Tables</strong></font></br></br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Optimize Database Results</th></tr><tr><td>';
 
-			$db_check = mysql_query("OPTIMIZE TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
+			$db_check = mysql_query("OPTIMIZE TABLE `activity_logs` , `my_keys` , `my_transaction_queue` , `options` , `transaction_queue`");
 			$db_check_info = mysql_fetch_array($db_check);
 			$db_check_count = 0;
 			
