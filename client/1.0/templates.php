@@ -25,7 +25,7 @@ function login_screen($error_message)
 </div>
 <div id="center-column">
 <div class="top-bar">
-<h1>Timekoin Server Login</h1>
+<h1>Timekoin Client Billfold Login</h1>
 </div>
 <div class="select-bar">
 <FORM ACTION="index.php?action=login" METHOD="post">
@@ -102,7 +102,7 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 <!DOCTYPE html>
 <html>
 <head>
-<title>Timekoin Server Administration</title>
+<title>Timekoin Billfold Administration</title>
 <link rel="icon" type="image/x-icon" href="img/favicon.ico" />
 <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
 <link  href="css/admin.css" rel="stylesheet" type="text/css" />
@@ -267,7 +267,7 @@ function backup_body($private_key, $public_key, $cancel_private = FALSE, $cancel
 		// Redo menu to show cancel or complete buttons
 		$public_cancel_button = '<FORM ACTION="index.php?menu=backup" METHOD="post"><input type="submit" value="Cancel" /></FORM>';
 		$form_action2 = '<FORM ACTION="index.php?menu=backup&dorestore=public" METHOD="post">';
-		$are_you_sure2 = '</br><font color="red"><strong>This will over-write the Public Key</br> for your server. Are you sure?</strong></font>';		
+		$are_you_sure2 = '</br><font color="red"><strong>This will over-write the Public Key</br> for your billfold. Are you sure?</strong></font>';		
 	}
 	else
 	{

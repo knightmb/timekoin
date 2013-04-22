@@ -226,6 +226,118 @@ function tk_decrypt($key, $crypt_data, $skip_openssl_check = FALSE)
 }
 //***********************************************************************************
 //***********************************************************************************
+function transaction_history_query($to_from, $last = 1)
+{
+	// Ask one of my active peers
+	ini_set('user_agent', 'Timekoin Client v' . TIMEKOIN_VERSION);
+	ini_set('default_socket_timeout', 5); // Timeout for request in seconds
+
+	$my_public_key = base64_encode(my_public_key());
+
+	if($to_from == 1)
+	{
+		$params = array ('public_key' => $my_public_key, 
+		'last' => $last, 
+		'sent_to' => '1');
+	}
+	
+	if($to_from == 2)
+	{
+		$params = array ('public_key' => $my_public_key, 
+		'last' => $last, 
+		'sent_from' => '1');
+	}
+
+	// Build Http query using params
+	$query = http_build_query($params);
+	 
+	// Create Http context details
+	$contextData = array (
+						 'method' => 'POST',
+						 'header' => "Connection: close\r\n".
+										 "Content-Length: ".strlen($query)."\r\n",
+						 'content'=> $query );
+	 
+	// Create context resource for our request
+	$context = stream_context_create (array ( 'http' => $contextData ));
+
+	$sql_result = mysql_query("SELECT * FROM `active_peer_list` ORDER BY RAND()");
+	$sql_num_results = mysql_num_rows($sql_result);
+
+	for ($i = 0; $i < $sql_num_results; $i++)
+	{
+		$sql_row = mysql_fetch_array($sql_result);
+		$ip_address = $sql_row["IP_Address"];
+		$domain = $sql_row["domain"];
+		$subfolder = $sql_row["subfolder"];
+		$port_number = $sql_row["port_number"];
+		$code = $sql_row["code"];
+		$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 200000, "api.php?action=pk_history&hash=$code", $context));
+
+		if(empty($poll_peer) == FALSE)
+		{
+			return $poll_peer;
+		}
+	}
+
+	// No peers would respond
+	write_log("No Peers Answered the Transaction History Poll", "GU");
+	return;
+}
+//***********************************************************************************
+//***********************************************************************************
+function verify_public_key($public_key)
+{
+	if(empty($public_key) == TRUE)
+	{
+		return 0;
+	}
+
+	// Ask one of my active peers
+	ini_set('user_agent', 'Timekoin Client v' . TIMEKOIN_VERSION);
+	ini_set('default_socket_timeout', 3); // Timeout for request in seconds
+
+	// Create map with request parameters
+	$params = array ('public_key' => base64_encode($public_key));
+	 
+	// Build Http query using params
+	$query = http_build_query($params);
+	 
+	// Create Http context details
+	$contextData = array (
+						 'method' => 'POST',
+						 'header' => "Connection: close\r\n".
+										 "Content-Length: ".strlen($query)."\r\n",
+						 'content'=> $query );
+	 
+	// Create context resource for our request
+	$context = stream_context_create (array ( 'http' => $contextData ));
+
+	$sql_result = mysql_query("SELECT * FROM `active_peer_list` ORDER BY RAND()");
+	$sql_num_results = mysql_num_rows($sql_result);
+
+	for ($i = 0; $i < $sql_num_results; $i++)
+	{
+		$sql_row = mysql_fetch_array($sql_result);
+		$ip_address = $sql_row["IP_Address"];
+		$domain = $sql_row["domain"];
+		$subfolder = $sql_row["subfolder"];
+		$port_number = $sql_row["port_number"];
+		$code = $sql_row["code"];
+		$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 2, "api.php?action=pk_valid&hash=$code", $context));
+
+		if($poll_peer == 1)
+		{
+			return TRUE;
+		}
+	}
+
+	// No peers would respond
+	write_log("No Peers Answered the Public Key Verification Poll", "GU");
+	return;
+}
+//***********************************************************************************
+//***********************************************************************************
 function check_crypt_balance($public_key)
 {
 	if(empty($public_key) == TRUE)
@@ -256,7 +368,6 @@ function check_crypt_balance($public_key)
 	$sql_result = mysql_query("SELECT * FROM `active_peer_list` ORDER BY RAND()");
 	$sql_num_results = mysql_num_rows($sql_result);
 
-	// First Contact Server Format
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
 		$sql_row = mysql_fetch_array($sql_result);
@@ -267,13 +378,15 @@ function check_crypt_balance($public_key)
 		$code = $sql_row["code"];
 		$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 20, "api.php?action=pk_balance&hash=$code", $context));
 
-		if(empty($poll_peer) == FALSE)
+		if(empty($poll_peer) == FALSE || $poll_peer === 0)
 		{
 			return $poll_peer;
 		}
 	}
 
-	return 0;
+	// No peers would respond
+	write_log("No Peers Answered the Public Key Balance Poll", "GU");
+	return;
 }
 //***********************************************************************************
 //***********************************************************************************
@@ -341,13 +454,19 @@ function db_cache_balance($my_public_key)
 
 	if($my_server_balance === FALSE)
 	{
-		// Does not exist, needs to be created
-		mysql_query("INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`)VALUES ('0', 'server_timekoin_balance', '0')");
-
 		// Update record with the latest balance
 		$display_balance = check_crypt_balance($my_public_key);
 
-		mysql_query("UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$display_balance' WHERE `balance_index`.`public_key_hash` = 'server_timekoin_balance' LIMIT 1");
+		if($display_balance == NULL)
+		{
+			// No response from any active peers
+		}
+		else
+		{
+			// Does not exist, needs to be created
+			mysql_query("INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`)VALUES ('0', 'server_timekoin_balance', '0')");
+			mysql_query("UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$display_balance' WHERE `balance_index`.`public_key_hash` = 'server_timekoin_balance' LIMIT 1");
+		}
 	}
 	else
 	{
@@ -357,7 +476,15 @@ function db_cache_balance($my_public_key)
 			// Update record with the latest balance
 			$display_balance = check_crypt_balance($my_public_key);
 
-			mysql_query("UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$display_balance' WHERE `balance_index`.`public_key_hash` = 'server_timekoin_balance' LIMIT 1");
+			if($display_balance == NULL)
+			{
+				// No response from any active peers				
+				mysql_query("DELETE FROM `balance_index` WHERE `balance_index`.`public_key_hash` = 'server_timekoin_balance'");
+			}
+			else
+			{
+				mysql_query("UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$display_balance' WHERE `balance_index`.`public_key_hash` = 'server_timekoin_balance' LIMIT 1");
+			}
 		}
 		else
 		{
@@ -446,6 +573,7 @@ function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $a
 
 		if($poll_peer == "OK")
 		{
+			write_log("Peer: [$ip_address$domain:$port_number/$subfolder] Accepted the Transaction for Processing", "T");
 			$return_results = TRUE;
 		}
 	}
@@ -458,6 +586,7 @@ function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $a
 	else
 	{
 		// No peer servers accepted the transaction data :(
+		write_log("No Peers Accepted the Transaction", "T");
 		return FALSE;
 	}
 }
@@ -542,7 +671,7 @@ function check_for_updates()
 
 	$update_check1 = 'Checking for Updates....</br></br>';
 
-	$poll_version = file_get_contents("https://timekoin.com/tkupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
+	$poll_version = file_get_contents("https://timekoin.com/tkcliupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
 
 	if($poll_version > TIMEKOIN_VERSION && empty($poll_version) == FALSE)
 	{
@@ -592,7 +721,7 @@ function check_update_script($script_name, $script, $php_script_file, $poll_vers
 {
 	$update_status_return = NULL;
 	
-	$poll_sha = file_get_contents("https://timekoin.com/tkupdates/v$poll_version/$script.sha", FALSE, $context, NULL, 64);
+	$poll_sha = file_get_contents("https://timekoin.com/tkcliupdates/v$poll_version/$script.sha", FALSE, $context, NULL, 64);
 
 	if(empty($poll_sha) == FALSE)
 	{
@@ -617,7 +746,7 @@ function check_update_script($script_name, $script, $php_script_file, $poll_vers
 //***********************************************************************************
 function get_update_script($php_script, $poll_version, $context)
 {
-	return file_get_contents("https://timekoin.com/tkupdates/v$poll_version/$php_script.txt", FALSE, $context, NULL);
+	return file_get_contents("https://timekoin.com/tkcliupdates/v$poll_version/$php_script.txt", FALSE, $context, NULL);
 }
 //***********************************************************************************
 //***********************************************************************************
@@ -672,7 +801,7 @@ function do_updates()
 	ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
 	ini_set('default_socket_timeout', 30); // Timeout for request in seconds
 
-	$poll_version = file_get_contents("https://timekoin.com/tkupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
+	$poll_version = file_get_contents("https://timekoin.com/tkcliupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
 
 	$update_status = 'Starting Update Process...</br></br>';
 
@@ -738,7 +867,7 @@ function do_updates()
 		$update_status .= run_script_update("Function Storage (function.php)", "function", $poll_version, $context);
 		//****************************************************
 
-		$finish_message = file_get_contents("https://timekoin.com/tkupdates/v$poll_version/ZZZfinish.txt", FALSE, $context, NULL);
+		$finish_message = file_get_contents("https://timekoin.com/tkcliupdates/v$poll_version/ZZZfinish.txt", FALSE, $context, NULL);
 		$update_status .= '</br>' . $finish_message;
 	}
 	else

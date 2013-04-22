@@ -94,8 +94,17 @@ if($_SESSION["valid_login"] == TRUE)
 		$body_string = $body_string . '</table>';
 
 		$display_balance = db_cache_balance(my_public_key());
-		
-		$text_bar = '<table border="0"><tr><td style="width:260px"><strong>Current Billfold Balance: <font color="green">' . number_format($display_balance) . '</font></strong></td></tr>
+
+		if($display_balance == '')
+		{
+			$display_balance = '<font color="red">NA</font>';
+		}
+		else
+		{
+			$display_balance = number_format($display_balance);
+		}
+
+		$text_bar = '<table border="0"><tr><td style="width:260px"><strong>Current Billfold Balance: <font color="green">' . $display_balance . '</font></strong></td></tr>
 			<tr></table>';
 
 		$quick_info = 'Current Status...';
@@ -144,7 +153,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["save"] == "firstcontact")
 		{
-			// Wipe Current First Contact Peers List and Save the New List
+			// Wipe Current First Contact Servers List and Save the New List
 			$field_numbers = intval($_POST["field_numbers"]);
 
 			if($field_numbers > 0)
@@ -351,7 +360,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			$body_string .= '<tr><td colspan="2"><FORM ACTION="index.php?menu=peerlist&show=reserve" METHOD="post"><input type="submit" value="Show Reserve Peers"/></FORM></td>
 				<td colspan="3"><FORM ACTION="index.php?menu=peerlist&edit=peer&type=new" METHOD="post"><input type="submit" value="Add New Peer"/></FORM></td>
-				<td colspan="4"><FORM ACTION="index.php?menu=peerlist&edit=peer&type=firstcontact" METHOD="post"><input type="submit" value="First Contact Peers"/></FORM></td></tr></table></div>';
+				<td colspan="4"><FORM ACTION="index.php?menu=peerlist&edit=peer&type=firstcontact" METHOD="post"><input type="submit" value="First Contact Servers"/></FORM></td></tr></table></div>';
 
 			$sql = "SELECT * FROM `new_peers_list`";
 			$new_peers = mysql_num_rows(mysql_query($sql));		
@@ -512,7 +521,7 @@ if($_SESSION["valid_login"] == TRUE)
 //****************************************************************************
 	if($_GET["menu"] == "send")
 	{
-		$my_public_key = mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,"field_data");
+		$my_public_key = my_public_key();
 
 		if($_GET["check"] == "key")
 		{
@@ -541,19 +550,9 @@ if($_SESSION["valid_login"] == TRUE)
 				{
 					// Check if public key is valid by searching for any transactions
 					// that reference it
-					$valid_key_test = mysql_result(mysql_query("SELECT public_key_from, public_key_to FROM `transaction_history` WHERE `public_key_from` = '$public_key_to' OR `public_key_to` = '$public_key_to' LIMIT 1"),0,0);
+					$valid_key_test = verify_public_key($public_key_to);
 
-					if(empty($valid_key_test) == TRUE)
-					{
-						// No key history, might not be valid
-						$message = $_POST["send_message"];
-						$display_balance = db_cache_balance($my_public_key);
-						$body_string = send_receive_body($public_key_64, $send_amount, TRUE, NULL, $message);
-						$body_string .= '<hr></hr><font color="red"><strong>This public key may not be valid as it has no existing history of transactions.</br>
-							There is no way to recover timekoins sent to the wrong public key.</br>
-							Click "Send Timekoins" to send now.</strong></font></br></br>';
-					}
-					else
+					if($valid_key_test == TRUE)
 					{
 						// Key has a valid history
 						$message = $_POST["send_message"];
@@ -562,6 +561,16 @@ if($_SESSION["valid_login"] == TRUE)
 						$body_string .= '<hr></hr><font color="blue"><strong>This public key is valid.</font></br>
 							<font color="red">There is no way to recover timekoins sent to the wrong public key.</font></br>
 							<font color="blue">Click "Send Timekoins" to send now.</strong></font></br></br>';
+					}
+					else
+					{
+						// No key history, might not be valid
+						$message = $_POST["send_message"];
+						$display_balance = db_cache_balance($my_public_key);
+						$body_string = send_receive_body($public_key_64, $send_amount, TRUE, NULL, $message);
+						$body_string .= '<hr></hr><font color="red"><strong>This public key may not be valid as it has no existing history of transactions.</br>
+							There is no way to recover timekoins sent to the wrong public key.</br>
+							Click "Send Timekoins" to send now.</strong></font></br></br>';
 					}
 				} // End self check
 			} // End balance check
@@ -596,7 +605,7 @@ if($_SESSION["valid_login"] == TRUE)
 					else
 					{
 						// Now it's time to send the transaction
-						$my_private_key = mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_private_key' LIMIT 1"),0,"field_data");
+						$my_private_key = my_private_key();
 
 						if(send_timekoins($my_private_key, $my_public_key, $public_key_to, $send_amount, $message) == TRUE)
 						{
@@ -618,7 +627,7 @@ if($_SESSION["valid_login"] == TRUE)
 			{
 				if($_GET["easykey"] == "grab")
 				{
-					ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
+					ini_set('user_agent', 'Timekoin Client (GUI) v' . TIMEKOIN_VERSION);
 					ini_set('default_socket_timeout', 10); // Timeout for request in seconds
 					$message = $_POST["send_message"];
 					$easy_key = filter_sql($_POST["easy_key"]); // Filter SQL just in case
@@ -646,7 +655,16 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 		}
 
-		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong>Current Billfold Balance: <font color="green">' . number_format($display_balance) . '</font></strong></td></tr>
+		if($display_balance == '')
+		{
+			$display_balance = '<font color="red">NA</font>';
+		}
+		else
+		{
+			$display_balance = number_format($display_balance);
+		}
+
+		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong>Current Billfold Balance: <font color="green">' . $display_balance . '</font></strong></td></tr>
 			<tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
 			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
 
@@ -663,455 +681,141 @@ if($_SESSION["valid_login"] == TRUE)
 	if($_GET["menu"] == "history")
 	{
 		$my_public_key = my_public_key();
-		set_time_limit(120);
 
-		if($_GET["trans_browse"] == "open")
+		// Standard History View
+		if($_GET["receive"] == "listmore" || $_GET["send"] == "listmore")
 		{
-			set_time_limit(300);
-			
-			//Open Transaction Browser
-			if($_POST["show_more"] > 0)
+			if(empty($_GET["send"]) == TRUE)
 			{
-				$show_last = $_POST["show_more"];
+				$show_last = $_POST["show_more_receive"];
+				$hide_send = TRUE;
 			}
 			else
 			{
-				$show_last = 10; // Default number of last items to show
-			}			
-
-			// Check if these graphic files exist
-			if(file_exists("img/timekoin_green.png") == TRUE)
-			{
-				// Use graphic
-				$timekoin_green = TRUE;			
+				$show_last = $_POST["show_more_send"];
+				$hide_receive = TRUE;				
 			}
-
-			if(file_exists("img/timekoin_blue.png") == TRUE)
-			{
-				// Use graphic
-				$timekoin_blue = TRUE;			
-			}			
-
-			$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transaction Cycles</strong>';
-
-			// Start the Transaction Browser section
-			$body_string .= '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Transaction Cycle</th>
-				<th>Transactions</th></tr>';
-
-			// How many transactions back from the present time to display?
-			$show_last_counter = $show_last;
-			$counter = -1; // Transaction back from present cycle
-
-			while($show_last_counter > 0)
-			{
-				$start_transaction_cycle = transaction_cycle($counter);
-				$end_transaction_cycle = transaction_cycle($counter + 1);
-				$jump_to_transaction = transaction_cycle($counter + 5);
-
-				$sql = "SELECT * FROM `transaction_history` WHERE `timestamp` >= '$start_transaction_cycle' AND `timestamp` < '$end_transaction_cycle'";
-				$sql_result = mysql_query($sql);
-				$sql_num_results = mysql_num_rows($sql_result);
-
-				if($_POST["highlight_cycle"] - 1500 == $start_transaction_cycle)
-				{
-					$body_string .= '<tr><td class="style2"><p style="font-size: 12px;"><h9 id="' . $start_transaction_cycle . '"></h9><font color="blue">' . $start_transaction_cycle . '</br>' . unix_timestamp_to_human($start_transaction_cycle) . '</font></p></td>
-						<td class="style2"><table border="0" cellspacing="0" cellpadding="0"><tr>';
-				}
-				else
-				{
-					$body_string .= '<tr><td class="style2"><p style="font-size: 12px;"><h9 id="' . $start_transaction_cycle . '"></h9>' . $start_transaction_cycle . '</br>' . unix_timestamp_to_human($start_transaction_cycle) . '</p></td>
-						<td class="style2"><table border="0" cellspacing="0" cellpadding="0"><tr>';
-				}
-
-				$koin_kounter = 0;
-				$row_count_limit = 12;
-
-				if($sql_num_results > 1)
-				{
-					// Build row with icons
-					for ($i = 0; $i < $sql_num_results; $i++)
-					{
-						$sql_row = mysql_fetch_array($sql_result);
-
-						if($koin_kounter >= $row_count_limit)
-						{
-							$body_string .= '</tr><tr>';
-							$koin_kounter = 0;
-						}
-
-						// Transaction Amount
-						$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($sql_row["crypt_data3"]));
-
-						$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
-
-						if($sql_row["attribute"] == 'G')
-						{
-							if($timekoin_green == TRUE)
-							{
-								$body_string .= '<td><FORM ACTION="index.php?menu=history&examine=transaction" METHOD="post">
-									<input type="hidden" name="show_more" value="' . $show_last . '">
-									<input type="hidden" name="trans_cycle" value="' . $jump_to_transaction . '">
-									<input type="hidden" name="timestamp" value="' . $sql_row["timestamp"] . '">
-									<input type="hidden" name="hash" value="' . $sql_row["hash"] . '">
-									<input type="image" src="img/timekoin_green.png" title="Amount: ' . $transaction_amount . '" name="submit2" border="0"></FORM></td>';
-							}
-							else
-							{
-								$body_string .= '<td style="background-color:#c8ffc8"><FORM ACTION="index.php?menu=history&examine=transaction" METHOD="post">
-									<input type="hidden" name="show_more" value="' . $show_last . '">
-									<input type="hidden" name="trans_cycle" value="' . $jump_to_transaction . '">
-									<input type="hidden" name="timestamp" value="' . $sql_row["timestamp"] . '">
-									<input type="hidden" name="hash" value="' . $sql_row["hash"] . '">
-									<input type="image" src="img/timekoin_logo.png" width="25" height="25" title="Amount: ' . $transaction_amount . '" name="submit2" border="0"></FORM></td>';
-							}
-
-							$koin_kounter++;
-						}
-
-						if($sql_row["attribute"] == 'T')
-						{
-							if($timekoin_blue == TRUE)
-							{
-								$body_string .= '<td><FORM ACTION="index.php?menu=history&examine=transaction" METHOD="post">
-									<input type="hidden" name="show_more" value="' . $show_last . '">
-									<input type="hidden" name="trans_cycle" value="' . $jump_to_transaction . '">
-									<input type="hidden" name="timestamp" value="' . $sql_row["timestamp"] . '">
-									<input type="hidden" name="hash" value="' . $sql_row["hash"] . '">
-									<input type="image" src="img/timekoin_blue.png" title="Amount: ' . $transaction_amount . '" name="submit2" border="0"></FORM></td>';
-							}
-							else
-							{
-								$body_string .= '<td style="background-color:#b2b2ff"><FORM ACTION="index.php?menu=history&examine=transaction" METHOD="post">
-									<input type="hidden" name="show_more" value="' . $show_last . '">
-									<input type="hidden" name="trans_cycle" value="' . $jump_to_transaction . '">
-									<input type="hidden" name="timestamp" value="' . $sql_row["timestamp"] . '">
-									<input type="hidden" name="hash" value="' . $sql_row["hash"] . '">
-									<input type="image" src="img/timekoin_logo.png" width="25" height="25" title="Amount: ' . $transaction_amount . '" name="submit2" border="0"></FORM></td>';
-							}
-
-							$koin_kounter++;
-						}
-					}
-				}
-				else
-				{
-					$body_string .= 'No Transactions';
-				}
-
-				$body_string .= '</tr></table></td></tr>';
-				$counter--;
-				$show_last_counter--;
-			}
-
-			$body_string .= '<tr><FORM ACTION="index.php?menu=history&trans_browse=open" METHOD="post">
-				<td colspan="2" align="left"><input type="text" size="5" name="show_more" value="' . $show_last .'" /><input type="submit" name="Submit1" value="Show Last" /></FORM></td></tr>';
-
-			$body_string .= '</table></div>';
-
-			if($timekoin_green == TRUE)
-			{
-				$color_key1 = '<td><img src="img/timekoin_green.png" /></td>';
-			}
-			else
-			{
-				$color_key1 = '<td style="background-color:#c8ffc8"><img src="img/timekoin_logo.png" width="25" height="25" /></td>';
-			}
-
-			if($timekoin_blue == TRUE)
-			{
-				$color_key2 = '<td><img src="img/timekoin_blue.png" /></td>';
-			}
-			else
-			{
-				$color_key2 = '<td style="background-color:#b2b2ff"><img src="img/timekoin_logo.png" width="25" height="25" /></td>';
-			}
-
-			$text_bar = '<table border="0" cellspacing="0" cellpadding="0"><tr><td style="width:125px;"><strong>Color Chart:</strong></td>
-				<td>New Currency</td>' . $color_key1 . '
-				<td style="width:115px;" align="right">Transaction</td>' . $color_key2 . '
-				</tr></table>';
-			$quick_info = '<strong>Transaction History Browser</strong> allows the user to get a quick visual glance of past transactions.</br></br>
-				The color code graphic shows various types of transactions.</br></br>
-				Hovering the cursor over the icon will show the transaction amount.</br></br>
-				Clicking the icon will display the full details of the selected transaction.';
-
-			home_screen('Transaction History (Browser)', $text_bar, $body_string , $quick_info);
-			exit;
-		}
-		else if($_GET["examine"] == "transaction")
-		{
-			// Examine Transaction Details
-			$sql = "SELECT * FROM `transaction_history` WHERE `timestamp` = '" . $_POST["timestamp"] . "' AND `hash` = '" . $_POST["hash"] . "'";
-			$sql_result = mysql_query($sql);			
-			$sql_row = mysql_fetch_array($sql_result);
-
-			$crypt1_data = tk_decrypt($sql_row["public_key_from"], base64_decode($sql_row["crypt_data1"]));
-			$crypt2_data = tk_decrypt($sql_row["public_key_from"], base64_decode($sql_row["crypt_data2"]));
-			$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($sql_row["crypt_data3"]));
-
-			$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
-			$timestamp_created = find_string("TIME=", "---HASH", $transaction_info);
-			$inside_message = find_string("---MSG=", "", $transaction_info, TRUE);
-
-			$inside_transaction_hash = find_string("HASH=", "", $transaction_info, TRUE);
-
-			// Check if a message is encoded in this data as well
-			if(strlen($inside_transaction_hash) != 64)
-			{
-				// A message is also encoded
-				$inside_transaction_hash = find_string("HASH=", "---MSG", $transaction_info);
-			}			
-			
-			if($sql_row["attribute"] == "T")
-			{
-				$body_string .= "<strong>Type:</strong> Transaction";
-			}
-			else if($sql_row["attribute"] == "G")
-			{
-				$body_string .= "<strong>Type:</strong> Currency Creation";
-			}			
-
-			$body_string .= "</br></br><strong>Amount:</strong> $transaction_amount";
-			$body_string .= "</br></br><strong>Created:</strong> ($timestamp_created) " . unix_timestamp_to_human($timestamp_created);
-			$body_string .= "</br></br><strong>Message:</strong> $inside_message";
-			$body_string .= "</br></br><strong>Inside Hash:</strong> $inside_transaction_hash";
-
-			// Check Inside Has for tampering comparison
-			$crypt_1_2_hash = hash('sha256', $sql_row["crypt_data1"] . $sql_row["crypt_data2"]);
-
-			if($inside_transaction_hash == $crypt_1_2_hash)
-			{
-				$body_string .= '</br><font color="green">(Match for Crypt Fields 1 & 2)</font>';
-			}
-			else
-			{
-				$body_string .= '</br><font color="red">(NO MATCH for Crypt Fields 1 & 2)</font>';
-			}
-
-			$body_string .= '<hr></hr><strong>Public Key From:</strong></br><p style="word-wrap:break-word;">' . base64_encode($sql_row["public_key_from"]) . '</p>';
-			
-			if($crypt1_data . $crypt2_data == $sql_row["public_key_to"])
-			{
-				$match_pub_key = '<font color="green">(Public Key Match for Crypt Fields 1 & 2)</font>';
-			}
-			else
-			{
-				$match_pub_key = '<font color="red">(Public Key NO MATCH for Crypt Fields 1 & 2)</font>';
-			}			
-			
-			$body_string .= '<hr></hr><strong>Public Key To:</strong> ' . $match_pub_key . '</br><p style="word-wrap:break-word;">' . base64_encode($sql_row["public_key_to"]) . '</p>';
-
-			$triple_hash_check = hash('sha256', $sql_row["crypt_data1"] . $sql_row["crypt_data2"] . $sql_row["crypt_data3"]);
-
-			if($triple_hash_check == $_POST["hash"])
-			{
-				$triple1 = '<font color="green">';
-				$triple2 = '</br>(Match for Crypt Fields 1,2,3)';
-			}
-			else
-			{
-				$triple1 = '<font color="red">';
-				$triple2 = '</br>(NO MATCH for Crypt Fields 1,2,3)';				
-			}
-
-			// Return Button
-			$body_string .= '<hr></hr><FORM ACTION="index.php?menu=history&trans_browse=open#' . $_POST["trans_cycle"] . '" METHOD="post">
-				<input type="hidden" name="show_more" value="' . $_POST["show_more"] . '">
-				<input type="hidden" name="highlight_cycle" value="' . $_POST["trans_cycle"] . '">				
-				<input type="submit" name="Submit5" value="Return to Transaction Browser" /></FORM><hr></hr>';
-
-			$text_bar = '<table border="0" cellspacing="0" cellpadding="0"><tr><td style="width:190px;"><strong>Timestamp:</strong> (' . $_POST["timestamp"] . 
-				')</td><td>' . unix_timestamp_to_human($_POST["timestamp"]) . '</td></tr>
-				<tr><td colspan="2"><strong>Hash:</strong>' . $triple1 . $_POST["hash"] . $triple2 . '</font></td></tr></table>';
-			$quick_info = '<strong>Timestamp</strong> represents when the transaction request to be recorded in the transaction history.</br></br>
-				<strong>Hash</strong> is included with the transaction to allow Timekoin to check if any of the encrypted fields have been tampered with.</br></br>
-				<strong>Created</strong> is when Timekoin generated the transaction.</br></br>
-				<strong>Message</strong> is any included text set by the user at the time of the transaction creation.</br></br>
-				<strong>Inside Hash</strong> is included to make sure the destination public key for the transfer has not been tampered with.</br></br>
-				<strong>Return to Transaction Browser</strong> will highlight in <font color="blue">blue</font>, the last transaction cycle this transaction came from.';
-
-			home_screen('Transaction History (Examine Transaction)', $text_bar, $body_string , $quick_info);
-			exit;
 		}
 		else
 		{
-			// Standard History View
-			if($_GET["receive"] == "listmore" || $_GET["send"] == "listmore")
+			$show_last = 5; // Default number of last items to show
+		}
+		
+		if($_GET["font"] == "public_key")
+		{
+			if(empty($_POST["font_size"]) == FALSE)
 			{
-				if(empty($_GET["send"]) == TRUE)
+				// Save value in database
+				$sql = "UPDATE `options` SET `field_data` = '" . $_POST["font_size"] . "' WHERE `options`.`field_name` = 'public_key_font_size' LIMIT 1";
+				mysql_query($sql);
+
+				$default_public_key_font = $_POST["font_size"];
+			}
+		}
+		else
+		{
+			$default_public_key_font = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
+		}
+
+		if($hide_receive == FALSE)
+		{
+			$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transactions <font color="green">Sent To</font> This Server</strong></br>
+				<FORM ACTION="index.php?menu=history&receive=listmore" METHOD="post"></br>
+				</br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
+				<th>Sent From</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
+
+			$history_data_to = transaction_history_query(1, $show_last);
+			$counter = 1;
+
+			while($counter <= 100) // 100 History Limit
+			{
+				$timestamp = find_string("---TIMESTAMP$counter=", "---FROM", $history_data_to);
+				$public_key_from = find_string("---FROM$counter=", "---AMOUNT", $history_data_to);
+				$amount = find_string("---AMOUNT$counter=", "---VERIFY", $history_data_to);					
+				$verify = find_string("---VERIFY$counter=", "---MESSAGE", $history_data_to);
+				$message = find_string("---MESSAGE$counter=", "---END$counter", $history_data_to);					
+
+				if(empty($timestamp) == TRUE && empty($amount) == TRUE)
 				{
-					$show_last = $_POST["show_more_receive"];
-					$hide_send = TRUE;
+					// No more data to search
+					break;
+				}
+
+				if($public_key_from == base64_encode($my_public_key))
+				{
+					// Self Generated
+					$public_key_from = '<td class="style2">Self Generated';
 				}
 				else
 				{
-					$show_last = $_POST["show_more_send"];
-					$hide_receive = TRUE;				
+					// Everyone else
+					$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:150px; font-size:' . $default_public_key_font . 'px;">' . $public_key_from . '</p>';
 				}
-			}
-			else
-			{
-				$show_last = 5; // Default number of last items to show
+
+				$body_string .= '<tr>
+				<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($timestamp) . '</p></td>' 
+				. $public_key_from . '</td>
+				<td class="style2"><p style="font-size: 11px;">' . $amount . '</p></td>
+				<td class="style2"><p style="font-size: 11px;">' . $verify . '</p></td>
+				<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $message . '</p></td></tr>';
+
+				$counter++;
 			}
 			
-			if($_GET["font"] == "public_key")
-			{
-				if(empty($_POST["font_size"]) == FALSE)
-				{
-					// Save value in database
-					$sql = "UPDATE `options` SET `field_data` = '" . $_POST["font_size"] . "' WHERE `options`.`field_name` = 'public_key_font_size' LIMIT 1";
-					mysql_query($sql);
+			$body_string .= '<tr><td colspan="5"><input type="text" size="5" name="show_more_receive" value="' . $show_last .'" /><input type="submit" name="Submit1" value="Show Last" /></FORM></td></tr>';
+			$body_string .= '</table></div>';
 
-					$default_public_key_font = $_POST["font_size"];
+		} // End hide check for receive
+
+		if($hide_send == FALSE)
+		{
+			$body_string .= '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transactions <font color="blue">Sent From</font> This Server</strong></br></br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
+				<th>Sent To</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
+
+			$history_data_to = transaction_history_query(2, $show_last);
+			$counter = 1;
+
+			while($counter <= 100) // 100 History Limit
+			{
+				$timestamp = find_string("---TIMESTAMP$counter=", "---TO", $history_data_to);
+				$public_key_to = find_string("---TO$counter=", "---AMOUNT", $history_data_to);
+				$amount = find_string("---AMOUNT$counter=", "---VERIFY", $history_data_to);					
+				$verify = find_string("---VERIFY$counter=", "---MESSAGE", $history_data_to);
+				$message = find_string("---MESSAGE$counter=", "---END$counter", $history_data_to);					
+
+				if(empty($timestamp) == TRUE && empty($amount) == TRUE)
+				{
+					// No more data to search
+					break;
 				}
+
+				$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:150px; font-size:' . $default_public_key_font . 'px;">' . $public_key_to . '</p>';
+
+				$body_string .= '<tr>
+				<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($timestamp) . '</p></td>' 
+				. $public_key_to . '</td>
+				<td class="style2"><p style="font-size: 11px;">' . $amount . '</p></td>
+				<td class="style2"><p style="font-size: 11px;">' . $verify . '</p></td>
+				<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $message . '</p></td></tr>';
+
+				$counter++;
 			}
-			else
-			{
-				$default_public_key_font = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
-			}
 
-			if($hide_receive == FALSE)
-			{
-				if(empty($_POST['filter']) == FALSE)
-				{
-					$filter_results;
-					$filter_GUI;
-					$sent_to_selected_trans;
-					$sent_to_selected_gen;
-					$sent_to_selected_both;
+			$body_string .= '<tr><td colspan="5"><FORM ACTION="index.php?menu=history&send=listmore" METHOD="post"><input type="text" size="5" name="show_more_send" value="' . $show_last .'" /><input type="submit" name="Submit2" value="Show Last" /></FORM></td></tr>';
+			$body_string .= '</table></div>';
 
-					switch($_POST['filter'])
-					{
-						case "transactions":
-							$filter_results = "AND `attribute` = 'T'";
-							$filter_GUI = "Transactions";
-							$sent_to_selected_trans = "SELECTED";
-							break;
+		} // End hide check for send
 
-						case "generation":
-							$filter_results = "AND `attribute` = 'G'";
-							$filter_GUI = "Currency Generation";
-							$sent_to_selected_gen = "SELECTED";
-							break;
+		$text_bar = '<FORM ACTION="index.php?menu=history&font=public_key" METHOD="post">
+			<table border="0" cellspacing="4"><tr><td><strong>Default Public Key Font Size</strong></td>
+			<td style="width:250px"><input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" /><input type="submit" name="Submit3" value="Save" /></FORM></td></tr></table>';
 
-						case "all":
-							$filter_GUI = "Transactions & Currency Generation";
-							$sent_to_selected_both = "SELECTED";
-							break;							
-					}
-				}
-				else
-				{
-					$filter_results = "AND `attribute` = 'T'";
-					$filter_GUI = "Transactions";
-					$sent_to_selected_trans = "SELECTED";
-				}
+		$quick_info = 'Verification Level represents how deep in the transaction history the transaction exist.</br></br>
+			The larger the number, the more time that all the peers have examined it and agree that it is a valid transaction.</br></br>
+			You can view up to 100 past transactions that have been sent from or sent to this public key.';
 
-				$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> ' . $filter_GUI . ' <font color="green">Sent To</font> This Server</strong></br>
-					<FORM ACTION="index.php?menu=history&receive=listmore" METHOD="post"><select name="filter"><option value="transactions" ' . $sent_to_selected_trans . '>Transactions Only</option>
-					<option value="generation" ' . $sent_to_selected_gen . '>Generation Only</option><option value="all" ' . $sent_to_selected_both . '>Both</option></option></select></br>
-					</br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
-					<th>Sent From</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
+		home_screen('Transaction History', $text_bar, $body_string , $quick_info);
 
-				// Find the last X transactions sent to this public key
-				$sql = "SELECT timestamp, public_key_from, public_key_to, crypt_data3 FROM `transaction_history` WHERE `public_key_to` = '$my_public_key' $filter_results ORDER BY `transaction_history`.`timestamp` DESC LIMIT $show_last";
-				$sql_result = mysql_query($sql);
-				$sql_num_results = mysql_num_rows($sql_result);
-
-				for ($i = 0; $i < $sql_num_results; $i++)
-				{
-					$sql_row = mysql_fetch_array($sql_result);
-					$crypt3 = $sql_row["crypt_data3"];
-
-					$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($crypt3));
-
-					$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
-
-					// Any encoded messages?
-					$inside_message = find_string("---MSG=", "", $transaction_info, TRUE);
-
-					if($sql_row["public_key_from"] == $my_public_key)
-					{
-						// Self Generated
-						$public_key_from = '<td class="style2">Self Generated';
-					}
-					else
-					{
-						// Everyone else
-						$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:150px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($sql_row["public_key_from"]) . '</p>';
-					}
-
-					// How many cycles back did this take place?
-					$cycles_back = intval((time() - $sql_row["timestamp"]) / 300);
-
-					$body_string .= '<tr>
-					<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>' 
-					. $public_key_from . '</td>
-					<td class="style2"><p style="font-size: 11px;">' . $transaction_amount . '</p></td>
-					<td class="style2"><p style="font-size: 11px;">' . $cycles_back . '</p></td>
-					<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $inside_message . '</p></td></tr>';
-				}
-				
-				$body_string .= '<tr><td colspan="5"><input type="text" size="5" name="show_more_receive" value="' . $show_last .'" /><input type="submit" name="Submit1" value="Show Last" /></FORM></td></tr>';
-
-				$body_string .= '</table></div>';
-
-			} // End hide check for receive
-
-			if($hide_send == FALSE)
-			{
-				$body_string .= '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transactions <font color="blue">Sent From</font> This Server</strong></br></br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
-					<th>Sent To</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
-
-				// Find the last X transactions from to this public key
-				$sql = "SELECT timestamp, public_key_from, public_key_to, crypt_data3 FROM `transaction_history` WHERE `public_key_from` = '$my_public_key' AND `attribute` = 'T' ORDER BY `transaction_history`.`timestamp` DESC LIMIT $show_last";
-				
-				$sql_result = mysql_query($sql);
-				$sql_num_results = mysql_num_rows($sql_result);
-
-				for ($i = 0; $i < $sql_num_results; $i++)
-				{
-					$sql_row = mysql_fetch_array($sql_result);
-					$crypt3 = $sql_row["crypt_data3"];
-
-					$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($crypt3));
-
-					$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
-
-					// Any encoded messages?
-					$inside_message = find_string("---MSG=", "", $transaction_info, TRUE);				
-
-					// Everyone else
-					$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:150px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($sql_row["public_key_to"]) . '</p>';
-
-					// How many cycles back did this take place?
-					$cycles_back = intval((time() - $sql_row["timestamp"]) / 300);
-
-					$body_string .= '<tr>
-					<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>' 
-					. $public_key_from . '</td>
-					<td class="style2"><p style="font-size: 11px;">' . $transaction_amount . '</p></td>
-					<td class="style2"><p style="font-size: 11px;">' . $cycles_back . '</p></td>
-					<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $inside_message . '</p></td></tr>';
-				}
-
-				$body_string .= '<tr><td colspan="5"><FORM ACTION="index.php?menu=history&send=listmore" METHOD="post"><input type="text" size="5" name="show_more_send" value="' . $show_last .'" /><input type="submit" name="Submit2" value="Show Last" /></FORM></td></tr>';
-
-				$body_string .= '</table></div>';
-
-			} // End hide check for send
-
-			$text_bar = '<FORM ACTION="index.php?menu=history&font=public_key" METHOD="post">
-				<table border="0" cellspacing="4"><tr><td><strong>Default Public Key Font Size</strong></td>
-				<td style="width:250px"><input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" /><input type="submit" name="Submit3" value="Save" /></FORM></td>
-				<td><FORM ACTION="index.php?menu=history&trans_browse=open" METHOD="post"><input type="submit" name="Submit4" value="Transaction Browser" /></FORM></td></tr></table>';
-
-			$quick_info = 'Verification Level represents how deep in the transaction history the transaction exist.</br></br>
-				The larger the number, the more time that all the peers have examined it and agree that it is a valid transaction.</br></br>
-				<strong>Transaction Browser</strong> will allow the user to examine the details of the transaction history.';
-
-			home_screen('Transaction History', $text_bar, $body_string , $quick_info);
-		} // Check for which type of History Mode to open
 		exit;
 	}
 //****************************************************************************
@@ -1343,20 +1047,26 @@ if($_SESSION["valid_login"] == TRUE)
 				$filter_by;
 				switch($_POST["filter"])
 				{
-					case "AA":
-						$filter_by = ' (Filtered by <strong>New Filter 1</strong>)';
+					case "GU":
+						$filter_by = ' (Filtered by <strong>Graphical User Interface</strong>)';
 						break;
 
-					case "BB":
-						$filter_by = ' (Filtered by <strong>New Filter 2</strong>)';
+					case "PL":
+						$filter_by = ' (Filtered by <strong>Peer List</strong>)';
 						break;
+
+					case "T":
+						$filter_by = ' (Filtered by <strong>Transactions</strong>)';
+						break;						
 				}
 			}
 			
 			$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> Log Events</strong>' . $filter_by . '<table border="0" cellspacing="5"><tr><td>
 				Filter By:</td><td><FORM ACTION="index.php?menu=tools&logs=listmore" METHOD="post"><select name="filter"><option value="all" SELECTED>Show All</option>
-				<option value="AA">Filter 1</option>
-				<option value="BB">Filter 2</option></select></td></tr></table>
+				<option value="GU">GUI - Graphical User Interface</option>
+				<option value="PL">Peer Processor</option>
+				<option value="T">Transactions</option>
+				</select></td></tr></table>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th><th>Log</th><th>Attribute</th></tr>';
 
 			// Find the last X amount of log events
@@ -1434,8 +1144,8 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 		}
 
-		$my_private_key = mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_private_key' LIMIT 1"),0,"field_data");
-		$my_public_key = mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,"field_data");
+		$my_private_key = my_private_key();
+		$my_public_key = my_public_key();
 
 		if($_GET["restore"] == "private" && empty($_POST["restore_private_key"]) == FALSE)
 		{
@@ -1470,8 +1180,6 @@ if($_SESSION["valid_login"] == TRUE)
 	{
 		unset($_SESSION["valid_login"]);
 		unset($_SESSION["login_username"]);
-		mysql_query("TRUNCATE `active_peer_list`");
-		mysql_query("TRUNCATE `new_peers_list`");
 		header("Location: index.php");
 		exit;		
 	}

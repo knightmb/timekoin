@@ -19,9 +19,6 @@ if(mysql_select_db(MYSQL_DATABASE) == FALSE)
 //***********************************************************************************
 function transaction_queue()
 {
-	write_log("Starting QueueClerk Task","PL");
-	$start_time = time();
-
 	$next_transaction_cycle = transaction_cycle(1);
 	$current_transaction_cycle = transaction_cycle(0);
 
@@ -33,8 +30,6 @@ function transaction_queue()
 
 	// Create a hash of my own transaction queue
 	$transaction_queue_hash = queue_hash();
-
-	write_log("Calculated Hash: $transaction_queue_hash","PL");
 
 	// How does my transaction queue compare to others?
 	// Ask all of my active peers
@@ -219,16 +214,12 @@ function transaction_queue()
 
 	} // End Compare Tallies
 
-	write_log("FINISHED QueueClerk Task (" . (time() - $start_time) . " seconds)","PL");
-	return time() - $start_time; // Return Time to Process
+	return;
 }
 //***********************************************************************************
 //***********************************************************************************
 function peer_list()
 {
-	write_log("Starting PeerList Task","PL");
-	$start_time = time();
-
 	ini_set('user_agent', 'Timekoin Client (Peerlist) v' . TIMEKOIN_VERSION);
 	ini_set('default_socket_timeout', 2); // Timeout for request in seconds
 	$max_active_peers = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,"field_data");
@@ -241,14 +232,15 @@ function peer_list()
 	$sql = "SELECT * FROM `new_peers_list`";
 	$new_peers = mysql_num_rows(mysql_query($sql));
 
-	if($active_peers == 0 && $new_peers == 0)
+	if($active_peers == 0)
 	{
 		// No active or new peers to poll from, start with the first contact servers
 		// and copy them to the new peer list
 		$sql = "SELECT * FROM `options` WHERE `field_name` = 'first_contact_server'";
-
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
+
+		write_log("Peer List Empty. Adding First Contact Servers.", "PL");
 
 		// First Contact Server Format
 		//---ip=192.168.0.1---domain=timekoin.com---subfolder=timekoin---port=80---code=guest---end
@@ -292,6 +284,7 @@ function peer_list()
 			$subfolder = $sql_row["subfolder"];
 			$port_number = $sql_row["port_number"];
 			$poll_failures = $sql_row["poll_failures"];
+			$code = $sql_row["code"];			
 
 			// Check to make sure that this peer is not already in our active peer list
 			$duplicate_check1 = mysql_result(mysql_query("SELECT * FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' LIMIT 1"),0,0);
@@ -325,48 +318,43 @@ function peer_list()
 
 			if($duplicate_peer == FALSE)
 			{
-				//Send a challenge hash to see if a timekoin server is active
-				$poll_challenge = rand(1, 999999);
-				$hash_solution = hash('crc32', $poll_challenge);
-
-				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 10, "peerlist.php?action=poll&challenge=$poll_challenge");
-
-				if($poll_peer == $hash_solution)
+				// Poll Peer for Access
+				if(empty($code) == TRUE)
 				{
-					//Got a response from an active Timekoin server
+					// Try guest access
+					$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 5, "api.php?action=tk_hash_status&hash=guest");
+				}
+				else
+				{
+					// Using custom code for peer
+					$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 5, "api.php?action=tk_hash_status&hash=$code");
+				}
 
-					// Ask to be added to the other server's peerlist
-					$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 10, "peerlist.php?action=join");
-
-					if($poll_peer == "OK")
+				if($poll_peer == TRUE)
+				{
+					// Add this peer to the active list
+					// Insert this peer into our active peer table
+					// Save only domain name if both IP and Domain exist
+					if(empty($domain) == FALSE)
 					{
-						// Add this peer to the active list
-
-							// Insert this peer into our active peer table
-							// Save only domain name if both IP and Domain exist
-							if(empty($domain) == FALSE)
-							{
-								$ip_address = NULL;
-							}
-
-							// Store new peer in active list
-							$sql = "INSERT INTO `active_peer_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`last_heartbeat` ,`join_peer_list` ,`failed_sent_heartbeat` ,`code`)
-					VALUES ('$ip_address', '$domain', '$subfolder', '$port_number', '" . time() . "', '" . time() . "', '0', 'guest');";
-
-							if(mysql_query($sql) == TRUE)
-							{
-								// Subtract 1 from the peer difference count
-								$peer_difference_count--;
-
-								write_log("Joined with Peer $ip_address:$domain:$port_number/$subfolder", "PL");
-							}
+						$ip_address = NULL;
 					}
-					else
-					{
-						// Server is either full or not responding, record polling failure
-						$poll_failures++;
 
-						mysql_query("UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+					if(empty($code) == TRUE)
+					{
+						$code = "guest";
+					}
+
+					// Store new peer in active list
+					$sql = "INSERT INTO `active_peer_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`last_heartbeat` ,`join_peer_list` ,`failed_sent_heartbeat` ,`code`)
+			VALUES ('$ip_address', '$domain', '$subfolder', '$port_number', '" . time() . "', '" . time() . "', '0', '$code');";
+
+					if(mysql_query($sql) == TRUE)
+					{
+						// Subtract 1 from the peer difference count
+						$peer_difference_count--;
+
+						write_log("Joined with Peer $ip_address:$domain:$port_number/$subfolder", "PL");
 					}
 				}
 				else
@@ -598,13 +586,10 @@ function peer_list()
 			$port_number = $sql_row["port_number"];
 			$poll_failures = $sql_row["poll_failures"];
 
-			//Send a challenge hash to see if a timekoin server is active
-			$poll_challenge = rand(1, 999999);
-			$hash_solution = hash('crc32', $poll_challenge);
+			// Query Server for valid Hashcode
+			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 5, "api.php?action=tk_hash_status&hash=$code");
 
-			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 10, "peerlist.php?action=poll&challenge=$poll_challenge");
-
-			if($poll_peer == $hash_solution)
+			if($poll_peer == TRUE)
 			{
 				//Got a response from an active Timekoin server
 				$sql = "UPDATE `new_peers_list` SET `poll_failures` = 0 WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1";
@@ -627,19 +612,15 @@ function peer_list()
 		mysql_query("DELETE QUICK FROM `new_peers_list` WHERE `poll_failures` > 30");
 	}
 
-	write_log("FINISHED PeerList Task (" . (time() - $start_time) . " seconds)","PL");
-	return time() - $start_time; // Return Time to Process
+	return;
 }
 //***********************************************************************************
 //***********************************************************************************
 function tk_client_task()
 {
 	// Repeat Task
-	echo "</br>Running Peerlist Task (" . peer_list() . " seconds)";
-	
-	echo "</br>Running QueueClerk Task (" . transaction_queue() . " seconds)";
-
-	echo "</br>Task Number:" . rand(1,99999);
+	peer_list();
+	transaction_queue();
 	return;
 }
 //***********************************************************************************
