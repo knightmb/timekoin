@@ -1205,7 +1205,9 @@ if($_SESSION["valid_login"] == TRUE)
 				</br>Hashcode: <input type="text" name="hashcode'. $counter . '" size="15" value="' . $hashcode . '"/></strong></td>
 				<td><input type="checkbox" name="pk_balance'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_balance", TRUE) . '>pk_balance 
 				<input type="checkbox" name="pk_gen_amt'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_gen_amt", TRUE) . '>pk_gen_amt 
-				<input type="checkbox" name="pk_recv'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_recv", TRUE) . '>pk_recv 
+				<input type="checkbox" name="pk_history'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_history", TRUE) . '>pk_history
+				<input type="checkbox" name="pk_recv'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_recv", TRUE) . '>pk_recv</br>
+				<input type="checkbox" name="pk_valid'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_valid", TRUE) . '>pk_valid
 				<input type="checkbox" name="send_tk'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "send_tk", TRUE) . '>send_tk
 				</td></tr><tr><td colspan="2"><hr></hr></td></tr>';
 
@@ -1244,7 +1246,9 @@ if($_SESSION["valid_login"] == TRUE)
 						VALUES ('hashcode" . $counter . "_permissions', '" . generate_hashcode_permissions($_POST["pk_balance$counter"], 
 						$_POST["pk_gen_amt$counter"], 
 						$_POST["pk_recv$counter"], 
-						$_POST["send_tk$counter"]) . "')");
+						$_POST["send_tk$counter"],
+						$_POST["pk_history$counter"],
+						$_POST["pk_valid$counter"]) . "')");
 				}
 
 				$counter++;

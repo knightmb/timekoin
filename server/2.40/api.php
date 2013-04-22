@@ -22,21 +22,56 @@ if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 	exit;
 }
 //***********************************************************************************
+$hash_code = filter_sql(substr($_GET["hash"], 0, 256)); // Limit to 256 Characters
+$hash_code = mysql_result(mysql_query("SELECT field_name FROM `options` WHERE `field_name` LIKE 'hashcode%' AND `field_data` = '$hash_code' LIMIT 1"),0,0);
+
+if(empty($hash_code) == TRUE)
+{
+	// Invalid Hashcode
+	// Log inbound IP activity x50 to Prevent Brute-Force Attacking
+	log_ip("AP", 50);
+	exit;
+}
+else
+{
+	$hash_permissions = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = '$hash_code" . "_permissions' LIMIT 1"),0,0);
+}
 //***********************************************************************************
-// Answer if Hashcode is accepted for any reason
+// Answer if Hashcode is valid for any reason
 if($_GET["action"] == "tk_hash_status")
 {
-	$hash_code = filter_sql(substr($_GET["hash"], 0, 256)); // Limit to 256 Characters
-	$hash_code = mysql_result(mysql_query("SELECT field_name FROM `options` WHERE `field_name` LIKE 'hashcode%' AND `field_data` = '$hash_code' LIMIT 1"),0,0);
+	echo TRUE;
 
-	if(empty($hash_code) == FALSE )
+	log_ip("AP");
+	exit;
+}
+//***********************************************************************************
+//***********************************************************************************
+// Answer public key balance request that match our hash code
+if($_GET["action"] == "pk_valid")
+{
+	if(check_hashcode_permissions($hash_permissions, "pk_valid") == TRUE)
 	{
-		// This hashcode is valid
-		echo TRUE;
+		// Is this public key valid with any history?
+		$public_key = substr($_POST["public_key"], 0, 500); // In case someone is trying to flood this function
+		$public_key = filter_sql(base64_decode($public_key));
+
+		$valid_key_test = mysql_result(mysql_query("SELECT public_key_from FROM `transaction_history` WHERE `public_key_from` = '$public_key' OR `public_key_to` = '$public_key' LIMIT 1"),0,0);
+
+		if(empty($valid_key_test) == FALSE)
+		{
+			// Valid Key with History
+			echo 1;
+		}
+		else
+		{
+			// No History for Key
+			echo 0;
+		}		
 	}
 
-	// Log inbound IP activity x50 to Prevent Brute-Force Checking
-	log_ip("AP", 50);
+	// Log inbound IP activity
+	log_ip("AP");
 	exit;
 }
 //***********************************************************************************
@@ -44,12 +79,7 @@ if($_GET["action"] == "tk_hash_status")
 // Answer public key balance request that match our hash code
 if($_GET["action"] == "pk_balance")
 {
-	$hash_code = filter_sql(substr($_GET["hash"], 0, 256)); // Limit to 256 Characters
-	$hash_code = mysql_result(mysql_query("SELECT field_name FROM `options` WHERE `field_name` LIKE 'hashcode%' AND `field_data` = '$hash_code' LIMIT 1"),0,0);
-
-	$hash_permissions = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = '$hash_code" . "_permissions' LIMIT 1"),0,0);
-
-	if(empty($hash_code) == FALSE && check_hashcode_permissions($hash_permissions, "pk_balance") == TRUE)
+	if(check_hashcode_permissions($hash_permissions, "pk_balance") == TRUE)
 	{
 		// Grab balance for public key and return value
 		$public_key = substr($_POST["public_key"], 0, 500); // In case someone is trying to flood this function
@@ -67,12 +97,7 @@ if($_GET["action"] == "pk_balance")
 // Place Transaction Data Directly into the "my_transaction_queue" table
 if($_GET["action"] == "send_tk")
 {
-	$hash_code = filter_sql(substr($_GET["hash"], 0, 256)); // Limit to 256 Characters
-	$hash_code = mysql_result(mysql_query("SELECT field_name FROM `options` WHERE `field_name` LIKE 'hashcode%' AND `field_data` = '$hash_code' LIMIT 1"),0,0);
-
-	$hash_permissions = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = '$hash_code" . "_permissions' LIMIT 1"),0,0);
-
-	if(empty($hash_code) == FALSE && check_hashcode_permissions($hash_permissions, "send_tk") == TRUE)
+	if(check_hashcode_permissions($hash_permissions, "send_tk") == TRUE)
 	{
 		$next_transaction_cycle = transaction_cycle(1);
 		$current_transaction_cycle = transaction_cycle(0);		
@@ -183,6 +208,115 @@ if($_GET["action"] == "send_tk")
 }
 //***********************************************************************************
 //***********************************************************************************
-// Log IP even when not using any functions
+// Answer public key balance request that match our hash code
+if($_GET["action"] == "pk_history")
+{
+	if(check_hashcode_permissions($hash_permissions, "pk_history") == TRUE)
+	{
+		// Output History of Transactions for the Public Key
+		$last = intval($_POST["last"]);
+		$public_key = filter_sql(base64_decode($_POST["public_key"]));
+		$sent_to = intval($_POST["sent_to"]);
+		$sent_from = intval($_POST["sent_from"]);		
+
+		if($last < 1 || $last > 100) { $last = 1; } // Sanitize Number of Transactions to Output
+
+		if($sent_to == TRUE) // Output all transactions sent TO this public key
+		{
+			// Find the last X transactions sent to this public key
+			$sql = "SELECT timestamp, public_key_from, crypt_data3  FROM `transaction_history` WHERE `public_key_to` = '$public_key' ORDER BY `transaction_history`.`timestamp` DESC";
+			$sql_result = mysql_query($sql);
+			$sql_num_results = mysql_num_rows($sql_result);
+			$counter = 1;
+			$result_limit = 0;
+
+			for ($i = 0; $i < $sql_num_results; $i++)
+			{
+				if($result_limit >= $last)
+				{
+					// Have the amount to show, break from the loop early
+					break;
+				}					
+				
+				$sql_row = mysql_fetch_array($sql_result);
+				$crypt3 = $sql_row["crypt_data3"];
+				$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($crypt3));
+				$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
+
+				// Any encoded messages?
+				$inside_message = find_string("---MSG=", "", $transaction_info, TRUE);
+
+				// How many cycles back did this take place?
+				$cycles_back = intval((time() - $sql_row["timestamp"]) / 300);
+
+				echo "---TIMESTAMP$counter=" . $sql_row["timestamp"];
+				echo "---FROM$counter=" . base64_encode($sql_row["public_key_from"]);
+				echo "---AMOUNT$counter=$transaction_amount";
+				echo "---VERIFY$counter=$cycles_back";
+				echo "---MESSAGE$counter=$inside_message---END$counter";
+
+				$counter++;
+				$result_limit++;
+			}
+
+			// Log inbound IP activity
+			log_ip("AP");
+			exit;		
+		
+		} // Sent to Public Key
+
+		if($sent_from == TRUE) // Output all transactions sent FROM this public key
+		{
+			// Find the last X transactions sent to this public key
+			$sql = "SELECT timestamp, public_key_to, crypt_data3  FROM `transaction_history` WHERE `public_key_from` = '$public_key' ORDER BY `transaction_history`.`timestamp` DESC";
+			$sql_result = mysql_query($sql);
+			$sql_num_results = mysql_num_rows($sql_result);
+			$counter = 1;
+			$result_limit = 0;
+
+			for ($i = 0; $i < $sql_num_results; $i++)
+			{
+				if($result_limit >= $last)
+				{
+					// Have the amount to show, break from the loop early
+					break;
+				}					
+				
+				$sql_row = mysql_fetch_array($sql_result);
+				$crypt3 = $sql_row["crypt_data3"];
+				$transaction_info = tk_decrypt($public_key, base64_decode($crypt3));
+				$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
+
+				// Any encoded messages?
+				$inside_message = find_string("---MSG=", "", $transaction_info, TRUE);
+
+
+				// How many cycles back did this take place?
+				$cycles_back = intval((time() - $sql_row["timestamp"]) / 300);
+
+				echo "---TIMESTAMP$counter=" . $sql_row["timestamp"];
+				echo "---TO$counter=" . base64_encode($sql_row["public_key_to"]);
+				echo "---AMOUNT$counter=$transaction_amount";
+				echo "---VERIFY$counter=$cycles_back";
+				echo "---MESSAGE$counter=$inside_message---END$counter";
+
+				$counter++;
+				$result_limit++;
+			}
+
+			// Log inbound IP activity
+			log_ip("AP");
+			exit;		
+		
+		} // Sent from Public Key
+
+	} // Valid Hashcode and Function Check
+
+	log_ip("AP");
+	exit;
+}
+//***********************************************************************************
+//***********************************************************************************
+// Log IP even when not using any functions, just in case
 log_ip("AP");
 ?>

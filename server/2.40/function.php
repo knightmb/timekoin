@@ -1831,20 +1831,64 @@ function find_file($dir, $pattern)
 }
 //***********************************************************************************
 //***********************************************************************************
-function generate_hashcode_permissions($pk_balance, $pk_gen_amt, $pk_recv, $send_tk)
+function generate_hashcode_permissions($pk_balance, $pk_gen_amt, $pk_recv, $send_tk, $pk_history, $pk_valid)
 {
 	$permissions_number;
 
 	if($pk_balance == 1) { $permissions_number += 1; }
 	if($pk_gen_amt == 1) { $permissions_number += 2; }
 	if($pk_recv == 1) { $permissions_number += 4; }
-	if($send_tk == 1) { $permissions_number += 8; }			
+	if($send_tk == 1) { $permissions_number += 8; }
+	if($pk_history == 1) { $permissions_number += 16; }
+	if($pk_valid == 1) { $permissions_number += 32; }
 
 	return $permissions_number;
 }
 //***********************************************************************************
 function check_hashcode_permissions($permissions_number, $pk_api_check, $checkbox = FALSE)
 {
+	// Check pk_valid
+	if($pk_api_check == "pk_valid")
+	{ 
+		if($permissions_number >= 32) // Permission Granted
+		{
+			if($checkbox == TRUE)
+			{
+				return "CHECKED";
+			}
+			else
+			{
+				return TRUE;
+			}
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	if($permissions_number - 32 >= 0) { $permissions_number -= 32; } // Subtract Active Permission
+
+	// Check pk_history
+	if($pk_api_check == "pk_history")
+	{ 
+		if($permissions_number >= 16) // Permission Granted
+		{
+			if($checkbox == TRUE)
+			{
+				return "CHECKED";
+			}
+			else
+			{
+				return TRUE;
+			}
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	if($permissions_number - 16 >= 0) { $permissions_number -= 16; } // Subtract Active Permission
+
 	// Check send_tk
 	if($pk_api_check == "send_tk")
 	{ 
