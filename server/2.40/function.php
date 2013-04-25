@@ -582,7 +582,6 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 		if($attribute == "T")
 		{
 			// Decrypt transaction information
-
 			if($GLOBALS['decrypt_mode'] == 2)
 			{
 				$rsa->loadKey($public_key_from);

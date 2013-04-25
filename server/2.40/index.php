@@ -1067,31 +1067,17 @@ if($_SESSION["valid_login"] == TRUE)
 					$sql = "UPDATE `options` SET `field_data` = '" . $_POST["queue_update"] . "' WHERE `options`.`field_name` = 'refresh_realtime_queue' LIMIT 1";
 					if(mysql_query($sql) == TRUE)
 					{
-						$hash_code = $_POST["hash_code"];
-						
-						// Sanitization of message !#$%&'*+-/=?^_`{|}~@.[] allowed 
-						$hash_code = filter_var($hash_code, FILTER_SANITIZE_EMAIL);
+						$super_peer_limit = intval($_POST["super_peer_limit"]);
 
-						// Filter symbols that might lead to an HTML access error
-						$symbols = array("'", "%", "*", "$", "`", "?", "=", "~", "&", "#", "/", "+",);
+						if($super_peer_limit > 0 && $super_peer_limit < 10) { $super_peer_limit = 10; }
+						if($super_peer_limit > 500) { $super_peer_limit = 500; }
 
-						$hash_code = str_replace($symbols, "", $hash_code);
-						
-						$sql = "UPDATE `options` SET `field_data` = '" . $hash_code . "' WHERE `options`.`field_name` = 'server_hash_code' LIMIT 1";
+						$sql = "UPDATE `options` SET `field_data` = '$super_peer_limit' WHERE `options`.`field_name` = 'super_peer' LIMIT 1";
 						if(mysql_query($sql) == TRUE)
-						{						
-							$super_peer_limit = intval($_POST["super_peer_limit"]);
-
-							if($super_peer_limit > 0 && $super_peer_limit < 10) { $super_peer_limit = 10; }
-							if($super_peer_limit > 500) { $super_peer_limit = 500; }
-
-							$sql = "UPDATE `options` SET `field_data` = '$super_peer_limit' WHERE `options`.`field_name` = 'super_peer' LIMIT 1";
-							if(mysql_query($sql) == TRUE)
-							{							
-								mysql_query("UPDATE `main_loop_status` SET `field_data` = '$super_peer_limit' WHERE `main_loop_status`.`field_name` = 'super_peer' LIMIT 1");
-								$refresh_change = TRUE;
-							}							
-						}						
+						{							
+							mysql_query("UPDATE `main_loop_status` SET `field_data` = '$super_peer_limit' WHERE `main_loop_status`.`field_name` = 'super_peer' LIMIT 1");
+							$refresh_change = TRUE;
+						}
 					}
 				}
 			}
