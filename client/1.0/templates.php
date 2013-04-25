@@ -57,16 +57,120 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 	$send;
 	$history;
 	$queue;
+	$script_headers;
+	$balance_history;
+	$counter;
+	$amount;
+	$graph_data_range_sent;
+	$graph_data_range_recv;
+	$largest_sent = 10;
+	$largest_recv = 10;
 
 	if($refresh > 0)
 	{
 		$refresh_header = '<meta http-equiv="refresh" content="' . $refresh . '" />';
 	}
 
+
 	switch($_GET["menu"])
 	{
 		case "home":
 			$home = 'class="active"';
+			$graph_data_range_recv = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'graph_data_range_recv' LIMIT 1"),0,"field_data");
+			$timestamp_cache = intval(find_string("---time=", "---max", $graph_data_range_recv));
+
+			if(time() - 45 > $timestamp_cache) // 45 Second Cache TTL
+			{
+				// Old data needs to be refreshed
+				$history_data_to = transaction_history_query(1, 28);
+				$counter = 1;
+				$graph_data_range_recv = NULL;
+				while($counter <= 28) // 28 History Limit
+				{
+					$amount = find_string("---AMOUNT$counter=", "---VERIFY", $history_data_to);					
+
+					if(empty($timestamp) == TRUE && empty($amount) == TRUE)
+					{
+						// No more data to search
+						break;
+					}
+
+					if($amount > $largest_recv)
+					{
+						$largest_recv = $amount + 1;
+					}
+					
+					$graph_data_range_recv .= ",$amount";
+					$counter++;
+				}
+				// Update data cache
+				mysql_query("UPDATE `options` SET `field_data` = '---time=" . time() . "---max=$largest_recv---data=$graph_data_range_recv---end' WHERE `options`.`field_name` = 'graph_data_range_recv' LIMIT 1");
+			}
+			else
+			{
+				// Use cached data
+				$largest_recv = find_string("---max=", "---data", $graph_data_range_recv);
+				$graph_data_range_recv = find_string("---data=", "---end", $graph_data_range_recv);
+			}
+
+			$graph_data_range_sent = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'graph_data_range_sent' LIMIT 1"),0,"field_data");
+			$timestamp_cache = intval(find_string("---time=", "---max", $graph_data_range_sent));
+
+			if(time() - 45 > $timestamp_cache)// 45 Second Cache TTL
+			{
+				// Old data needs to be refreshed
+				$history_data_to = transaction_history_query(2, 28);
+				$counter = 1;			
+				$graph_data_range_sent = NULL;
+				while($counter <= 28) // 28 History Limit
+				{
+					$amount = find_string("---AMOUNT$counter=", "---VERIFY", $history_data_to);					
+
+					if(empty($timestamp) == TRUE && empty($amount) == TRUE)
+					{
+						// No more data to search
+						break;
+					}
+					
+					if($amount > $largest_sent)
+					{
+						$largest_sent = $amount + 1;
+					}
+
+					$graph_data_range_sent .= ",$amount";				
+					$counter++;
+				}
+				// Update data cache
+				mysql_query("UPDATE `options` SET `field_data` = '---time=" . time() . "---max=$largest_sent---data=$graph_data_range_sent---end' WHERE `options`.`field_name` = 'graph_data_range_sent' LIMIT 1");
+			}
+			else
+			{
+				// Use cached data
+				$largest_sent = find_string("---max=", "---data", $graph_data_range_sent);
+				$graph_data_range_sent = find_string("---data=", "---end", $graph_data_range_sent);
+			}
+
+			$script_headers = '<script type="text/javascript" src="js/tkgraph.js"></script>
+<script type="text/javascript">
+window.onload = function() {
+g_graph = new Graph(
+{
+\'id\': "recv_graph",
+\'strokeStyle\': "#FFA500",
+\'fillStyle\': "rgba(0,127,0,0.30)",
+\'range\': [-1,' . $largest_recv . '],
+\'data\': [' . $graph_data_range_recv . ']
+});
+g_graph = new Graph(
+{
+\'id\': "sent_graph",
+\'strokeStyle\': "#FFA500",
+\'fillStyle\': "rgba(0,127,0,0.30)",
+\'range\': [-1,' . $largest_sent . '],
+\'data\': [' . $graph_data_range_sent . ']
+});
+}
+</script>';
 			break;
 
 		case "queue":
@@ -102,11 +206,12 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 <!DOCTYPE html>
 <html>
 <head>
-<title>Timekoin Billfold Administration</title>
+<title>Timekoin Client Billfold</title>
 <link rel="icon" type="image/x-icon" href="img/favicon.ico" />
 <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
 <link  href="css/admin.css" rel="stylesheet" type="text/css" />
 <?PHP echo $refresh_header; ?>
+<?PHP echo $script_headers; ?>
 </head>
 <body>
 <div id="main">
@@ -186,9 +291,9 @@ function options_screen2()
 {
 $home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
 
-return '<table border="0"><tr><td><strong>Refresh Rates (seconds) [10 = default]</strong></br></br><FORM ACTION="index.php?menu=options&refresh=change" METHOD="post"></td></tr>
+return '<table border="0"><tr><td><strong>Home, Peerlist, & Queue Refresh Rates [Default 10]</strong></br></br><FORM ACTION="index.php?menu=options&refresh=change" METHOD="post"></td></tr>
 <tr><td style="width:415px" valign="bottom" align="right">
-Refresh: <input type="text" name="home_update" size="2" value="' . $home_update . '" /></br></tr>
+Seconds: <input type="text" name="home_update" size="2" value="' . $home_update . '" /></br></tr>
 <tr><td align="right">
 <input type="submit" name="Submit2" value="Save Options" />
 </FORM>
@@ -225,7 +330,7 @@ function send_receive_body($fill_in_key, $amount, $cancel = FALSE, $easy_key, $m
 	else
 	{
 		$cancel_button = '<FORM ACTION="index.php?menu=send&easykey=grab" METHOD="post"><input type="text" size="24" name="easy_key" value="' . $easy_key . '" /></br>
-			<input type="submit" value="Easy Key" /></FORM>';
+			<input type="submit" value="Find Easy Key" /></FORM>';
 		$form_action = '<FORM ACTION="index.php?menu=send&check=key" METHOD="post">';
 	}
 

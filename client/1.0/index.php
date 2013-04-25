@@ -85,14 +85,10 @@ if($_SESSION["valid_login"] == TRUE)
 //****************************************************************************
 	if($_GET["menu"] == "home" || empty($_GET["menu"]) == TRUE)
 	{
-		$body_string = '<table border="0" cellspacing="10" cellpadding="2" bgcolor="#FFFFFF"><tr><td align="center"><strong>Status</strong></td>
-			<td align="center"><strong>Program</strong></td><td align="left"><strong>Message</strong></td></tr>';
-
-		$body_string .= '<tr><td align="center"><img src="img/hr.gif" alt="" /></td><td><font color="red"><strong>Reserve Spot</strong></font></td>
-				<td><strong>Status Goes Here</strong></td></tr>';
-
-		$body_string = $body_string . '</table>';
-
+		$body_string = '<strong><font color="green">Received</font> History Graph</strong></br><canvas id="recv_graph" width="600" height="200"></canvas></br></br>';
+		$body_string .= '<hr></hr>';
+		$body_string .= '<strong><font color="blue">Sent</font> History Graph</strong></br><canvas id="sent_graph" width="600" height="200"></canvas>';
+		
 		$display_balance = db_cache_balance(my_public_key());
 
 		if($display_balance == '')
@@ -107,7 +103,7 @@ if($_SESSION["valid_login"] == TRUE)
 		$text_bar = '<table border="0"><tr><td style="width:260px"><strong>Current Billfold Balance: <font color="green">' . $display_balance . '</font></strong></td></tr>
 			<tr></table>';
 
-		$quick_info = 'Current Status...';
+		$quick_info = 'This section will contain helpful information about each tab in the software.';
 
 		$home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
 
@@ -669,10 +665,10 @@ if($_SESSION["valid_login"] == TRUE)
 			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
 
 		$quick_info = 'Send your own Timekoins to someone else.</br></br>
-			Your server will attempt to verify if the public key is valid by examing the transaction history before sending.</br></br>
+			Your client will attempt to verify if the public key is valid by examing the transaction history before sending.</br></br>
 			New public keys with no history could appear invalid for this reason, so always double check.</br></br>
 			You can enter an <strong>Easy Key</strong> and Timekoin will fill in the Public Key field for you.</br></br>
-			Messages encoded into your transaction are limited to <strong>64</strong> characters and are visible to anyone.</br>No <strong>| ? = \' ` * %</strong> characters allowed.';
+			Messages encoded into your transaction are limited to <strong>64</strong> characters. Messages are visible to anyone that examines your specific transaction details.</br></br>No <strong>| ? = \' ` * %</strong> characters allowed.';
 
 		home_screen('Send / Receive Timekoins', $text_bar, $body_string , $quick_info);
 		exit;
@@ -812,7 +808,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$quick_info = 'Verification Level represents how deep in the transaction history the transaction exist.</br></br>
 			The larger the number, the more time that all the peers have examined it and agree that it is a valid transaction.</br></br>
-			You can view up to 100 past transactions that have been sent from or sent to this public key.';
+			You can view up to 100 past transactions that have been <u>sent from</u> or <u>sent to</u> your public key.';
 
 		home_screen('Transaction History', $text_bar, $body_string , $quick_info);
 
@@ -1168,8 +1164,8 @@ if($_SESSION["valid_login"] == TRUE)
 			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
 
 		$quick_info = '<strong>Do Not</strong> share your Private Key with anyone for any reason.</br></br>
-			The Private Key encrypts all transactions from your server.</br></br>
-			You should make a backup of both keys in case you want to transfer your balance to a new server or restore from a server failure.</br></br>
+			The Private Key encrypts all your transactions.</br></br>
+			You should make a backup of both keys in case you want to transfer your balance to a new billfold or restore from a software failure.</br></br>
 			Save both keys in a password protected text file or external device that you can secure (CD, Flash Drive, Printed Paper, etc.)';
 
 		home_screen('Backup & Restore Keys', $text_bar, $body_string , $quick_info);

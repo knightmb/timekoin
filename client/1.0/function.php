@@ -378,7 +378,7 @@ function check_crypt_balance($public_key)
 		$code = $sql_row["code"];
 		$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 20, "api.php?action=pk_balance&hash=$code", $context));
 
-		if(empty($poll_peer) == FALSE || $poll_peer === 0)
+		if(strlen($poll_peer) >= 1)
 		{
 			return $poll_peer;
 		}
