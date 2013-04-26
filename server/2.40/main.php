@@ -167,9 +167,6 @@ while(1) // Begin Infinite Loop :)
 			}
 		}
 
-		// Clear IP Activity for next cycle
-		mysql_query("TRUNCATE TABLE `ip_activity`");
-
 		// Clear out ban list of IPs older than 1 day
 		if(rand(1,60) == 30) // Randomize a little to save DB usage
 		{
@@ -178,43 +175,51 @@ while(1) // Begin Infinite Loop :)
 	//*****************************************************************************************************
 	//*****************************************************************************************************
 		// Check to make sure we are not behind a firewall with no Inbound ports
+		$sql_result = mysql_query("SELECT timestamp FROM `ip_activity` WHERE `attribute` = 'QU' OR `attribute` = 'TC' OR `attribute` = 'GP' LIMIT 1");
+		$sql_num_results = mysql_num_rows($sql_result);		
 		if($sql_num_results == 0) // Randomize a little
 		{
-			if(rand(1,3) == 2)
+			// No activity from any peer, keep track of this
+			$no_peer_activity = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'no_peer_activity' LIMIT 1"),0,"field_data");
+			$no_peer_activity++;
+			
+			if($no_peer_activity < 12)
 			{
-				// No activity from any peer, keep track of this
-				$no_peer_activity = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'no_peer_activity' LIMIT 1"),0,"field_data");
-				$no_peer_activity++;
-				
-				if($no_peer_activity < 9)
-				{
-					// No Inbound connection traffic
-					mysql_query("UPDATE `main_loop_status` SET `field_data` = '$no_peer_activity' WHERE `main_loop_status`.`field_name` = 'no_peer_activity' LIMIT 1");
-				}
+				// No Inbound connection traffic
+				mysql_query("UPDATE `main_loop_status` SET `field_data` = '$no_peer_activity' WHERE `main_loop_status`.`field_name` = 'no_peer_activity' LIMIT 1");
 			}
 		}
 		else
 		{
-			if(rand(1,3) == 2)
+			$no_peer_activity = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'no_peer_activity' LIMIT 1"),0,"field_data");
+			
+			if($no_peer_activity > 10)
 			{
-				$no_peer_activity = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'no_peer_activity' LIMIT 1"),0,"field_data");
-				
-				if($no_peer_activity > 1)
-				{
-					// Disable Firewalled Mode, Inbound is working again
-					mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'firewall_blocked_peer' LIMIT 1");
-					mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'no_peer_activity' LIMIT 1");
-					$no_peer_activity = FALSE;
-				}
+				// Disable Firewalled Mode, Inbound is working again
+				mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'firewall_blocked_peer' LIMIT 1");
+				mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'no_peer_activity' LIMIT 1");
+				$no_peer_activity = NULL;
+				write_log("Inbound Activity Detected from Peers, Switching to Normal Operations Mode", "MA");
+			}
+			else if($no_peer_activity > 0) // Only some short delays of no activity
+			{
+				// Disable Firewalled Mode, Inbound is working again
+				mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'firewall_blocked_peer' LIMIT 1");
+				mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'no_peer_activity' LIMIT 1");
+				$no_peer_activity = NULL;
 			}
 		}
 
-		if($no_peer_activity > 5 && $no_peer_activity < 7) // 6th failure triggers
+		if($no_peer_activity == 10) // 10th failure triggers
 		{
 			// No Inbound connection working, the only way to submit transactions is out remotely.
 			// Switch to firewalled mode.
 			mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'firewall_blocked_peer' LIMIT 1");
+			write_log("NO Inbound Activity from Peers, Switching to Outbound Mode", "MA");
 		}
+
+		// Clear IP Activity for next cycle
+		mysql_query("TRUNCATE TABLE `ip_activity`");		
 	//*****************************************************************************************************
 	//*****************************************************************************************************
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,"field_data");

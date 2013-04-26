@@ -28,7 +28,15 @@ if($_GET["action"] == "trans_hash")
 	echo mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'transaction_queue_hash' LIMIT 1"),0,"field_data");
 
 	// Log inbound IP activity
-	log_ip("QU");
+	if($_GET["client"] == "api")
+	{
+		log_ip("AP");
+	}
+	else
+	{
+		log_ip("QU");
+	}
+
 	exit;
 }
 //***********************************************************************************
@@ -53,7 +61,14 @@ if($_GET["action"] == "queue")
 	}
 
 	// Log inbound IP activity
-	log_ip("QU");
+	if($_GET["client"] == "api")
+	{
+		log_ip("AP");
+	}
+	else
+	{
+		log_ip("QU");
+	}
 	exit;
 }
 //***********************************************************************************
@@ -81,7 +96,14 @@ if($_GET["action"] == "transaction" && empty($_GET["number"]) == FALSE)
 	}
 
 	// Log inbound IP activity
-	log_ip("QU");
+	if($_GET["client"] == "api")
+	{
+		log_ip("AP");
+	}
+	else
+	{
+		log_ip("QU");
+	}
 	exit;
 }
 //***********************************************************************************
@@ -93,8 +115,8 @@ if($_GET["action"] == "input_transaction")
 	$current_generation_cycle = transaction_cycle(0);
 
 	// Can we work on the transactions in the database?
-	// Not allowed 120 seconds before and 30 seconds after transaction cycle.
-	if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycle) > 30)
+	// Not allowed 120 seconds before and 20 seconds after transaction cycle.
+	if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycle) > 20)
 	{
 		$transaction_timestamp = intval($_POST["timestamp"]);
 		$transaction_public_key = $_POST["public_key"];
@@ -119,7 +141,20 @@ if($_GET["action"] == "input_transaction")
 			}
 			else
 			{
-				$hash_match = mysql_result(mysql_query("SELECT * FROM `transaction_queue` WHERE `hash` = '$transaction_hash' LIMIT 1"),0,0);
+				// Make sure hash is actually valid and not made up to stop other transactions
+				$crypt_hash_check = hash('sha256', $transaction_crypt1 . $transaction_crypt2 . $transaction_crypt3);				
+
+				if($transaction_hash == $crypt_hash_check)
+				{
+					// Hash check good
+					$hash_match = mysql_result(mysql_query("SELECT timestamp FROM `transaction_queue` WHERE `hash` = '$transaction_hash' LIMIT 1"),0,0);
+				}
+				else
+				{
+					// Ok, something is wrong here...
+					write_log("Crypt Field Hash Check Failed from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
+					$hash_match = "mismatch";
+				}
 			}
 		}
 		else
@@ -193,12 +228,17 @@ if($_GET["action"] == "input_transaction")
 			}
 
 		} // End Duplicate & Timestamp check
+		else
+		{
+			// Respond that the transaction is already in the queue
+			echo "DUP";
+		}
 
 	} // End time allowed check
 
-	//Direct Input Transaction get a 10x count boost
+	//Direct Input Transaction get a 2x count boost
 	//to help prevent direct Transaction spamming
-	log_ip("QU", 10);
+	log_ip("QU", 2);
 	exit;
 }
 //***********************************************************************************
@@ -329,7 +369,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				}
 
 				//Check if this transaction is already in our queue
-				$hash_match = mysql_result(mysql_query("SELECT hash FROM `transaction_queue` WHERE `hash` = '$current_hash' LIMIT 1"),0,0);
+				$hash_match = mysql_result(mysql_query("SELECT timestamp FROM `transaction_queue` WHERE `hash` = '$current_hash' LIMIT 1"),0,0);
 
 				if(empty($hash_match) == TRUE)
 				{
@@ -358,10 +398,23 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 							$transaction_attribute = "mismatch";
 							$mismatch_error_count++;
 						}
+						else
+						{
+							// Make sure hash is actually valid and not made up to stop other transactions
+							$crypt_hash_check = hash('sha256', $transaction_crypt1 . $transaction_crypt2 . $transaction_crypt3);
+
+							if($crypt_hash_check != $transaction_hash)
+							{
+								// Ok, something is wrong here...
+								write_log("Crypt Field Hash Check Failed for Public Key: " . base64_encode($transaction_public_key), "QC");
+								$transaction_attribute = "mismatch";
+								$mismatch_error_count++;
+							}
+						}
 					}
 					else
 					{
-						// Qhash is required to match hash now
+						// Qhash is required to match hash
 						write_log("Queue Hash Data MisMatch for Public Key: " . $transaction_public_key, "QC");
 						$transaction_attribute = "mismatch";
 						$mismatch_error_count++;						
@@ -416,10 +469,16 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 						if($sql_num_results < 100)
 						{						
-							// Transaction hash and real hash match
-							$sql = "INSERT INTO `transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
-							VALUES ('$transaction_timestamp', '$transaction_public_key', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
-							mysql_query($sql);
+							// Transaction hash and real hash match.
+							// Check if this transaction is already in our queue (again just in case a duplicate
+							// was inserted before getting to this part of the code when multi-threading many peers)
+							$hash_match = mysql_result(mysql_query("SELECT timestamp FROM `transaction_queue` WHERE `hash` = '$current_hash' LIMIT 1"),0,0);
+
+							if(empty($hash_match) == TRUE)
+							{
+								mysql_query("INSERT INTO `transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
+								VALUES ('$transaction_timestamp', '$transaction_public_key', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')");
+							}
 						}
 						else
 						{

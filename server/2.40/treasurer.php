@@ -36,7 +36,7 @@ $current_generation_block = transaction_cycle(0, TRUE);
 //*****************************************************************************************************
 //*****************************************************************************************************
 // Check my transaction queue and copy pending transaction to the main transaction queue
-$sql = "SELECT * FROM `my_transaction_queue` LIMIT 100";
+$sql = "SELECT * FROM `my_transaction_queue` ORDER BY `my_transaction_queue`.`timestamp` ASC LIMIT 100";
 
 $sql_result = mysql_query($sql);
 $sql_num_results = mysql_num_rows($sql_result);
@@ -44,15 +44,14 @@ $sql_num_results = mysql_num_rows($sql_result);
 if($sql_num_results > 0)
 {
 	// Can we copy my transaction queue to the main queue in the allowed time?
-	// Not allowed 120 seconds before and 25 seconds after transaction cycle.
-	if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycle) > 25)
+	// Not allowed 120 seconds before and 20 seconds after transaction cycle.
+	if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycle) > 20)
 	{
 		$firewall_blocked = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'firewall_blocked_peer' LIMIT 1"),0,"field_data");
 		
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
 			$sql_row = mysql_fetch_array($sql_result);
-
 			$time_created = $sql_row["timestamp"];
 			$public_key = $sql_row["public_key"];
 			$crypt1 = $sql_row["crypt_data1"];
@@ -67,8 +66,8 @@ if($sql_num_results > 0)
 
 			$public_key_to = $public_key_to_1 . $public_key_to_2;
 
-			$found_transaction_history = mysql_result(mysql_query("SELECT timestamp, public_key_from, public_key_to, hash FROM `transaction_history` WHERE `public_key_from` = '$public_key' 
-				AND `public_key_to` = '$public_key_to' AND `hash` = '$hash_check' LIMIT 1"),0,"timestamp");
+			$found_transaction_history = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `public_key_from` = '$public_key' 
+				AND `public_key_to` = '$public_key_to' AND `hash` = '$hash_check' LIMIT 1"),0,0);
 
 			if(empty($found_transaction_history) == FALSE)
 			{
@@ -88,143 +87,150 @@ if($sql_num_results > 0)
 			}
 			else
 			{
-				// Check to make sure there is not a duplicate transaction already
-				$found_public_key_queue = mysql_result(mysql_query("SELECT * FROM `transaction_queue` WHERE `public_key` = '$public_key' AND `hash` = '$hash_check' LIMIT 1"),0,"timestamp");
-				$timestamp = $current_generation_cycle + 4;
+				$timestamp = $current_generation_cycle + 4; // Format timestamp for a few seconds after transaction cycle
 
-				if(empty($found_public_key_queue) == TRUE)
+				if($firewall_blocked == "1" || ($next_generation_cycle - time()) > 230)// Mix outbound transaction broadcasting and regular polling
 				{
-					if($firewall_blocked == "1" || ($next_generation_cycle - time()) > 230)// Mix outbound transaction broadcasting and regular polling
+					if($attribute == "T" || $attribute == "G")
 					{
-						if($attribute == "T" || $attribute == "G")
+						// We are stuck behind a firewall with no inbound connections.
+						// The best we can do is try to submit our transaction out to a peer
+						// that is accepting inbound connections and hopefully they will replicate
+						// out to the peer network.
+						ini_set('user_agent', 'Timekoin Server (Treasurer) v' . TIMEKOIN_VERSION);
+						ini_set('default_socket_timeout', 3); // Timeout for request in seconds
+						
+						$sql_result2 = mysql_query("SELECT * FROM `active_peer_list` ORDER BY RAND()");
+						$sql_num_results2 = mysql_num_rows($sql_result2);							
+						$peer_failure;
+
+						// Broadcast to all active peers
+						for ($i2 = 0; $i2 < $sql_num_results2; $i2++)
 						{
-							// We are stuck behind a firewall with no inbound connections.
-							// The best we can do is try to submit our transaction out to a peer
-							// that is accepting inbound connections and hopefully they will replicate
-							// out to the peer network.
-							ini_set('user_agent', 'Timekoin Server (Treasurer) v' . TIMEKOIN_VERSION);
-							ini_set('default_socket_timeout', 3); // Timeout for request in seconds
-							
-							$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND()";
-							$sql_result = mysql_query($sql);
-							$sql_num_results = mysql_num_rows($sql_result);							
+							$sql_row2 = mysql_fetch_array($sql_result2);
+							$ip_address = $sql_row2["IP_Address"];
+							$domain = $sql_row2["domain"];
+							$subfolder = $sql_row2["subfolder"];
+							$port_number = $sql_row2["port_number"];
 
-							// Broadcast to all active peers
-							for ($i = 0; $i < $sql_num_results; $i++)
+							$qhash = $timestamp . base64_encode($public_key) . $crypt1 . $crypt2 . $crypt3 . $hash_check . $attribute;
+							$qhash = hash('md5', $qhash);
+
+							// Create map with request parameters
+							$params = array ('timestamp' => $timestamp, 
+								'public_key' => base64_encode($public_key), 
+								'crypt_data1' => $crypt1, 
+								'crypt_data2' => $crypt2, 
+								'crypt_data3' => $crypt3, 
+								'hash' => $hash_check, 
+								'attribute' => $attribute,
+								'qhash' => $qhash);
+							 
+							// Build Http query using params
+							$query = http_build_query($params);
+							 
+							// Create Http context details
+							$contextData = array (
+												 'method' => 'POST',
+												 'header' => "Connection: close\r\n".
+																 "Content-Length: ".strlen($query)."\r\n",
+												 'content'=> $query );
+							 
+							// Create context resource for our request
+							$context = stream_context_create (array ( 'http' => $contextData ));
+			
+							$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 5, "queueclerk.php?action=input_transaction", $context);
+
+							if($poll_peer == "OK")
 							{
-								$sql_row = mysql_fetch_array($sql_result);
-								$ip_address = $sql_row["IP_Address"];
-								$domain = $sql_row["domain"];
-								$subfolder = $sql_row["subfolder"];
-								$port_number = $sql_row["port_number"];
-
-								$qhash = $timestamp . base64_encode($public_key) . $crypt1 . $crypt2 . $crypt3 . $hash_check . $attribute;
-								$qhash = hash('md5', $qhash);
-
-								// Create map with request parameters
-								$params = array ('timestamp' => $timestamp, 
-									'public_key' => base64_encode($public_key), 
-									'crypt_data1' => $crypt1, 
-									'crypt_data2' => $crypt2, 
-									'crypt_data3' => $crypt3, 
-									'hash' => $hash_check, 
-									'attribute' => $attribute,
-									'qhash' => $qhash);
-								 
-								// Build Http query using params
-								$query = http_build_query($params);
-								 
-								// Create Http context details
-								$contextData = array (
-													 'method' => 'POST',
-													 'header' => "Connection: close\r\n".
-																	 "Content-Length: ".strlen($query)."\r\n",
-													 'content'=> $query );
-								 
-								// Create context resource for our request
-								$context = stream_context_create (array ( 'http' => $contextData ));
-				
-								$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 5, "queueclerk.php?action=input_transaction", $context);
-
-								if($poll_peer == "OK")
-								{
-									// Insert to the peer remotely was accepted
-									switch($attribute)
-									{
-										case "G":
-											write_log("Timekoin Generation Insert Accepted by remote Peer $ip_address$domain:$port_number/$subfolder", "G");
-											break;
-
-										case "T":
-											write_log("Standard Transaction Insert Accepted by remote Peer $ip_address$domain:$port_number/$subfolder", "T");
-											break;							
-									}
-								}
-								else if($poll_peer == "DUP")
-								{
-									// Insert to the peer, transaction is already there
-									switch($attribute)
-									{
-										case "G":
-											write_log("Timekoin Generation Already Exist at remote Peer $ip_address$domain:$port_number/$subfolder", "G");
-											break;
-
-										case "T":
-											write_log("Standard Transaction Already Exist at remote Peer $ip_address$domain:$port_number/$subfolder", "T");
-											break;							
-									}
-								}								
-								else
-								{
-									// Failed, probably due to no inbound connection allowed at the other peer
-									switch($attribute)
-									{
-										case "G":
-											write_log("Timekoin Generation Insert FAILED for remote Peer $ip_address$domain:$port_number/$subfolder", "G");
-											break;
-
-										case "T":
-											write_log("Standard Transaction Insert FAILED for remote Peer $ip_address$domain:$port_number/$subfolder", "T");
-											break;							
-									}
-								} // Failure/Success Check & Logging
-
-							} // Transaction Attribute Check
-
-						} // Cycle through Active Peers END
-
-					} // Firewall Mode Check
-					else
-					{
-						if($firewall_blocked == "0") // Firewall blocked peers can not queue election request
-						{
-							// Full Internet exposure					
-							$sql = "INSERT INTO `transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
-							VALUES ('" . $timestamp . "', '$public_key', '$crypt1', '$crypt2' , '$crypt3', '$hash_check' , '$attribute');";			
-
-							if(mysql_query($sql) == TRUE)
-							{
+								// Insert to the peer remotely was accepted
 								switch($attribute)
 								{
-									case "R":
-										write_log("Join Generation Peer Request Insert from MyQueue Complete", "R");
-										break;
-
 									case "G":
-										write_log("Timekoin Generation Insert from MyQueue Complete", "G");
+										write_log("Timekoin Currency Generation Broadcast Accepted by remote Peer $ip_address$domain:$port_number/$subfolder", "G");
 										break;
 
 									case "T":
-										write_log("Standard Transaction Insert from MyQueue Complete", "T");
+										write_log("Standard Transaction Broadcast Accepted by remote Peer $ip_address$domain:$port_number/$subfolder", "T");
 										break;							
 								}
 							}
+							else if($poll_peer == "DUP")
+							{
+								// Insert to the peer, transaction is already there
+								switch($attribute)
+								{
+									case "G":
+										write_log("Timekoin Currency Generation Already Exist at remote Peer $ip_address$domain:$port_number/$subfolder", "G");
+										break;
+
+									case "T":
+										write_log("Standard Transaction Already Exist at remote Peer $ip_address$domain:$port_number/$subfolder", "T");
+										break;							
+								}
+							}								
+							else
+							{
+								// Failed, probably due to no inbound connection allowed at the other peer
+								switch($attribute)
+								{
+									case "G":
+										write_log("Timekoin Currency Generation Broadcast FAILED for remote Peer $ip_address$domain:$port_number/$subfolder", "G");
+										// Add failure points to the peer in case further issues
+										modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 5);
+										break;
+
+									case "T":
+										write_log("Standard Transaction Broadcast FAILED for remote Peer $ip_address$domain:$port_number/$subfolder", "T");
+										// Add failure points to the peer in case further issues
+										modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 3);
+										break;							
+								}
+							} // Failure/Success Check & Logging
+
+						} // Transaction Attribute Check
+
+					} // Cycle through Active Peers END
+
+				} // Firewall Mode & Broadcast Session Check
+
+				// Check to make sure there is not a duplicate transaction already
+				$found_public_key_queue = mysql_result(mysql_query("SELECT * FROM `transaction_queue` WHERE `public_key` = '$public_key' AND `hash` = '$hash_check' LIMIT 1"),0,"timestamp");
+
+				if(empty($found_public_key_queue) == TRUE) // Not in transaction queue
+				{					
+					if($firewall_blocked == "0") // Firewall blocked peers can not queue election request or transactions
+					{
+						// Full Internet exposure					
+						$sql = "INSERT INTO `transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
+						VALUES ('" . $timestamp . "', '$public_key', '$crypt1', '$crypt2' , '$crypt3', '$hash_check' , '$attribute');";			
+
+						if(mysql_query($sql) == TRUE)
+						{
+							switch($attribute)
+							{
+								case "R":
+									write_log("Join Generation Peer Request Insert from MyQueue Complete", "R");
+									break;
+
+								case "G":
+									write_log("Timekoin Generation Insert from MyQueue Complete", "G");
+									break;
+
+								case "T":
+									write_log("Standard Transaction Insert from MyQueue Complete", "T");
+									break;							
+							}
 						}
 					}
-				}
-			} // End Duplicate in Transaction History Check
+				} // End Checking Transaction Queue for Transaction Data
+
+			} // End Duplicate Transaction in Transaction History Check
+
 		} // End for loop
+
 	} // End timing allowed check
+
 }
 //*****************************************************************************************************
 //*****************************************************************************************************

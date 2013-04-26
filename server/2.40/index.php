@@ -1195,6 +1195,7 @@ if($_SESSION["valid_login"] == TRUE)
 				<input type="checkbox" name="pk_recv'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_recv", TRUE) . '>pk_recv</br>
 				<input type="checkbox" name="pk_valid'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_valid", TRUE) . '>pk_valid
 				<input type="checkbox" name="send_tk'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "send_tk", TRUE) . '>send_tk
+				<input type="checkbox" name="tk_trans_total'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "tk_trans_total", TRUE) . '>tk_trans_total
 				</td></tr><tr><td colspan="2"><hr></hr></td></tr>';
 
 				$counter++;
@@ -1234,7 +1235,8 @@ if($_SESSION["valid_login"] == TRUE)
 						$_POST["pk_recv$counter"], 
 						$_POST["send_tk$counter"],
 						$_POST["pk_history$counter"],
-						$_POST["pk_valid$counter"]) . "')");
+						$_POST["pk_valid$counter"],
+						$_POST["tk_trans_total$counter"]) . "')");
 				}
 
 				$counter++;

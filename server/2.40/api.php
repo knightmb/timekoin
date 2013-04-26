@@ -331,6 +331,61 @@ if($_GET["action"] == "pk_gen_amt")
 }
 //***********************************************************************************
 //***********************************************************************************
+if($_GET["action"] == "tk_trans_total")
+{
+	if(check_hashcode_permissions($hash_permissions, "tk_trans_total") == TRUE)
+	{
+		$last = intval($_GET["last"]);
+		if($last > 100 || $last < 1) { $last = 1; }
+
+		$counter = -1; // Transaction back from present cycle
+		$output_counter = 1;
+
+		while($last > 0)
+		{
+			$start_transaction_cycle = transaction_cycle($counter);
+			$end_transaction_cycle = transaction_cycle($counter + 1);
+			$transaction_counter = 0;
+			$amount = 0;
+
+			$sql = "SELECT * FROM `transaction_history` WHERE `timestamp` >= '$start_transaction_cycle' AND `timestamp` < '$end_transaction_cycle'";
+			$sql_result = mysql_query($sql);
+			$sql_num_results = mysql_num_rows($sql_result);
+
+			if($sql_num_results > 1)
+			{
+				// Build row with icons
+				for ($i = 0; $i < $sql_num_results; $i++)
+				{
+					$sql_row = mysql_fetch_array($sql_result);
+
+					if($sql_row["attribute"] == 'G' || $sql_row["attribute"] == 'T')
+					{
+						// Transaction Amount
+						$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($sql_row["crypt_data3"]));
+						$amount += intval(find_string("AMOUNT=", "---TIME", $transaction_info));
+						$transaction_counter++;
+					}
+				}
+			}
+
+			echo "---TIMESTAMP$output_counter=" . transaction_cycle($counter);
+			echo "---NUM$output_counter=$transaction_counter";
+			echo "---AMOUNT$output_counter=$amount---END$output_counter";
+
+			$output_counter++;
+			$counter--;
+			$last--;
+		}
+
+	}
+
+	// Log inbound IP activity
+	log_ip("AP");
+	exit;
+}
+//***********************************************************************************
+//***********************************************************************************
 if($_GET["action"] == "pk_recv")
 {
 	if(check_hashcode_permissions($hash_permissions, "pk_recv") == TRUE)

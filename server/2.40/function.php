@@ -251,6 +251,14 @@ function my_domain()
 	return mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,1);
 }
 //***********************************************************************************
+function modify_peer_grade($ip_address, $domain, $subfolder, $port_number, $grade)
+{
+	$peer_failure = mysql_result(mysql_query("SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' OR `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1"),0,0);
+	$peer_failure += $grade;
+	if($peer_failure < 0) { $peer_failure = 0; } // Range fixing
+	mysql_query("UPDATE `active_peer_list` SET `failed_sent_heartbeat` = '$peer_failure' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+	return;
+}
 //***********************************************************************************
 function poll_peer($ip_address, $domain, $subfolder, $port_number, $max_length, $poll_string, $custom_context)
 {
@@ -1315,6 +1323,13 @@ function initialization_database()
 	{
 		// Does not exist, create it
 		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('perm_peer_priority', '0')");
+	}
+
+	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,0);
+	if($new_record_check === FALSE)
+	{
+		// Does not exist, create it
+		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('peer_failure_grade', '30')");
 	}	
 //**************************************
 	// Check for an empty generation IP address,
@@ -1830,7 +1845,7 @@ function find_file($dir, $pattern)
 }
 //***********************************************************************************
 //***********************************************************************************
-function generate_hashcode_permissions($pk_balance, $pk_gen_amt, $pk_recv, $send_tk, $pk_history, $pk_valid)
+function generate_hashcode_permissions($pk_balance, $pk_gen_amt, $pk_recv, $send_tk, $pk_history, $pk_valid, $tk_trans_total)
 {
 	$permissions_number;
 
@@ -1840,12 +1855,34 @@ function generate_hashcode_permissions($pk_balance, $pk_gen_amt, $pk_recv, $send
 	if($send_tk == 1) { $permissions_number += 8; }
 	if($pk_history == 1) { $permissions_number += 16; }
 	if($pk_valid == 1) { $permissions_number += 32; }
+	if($tk_trans_total == 1) { $permissions_number += 64; }
 
 	return $permissions_number;
 }
 //***********************************************************************************
 function check_hashcode_permissions($permissions_number, $pk_api_check, $checkbox = FALSE)
 {
+	// Check pk_valid
+	if($pk_api_check == "tk_trans_total")
+	{ 
+		if($permissions_number >= 64) // Permission Granted
+		{
+			if($checkbox == TRUE)
+			{
+				return "CHECKED";
+			}
+			else
+			{
+				return TRUE;
+			}
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	if($permissions_number - 64 >= 0) { $permissions_number -= 64; } // Subtract Active Permission
+
 	// Check pk_valid
 	if($pk_api_check == "pk_valid")
 	{ 
