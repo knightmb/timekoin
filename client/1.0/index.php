@@ -85,10 +85,14 @@ if($_SESSION["valid_login"] == TRUE)
 //****************************************************************************
 	if($_GET["menu"] == "home" || empty($_GET["menu"]) == TRUE)
 	{
-		$body_string = '<strong><font color="green">Received</font> History Graph</strong></br><canvas id="recv_graph" width="600" height="200"></canvas></br></br>';
+		$body_string = '<strong>Last 30 <font color="green">Received</font> Transaction Amounts to Billfold</strong></br><canvas id="recv_graph" width="620" height="200"></canvas>';
 		$body_string .= '<hr></hr>';
-		$body_string .= '<strong><font color="blue">Sent</font> History Graph</strong></br><canvas id="sent_graph" width="600" height="200"></canvas>';
-		
+		$body_string .= '<strong>Last 30 <font color="blue">Sent</font> Transaction Amounts from Billfold</strong></br><canvas id="sent_graph" width="620" height="200"></canvas>';
+		$body_string .= '<hr></hr>';
+		$body_string .= '<strong>Timekoin Network Total Transactions per Cycle</strong></br><canvas id="trans_total" width="620" height="200"></canvas>';
+		$body_string .= '<hr></hr>';
+		$body_string .= '<strong>Timekoin Network Total Amounts Sent per Cycle</strong></br><canvas id="amount_total" width="620" height="200"></canvas>';
+
 		$display_balance = db_cache_balance(my_public_key());
 
 		if($display_balance == '')
@@ -107,7 +111,12 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
 
-		home_screen("Realtime Status", $text_bar, $body_string, $quick_info , $home_update);
+		if($home_update < 60 && $home_update != 0)
+		{
+			$home_update = 60;
+		}
+
+		home_screen("Home", $text_bar, $body_string, $quick_info , $home_update);
 		exit;
 	}
 //****************************************************************************

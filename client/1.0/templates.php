@@ -63,14 +63,10 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 	$amount;
 	$graph_data_range_sent;
 	$graph_data_range_recv;
+	$graph_data_trans_total;
 	$largest_sent = 10;
 	$largest_recv = 10;
-
-	if($refresh > 0)
-	{
-		$refresh_header = '<meta http-equiv="refresh" content="' . $refresh . '" />';
-	}
-
+	$last = 30;
 
 	switch($_GET["menu"])
 	{
@@ -79,17 +75,17 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 			$graph_data_range_recv = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'graph_data_range_recv' LIMIT 1"),0,"field_data");
 			$timestamp_cache = intval(find_string("---time=", "---max", $graph_data_range_recv));
 
-			if(time() - 45 > $timestamp_cache) // 45 Second Cache TTL
+			if(time() - 60 > $timestamp_cache) // 60 Second Cache TTL
 			{
 				// Old data needs to be refreshed
-				$history_data_to = transaction_history_query(1, 28);
+				$history_data_to = transaction_history_query(1, $last);
 				$counter = 1;
 				$graph_data_range_recv = NULL;
-				while($counter <= 28) // 28 History Limit
+				while($counter <= $last) // History Limit
 				{
 					$amount = find_string("---AMOUNT$counter=", "---VERIFY", $history_data_to);					
 
-					if(empty($timestamp) == TRUE && empty($amount) == TRUE)
+					if($amount == "")
 					{
 						// No more data to search
 						break;
@@ -97,11 +93,18 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 
 					if($amount > $largest_recv)
 					{
-						$largest_recv = $amount + 1;
+						$largest_recv = $amount + 2;
+					}
+					$counter++;
+					if($counter <= $last)
+					{
+						$graph_data_range_recv .= "$amount,";
+					}
+					else
+					{
+						$graph_data_range_recv .= "$amount";
 					}
 					
-					$graph_data_range_recv .= ",$amount";
-					$counter++;
 				}
 				// Update data cache
 				mysql_query("UPDATE `options` SET `field_data` = '---time=" . time() . "---max=$largest_recv---data=$graph_data_range_recv---end' WHERE `options`.`field_name` = 'graph_data_range_recv' LIMIT 1");
@@ -116,17 +119,17 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 			$graph_data_range_sent = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'graph_data_range_sent' LIMIT 1"),0,"field_data");
 			$timestamp_cache = intval(find_string("---time=", "---max", $graph_data_range_sent));
 
-			if(time() - 45 > $timestamp_cache)// 45 Second Cache TTL
+			if(time() - 60 > $timestamp_cache)// 60 Second Cache TTL
 			{
 				// Old data needs to be refreshed
-				$history_data_to = transaction_history_query(2, 28);
+				$history_data_to = transaction_history_query(2, $last);
 				$counter = 1;			
 				$graph_data_range_sent = NULL;
-				while($counter <= 28) // 28 History Limit
+				while($counter <= $last) // History Limit
 				{
 					$amount = find_string("---AMOUNT$counter=", "---VERIFY", $history_data_to);					
 
-					if(empty($timestamp) == TRUE && empty($amount) == TRUE)
+					if($amount == "")
 					{
 						// No more data to search
 						break;
@@ -134,11 +137,18 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 					
 					if($amount > $largest_sent)
 					{
-						$largest_sent = $amount + 1;
+						$largest_sent = $amount + 2;
 					}
 
-					$graph_data_range_sent .= ",$amount";				
 					$counter++;
+					if($counter <= $last)
+					{
+						$graph_data_range_sent .= "$amount,";
+					}
+					else
+					{
+						$graph_data_range_sent .= "$amount";
+					}					
 				}
 				// Update data cache
 				mysql_query("UPDATE `options` SET `field_data` = '---time=" . time() . "---max=$largest_sent---data=$graph_data_range_sent---end' WHERE `options`.`field_name` = 'graph_data_range_sent' LIMIT 1");
@@ -150,25 +160,113 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 				$graph_data_range_sent = find_string("---data=", "---end", $graph_data_range_sent);
 			}
 
+			$graph_data_trans_total = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'graph_data_trans_total' LIMIT 1"),0,"field_data");
+			$graph_data_amount_total = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'graph_data_amount_total' LIMIT 1"),0,"field_data");			
+			$timestamp_cache = intval(find_string("---time=", "---max", $graph_data_trans_total));
+
+			if(time() - 60 > $timestamp_cache)// 60 Second Cache TTL
+			{
+				// Old data needs to be refreshed
+				$total_trans_last = 30;
+				$tk_trans_total_data = tk_trans_total($total_trans_last);
+				$counter = 1;			
+				$graph_data_trans_total = NULL;
+				$graph_data_amount_total = NULL;
+				$max_amount = 10;
+				$max_transactions = 10;
+
+				while($counter <= $total_trans_last) // History Limit
+				{
+					$timestamp = find_string("---TIMESTAMP$counter=", "---NUM$counter", $tk_trans_total_data);
+					$total_transactions = find_string("---NUM$counter=", "---AMOUNT$counter", $tk_trans_total_data);
+					$total_amount = find_string("---AMOUNT$counter=", "---END$counter", $tk_trans_total_data);
+
+					if(empty($timestamp) == TRUE)
+					{
+						// No more data to search
+						break;
+					}
+					
+					if($total_transactions > $max_transactions)
+					{
+						$max_transactions = $total_transactions + 2;
+					}
+
+					if($total_amount > $max_amount)
+					{
+						$max_amount = $total_amount + 2;
+					}					
+
+					$counter++;
+					if($counter <= $total_trans_last)
+					{
+						$graph_data_trans_total .= "$total_transactions,";
+						$graph_data_amount_total .= "$total_amount,";						
+					}
+					else
+					{
+						$graph_data_trans_total .= "$total_transactions";
+						$graph_data_amount_total .= "$total_amount";
+					}					
+				}
+				// Update data cache
+				mysql_query("UPDATE `options` SET `field_data` = '---time=" . time() . "---max=$max_transactions---data=$graph_data_trans_total---end' WHERE `options`.`field_name` = 'graph_data_trans_total' LIMIT 1");
+				mysql_query("UPDATE `options` SET `field_data` = '---time=" . time() . "---max=$max_amount---data=$graph_data_amount_total---end' WHERE `options`.`field_name` = 'graph_data_amount_total' LIMIT 1");
+			}
+			else
+			{
+				// Use cached data
+				$max_transactions = find_string("---max=", "---data", $graph_data_trans_total);
+				$graph_data_trans_total = find_string("---data=", "---end", $graph_data_trans_total);
+
+				$max_amount = find_string("---max=", "---data", $graph_data_amount_total);
+				$graph_data_amount_total = find_string("---data=", "---end", $graph_data_amount_total);				
+			}
+
 			$script_headers = '<script type="text/javascript" src="js/tkgraph.js"></script>
 <script type="text/javascript">
 window.onload = function() {
+	
 g_graph = new Graph(
 {
 \'id\': "recv_graph",
 \'strokeStyle\': "#FFA500",
-\'fillStyle\': "rgba(0,127,0,0.30)",
-\'range\': [-1,' . $largest_recv . '],
-\'data\': [' . $graph_data_range_recv . ']
+\'fillStyle\': "rgba(0,127,0,0.20)",
+\'grid\': [' . intval($largest_recv * 0.1) . ',10],
+\'range\': [0,' . $largest_recv . '],
+\'data\': [,' . $graph_data_range_recv . ']
 });
+
 g_graph = new Graph(
 {
 \'id\': "sent_graph",
 \'strokeStyle\': "#FFA500",
-\'fillStyle\': "rgba(0,127,0,0.30)",
-\'range\': [-1,' . $largest_sent . '],
-\'data\': [' . $graph_data_range_sent . ']
+\'fillStyle\': "rgba(0,0,255,0.20)",
+\'grid\': [' . intval($largest_sent * 0.1) . ',10],
+\'range\': [0,' . $largest_sent . '],
+\'data\': [,' . $graph_data_range_sent . ']
 });
+
+g_graph = new Graph(
+{
+\'id\': "trans_total",
+\'strokeStyle\': "#FFA500",
+\'fillStyle\': "rgba(187,217,238,0.65)",
+\'grid\': [' . intval($max_transactions * 0.1) . ',10],
+\'range\': [0,' . $max_transactions . '],
+\'data\': [,' . $graph_data_trans_total . ']
+});
+
+g_graph = new Graph(
+{
+\'id\': "amount_total",
+\'strokeStyle\': "#FFA500",
+\'fillStyle\': "rgba(130,127,0,0.20)",
+\'grid\': [' . intval($max_amount * 0.1) . ',10],
+\'range\': [0,' . $max_amount . '],
+\'data\': [,' . $graph_data_amount_total . ']
+});
+
 }
 </script>';
 			break;

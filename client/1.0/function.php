@@ -286,6 +286,36 @@ function transaction_history_query($to_from, $last = 1)
 }
 //***********************************************************************************
 //***********************************************************************************
+function tk_trans_total($last = 1)
+{
+	// Ask one of my active peers
+	ini_set('user_agent', 'Timekoin Client v' . TIMEKOIN_VERSION);
+	ini_set('default_socket_timeout', 5); // Timeout for request in seconds
+	$sql_result = mysql_query("SELECT * FROM `active_peer_list` ORDER BY RAND()");
+	$sql_num_results = mysql_num_rows($sql_result);
+
+	for ($i = 0; $i < $sql_num_results; $i++)
+	{
+		$sql_row = mysql_fetch_array($sql_result);
+		$ip_address = $sql_row["IP_Address"];
+		$domain = $sql_row["domain"];
+		$subfolder = $sql_row["subfolder"];
+		$port_number = $sql_row["port_number"];
+		$code = $sql_row["code"];
+		$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 7000, "api.php?action=tk_trans_total&last=$last&hash=$code"));
+
+		if(empty($poll_peer) == FALSE)
+		{
+			return $poll_peer;
+		}
+	}
+
+	// No peers would respond
+	write_log("No Peers Answered the Transaction Totals & Amounts Query", "GU");
+	return;
+}
+//***********************************************************************************
+//***********************************************************************************
 function verify_public_key($public_key)
 {
 	if(empty($public_key) == TRUE)

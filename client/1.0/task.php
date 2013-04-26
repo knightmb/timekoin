@@ -57,7 +57,7 @@ function transaction_queue()
 			$subfolder = $sql_row["subfolder"];
 			$port_number = $sql_row["port_number"];
 
-			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 40, "queueclerk.php?action=trans_hash");
+			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 40, "queueclerk.php?action=trans_hash&client=api");
 
 			if($transaction_queue_hash === $poll_peer)
 			{
@@ -94,7 +94,7 @@ function transaction_queue()
 			$subfolder = $hash_different["subfolder$i"];
 			$port_number = $hash_different["port_number$i"];
 
-			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 8200, "queueclerk.php?action=queue");
+			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 8200, "queueclerk.php?action=queue&client=api");
 
 			// Bring up first match (if any) to compare agaist our database
 			$match_number = 1;
@@ -126,7 +126,7 @@ function transaction_queue()
 				if(empty($hash_match) == TRUE)
 				{
 					// This peer has a different transaction, ask for the full details of it
-					$poll_hash = poll_peer($ip_address, $domain, $subfolder, $port_number, 1500, "queueclerk.php?action=transaction&number=$current_hash");
+					$poll_hash = poll_peer($ip_address, $domain, $subfolder, $port_number, 1500, "queueclerk.php?action=transaction&number=$current_hash&client=api");
 
 					$transaction_timestamp = filter_sql(find_string("-----timestamp=", "-----public_key", $poll_hash));
 					$transaction_public_key = find_string("-----public_key=", "-----crypt1", $poll_hash);
