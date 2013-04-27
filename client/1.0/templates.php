@@ -8,12 +8,23 @@ function login_screen($error_message)
 <!DOCTYPE html>
 <html>
 <head>
-<title>Timekoin</title>
+<title>Timekoin Client Billfold</title>
 <link rel="icon" type="image/x-icon" href="img/favicon.ico" />
 <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
 <link  href="css/admin.css" rel="stylesheet" type="text/css" />
+<script language="JavaScript" type="text/javascript">
+<!--
+function breakout_of_frame()
+{
+	if (top.location != location)
+	{
+		top.location.href = document.location.href ;
+	}
+}
+-->
+</script>
 </head>
-<body>
+<body onload="breakout_of_frame()">
 <div id="main">
 <div id="header">
 <ul id="top-navigation">
@@ -67,6 +78,11 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 	$largest_sent = 10;
 	$largest_recv = 10;
 	$last = 30;
+
+	if($refresh != 0)
+	{
+		$refresh_header = '<meta http-equiv="refresh" content="' . $refresh . '" />';
+	}
 
 	switch($_GET["menu"])
 	{
@@ -345,12 +361,12 @@ g_graph = new Graph(
 </div>
 </div>
 <div id="footer"><p>Timekoin Crypto Currency Client v<?PHP echo TIMEKOIN_VERSION; ?> - <a href="http://timekoin.org">http://timekoin.org</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?> - ( You are logged in as <strong><?PHP echo $_SESSION["login_username"]; ?></strong> )</p>
-<IFRAME src="task.php?task=refresh" frameborder="0"></IFRAME></div>
+ </div>
 </div>
 </body>
 </html>
 <?PHP
-} 
+}
 //***********************************************************
 //***********************************************************
 function options_screen()

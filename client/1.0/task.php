@@ -634,12 +634,13 @@ if($_GET["task"] == "refresh")
 	<html>
 	<head>
 	<title>Timekoin Client Task</title>
-	<?PHP echo $refresh_header; ?>
+	<?PHP //echo $refresh_header; ?>
 	</head>
 	<body>
 	</body>
 	</html>
 	<?PHP
+	flush();
 
 	// After self-refreshing HTML, carry out background task.
 	tk_client_task();

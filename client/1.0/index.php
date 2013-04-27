@@ -52,7 +52,7 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 				// All match, set login variable and store username in cookie
 				$_SESSION["login_username"] = $http_username;
 				$_SESSION["valid_login"] = TRUE;
-				header("Location: index.php?menu=home");
+				header("Location: index.php");
 				exit;
 			}
 		}
@@ -82,6 +82,34 @@ if($_SESSION["valid_login"] == TRUE)
 		exit;
 	}
 //****************************************************************************
+	if(empty($_GET["menu"]) == TRUE)
+	{
+		// Build frame box with the bottom self-refreshing frame for task
+		?>
+		<html>
+		  <head>
+			<title>Timekoin Client Billfold</title>			
+			<link rel="icon" type="image/x-icon" href="img/favicon.ico" />
+			<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+			<script type="text/javascript">
+				window.onload = setupRefresh;
+
+				function setupRefresh() {
+					 setInterval("refreshFrame();", 10000);
+				}
+				function refreshFrame() {
+					parent.bottom_frame.location.reload();
+				}
+		  </script>
+		  </head>
+		  <frameset id="timekoin" rows="*,1">
+			<frame name="top_frame" src="index.php?menu=home" scrolling="auto" frameborder="0" />
+			<frame name="bottom_frame" src="task.php?task=refresh" scrolling="none" noresize="noresize" frameborder="0" />
+		  </frameset>
+		</html>
+		<?PHP
+		return;
+	}	
 //****************************************************************************
 	if($_GET["menu"] == "home" || empty($_GET["menu"]) == TRUE)
 	{
@@ -111,7 +139,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
 
-		if($home_update < 60 && $home_update != 0)
+		if($home_update < 60 && $home_update != 0) // Cap home updates refresh to 1 minute
 		{
 			$home_update = 60;
 		}
