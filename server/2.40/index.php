@@ -542,7 +542,7 @@ if($_SESSION["valid_login"] == TRUE)
 				<th><p style="font-size:11px;">IP Address</p></th><th><p style="font-size:11px;">Domain</p></th>
 				<th><p style="font-size:11px;">Subfolder</p></th><th><p style="font-size:11px;">Port Number</p></th>
 				<th><p style="font-size:11px;">Last Heartbeat</p></th><th><p style="font-size:11px;">Joined</p></th>
-				<th><p style="font-size:11px;">Failed Heartbeat</p></th><th></th><th></th></tr>';			
+				<th><p style="font-size:11px;">Failure Score</p></th><th></th><th></th></tr>';			
 			
 			if($_GET["show"] == "reserve")
 			{

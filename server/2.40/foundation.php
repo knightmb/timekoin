@@ -181,6 +181,12 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 
 					$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 65, "foundation.php?action=block_hash&block_number=$rand_block");
 
+					if(empty($poll_peer) == TRUE)
+					{
+						// Add failure points to the peer in case further issues
+						modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 4);
+					}
+
 					if($current_foundation_hash === $poll_peer)
 					{
 						$foundation_hash_match++;

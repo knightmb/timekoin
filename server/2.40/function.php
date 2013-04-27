@@ -821,7 +821,7 @@ function getCharFreq($str,$chr=false)
 }
 //***********************************************************************************
 //***********************************************************************************
-function scorePublicKey($public_key)
+function scorePublicKey($public_key, $score_key = FALSE)
 {
 	$current_generation_block = transaction_cycle(0, TRUE);	
 
@@ -830,6 +830,20 @@ function scorePublicKey($public_key)
 	$public_key_score = 0;
 	$tkrandom_num = 0;
 	$character = 0;
+
+	if($score_key == TRUE)
+	{
+		$output_score_key;
+
+		// Output what is being used to score the keys
+		for ($i = 0; $i < 18; $i++)
+		{
+			$tkrandom_num = TKRandom::num(1, 35);
+			$output_score_key .= "[$tkrandom_num=" . base_convert($tkrandom_num, 10, 36) . "]";  // Base 10 to Base 36 conversion
+		}
+		
+		return $output_score_key;
+	}
 
 	for ($i = 0; $i < 18; $i++)
 	{

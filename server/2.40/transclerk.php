@@ -291,6 +291,12 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 65, "transclerk.php?action=history_hash");
 
+			if(empty($poll_peer) == TRUE)
+			{
+				// Add failure points to the peer in case further issues
+				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 4);
+			}
+
 			if($current_history_hash === $poll_peer)
 			{
 				$trans_list_hash_match++;
@@ -481,6 +487,12 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 65, "transclerk.php?action=block_hash&block_number=$hash_number");
 
+				if(empty($poll_peer) == TRUE)
+				{
+					// Add failure points to the peer in case further issues
+					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 4);
+				}
+
 				if($my_hash === $poll_peer)
 				{
 					$hash_agree++;
@@ -531,7 +543,13 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 					{
 						// Is this a Super Peer?
 						$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 3, "transclerk.php?action=super_peer");
-						
+
+						if(empty($poll_peer) == TRUE)
+						{
+							// Add failure points to the peer in case further issues
+							modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 4);
+						}
+
 						if($poll_peer >= 1)// This is a super peer that will allow mass downloading of transactions
 						{
 							// How far behind in the transaction history are we?
@@ -567,6 +585,12 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 									while($super_transaction_cycle < $block_number + $super_peer_cycles)
 									{
 										$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 2000000, "transclerk.php?action=transaction_data&block_number=$super_transaction_cycle");
+
+										if(empty($poll_peer) == TRUE)
+										{
+											// Add failure points to the peer in case further issues
+											modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 1);
+										}
 
 										$tc = 1;
 
@@ -631,8 +655,13 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 //************************************************************
 
 					$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 2000000, "transclerk.php?action=transaction_data&block_number=$block_number");
-
 					$tc = 1;
+
+					if(empty($poll_peer) == TRUE)
+					{
+						// Add failure points to the peer in case further issues
+						modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 4);
+					}					
 
 					while(empty($poll_peer) == FALSE)
 					{
@@ -836,6 +865,12 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				$port_number = $sql_row["port_number"];
 
 				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 65, "transclerk.php?action=block_hash&block_number=$random_block");
+
+				if(empty($poll_peer) == TRUE)
+				{
+					// Add failure points to the peer in case further issues
+					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 4);
+				}
 
 				if(empty($poll_peer) == FALSE && strlen($poll_peer) > 60)
 				{

@@ -112,10 +112,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 				$sql_row = mysql_fetch_array($sql_result);
 				$public_key = $sql_row["public_key"];
 				$IP_Address = $sql_row["IP_Address"];
-
 				mysql_query("INSERT INTO `generating_peer_list` (`public_key` ,`join_peer_list` ,`last_generation`, `IP_Address`) VALUES ('$public_key', '$current_generation_cycle', '$current_generation_cycle', '$IP_Address')");
-
-				write_log("Generation Peer Elected for Public Key: " . base64_encode($public_key), "GP");				
+				write_log("Generation Peer Elected for Public Key: " . base64_encode($public_key), "GP");
 			}
 			else
 			{
@@ -123,6 +121,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 				// the public key with the most points win
 				$highest_score = 0;
 				$public_key_winner = "";
+				write_log("Peer Election Score Key: " . scorePublicKey(NULL, TRUE), "GP");
 
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
@@ -130,6 +129,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 					$public_key = $sql_row["public_key"];
 			
 					$public_key_score = scorePublicKey($public_key);
+					write_log("Key Score: [$public_key_score] for Public Key: " . base64_encode($public_key), "GP");
 
 					if($public_key_score > $highest_score)
 					{
@@ -147,8 +147,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 			// Clear out queue for next round			
 			mysql_query("TRUNCATE TABLE `generating_peer_queue`");
 
-			// Wait after generation election for sanity reasons
-			sleep(2);
+			// Wait after generation election for DB sanity reasons
+			sleep(1);
 
 		}	//End if/then results check
 
@@ -192,6 +192,12 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 			$port_number = $sql_row["port_number"];
 
 			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 100, "genpeer.php?action=gen_hash");
+
+			if(empty($poll_peer) == TRUE)
+			{
+				// Add failure points to the peer in case further issues
+				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 4);
+			}
 
 			if($generating_hash === $poll_peer)
 			{
@@ -244,6 +250,12 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		$port_number = $hash_different["port_number$i"];
 
 		$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 39000, "genpeer.php?action=gen_peer_list");
+
+		if(empty($poll_peer) == TRUE)
+		{
+			// Add failure points to the peer in case further issues
+			modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 4);
+		}
 
 		$match_number = 1;
 		$gen_peer_public_key = "Start";

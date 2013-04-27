@@ -359,12 +359,16 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				if($transaction_counter > $peer_transaction_limit)
 				{
 					write_log("$peer_transaction_limit Transaction limit reached from Peer: $ip_address:$domain:$port_number/$subfolder", "QC");
+					// Add failure points to the peer in case further issues
+					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 3);					
 					break;					
 				}
 
 				if($mismatch_error_count > $mismatch_error_limit)
 				{
 					write_log("$mismatch_error_limit Transaction Error limit reached from Peer: $ip_address:$domain:$port_number/$subfolder", "QC");
+					// Add failure points to the peer in case further issues
+					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 5);					
 					break;					
 				}
 
@@ -397,6 +401,9 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 							write_log("Queue Hash Data MisMatch for Public Key: " . $transaction_public_key, "QC");
 							$transaction_attribute = "mismatch";
 							$mismatch_error_count++;
+
+							// Add failure points to the peer in case further issues
+							modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 3);							
 						}
 						else
 						{
@@ -409,6 +416,9 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 								write_log("Crypt Field Hash Check Failed for Public Key: " . base64_encode($transaction_public_key), "QC");
 								$transaction_attribute = "mismatch";
 								$mismatch_error_count++;
+
+								// Add failure points to the peer in case further issues
+								modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 5);								
 							}
 						}
 					}
@@ -417,7 +427,10 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 						// Qhash is required to match hash
 						write_log("Queue Hash Data MisMatch for Public Key: " . $transaction_public_key, "QC");
 						$transaction_attribute = "mismatch";
-						$mismatch_error_count++;						
+						$mismatch_error_count++;
+
+						// Add failure points to the peer in case further issues
+						modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 3);						
 					}
 
 					$transaction_public_key = filter_sql(base64_decode($transaction_public_key));
