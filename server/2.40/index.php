@@ -2419,7 +2419,7 @@ if($_SESSION["valid_login"] == TRUE)
 				$sql_row = mysql_fetch_array($sql_result);
 
 				$body_string .= '<tr>
-				<td class="style2"><p style="width:160px;">' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>
+				<td class="style2"><p style="width:162px;">[ ' . $sql_row["timestamp"] . ' ]</br>' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>
 				<td class="style2"><p style="word-wrap:break-word; width:360px;">' . $sql_row["log"] . '</p></td>
 				<td class="style2">' . $sql_row["attribute"] . '</td></tr>';
 			}
