@@ -418,7 +418,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 								$mismatch_error_count++;
 
 								// Add failure points to the peer in case further issues
-								modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 5);								
+								modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 6);								
 							}
 						}
 					}
@@ -430,7 +430,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 						$mismatch_error_count++;
 
 						// Add failure points to the peer in case further issues
-						modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 3);						
+						modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 2);						
 					}
 
 					$transaction_public_key = filter_sql(base64_decode($transaction_public_key));

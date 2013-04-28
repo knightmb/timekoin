@@ -23,16 +23,6 @@ if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 }
 //***********************************************************************************
 //***********************************************************************************
-// If Timekoin is NOT running, don't answer Peer Pings to avoid being left in
-// active peer lists for a very long time
-$main_heartbeat_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,"field_data");
-
-if($main_heartbeat_active == FALSE)
-{
-	exit;
-}
-//***********************************************************************************
-//***********************************************************************************
 // Answer poll challenge/ping
 if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 {
@@ -106,6 +96,21 @@ if($_GET["action"] == "polltime")
 	echo time();
 	
 	// Log inbound IP activity
+	log_ip("PL");
+	exit;
+}
+//***********************************************************************************
+//***********************************************************************************
+// Another peer is asking for a failure score
+if($_GET["action"] == "poll_failure")
+{
+	$domain = filter_sql($_GET["domain"]);
+	$ip = $_SERVER['REMOTE_ADDR'];
+	$subfolder = filter_sql($_GET["subfolder"]);
+	$port = intval($_GET["port"]);
+
+	echo mysql_result(mysql_query("SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip' OR `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port LIMIT 1"),0,0);
+
 	log_ip("PL");
 	exit;
 }
@@ -733,13 +738,12 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 
 	} // End for Loop
 
-	// Remove all active peers that are offline for more than 5 minutes
-	
+	// Remove all active peers that are offline for more than 5 minutes or have failed a lot
 	$peer_failure_grade = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,0);
 	
 	if(rand(1,2) == 2)// Randomize to avoid spamming DB
 	{
-		mysql_query("DELETE QUICK FROM `active_peer_list` WHERE `last_heartbeat` < " . (time() - 300) . " OR `failed_sent_heartbeat` > $peer_failure_grade AND `join_peer_list` != 0");
+		mysql_query("DELETE QUICK FROM `active_peer_list` WHERE `last_heartbeat` < " . (time() - 300) . " OR `failed_sent_heartbeat` >= $peer_failure_grade AND `join_peer_list` != 0");
 	}
 //***********************************************************************************
 //***********************************************************************************

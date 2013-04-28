@@ -125,7 +125,7 @@ while(1) // Begin Infinite Loop :)
 	//*****************************************************************************************************
 	//*****************************************************************************************************	
 	// Do a random time sync check and report any errors to the user
-	if(rand(1,60) == 30)
+	if(rand(1,99) == 30)
 	{
 		$poll_peer = filter_sql(file_get_contents("http://timekoin.net/time.php", FALSE, $context, NULL, 12));
 		$my_time = time();
@@ -139,6 +139,17 @@ while(1) // Begin Infinite Loop :)
 		{
 			// Timekoin peer time is in sync
 			mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'time_sync_error' LIMIT 1");
+		}
+	}
+	//*****************************************************************************************************
+	//*****************************************************************************************************	
+	// Do a update software check and report to user if one is available
+	if(rand(1,300) == 100)
+	{
+		if(check_for_updates(TRUE) == 1)
+		{
+			// Update available, alert user
+			mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'update_available' LIMIT 1");
 		}
 	}
 	//*****************************************************************************************************

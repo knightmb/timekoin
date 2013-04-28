@@ -224,6 +224,7 @@ $peerlist_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `fiel
 $queue_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_queue' LIMIT 1"),0,"field_data");
 $php_location = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,"field_data");
 $super_peer = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'super_peer' LIMIT 1"),0,"field_data");
+$peer_failure_grade = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,"field_data");
 
 if($super_peer == 1)
 {
@@ -237,6 +238,8 @@ Peerlist: <input type="text" name="peerlist_update" size="2" value="' . $peerlis
 Transaction Queue: <input type="text" name="queue_update" size="2" value="' . $queue_update . '" /></td></tr>
 <tr><td></td></tr>
 <tr><td align="right"><strong>Super Peer Limit (10 - 500)</strong></br><input type="text" name="super_peer_limit" size="3" value="' . $super_peer . '" /></br></td></tr>
+<tr><td></td></tr>
+<tr><td align="right"><strong>Peer Failure Limit (1 - 100)</strong></br><input type="text" name="peer_failure_grade" size="3" value="' . $peer_failure_grade . '" /></br></td>
 <tr><td align="right"><input type="submit" name="Submit2" value="Save Options" /></FORM></td></tr>
 <tr><td><hr></hr></td></tr>
 <tr><td align="right"><FORM ACTION="index.php?menu=options&hashcode=manage" METHOD="post"><input type="submit" name="Submit3" value="Manage Hash Code Access" /></FORM></td>
@@ -413,8 +416,6 @@ Max Peer Query: <input type="text" name="max_request" size="6" maxlength="4" val
 </td></tr>
 </table>
 <hr></hr>
-<table border="0"><tr><td><FORM ACTION="index.php?menu=system&time=poll" METHOD="post"><input name="Submit3" type="submit" value="Check Peer Clock & Ping Times" /></FORM></td></tr></table>
-<hr></hr>
 <table border="0"><tr><td align="right">
 <strong>Miscellaneous Server</strong></br></br>
 Generating Peers List Hash:</br>
@@ -442,8 +443,7 @@ Database Size:
 function system_service_bar()
 {
 return '<table cellspacing="10" border="0"><tr><td width="150"><FORM ACTION="main.php?action=begin_main" METHOD="post"><input type="submit" value="Start Timekoin"/></FORM></td>
-	<td width="150"><FORM ACTION="index.php?menu=system&stop=main" METHOD="post"><input type="submit" value="Stop Timekoin"/></FORM></td>
-	<td><FORM ACTION="index.php?menu=system&stop=emergency" METHOD="post"><input type="submit" value="Emergency Stop"/></FORM></td></tr></table><hr></hr>
+	<td width="150"><FORM ACTION="index.php?menu=system&stop=main" METHOD="post"><input type="submit" value="Stop Timekoin"/></FORM></td></tr></table><hr></hr>
 	<table cellspacing="10" border="0"><tr><td width="150"><FORM ACTION="watchdog.php?action=begin_watchdog" METHOD="post"><input type="submit" value="Start Watchdog"/></FORM></td>
 	<td width="150"><FORM ACTION="index.php?menu=system&stop=watchdog" METHOD="post"><input type="submit" value="Stop Watchdog"/></FORM></td></tr></table>';
 }

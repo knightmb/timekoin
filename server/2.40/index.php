@@ -342,7 +342,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$firewall_blocked = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'firewall_blocked_peer' LIMIT 1"),0,"field_data");
 
-		if($firewall_blocked == "1")
+		if($firewall_blocked == TRUE)
 		{
 			$firewall_blocked = '<tr><td colspan="3"><font color="#827f00"><strong>*** Operating in Outbound Only Mode ***</strong></font></td></tr>';
 		}
@@ -353,7 +353,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$time_sync_error = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'time_sync_error' LIMIT 1"),0,"field_data");
 
-		if($time_sync_error == "1")
+		if($time_sync_error == TRUE)
 		{
 			$time_sync_error = '<tr><td colspan="3"><font color="red"><strong>*** Timekoin Might Be Out of Sync with the Network Peers ***</strong></font></td></tr>';
 		}
@@ -361,13 +361,24 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			$time_sync_error = NULL;
 		}
+
+		$update_available = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'update_available' LIMIT 1"),0,"field_data");
+
+		if($update_available == TRUE)
+		{
+			$update_available = '<tr><td colspan="3"><font color="green"><strong>*** NEW SOFTWARE UPDATE AVAILABLE ***</strong></font></td></tr>';
+		}
+		else
+		{
+			$update_available = NULL;
+		}
 		
 		$text_bar = '<table border="0"><tr><td style="width:260px"><strong>Current Server Balance: <font color="green">' . number_format($display_balance) . '</font></strong></td>
 			<td style="width:180px"><strong>Peer Time: <font color="blue">' . time() . '</font></strong></td>
 			<td style="width:180px"><strong><font color="#827f00">' . tk_time_convert(transaction_cycle(1) - time()) . '</font> until next cycle</strong></td></tr>
 			<tr><td align="left" colspan="3"><strong>Transaction History:</strong>&nbsp;
 			' . trans_percent_status() . '</td></tr>
-			' . $firewall_blocked . $time_sync_error . '</table>';
+			' . $update_available . $firewall_blocked . $time_sync_error . '</table>';
 
 		$quick_info = 'Check on the Status of the Timekoin inner workings.';
 
@@ -437,6 +448,157 @@ if($_SESSION["valid_login"] == TRUE)
 					$field_numbers--;
 				}
 			}
+		}
+
+		if($_GET["time"] == "poll")
+		{
+			ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
+			ini_set('default_socket_timeout', 2); // Timeout for request in seconds
+			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
+				<tr><th>Peer</th><th>Time</th><th>Variance</th><th>Ping</th></tr>';
+
+			// Polling what the active peers have
+			$sql = "SELECT * FROM `active_peer_list`";
+			$sql_result = mysql_query($sql);
+			$sql_num_results = mysql_num_rows($sql_result);
+			$response_counter = 0;
+			$variance_total = 0;
+
+			for ($i = 0; $i < $sql_num_results; $i++)
+			{
+				$sql_row = mysql_fetch_array($sql_result);
+				
+				$ip_address = $sql_row["IP_Address"];
+				$domain = $sql_row["domain"];
+				$subfolder = $sql_row["subfolder"];
+				$port_number = $sql_row["port_number"];
+
+				$my_micro_time = microtime(TRUE);				
+
+				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 12, "peerlist.php?action=polltime");
+
+				$my_time = time();
+				
+				if($my_time == $poll_peer && empty($poll_peer) == FALSE)
+				{
+					$variance = '0 seconds';
+					$micro_time_variance = round((microtime(TRUE) - $my_micro_time) * 1000) . " ms";
+					$response_counter++;
+				}
+				else if(empty($poll_peer) == FALSE)
+				{
+					$variance = $my_time - $poll_peer;
+					$response_counter++;
+					$variance_total = $variance_total + abs($variance);
+					$micro_time_variance = round((microtime(TRUE) - $my_micro_time) * 1000) . " ms";
+
+					if($variance > 1)
+					{
+						$variance = '+' . $variance . ' seconds';
+					}
+					else if($variance == 1)
+					{
+						$variance = '+' . $variance . ' second';
+					}
+					else if($variance == -1)
+					{
+						$variance = $variance . ' second';
+					}
+					else
+					{
+						$variance = $variance . ' seconds';
+					}					
+				}
+				else
+				{
+					$variance = 'No Response';
+					$micro_time_variance = "&infin; ms";
+				}
+
+				$body_string .= '<tr><td class="style2"><p style="word-wrap:break-word; font-size:12px;">' . $ip_address . $domain . ':' . $port_number . '/' . $subfolder . '</p></td>';
+				$body_string .= '<td class="style2"><p style="font-size:12px;">' . $poll_peer . '</p></td>';
+				$body_string .= '<td class="style2"><p style="font-size:12px;">' . $variance . '</p></td>';
+				$body_string .= '<td class="style2"><p style="font-size:12px;">' . $micro_time_variance . '</p></td></tr>';
+			}
+
+			$body_string .= '</table></div>';
+
+			$variance_average = round($variance_total / $response_counter);
+
+			if($variance_average > 15)
+			{
+				$variance_average = '<font color="red">' . $variance_average . '</font> seconds';
+			}
+			else if($variance_average == 1)
+			{
+				$variance_average = '<font color="green">' . $variance_average . '</font> second';
+			}
+			else if($variance_average <= 15 && $variance_average > 1)
+			{
+				$variance_average = '<font color="blue">' . $variance_average . '</font> seconds';
+			}
+			else
+			{
+				$variance_average = '<font color="green">' . $variance_average . '</font> seconds';
+			}
+
+			$body_string .= '<strong>Variance Average: ' . $variance_average . '</strong></br></br>';
+
+			$quick_info = '<strong>Variance</strong> of 15 seconds or less with the other peers is good.</br></br>
+			<strong>Ping</strong> response time greater than 3000 ms will timeout during data exchanges.';
+
+			home_screen('Check Peer Clocks & Ping Times', NULL, $body_string , $quick_info);
+			exit;
+		}
+
+		if($_GET["poll_failure"] == "poll")
+		{
+			ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
+			ini_set('default_socket_timeout', 2); // Timeout for request in seconds
+			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
+				<tr><th>Peer</th><th>My Failure Score</th></tr>';
+
+			$my_domain = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,"field_data");
+			$my_subfolder = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_subfolder' LIMIT 1"),0,"field_data");
+			$my_port = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
+
+			// Polling what the active peers have
+			$sql = "SELECT * FROM `active_peer_list`";
+			$sql_result = mysql_query($sql);
+			$sql_num_results = mysql_num_rows($sql_result);
+
+			for ($i = 0; $i < $sql_num_results; $i++)
+			{
+				$sql_row = mysql_fetch_array($sql_result);
+				
+				$ip_address = $sql_row["IP_Address"];
+				$domain = $sql_row["domain"];
+				$subfolder = $sql_row["subfolder"];
+				$port_number = $sql_row["port_number"];
+
+				// Poll and give my domain to check against
+				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 3, "peerlist.php?action=poll_failure&domain=$my_domain&subfolder=$my_subfolder&port=$my_port");
+
+				if($poll_peer == "")
+				{
+					$poll_peer = "No Response";
+				}
+				else
+				{
+					$poll_peer = intval($poll_peer);
+				}
+
+				$body_string .= '<tr><td class="style2"><p style="word-wrap:break-word; font-size:12px;">' . $ip_address . $domain . ':' . $port_number . '/' . $subfolder . '</p></td>';
+				$body_string .= '<td class="style2"><p style="font-size:12px;">' . $poll_peer . '</p></td></tr>';
+			}
+
+			$body_string .= '</table></div>';
+
+
+			$quick_info = '<strong>Failure Scores</strong> that other peers have recorded for your server.';
+
+			home_screen('Failure Scores From Peers', NULL, $body_string , $quick_info);
+			exit;
 		}
 
 		if($_GET["edit"] == "peer")
@@ -616,10 +778,15 @@ if($_SESSION["valid_login"] == TRUE)
 
 			$body_string .= '<tr><td colspan="2"><FORM ACTION="index.php?menu=peerlist&show=reserve" METHOD="post"><input type="submit" value="Show Reserve Peers"/></FORM></td>
 				<td colspan="3"><FORM ACTION="index.php?menu=peerlist&edit=peer&type=new" METHOD="post"><input type="submit" value="Add New Peer"/></FORM></td>
-				<td colspan="4"><FORM ACTION="index.php?menu=peerlist&edit=peer&type=firstcontact" METHOD="post"><input type="submit" value="First Contact Servers"/></FORM></td></tr></table></div>';
+				<td colspan="4"><FORM ACTION="index.php?menu=peerlist&edit=peer&type=firstcontact" METHOD="post"><input type="submit" value="First Contact Servers"/></FORM></td></tr>
+				<tr><td colspan="9"><hr></hr></td></tr>
+				<tr><td colspan="3"><FORM ACTION="index.php?menu=peerlist&time=poll" METHOD="post"><input name="Submit3" type="submit" value="Check Peer Clock & Ping Times" /></FORM></td>
+				<td colspan="6"><FORM ACTION="index.php?menu=peerlist&poll_failure=poll" METHOD="post"><input name="Submit4" type="submit" value="Poll Failure Scores" /></FORM></td>
+				</tr></table></div>';
 
+			
 			$sql = "SELECT * FROM `new_peers_list`";
-			$new_peers = mysql_num_rows(mysql_query($sql));		
+			$new_peers = mysql_num_rows(mysql_query($sql));
 
 			if($_GET["show"] == "reserve")
 			{
@@ -786,11 +953,14 @@ if($_SESSION["valid_login"] == TRUE)
 						$server_code = '</br><font color="red"><strong>Timekoin Main Processor was already Stopped...</strong></font></br></br>';
 						// Clear transaction queue to avoid unnecessary peer confusion
 						mysql_query("TRUNCATE TABLE `transaction_queue`");
+
+						// Stop all other script activity
+						activate(TIMEKOINSYSTEM, 0);
 					}
 				}
 				else
 				{
-					// Set database to flag watchdog to stop
+					// Set database to flag main to stop
 					$sql = "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1";
 					
 					if(mysql_query($sql) == TRUE)
@@ -798,6 +968,9 @@ if($_SESSION["valid_login"] == TRUE)
 						$server_code = '</br><font color="blue"><strong>Timekoin Main Processor Stopping...</strong></font></br></br>';
 						// Clear transaction queue to avoid unnecessary peer confusion
 						mysql_query("TRUNCATE TABLE `transaction_queue`");
+
+						// Stop all other script activity
+						activate(TIMEKOINSYSTEM, 0);						
 					}
 				}
 			}
@@ -805,44 +978,9 @@ if($_SESSION["valid_login"] == TRUE)
 			{
 				$server_code = '</br><font color="red"><strong>Timekoin Main Processor was already Stopped...</strong></font></br></br>';
 				// Clear transaction queue to avoid unnecessary peer confusion
-				mysql_query("TRUNCATE TABLE `transaction_queue`");				
-			}
-		}
+				mysql_query("TRUNCATE TABLE `transaction_queue`");
 
-		if($_GET["stop"] == "emergency")
-		{
-			$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,"field_data");
-			$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,"field_data");
-
-			if($script_loop_active > 0)
-			{
-				// Main should still be active
-				if((time() - $script_last_heartbeat) > 30) // Greater than triple the loop time, something is wrong
-				{
-					// Main stop was unexpected
-					$sql = "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1";
-					
-					if(mysql_query($sql) == TRUE)
-					{
-						$server_code = '</br><font color="red"><strong>Entire Timekoin System has been Halted!</strong></font></br></br>';
-						activate(TIMEKOINSYSTEM, 0);
-					}
-				}
-				else
-				{
-					// Set database to flag watchdog to stop
-					$sql = "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1";
-					
-					if(mysql_query($sql) == TRUE)
-					{
-						$server_code = '</br><font color="red"><strong>Entire Timekoin System has been Halted!</strong></font></br></br>';
-						activate(TIMEKOINSYSTEM, 0);
-					}
-				}
-			}
-			else
-			{
-				$server_code = '</br><font color="red"><strong>Entire Timekoin System has been Halted!</strong></font></br></br>';
+				// Stop all other script activity
 				activate(TIMEKOINSYSTEM, 0);				
 			}
 		}
@@ -868,115 +1006,15 @@ if($_SESSION["valid_login"] == TRUE)
 			$server_code = '</br><font color="blue"><strong>Watchdog Already Active...</strong></font></br></br>';
 		}
 
-		if($_GET["time"] == "poll")
-		{
-			ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
-			ini_set('default_socket_timeout', 2); // Timeout for request in seconds
-			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
-				<tr><th>Peer</th><th>Time</th><th>Variance</th><th>Ping</th></tr>';
-
-			// Add more possible peers to the new peer list by polling what the active peers have
-			$sql = "SELECT * FROM `active_peer_list`";
-			$sql_result = mysql_query($sql);
-			$sql_num_results = mysql_num_rows($sql_result);
-			$response_counter = 0;
-			$variance_total = 0;
-
-			for ($i = 0; $i < $sql_num_results; $i++)
-			{
-				$sql_row = mysql_fetch_array($sql_result);
-				
-				$ip_address = $sql_row["IP_Address"];
-				$domain = $sql_row["domain"];
-				$subfolder = $sql_row["subfolder"];
-				$port_number = $sql_row["port_number"];
-
-				$my_micro_time = microtime(TRUE);				
-
-				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 12, "peerlist.php?action=polltime");
-
-				$my_time = time();
-				
-				if($my_time == $poll_peer && empty($poll_peer) == FALSE)
-				{
-					$variance = '0 seconds';
-					$micro_time_variance = round((microtime(TRUE) - $my_micro_time) * 1000) . " ms";
-					$response_counter++;
-				}
-				else if(empty($poll_peer) == FALSE)
-				{
-					$variance = $my_time - $poll_peer;
-					$response_counter++;
-					$variance_total = $variance_total + abs($variance);
-					$micro_time_variance = round((microtime(TRUE) - $my_micro_time) * 1000) . " ms";
-
-					if($variance > 1)
-					{
-						$variance = '+' . $variance . ' seconds';
-					}
-					else if($variance == 1)
-					{
-						$variance = '+' . $variance . ' second';
-					}
-					else if($variance == -1)
-					{
-						$variance = $variance . ' second';
-					}
-					else
-					{
-						$variance = $variance . ' seconds';
-					}					
-				}
-				else
-				{
-					$variance = 'No Response';
-					$micro_time_variance = "&infin; ms";
-				}
-
-				$body_string .= '<tr><td class="style2"><p style="word-wrap:break-word; font-size:12px;">' . $ip_address . $domain . ':' . $port_number . '/' . $subfolder . '</p></td>';
-				$body_string .= '<td class="style2"><p style="font-size:12px;">' . $poll_peer . '</p></td>';
-				$body_string .= '<td class="style2"><p style="font-size:12px;">' . $variance . '</p></td>';
-				$body_string .= '<td class="style2"><p style="font-size:12px;">' . $micro_time_variance . '</p></td></tr>';
-			}
-
-			$body_string .= '</table></div>';
-
-			$variance_average = round($variance_total / $response_counter);
-
-			if($variance_average > 15)
-			{
-				$variance_average = '<font color="red">' . $variance_average . '</font> seconds';
-			}
-			else if($variance_average == 1)
-			{
-				$variance_average = '<font color="green">' . $variance_average . '</font> second';
-			}
-			else if($variance_average <= 15 && $variance_average > 1)
-			{
-				$variance_average = '<font color="blue">' . $variance_average . '</font> seconds';
-			}
-			else
-			{
-				$variance_average = '<font color="green">' . $variance_average . '</font> seconds';
-			}
-
-			$body_string .= '<strong>Variance Average: ' . $variance_average . '</strong></br></br>';
-		}
-		else
-		{
-			$body_string = system_screen();
-			$body_string .= $server_code;
-		}
+		$body_string = system_screen();
+		$body_string .= $server_code;
 
 		$quick_info = '<strong>Start</strong> will activate all Timekoin Processing.</br></br>
 			<strong>Stop</strong> will halt Timekoin from further processing.</br></br>
-			<strong>Emergency Stop</strong> will halt Timekoin from further processing and Block all Peer Internet activity.</br></br>
 			<strong>Max Peer Query</strong> is the per 10 seconds limit imposed on each individual peer before being banned for 24 hours.</br></br>
 			<strong>Allow LAN Peers</strong> controls if LAN peers will be allowed to populate the peer list.</br></br>
 			<strong>Allow Ambient Peer Restarts</strong> controls if other peers can restart Timekoin from unknown failures.</br></br>
-			<strong>Super Peer</strong> will enable peers to download bulk transactions from your server.</br></br>
-			<strong>Variance</strong> of 15 seconds or less with the other peers is good.</br></br>
-			<strong>Ping</strong> response time greater than 3000 ms will timeout during data exchanges.';
+			<strong>Super Peer</strong> will enable peers to download bulk transactions from your server.</br></br>';
 
 		home_screen('System Settings', system_service_bar(), $body_string , $quick_info);
 		exit;
@@ -1074,9 +1112,17 @@ if($_SESSION["valid_login"] == TRUE)
 
 						$sql = "UPDATE `options` SET `field_data` = '$super_peer_limit' WHERE `options`.`field_name` = 'super_peer' LIMIT 1";
 						if(mysql_query($sql) == TRUE)
-						{							
+						{
 							mysql_query("UPDATE `main_loop_status` SET `field_data` = '$super_peer_limit' WHERE `main_loop_status`.`field_name` = 'super_peer' LIMIT 1");
-							$refresh_change = TRUE;
+
+							$peer_failure_grade = intval($_POST["peer_failure_grade"]);
+							if($peer_failure_grade < 1 || $peer_failure_grade > 100) { $peer_failure_grade = 30; }
+
+							$sql = "UPDATE `options` SET `field_data` = '$peer_failure_grade' WHERE `options`.`field_name` = 'peer_failure_grade' LIMIT 1";
+							if(mysql_query($sql) == TRUE)
+							{
+								$refresh_change = TRUE;
+							}
 						}
 					}
 				}
@@ -1086,7 +1132,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			if($refresh_change == TRUE)
 			{
-				$body_text .= '<font color="blue"><strong>Refresh Settings, Hash Code, & Super Peer Limit Saved!</strong></font></br>';
+				$body_text .= '<font color="blue"><strong>Refresh Settings, Super Peer Limit, & Peer Failure Limit Saved!</strong></font></br>';
 			}
 			else
 			{

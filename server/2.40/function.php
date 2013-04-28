@@ -1404,6 +1404,7 @@ function initialization_database()
 	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('no_peer_activity', '0')");
 	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('time_sync_error', '0')");
 	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('transaction_history_block_check', '0')");
+	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('update_available', '0')");
 //**************************************
 // Copy values from Database to RAM Database
 	$db_to_RAM = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'allow_ambient_peer_restart' LIMIT 1"),0,1);
@@ -1622,12 +1623,12 @@ function generate_new_keys()
 }
 //***********************************************************************************	
 //***********************************************************************************
-function check_for_updates()
+function check_for_updates($code_feedback = FALSE)
 {
 	// Poll timekoin.com for any program updates
 	$context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
 	ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
-	ini_set('default_socket_timeout', 15); // Timeout for request in seconds
+	ini_set('default_socket_timeout', 10); // Timeout for request in seconds
 
 	$update_check1 = 'Checking for Updates....</br></br>';
 
@@ -1635,6 +1636,8 @@ function check_for_updates()
 
 	if($poll_version > TIMEKOIN_VERSION && empty($poll_version) == FALSE)
 	{
+		if($code_feedback == TRUE) { return 1; } // Code feedback only that update is available
+		
 		$update_check1 .= '<strong>New Version Available <font color="blue">' . $poll_version . '</font></strong></br></br>
 		<FORM ACTION="index.php?menu=options&upgrade=doupgrade" METHOD="post"><input type="submit" name="Submit3" value="Perform Software Update" /></FORM>';
 	}
@@ -1759,7 +1762,7 @@ function do_updates()
 	// Poll timekoin.com for any program updates
 	$context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
 	ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
-	ini_set('default_socket_timeout', 15); // Timeout for request in seconds
+	ini_set('default_socket_timeout', 10); // Timeout for request in seconds
 
 	$poll_version = file_get_contents("https://timekoin.com/tkupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
 
