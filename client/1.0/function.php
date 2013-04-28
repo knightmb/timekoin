@@ -274,7 +274,7 @@ function transaction_history_query($to_from, $last = 1)
 		$code = $sql_row["code"];
 		$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 200000, "api.php?action=pk_history&hash=$code", $context));
 
-		if(empty($poll_peer) == FALSE)
+		if(strlen($poll_peer) > 60)
 		{
 			return $poll_peer;
 		}
@@ -304,7 +304,7 @@ function tk_trans_total($last = 1)
 		$code = $sql_row["code"];
 		$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 7000, "api.php?action=tk_trans_total&last=$last&hash=$code"));
 
-		if(empty($poll_peer) == FALSE)
+		if(strlen($poll_peer) > 40)
 		{
 			return $poll_peer;
 		}
@@ -377,7 +377,7 @@ function check_crypt_balance($public_key)
 
 	// Ask one of my active peers
 	ini_set('user_agent', 'Timekoin Client v' . TIMEKOIN_VERSION);
-	ini_set('default_socket_timeout', 3); // Timeout for request in seconds
+	ini_set('default_socket_timeout', 4); // Timeout for request in seconds
 
 	// Create map with request parameters
 	$params = array ('public_key' => base64_encode($public_key));

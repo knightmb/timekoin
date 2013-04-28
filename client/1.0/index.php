@@ -504,14 +504,22 @@ if($_SESSION["valid_login"] == TRUE)
 			$sql = "UPDATE `options` SET `field_data` = '" . $_POST["home_update"] . "' WHERE `options`.`field_name` = 'refresh_realtime_home' LIMIT 1";
 			if(mysql_query($sql) == TRUE)
 			{
-				$refresh_change = TRUE;
+				$sql = "UPDATE `options` SET `field_data` = '" . $_POST["max_peers"] . "' WHERE `options`.`field_name` = 'max_active_peers' LIMIT 1";
+				if(mysql_query($sql) == TRUE)
+				{
+					$sql = "UPDATE `options` SET `field_data` = '" . $_POST["max_new_peers"] . "' WHERE `options`.`field_name` = 'max_new_peers' LIMIT 1";
+					if(mysql_query($sql) == TRUE)
+					{
+						$refresh_change = TRUE;
+					}
+				}
 			}
 
 			$body_text = options_screen2();
 
 			if($refresh_change == TRUE)
 			{
-				$body_text .= '<font color="blue"><strong>Refresh Settings Saved!</strong></font></br>';
+				$body_text .= '<font color="blue"><strong>Settings Saved!</strong></font></br>';
 			}
 			else
 			{
@@ -752,7 +760,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($hide_receive == FALSE)
 		{
-			$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transactions <font color="green">Sent To</font> This Server</strong></br>
+			$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transactions <font color="green">Sent To</font> This Billfold</strong></br>
 				<FORM ACTION="index.php?menu=history&receive=listmore" METHOD="post"></br>
 				</br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
 				<th>Sent From</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
@@ -802,7 +810,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($hide_send == FALSE)
 		{
-			$body_string .= '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transactions <font color="blue">Sent From</font> This Server</strong></br></br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
+			$body_string .= '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transactions <font color="blue">Sent From</font> This Billfold</strong></br></br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
 				<th>Sent To</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
 
 			$history_data_to = transaction_history_query(2, $show_last);
@@ -845,7 +853,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$quick_info = 'Verification Level represents how deep in the transaction history the transaction exist.</br></br>
 			The larger the number, the more time that all the peers have examined it and agree that it is a valid transaction.</br></br>
-			You can view up to 100 past transactions that have been <u>sent from</u> or <u>sent to</u> your public key.';
+			You can view up to 100 past transactions that have been <u>sent from</u> or <u>sent to</u> your Billfold.';
 
 		home_screen('Transaction History', $text_bar, $body_string , $quick_info);
 

@@ -119,7 +119,10 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 					}
 				}
 				// Update data cache
-				mysql_query("UPDATE `options` SET `field_data` = '---time=" . time() . "---max=$largest_recv---data=$graph_data_range_recv---end' WHERE `options`.`field_name` = 'graph_data_range_recv' LIMIT 1");
+				if(empty($graph_data_range_recv) == FALSE)
+				{
+					mysql_query("UPDATE `options` SET `field_data` = '---time=" . time() . "---max=$largest_recv---data=$graph_data_range_recv---end' WHERE `options`.`field_name` = 'graph_data_range_recv' LIMIT 1");
+				}
 			}
 			else
 			{
@@ -159,7 +162,10 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 					}
 				}
 				// Update data cache
-				mysql_query("UPDATE `options` SET `field_data` = '---time=" . time() . "---max=$largest_sent---data=$graph_data_range_sent---end' WHERE `options`.`field_name` = 'graph_data_range_sent' LIMIT 1");
+				if(empty($graph_data_range_sent) == FALSE)
+				{
+					mysql_query("UPDATE `options` SET `field_data` = '---time=" . time() . "---max=$largest_sent---data=$graph_data_range_sent---end' WHERE `options`.`field_name` = 'graph_data_range_sent' LIMIT 1");
+				}
 			}
 			else
 			{
@@ -219,8 +225,11 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 
 				}
 				// Update data cache
-				mysql_query("UPDATE `options` SET `field_data` = '---time=" . time() . "---max=$max_transactions---data=$graph_data_trans_total---end' WHERE `options`.`field_name` = 'graph_data_trans_total' LIMIT 1");
-				mysql_query("UPDATE `options` SET `field_data` = '---time=" . time() . "---max=$max_amount---data=$graph_data_amount_total---end' WHERE `options`.`field_name` = 'graph_data_amount_total' LIMIT 1");
+				if(empty($graph_data_trans_total) == FALSE && empty($graph_data_amount_total) == FALSE)
+				{
+					mysql_query("UPDATE `options` SET `field_data` = '---time=" . time() . "---max=$max_transactions---data=$graph_data_trans_total---end' WHERE `options`.`field_name` = 'graph_data_trans_total' LIMIT 1");
+					mysql_query("UPDATE `options` SET `field_data` = '---time=" . time() . "---max=$max_amount---data=$graph_data_amount_total---end' WHERE `options`.`field_name` = 'graph_data_amount_total' LIMIT 1");
+				}
 			}
 			else
 			{
@@ -414,14 +423,19 @@ Confirm Password: <input type="password" name="confirm_password" /></br></br>
 //***********************************************************
 function options_screen2()
 {
-$home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
+	$home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
+	$max_active_peers = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,"field_data");
+	$max_new_peers = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'max_new_peers' LIMIT 1"),0,"field_data");
 
-return '<table border="0"><tr><td><strong>Home, Peerlist, & Queue Refresh Rates [Default 10]</strong></br></br><FORM ACTION="index.php?menu=options&refresh=change" METHOD="post"></td></tr>
-<tr><td style="width:415px" valign="bottom" align="right">
-Seconds: <input type="text" name="home_update" size="2" value="' . $home_update . '" /></br></tr>
+	return '<table border="0"><FORM ACTION="index.php?menu=options&refresh=change" METHOD="post">
+		<tr><td><strong>Home, Peerlist, & Queue Refresh Rate</strong> [Default 10]</td></tr>
+		<tr><td style="width:415px" valign="bottom" align="right">Seconds: <input type="text" name="home_update" size="2" value="' . $home_update . '" /></td></tr>
+		<tr><td></td></tr>
 <tr><td align="right">
-<input type="submit" name="Submit2" value="Save Options" />
-</FORM>
+<strong>Maximum Active Peers</strong> [Default 5]: <input type="text" name="max_peers" size="3" value="' . $max_active_peers . '"/></br>
+<strong>Maximum Reserve Peers</strong> [Default 10]: <input type="text" name="max_new_peers" size="3" value="' . $max_new_peers . '"/></br>
+</td>
+<tr><td align="right"><input type="submit" name="Submit2" value="Save Options" /></FORM>
 </td><td style="width:215px" valign="bottom" align="right"><FORM ACTION="index.php?menu=options&upgrade=check" METHOD="post"><input type="submit" name="Submit3" value="Check for Updates" /></FORM></td></tr>
 </table>
 ';
