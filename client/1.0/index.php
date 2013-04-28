@@ -113,13 +113,13 @@ if($_SESSION["valid_login"] == TRUE)
 //****************************************************************************
 	if($_GET["menu"] == "home" || empty($_GET["menu"]) == TRUE)
 	{
-		$body_string = '<strong>Last 30 <font color="green">Received</font> Transaction Amounts to Billfold</strong></br><canvas id="recv_graph" width="620" height="200"></canvas>';
+		$body_string = '<strong>Last 20 <font color="green">Received</font> Transaction Amounts to Billfold</strong></br><canvas id="recv_graph" width="620" height="300"></canvas>';
 		$body_string .= '<hr></hr>';
-		$body_string .= '<strong>Last 30 <font color="blue">Sent</font> Transaction Amounts from Billfold</strong></br><canvas id="sent_graph" width="620" height="200"></canvas>';
+		$body_string .= '<strong>Last 20 <font color="blue">Sent</font> Transaction Amounts from Billfold</strong></br><canvas id="sent_graph" width="620" height="300"></canvas>';
 		$body_string .= '<hr></hr>';
-		$body_string .= '<strong>Timekoin Network Total Transactions per Cycle</strong></br><canvas id="trans_total" width="620" height="200"></canvas>';
+		$body_string .= '<strong>Timekoin Network - Total Transactions per Cycle (Last 25 Cycles)</strong></br><canvas id="trans_total" width="620" height="200"></canvas>';
 		$body_string .= '<hr></hr>';
-		$body_string .= '<strong>Timekoin Network Total Amounts Sent per Cycle</strong></br><canvas id="amount_total" width="620" height="200"></canvas>';
+		$body_string .= '<strong>Timekoin Network - Total Amounts Sent per Cycle (Last 20 Cycles)</strong></br><canvas id="amount_total" width="620" height="400"></canvas>';
 
 		$display_balance = db_cache_balance(my_public_key());
 
