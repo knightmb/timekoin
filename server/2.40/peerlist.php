@@ -743,7 +743,8 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 	
 	if(rand(1,2) == 2)// Randomize to avoid spamming DB
 	{
-		mysql_query("DELETE QUICK FROM `active_peer_list` WHERE `last_heartbeat` < " . (time() - 300) . " OR `failed_sent_heartbeat` >= $peer_failure_grade AND `join_peer_list` != 0");
+		mysql_query("DELETE QUICK FROM `active_peer_list` WHERE `last_heartbeat` < " . (time() - 300) . " AND `join_peer_list` != 0");
+		mysql_query("DELETE QUICK FROM `active_peer_list` WHERE `failed_sent_heartbeat` >= $peer_failure_grade AND `join_peer_list` != 0");
 	}
 //***********************************************************************************
 //***********************************************************************************
