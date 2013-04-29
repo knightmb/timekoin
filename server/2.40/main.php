@@ -36,12 +36,12 @@ if($_GET["action"]=="begin_main")
 				{
 					// Can't start Timekoin, php-win.exe is missing or the path is wrong.
 					// Try to find the file before starting.
-					$find_php = find_file('C:/wamp', 'php-win.exe');
+					$find_php = find_file('C:', 'php-win.exe');
 
 					if(empty($find_php[0]) == TRUE)
 					{
-						// Not in wamp, search the whole drive
-						$find_php = find_file('C:', 'php-win.exe');
+						// Try D: if not found on C:
+						$find_php = find_file('D:', 'php-win.exe');
 					}
 
 					// Filter strings
@@ -288,7 +288,7 @@ while(1) // Begin Infinite Loop :)
 
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,"field_data");
 		// Check if script is already running
-		if($script_loop_active == 0 || $script_loop_active == 1) // Two instances can be run with ths script
+		if($script_loop_active == 0)
 		{
 			call_script("queueclerk.php");			
 		}

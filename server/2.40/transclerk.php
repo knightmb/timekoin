@@ -98,18 +98,31 @@ if($_GET["action"] == "transaction_data" && $_GET["block_number"] >= 0)
 	exit;
 }
 //***********************************************************************************
+while(1) // Begin Infinite Loop
+{
+set_time_limit(120);
 //***********************************************************************************
-$loop_active = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,"field_data"));
+$loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,"field_data");
 
-// Check if loop is already running
-if($loop_active == 0)
+// Check script status
+if($loop_active === FALSE)
+{
+	// Time to exit
+	exit;
+}
+else if($loop_active == 0)
+{
+	// Set the working status of 1
+	mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
+}
+else if($loop_active == 2) // Wake from sleep
 {
 	// Set the working status of 1
 	mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
 }
 else
 {
-	// Loop called while still working
+	// Script called while still working
 	exit;
 }
 //***********************************************************************************
@@ -122,11 +135,10 @@ $foundation_active = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_s
 
 // Can we work on the transactions in the database?
 // Not allowed 30 seconds before and 30 seconds after transaction cycle.
-if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle) > 30 && $foundation_active == 0)
+if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle) > 30 && $foundation_active != 1)
 {
 	// Check if the transaction history is blank or not (either from reset or new setup)
 	$sql = "SELECT timestamp FROM `transaction_history` LIMIT 5";
-
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 
@@ -198,7 +210,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				
 				// Start a block rebuild from this since a new database is going to be far
 				// behind the history of the other active peers
-				$sql = "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'block_check_start' LIMIT 1";
+				mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'block_check_start' LIMIT 1");
 				mysql_query($sql);
 			}
 			else
@@ -238,24 +250,20 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			}
 
 			// Update database with ERROR_CHECK hash
-			$sql = "UPDATE `options` SET `field_data` = '$current_history_hash' WHERE `field_name` = 'transaction_history_hash' LIMIT 1";
-			mysql_query($sql);
+			mysql_query("UPDATE `options` SET `field_data` = '$current_history_hash' WHERE `field_name` = 'transaction_history_hash' LIMIT 1");
 		}
 		else
 		{
+			$error_check_active = FALSE;
+
 			$history_hash = transaction_history_hash();
 
-			if($history_hash == $current_history_hash)
-			{
-				// Already in database, no need to update
-			}
-			else
+			if($history_hash != $current_history_hash)
 			{
 				$current_history_hash = $history_hash;
 				
 				// Update database with new hash
-				$sql = "UPDATE `options` SET `field_data` = '$history_hash' WHERE `field_name` = 'transaction_history_hash' LIMIT 1";
-				mysql_query($sql);
+				mysql_query("UPDATE `options` SET `field_data` = '$history_hash' WHERE `field_name` = 'transaction_history_hash' LIMIT 1");
 			}
 		}
 //***********************************************************************************	
@@ -577,9 +585,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 									// Not too close to the end, start at the current transaction cycle
 									// and donwload X transaction cycles going forward.
 									write_log("Connecting with SUPER Peer ($super_peer_cycles Transaction Cycles Limit): $ip_address$domain:$port_number/$subfolder", "TC");
-									
-									set_time_limit(270); // Increase script processing time
-
+									set_time_limit(240); // Increase script processing time
 									$super_transaction_cycle = $block_number;
 
 									while($super_transaction_cycle < $block_number + $super_peer_cycles)
@@ -814,12 +820,10 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			$history_hash = transaction_history_hash();
 
 			// Update database with new hash
-			$sql = "UPDATE `options` SET `field_data` = '$history_hash' WHERE `field_name` = 'transaction_history_hash' LIMIT 1";
-			mysql_query($sql);
+			mysql_query("UPDATE `options` SET `field_data` = '$history_hash' WHERE `field_name` = 'transaction_history_hash' LIMIT 1");
 
 			// Reset error block
-			$sql = "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1";
-			mysql_query($sql);
+			mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1");
 
 			write_log("Manual History Check Complete. No Errors Found with Transaction Cycle #$transaction_history_block_check to #" . ($transaction_history_block_check + $hash_check_counter - 1), "TC");
 		}
@@ -901,8 +905,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 					{
 						// Something is wrong, transaction history has an error.
 						// Schedule a check in case the peer has an error and not us.
-						$sql = "UPDATE `main_loop_status` SET `field_data` = '$random_block' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1";
-						mysql_query($sql);
+						mysql_query("UPDATE `main_loop_status` SET `field_data` = '$random_block' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1");
 
 						write_log("This Peer ($ip_address$domain) Reports that My Transaction Block #$random_block is Invalid.</br>Will Double Check with other Peers before making any corrections.", "TC");
 					}
@@ -921,8 +924,8 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 //***********************************************************************************
 //***********************************************************************************
-// Script finished, set status to 0
-mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
+// Script finished, set standby status to 2
+mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
 
 // Record when this script finished
 mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'transclerk_last_heartbeat' LIMIT 1");
@@ -936,9 +939,14 @@ if($transaction_multi == TRUE)
 
 	if($main_loop_status == 1 || $main_loop_status == 2)
 	{
-		call_script("transclerk.php");
+		sleep(1);
 	}
-	exit;
 }
+else
+{
+	sleep(10);
+}
+
 //***********************************************************************************
+} // End Infinite Loop
 ?>

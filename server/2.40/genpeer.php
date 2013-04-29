@@ -71,19 +71,30 @@ if($_GET["action"] == "gen_peer_list")
 	exit;
 }
 //***********************************************************************************
+while(1) // Begin Infinite Loop
+{
 //***********************************************************************************
 $loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,"field_data");
 
-// Check if loop is already running
-if($loop_active == 0)
+// Check script status
+if($loop_active === FALSE)
+{
+	// Time to exit
+	exit;
+}
+else if($loop_active == 0)
 {
 	// Set the working status of 1
-	$sql = "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1";
-	mysql_query($sql);
+	mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
+}
+else if($loop_active == 2) // Wake from sleep
+{
+	// Set the working status of 1
+	mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
 }
 else
 {
-	// Loop called while still working
+	// Script called while still working
 	exit;
 }
 //***********************************************************************************
@@ -490,10 +501,13 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 //***********************************************************************************
 //***********************************************************************************
-// Script finished, set status to 0
-mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
+// Script finished, set standby status to 2
+mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
 
 // Record when this script finished
 mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'genpeer_last_heartbeat' LIMIT 1");
 
+//***********************************************************************************
+sleep(10);
+} // End Infinite Loop
 ?>

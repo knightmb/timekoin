@@ -118,7 +118,7 @@ if($_SESSION["valid_login"] == TRUE)
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,"field_data");
 		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'treasurer_last_heartbeat' LIMIT 1"),0,"field_data");
 
-		if($script_loop_active > 0)
+		if($script_loop_active == 1)
 		{
 			// Treasurer should still be active
 			if((time() - $script_last_heartbeat) > 200)
@@ -142,7 +142,7 @@ if($_SESSION["valid_login"] == TRUE)
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,"field_data");
 		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peerlist_last_heartbeat' LIMIT 1"),0,"field_data");
 
-		if($script_loop_active > 0)
+		if($script_loop_active == 1)
 		{
 			// Peerlist should still be active
 			if((time() - $script_last_heartbeat) > 99)
@@ -166,7 +166,7 @@ if($_SESSION["valid_login"] == TRUE)
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,"field_data");
 		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'queueclerk_last_heartbeat' LIMIT 1"),0,"field_data");
 
-		if($script_loop_active > 0)
+		if($script_loop_active == 1)
 		{
 			// Queueclerk should still be active
 			if((time() - $script_last_heartbeat) > 200)
@@ -190,7 +190,7 @@ if($_SESSION["valid_login"] == TRUE)
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,"field_data");
 		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'genpeer_last_heartbeat' LIMIT 1"),0,"field_data");
 
-		if($script_loop_active > 0)
+		if($script_loop_active == 1)
 		{
 			// Genpeer should still be active
 			if((time() - $script_last_heartbeat) > 200)
@@ -214,7 +214,7 @@ if($_SESSION["valid_login"] == TRUE)
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,"field_data");
 		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'generation_last_heartbeat' LIMIT 1"),0,"field_data");
 
-		if($script_loop_active > 0)
+		if($script_loop_active == 1)
 		{
 			// Generation should still be active
 			if((time() - $script_last_heartbeat) > 99)
@@ -239,7 +239,7 @@ if($_SESSION["valid_login"] == TRUE)
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,"field_data");
 		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'transclerk_last_heartbeat' LIMIT 1"),0,"field_data");
 
-		if($script_loop_active > 0)
+		if($script_loop_active == 1)
 		{
 			// Transclerk should still be active
 			if((time() - $script_last_heartbeat) > 300)
@@ -264,7 +264,7 @@ if($_SESSION["valid_login"] == TRUE)
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,"field_data");
 		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_last_heartbeat' LIMIT 1"),0,"field_data");
 
-		if($script_loop_active > 0)
+		if($script_loop_active == 1)
 		{
 			// Foundation should still be active
 			if((time() - $script_last_heartbeat) > 200)
@@ -289,7 +289,7 @@ if($_SESSION["valid_login"] == TRUE)
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'balance_heartbeat_active' LIMIT 1"),0,"field_data");
 		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'balance_last_heartbeat' LIMIT 1"),0,"field_data");
 
-		if($script_loop_active > 0)
+		if($script_loop_active == 1)
 		{
 			// Balance Indexer should still be active
 			if((time() - $script_last_heartbeat) > 500)
@@ -954,6 +954,16 @@ if($_SESSION["valid_login"] == TRUE)
 						// Clear transaction queue to avoid unnecessary peer confusion
 						mysql_query("TRUNCATE TABLE `transaction_queue`");
 
+						// Clear Status for other Scripts
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active' LIMIT 1");						
+
 						// Stop all other script activity
 						activate(TIMEKOINSYSTEM, 0);
 					}
@@ -968,6 +978,16 @@ if($_SESSION["valid_login"] == TRUE)
 						$server_code = '</br><font color="blue"><strong>Timekoin Main Processor Stopping...</strong></font></br></br>';
 						// Clear transaction queue to avoid unnecessary peer confusion
 						mysql_query("TRUNCATE TABLE `transaction_queue`");
+
+						// Clear Status for other Scripts
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active' LIMIT 1");
 
 						// Stop all other script activity
 						activate(TIMEKOINSYSTEM, 0);						
@@ -1167,11 +1187,12 @@ if($_SESSION["valid_login"] == TRUE)
 			// Search the entire hard drive looking for the php program
 			if(getenv("OS") == "Windows_NT")
 			{
-				$find_php = find_file('C:/wamp', 'php-win.exe');
+				$find_php = find_file('C:', 'php-win.exe');
 
 				if(empty($find_php[0]) == TRUE)
 				{
-					$find_php = find_file('C:', 'php-win.exe');
+					// Try D: if not found on C:
+					$find_php = find_file('D:', 'php-win.exe');
 				}
 
 				// Filter strings
