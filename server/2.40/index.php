@@ -1605,7 +1605,7 @@ if($_SESSION["valid_login"] == TRUE)
 							$display_balance = db_cache_balance($my_public_key);
 							$body_string = send_receive_body($public_key_64, $send_amount);
 							$body_string .= '<hr></hr><font color="green"><strong>You just sent ' . $send_amount . ' timekoins to the above public key.</font></br>
-								Your balance will not reflect this until the transation is recorded across the entire network.</strong></br></br>';
+								Your balance will not reflect this until the transaction is recorded across the entire network.</strong></br></br>';
 						}
 						else
 						{
