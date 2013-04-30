@@ -94,7 +94,7 @@ while(1)
 		if($script_loop_active > 0)
 		{
 			// Generation should still be active
-			if((time() - $script_last_heartbeat) > 99)
+			if((time() - $script_last_heartbeat) > 300)
 			{
 				write_log("Generation Clerk has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
@@ -110,7 +110,7 @@ while(1)
 		if($script_loop_active > 0)
 		{
 			// Treasurer should still be active
-			if((time() - $script_last_heartbeat) > 200)
+			if((time() - $script_last_heartbeat) > 300)
 			{
 				write_log("Treasurer has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
@@ -126,7 +126,7 @@ while(1)
 		if($script_loop_active > 0)
 		{
 			// Peerlist should still be active
-			if((time() - $script_last_heartbeat) > 99)
+			if((time() - $script_last_heartbeat) > 300)
 			{
 				write_log("Peer List Clerk has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
@@ -153,7 +153,7 @@ while(1)
 		if($script_loop_active > 0)
 		{
 			// Queueclerk should still be active
-			if((time() - $script_last_heartbeat) > 200)
+			if((time() - $script_last_heartbeat) > 300)
 			{
 				write_log("Transaction Queue Clerk has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
@@ -169,7 +169,7 @@ while(1)
 		if($script_loop_active > 0)
 		{
 			// Genpeer should still be active
-			if((time() - $script_last_heartbeat) > 200)
+			if((time() - $script_last_heartbeat) > 300)
 			{
 				write_log("Generation Peer Clerk has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
@@ -201,7 +201,7 @@ while(1)
 		if($script_loop_active > 0)
 		{
 			// Foundation should still be active
-			if((time() - $script_last_heartbeat) > 200)
+			if((time() - $script_last_heartbeat) > 300)
 			{
 				write_log("Foundation Clerk has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop

@@ -276,7 +276,7 @@ while(1) // Begin Infinite Loop :)
 			}			
 		}
 
-		sleep(2); // 2 seconds for sanity reasons
+		sleep(1); // 1 seconds for sanity reasons
 
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,"field_data");
 		// Check if script is already running
@@ -341,7 +341,7 @@ while(1) // Begin Infinite Loop :)
 	//*****************************************************************************************************
 	//*****************************************************************************************************	
 		// (Very Last Thing to do in Script)
-		sleep(1);
+		sleep(2);
 
 		// Time to wake up and start again
 		mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'main_last_heartbeat' LIMIT 1");

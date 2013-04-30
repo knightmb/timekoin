@@ -1598,7 +1598,7 @@ if($_SESSION["valid_login"] == TRUE)
 					else
 					{
 						// Now it's time to send the transaction
-						$my_private_key = mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_private_key' LIMIT 1"),0,"field_data");
+						$my_private_key = my_private_key();
 
 						if(send_timekoins($my_private_key, $my_public_key, $public_key_to, $send_amount, $message) == TRUE)
 						{

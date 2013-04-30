@@ -172,7 +172,7 @@ function trans_percent_status()
 	{
 		$status = '<font color="#818181"><strong>100%</strong></font>';
 	}
-	else if($percent_update < 100 && $percent_update >= 90)
+	else if($percent_update < 100 && $percent_update >= 98)
 	{
 		$status = '<font color="#5858FA"><strong>' . number_format($percent_update, 3) . '%</font> (' . number_format(transaction_cycle(0, TRUE) - $total_trans_hash) . ' Transaction Cycles to Update)</strong>';
 	}

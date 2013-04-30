@@ -931,16 +931,11 @@ mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_s
 mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'transclerk_last_heartbeat' LIMIT 1");
 
 //**********
-//Launch another instance right away when getting
-//transaction history in sync with the network
+// Start working right away when getting
+// transaction history in sync with the network
 if($transaction_multi == TRUE)
 {
-	$main_loop_status = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,"field_data");
-
-	if($main_loop_status == 1 || $main_loop_status == 2)
-	{
-		sleep(1);
-	}
+	sleep(1); // Busy updating
 }
 else
 {

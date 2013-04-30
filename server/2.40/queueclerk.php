@@ -111,12 +111,12 @@ if($_GET["action"] == "transaction" && empty($_GET["number"]) == FALSE)
 // Accept a transaction from a firewalled peer (behind a firewall with no inbound communication port open)
 if($_GET["action"] == "input_transaction")
 {
-	$next_generation_cycle = transaction_cycle(1);
-	$current_generation_cycle = transaction_cycle(0);
+	$next_transaction_cycle = transaction_cycle(1);
+	$current_transaction_cycle = transaction_cycle(0);
 
 	// Can we work on the transactions in the database?
 	// Not allowed 120 seconds before and 20 seconds after transaction cycle.
-	if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycle) > 20)
+	if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cycle) > 20)
 	{
 		$transaction_timestamp = intval($_POST["timestamp"]);
 		$transaction_public_key = $_POST["public_key"];
@@ -196,8 +196,8 @@ if($_GET["action"] == "input_transaction")
 			if($transaction_hash == $crypt_hash_check 
 				&& $inside_transaction_hash == $final_hash_compare 
 				&& strlen($transaction_public_key) > 300 
-				&& $transaction_timestamp >= $current_generation_cycle 
-				&& $transaction_timestamp < $next_generation_cycle)
+				&& $transaction_timestamp >= $current_transaction_cycle 
+				&& $transaction_timestamp < $next_transaction_cycle)
 			{
 				// Check for 100 public key limit in the transaction queue
 				$sql = "SELECT * FROM `transaction_queue` WHERE `public_key` = '$transaction_public_key'";
@@ -271,12 +271,12 @@ else
 }
 //***********************************************************************************
 //***********************************************************************************
-$next_generation_cycle = transaction_cycle(1);
-$current_generation_cycle = transaction_cycle(0);
+$next_transaction_cycle = transaction_cycle(1);
+$current_transaction_cycle = transaction_cycle(0);
 
 // Can we work on the transactions in the database?
-// Not allowed 30 seconds before and 30 seconds after generation cycle.
-if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle) > 30)
+// Not allowed 30 seconds before and 30 seconds after transaction cycle.
+if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cycle) > 30)
 {
 	// Create a hash of my own transaction queue
 	$transaction_queue_hash = queue_hash();
@@ -479,8 +479,8 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 					if($transaction_hash == $crypt_hash_check 
 						&& $inside_transaction_hash == $final_hash_compare 
 						&& strlen($transaction_public_key) > 300 
-						&& $transaction_timestamp >= $current_generation_cycle 
-						&& $transaction_timestamp < $next_generation_cycle)
+						&& $transaction_timestamp >= $current_transaction_cycle 
+						&& $transaction_timestamp < $next_transaction_cycle)
 					{
 						// Check for 100 public key limit in the transaction queue
 						$sql = "SELECT * FROM `transaction_queue` WHERE `public_key` = '$transaction_public_key'";
@@ -533,6 +533,13 @@ mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_s
 mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'queueclerk_last_heartbeat' LIMIT 1");
 
 //***********************************************************************************
-sleep(5);
+if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cycle) > 30)
+{
+	sleep(1);
+}
+else
+{
+	sleep(10);
+}
 } // End Infinite Loop
 ?>
