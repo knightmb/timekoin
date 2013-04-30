@@ -34,6 +34,7 @@ if($_GET["action"]=="begin_main")
 			{
 				if(file_exists($php_location . "php-win.exe") == FALSE)
 				{
+					set_time_limit(99);					
 					// Can't start Timekoin, php-win.exe is missing or the path is wrong.
 					// Try to find the file before starting.
 					$find_php = find_file('C:', 'php-win.exe');

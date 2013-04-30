@@ -204,14 +204,14 @@ Current Username: <input type="text" name="current_username" /></br>
 New Username: <input type="text" name="new_username" /></br>
 Confirm Username: <input type="text" name="confirm_username" />
 </td></tr>
-<tr></tr>
+<tr><td></td></tr>
 <tr><td align="right">
 Current Password: <input type="password" name="current_password" /></br>
 New Password: <input type="password" name="new_password" /></br>
 Confirm Password: <input type="password" name="confirm_password" /></br></br>
 <input type="submit" name="Submit" value="Change" />
-</FORM>
-</td><td style="width:305px" valign="bottom" align="right">' . $confirm_message . $form_action .'
+</FORM></td></tr></table>
+<table border="0"><tr><td style="width:630px" valign="bottom" align="right">' . $confirm_message . $form_action .'
 <input type="submit" name="Submit2" value="Generate New Keys" /></FORM></td></tr>
 </table>';
 } 
