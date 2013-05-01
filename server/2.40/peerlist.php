@@ -1,7 +1,7 @@
 <?PHP
 include 'configuration.php';
 include 'function.php';
-set_time_limit(60);
+set_time_limit(99);
 //***********************************************************************************
 //***********************************************************************************
 if(PEERLIST_DISABLED == TRUE || TIMEKOIN_DISABLED == TRUE)
@@ -330,7 +330,7 @@ if($_GET["action"] == "exchange")
 //***********************************************************************************
 while(1) // Begin Infinite Loop
 {
-set_time_limit(60);
+set_time_limit(99);
 //***********************************************************************************
 $loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,"field_data");
 

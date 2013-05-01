@@ -18,7 +18,7 @@ if($_SESSION["valid_login"] == FALSE && $_GET["action"] != "login")
 		login_screen();
 	}
 
-	if($_GET["autostart"] == "1" && $_SERVER["SERVER_ADDR"] == "127.0.0.1") // Only do this if run from the local machine
+	if($_GET["autostart"] == "1" && $_SERVER["SERVER_ADDR"] == gethostbyname(trim(`hostname`))) // Only do this if run from the local machine
 	{
 		// Auto start Timekoin process right away, even before login
 		if(mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD) == TRUE && mysql_select_db(MYSQL_DATABASE) == TRUE)
