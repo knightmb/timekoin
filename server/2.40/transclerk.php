@@ -585,7 +585,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 									// Not too close to the end, start at the current transaction cycle
 									// and donwload X transaction cycles going forward.
 									write_log("Connecting with SUPER Peer ($super_peer_cycles Transaction Cycles Limit): $ip_address$domain:$port_number/$subfolder", "TC");
-									set_time_limit(240); // Increase script processing time
+									set_time_limit(300); // Increase script processing time
 									$super_transaction_cycle = $block_number;
 
 									while($super_transaction_cycle < $block_number + $super_peer_cycles)
