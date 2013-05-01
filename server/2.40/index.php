@@ -1,6 +1,7 @@
 <?PHP
 include 'templates.php';
 include 'function.php';
+include 'configuration.php';
 set_time_limit(99);
 session_name("timekoin");
 session_start();
@@ -17,10 +18,80 @@ if($_SESSION["valid_login"] == FALSE && $_GET["action"] != "login")
 		login_screen();
 	}
 
+	if($_GET["autostart"] == "1" && $_SERVER["SERVER_ADDR"] == "127.0.0.1") // Only do this if run from the local machine
+	{
+		// Auto start Timekoin process right away, even before login
+		if(mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD) == TRUE && mysql_select_db(MYSQL_DATABASE) == TRUE)
+		{
+			// Check last heartbeat and make sure it was more than X seconds ago
+			$main_heartbeat_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,"field_data");
+
+			if($main_heartbeat_active == FALSE)
+			{
+				// Database Initialization
+				initialization_database();
+
+				// Check if a custom PHP path is being used
+				$php_location = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,"field_data");
+				
+				if(empty($php_location) == FALSE)
+				{
+					// Check to make sure the binary/exe file exist before starting
+					if(getenv("OS") == "Windows_NT")
+					{
+						if(file_exists($php_location . "php-win.exe") == FALSE)
+						{
+							set_time_limit(99);					
+							// Can't start Timekoin, php-win.exe is missing or the path is wrong.
+							// Try to find the file before starting.
+							$find_php = find_file('C:', 'php-win.exe');
+
+							if(empty($find_php[0]) == TRUE)
+							{
+								// Try D: if not found on C:
+								$find_php = find_file('D:', 'php-win.exe');
+							}
+
+							// Filter strings
+							$symbols = array("/");
+							$find_php[0] = str_replace($symbols, "\\", $find_php[0]);
+
+							// Filter for path setting
+							$symbols = array("php-win.exe");
+							$find_php[0] = str_replace($symbols, "", $find_php[0]);
+
+							if(empty($find_php[0]) == TRUE)
+							{
+								// Could not find it anywhere :(
+							}
+							else
+							{
+								// Found it! Save location and start Timekoin
+								mysql_query("UPDATE `options` SET `field_data` = '" . addslashes($find_php[0]) . "' WHERE `options`.`field_name` = 'php_location' LIMIT 1");
+							}
+						} // Check if php-win.exe exist check
+
+					} // Windows OS Check
+
+				} // End Database Check for custom PHP location
+
+				mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'main_last_heartbeat' LIMIT 1");
+
+				// Set loop at active now
+				mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1");
+
+				call_script("main.php"); // Start main.php process
+
+				activate(TIMEKOINSYSTEM, 1); // In case this was disabled from a stop call in the server GUI
+
+			} // End active main.php process check
+
+		}// End DB check
+
+	}// End Autostart check
+
 	exit;
 }
-
-include 'configuration.php';
 
 if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 {
