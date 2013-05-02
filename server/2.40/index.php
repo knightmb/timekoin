@@ -1389,38 +1389,6 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 		}
 
-		if($_GET["hashcode"] == "manage")
-		{
-			$hashcode;
-			$hashcode_name;
-			$hashcode_permissions;
-			$counter = 1;
-
-			$body_text = '<table border="0"><tr><td style="width:230px"><FORM ACTION="index.php?menu=options&hashcode=save" METHOD="post"></td></tr>';
-
-			while($counter <= 5)
-			{
-				$hashcode = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'hashcode$counter' LIMIT 1"),0,"field_data");
-				$hashcode_name = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'hashcode" . $counter . "_name' LIMIT 1"),0,"field_data");
-				$hashcode_permissions = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'hashcode" . $counter . "_permissions' LIMIT 1"),0,"field_data");
-
-				$body_text .= '<tr><td valign="bottom" align="right"><strong>Name: <input type="text" name="name'. $counter . '" size="15" value="' . $hashcode_name . '"/>
-				</br>Hashcode: <input type="text" name="hashcode'. $counter . '" size="15" value="' . $hashcode . '"/></strong></td>
-				<td><input type="checkbox" name="pk_balance'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_balance", TRUE) . '>pk_balance 
-				<input type="checkbox" name="pk_gen_amt'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_gen_amt", TRUE) . '>pk_gen_amt 
-				<input type="checkbox" name="pk_history'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_history", TRUE) . '>pk_history
-				<input type="checkbox" name="pk_recv'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_recv", TRUE) . '>pk_recv</br>
-				<input type="checkbox" name="pk_valid'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_valid", TRUE) . '>pk_valid
-				<input type="checkbox" name="send_tk'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "send_tk", TRUE) . '>send_tk
-				<input type="checkbox" name="tk_trans_total'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "tk_trans_total", TRUE) . '>tk_trans_total
-				</td></tr><tr><td colspan="2"><hr></hr></td></tr>';
-
-				$counter++;
-			}
-
-			$body_text .= '</table><input type="submit" name="save_hashcode" value="Save Settings" /></FORM>';
-		}
-
 		if($_GET["hashcode"] == "save")
 		{
 			// Clear all hashcode settings to allow new ones to be created
@@ -1453,13 +1421,51 @@ if($_SESSION["valid_login"] == TRUE)
 						$_POST["send_tk$counter"],
 						$_POST["pk_history$counter"],
 						$_POST["pk_valid$counter"],
-						$_POST["tk_trans_total$counter"]) . "')");
+						$_POST["tk_trans_total$counter"],
+						$_POST["pk_sent$counter"],
+						$_POST["pk_gen_total$counter"]) . "')");
 				}
 
 				$counter++;
 			}
 
-			$body_text = '<font color="blue">Settings Saved</font>';
+			$hash_settings_saved = TRUE;
+		}
+
+		if($_GET["hashcode"] == "manage" || $hash_settings_saved == TRUE)
+		{
+			$hashcode;
+			$hashcode_name;
+			$hashcode_permissions;
+			$counter = 1;
+
+			$body_text = '<table border="0"><tr><td style="width:230px"><FORM ACTION="index.php?menu=options&hashcode=save" METHOD="post"></td></tr>';
+
+			while($counter <= 5)
+			{
+				$hashcode = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'hashcode$counter' LIMIT 1"),0,"field_data");
+				$hashcode_name = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'hashcode" . $counter . "_name' LIMIT 1"),0,"field_data");
+				$hashcode_permissions = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'hashcode" . $counter . "_permissions' LIMIT 1"),0,"field_data");
+
+				$body_text .= '<tr><td valign="bottom" align="right"><strong>Name: <input type="text" name="name'. $counter . '" size="15" value="' . $hashcode_name . '"/>
+				</br>Hashcode: <input type="text" name="hashcode'. $counter . '" size="15" value="' . $hashcode . '"/></strong></td>
+				<td><input type="checkbox" name="pk_balance'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_balance", TRUE) . '>pk_balance 
+				<input type="checkbox" name="pk_gen_amt'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_gen_amt", TRUE) . '>pk_gen_amt
+				<input type="checkbox" name="pk_gen_total'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_gen_total", TRUE) . '>pk_gen_total
+				<input type="checkbox" name="pk_history'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_history", TRUE) . '>pk_history</br>
+				<input type="checkbox" name="pk_recv'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_recv", TRUE) . '>pk_recv
+				<input type="checkbox" name="pk_sent'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_sent", TRUE) . '>pk_sent
+				<input type="checkbox" name="pk_valid'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_valid", TRUE) . '>pk_valid
+				<input type="checkbox" name="send_tk'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "send_tk", TRUE) . '>send_tk</br>
+				<input type="checkbox" name="tk_trans_total'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "tk_trans_total", TRUE) . '>tk_trans_total
+				</td></tr><tr><td colspan="2"><hr></hr></td></tr>';
+
+				$counter++;
+			}
+
+			$body_text .= '</table><input type="submit" name="save_hashcode" value="Save Settings" /></FORM>';
+
+			if($hash_settings_saved == TRUE) { $body_text .= '</br><font color="blue"><strong>Hashcode Settings Saved!</strong></font>'; }
 		}
 
 		if($_GET["upgrade"] == "check" || $_GET["upgrade"] == "doupgrade")
