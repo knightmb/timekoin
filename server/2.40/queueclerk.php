@@ -1,7 +1,6 @@
 <?PHP
 include 'configuration.php';
 include 'function.php';
-set_time_limit(99);
 //***********************************************************************************
 //***********************************************************************************
 if(QUEUECLERK_DISABLED == TRUE || TIMEKOIN_DISABLED == TRUE)
@@ -264,6 +263,11 @@ else if($loop_active == 2) // Wake from sleep
 	// Set the working status of 1
 	mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
 }
+else if($loop_active == 3) // Shutdown
+{
+	mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
+	exit;
+}
 else
 {
 	// Script called while still working
@@ -490,15 +494,8 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 						if($sql_num_results < 100)
 						{						
 							// Transaction hash and real hash match.
-							// Check if this transaction is already in our queue (again just in case a duplicate
-							// was inserted before getting to this part of the code when multi-threading many peers)
-							$hash_match = mysql_result(mysql_query("SELECT timestamp FROM `transaction_queue` WHERE `hash` = '$current_hash' LIMIT 1"),0,0);
-
-							if(empty($hash_match) == TRUE)
-							{
-								mysql_query("INSERT INTO `transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
-								VALUES ('$transaction_timestamp', '$transaction_public_key', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')");
-							}
+							mysql_query("INSERT INTO `transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
+							VALUES ('$transaction_timestamp', '$transaction_public_key', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')");
 						}
 						else
 						{
@@ -526,6 +523,16 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 
 //***********************************************************************************
 //***********************************************************************************
+$loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,"field_data");
+
+// Check script status
+if($loop_active == 3)
+{
+	// Time to exit
+	mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
+	exit;
+}
+
 // Script finished, set standby status to 2
 mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
 

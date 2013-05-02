@@ -253,10 +253,12 @@ function my_domain()
 //***********************************************************************************
 function modify_peer_grade($ip_address, $domain, $subfolder, $port_number, $grade)
 {
-	$peer_failure = mysql_result(mysql_query("SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' OR `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1"),0,0);
+	$peer_failure = mysql_result(mysql_query("SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1"),0,0);
 	$peer_failure += $grade;
-	if($peer_failure < 0) { $peer_failure = 0; } // Range fixing
-	mysql_query("UPDATE `active_peer_list` SET `failed_sent_heartbeat` = '$peer_failure' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+	if($peer_failure >= 0)
+	{
+		mysql_query("UPDATE `active_peer_list` SET `failed_sent_heartbeat` = $peer_failure WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+	}
 	return;
 }
 //***********************************************************************************

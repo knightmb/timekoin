@@ -158,8 +158,8 @@ if($_SESSION["valid_login"] == TRUE)
 	{
 		$my_public_key = mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,"field_data");
 
-		$body_string = '<table border="0" cellspacing="10" cellpadding="2" bgcolor="#FFFFFF"><tr><td align="center"><strong>Status</strong></td>
-			<td align="center"><strong>Program</strong></td><td align="left"><strong>Message</strong></td></tr>';
+		$body_string = '<table border="0" cellspacing="10" cellpadding="2" bgcolor="#FFFFFF"><tr><td></td>
+			<td align="center"><strong>Process</strong></td><td align="left"><strong>Status</strong></td></tr>';
 
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,"field_data");
 		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,"field_data");
@@ -192,10 +192,10 @@ if($_SESSION["valid_login"] == TRUE)
 		if($script_loop_active == 1)
 		{
 			// Treasurer should still be active
-			if((time() - $script_last_heartbeat) > 200)
+			if((time() - $script_last_heartbeat) > 300)
 			{
 				$body_string .= '<tr><td align="center"><img src="img/hr.gif" alt="" /></td><td><font color="red"><strong>Treasurer Processor</strong></font></td>
-					<td><strong>Program Stalled.</strong></td></tr>';
+					<td><strong>Process Stalled.</strong></td></tr>';
 			}
 			else
 			{
@@ -204,10 +204,20 @@ if($_SESSION["valid_login"] == TRUE)
 					<td><strong>Examining Transactions for Accuracy...</strong></td></tr>';
 			}
 		}
-		else
+		else if($script_loop_active == 2)
 		{
 			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Treasurer Processor</strong></font></td>
 				<td><strong>Idle</strong></td></tr>';
+		}
+		else if($script_loop_active == 3)
+		{
+			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Treasurer Processor</strong></font></td>
+				<td><strong>Shutting Down...</strong></td></tr>';
+		}		
+		else
+		{
+			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Treasurer Processor</strong></font></td>
+				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,"field_data");
@@ -216,7 +226,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($script_loop_active == 1)
 		{
 			// Peerlist should still be active
-			if((time() - $script_last_heartbeat) > 99)
+			if((time() - $script_last_heartbeat) > 300)
 			{
 				$body_string .= '<tr><td align="center"><img src="img/hr.gif" alt="" /></td><td><font color="red"><strong>Peer Processor</strong></font></td>
 					<td><strong>Program Stalled.</strong></td></tr>';
@@ -228,10 +238,20 @@ if($_SESSION["valid_login"] == TRUE)
 					<td><strong>Talking to Peers...</strong></td></tr>';
 			}
 		}
-		else
+		else if($script_loop_active == 2)
 		{
 			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Peer Processor</strong></font></td>
 				<td><strong>Idle</strong></td></tr>';
+		}
+		else if($script_loop_active == 3)
+		{
+			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Peer Processor</strong></font></td>
+				<td><strong>Shutting Down...</strong></td></tr>';
+		}		
+		else
+		{
+			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Peer Processor</strong></font></td>
+				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,"field_data");
@@ -240,7 +260,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($script_loop_active == 1)
 		{
 			// Queueclerk should still be active
-			if((time() - $script_last_heartbeat) > 200)
+			if((time() - $script_last_heartbeat) > 300)
 			{
 				$body_string .= '<tr><td align="center"><img src="img/hr.gif" alt="" /></td><td><font color="red"><strong>Transaction Queue Clerk</strong></font></td>
 					<td><strong>Program Stalled.</strong></td></tr>';
@@ -252,10 +272,20 @@ if($_SESSION["valid_login"] == TRUE)
 					<td><strong>Consulting with Peers...</strong></td></tr>';
 			}
 		}
-		else
+		else if($script_loop_active == 2)
 		{
 			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Transaction Queue Clerk</strong></font></td>
 				<td><strong>Idle</strong></td></tr>';
+		}
+		else if($script_loop_active == 3)
+		{
+			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Transaction Queue Clerk</strong></font></td>
+				<td><strong>Shutting Down...</strong></td></tr>';
+		}		
+		else
+		{
+			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Transaction Queue Clerk</strong></font></td>
+				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,"field_data");
@@ -264,7 +294,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($script_loop_active == 1)
 		{
 			// Genpeer should still be active
-			if((time() - $script_last_heartbeat) > 200)
+			if((time() - $script_last_heartbeat) > 300)
 			{
 				$body_string .= '<tr><td align="center"><img src="img/hr.gif" alt="" /></td><td><font color="red"><strong>Generation Peer Manager</strong></font></td>
 					<td><strong>Program Stalled.</strong></td></tr>';
@@ -276,10 +306,20 @@ if($_SESSION["valid_login"] == TRUE)
 					<td><strong>Consulting with Peers...</strong></td></tr>';
 			}
 		}
-		else
+		else if($script_loop_active == 2)
 		{
 			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Generation Peer Manager</strong></font></td>
 				<td><strong>Idle</strong></td></tr>';
+		}
+		else if($script_loop_active == 3)
+		{
+			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Generation Peer Manager</strong></font></td>
+				<td><strong>Shutting Down...</strong></td></tr>';
+		}		
+		else
+		{
+			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Generation Peer Manager</strong></font></td>
+				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,"field_data");
@@ -288,7 +328,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($script_loop_active == 1)
 		{
 			// Generation should still be active
-			if((time() - $script_last_heartbeat) > 99)
+			if((time() - $script_last_heartbeat) > 300)
 			{
 				// Generation has stop was unexpected
 				$body_string .= '<tr><td align="center"><img src="img/hr.gif" alt="" /></td><td><font color="red"><strong>Generation Processor</strong></font></td>
@@ -301,10 +341,20 @@ if($_SESSION["valid_login"] == TRUE)
 					<td><strong>Doing Crypto Magic...</strong></td></tr>';
 			}
 		}
-		else
+		else if($script_loop_active == 2)
 		{
 			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Generation Processor</strong></font></td>
 				<td><strong>Idle</strong></td></tr>';
+		}
+		else if($script_loop_active == 3)
+		{
+			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Generation Processor</strong></font></td>
+				<td><strong>Shutting Down...</strong></td></tr>';
+		}		
+		else
+		{
+			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Generation Processor</strong></font></td>
+				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,"field_data");
@@ -326,10 +376,20 @@ if($_SESSION["valid_login"] == TRUE)
 					<td><strong>Consulting with Peers...</strong></td></tr>';
 			}
 		}
-		else
+		else if($script_loop_active == 2)
 		{
 			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Transaction Clerk</strong></font></td>
 				<td><strong>Idle</strong></td></tr>';
+		}
+		else if($script_loop_active == 3)
+		{
+			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Transaction Clerk</strong></font></td>
+				<td><strong>Shutting Down...</strong></td></tr>';
+		}		
+		else
+		{
+			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Transaction Clerk</strong></font></td>
+				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,"field_data");
@@ -338,7 +398,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($script_loop_active == 1)
 		{
 			// Foundation should still be active
-			if((time() - $script_last_heartbeat) > 200)
+			if((time() - $script_last_heartbeat) > 300)
 			{
 				// Script has stop was unexpected
 				$body_string .= '<tr><td align="center"><img src="img/hr.gif" alt="" /></td><td><font color="red"><strong>Foundation Manager</strong></font></td>
@@ -351,10 +411,20 @@ if($_SESSION["valid_login"] == TRUE)
 					<td><strong>Inspecting Transaction Foundations...</strong></td></tr>';
 			}
 		}
-		else
+		else if($script_loop_active == 2)
 		{
 			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Foundation Manager</strong></font></td>
 				<td><strong>Idle</strong></td></tr>';
+		}
+		else if($script_loop_active == 3)
+		{
+			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Foundation Manager</strong></font></td>
+				<td><strong>Shutting Down...</strong></td></tr>';
+		}		
+		else
+		{
+			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Foundation Manager</strong></font></td>
+				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'balance_heartbeat_active' LIMIT 1"),0,"field_data");
@@ -376,10 +446,20 @@ if($_SESSION["valid_login"] == TRUE)
 					<td><strong>Building Balance Indexes...</strong></td></tr>';
 			}
 		}
-		else
+		else if($script_loop_active == 2)
 		{
 			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Balance Indexer</strong></font></td>
 				<td><strong>Idle</strong></td></tr>';
+		}
+		else if($script_loop_active == 3)
+		{
+			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Balance Indexer</strong></font></td>
+				<td><strong>Shutting Down...</strong></td></tr>';
+		}		
+		else
+		{
+			$body_string .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="#b0a454"><strong>Balance Indexer</strong></font></td>
+				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,"field_data");
@@ -821,7 +901,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 
 				$body_string .= '<tr>
-				 <td class="style2"><p style="word-wrap:break-word; width:86px; font-size:11px;">' . $permanent1 . $sql_row["IP_Address"] . $permanent2 . '</p></td>
+				 <td class="style2"><p style="word-wrap:break-word; width:95px; font-size:11px;">' . $permanent1 . $sql_row["IP_Address"] . $permanent2 . '</p></td>
 				 <td class="style2"><p style="word-wrap:break-word; width:155px; font-size:11px;">' . $permanent1 . $sql_row["domain"] . $permanent2 . '</p></td>
 				 <td class="style2"><p style="word-wrap:break-word; width:60px; font-size:11px;">' . $permanent1 . $sql_row["subfolder"] . $permanent2 . '</p></td>
 				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["port_number"] . $permanent2 . '</p></td>
@@ -1050,16 +1130,15 @@ if($_SESSION["valid_login"] == TRUE)
 						// Clear transaction queue to avoid unnecessary peer confusion
 						mysql_query("TRUNCATE TABLE `transaction_queue`");
 
-						// Clear Status for other Scripts
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active' LIMIT 1");
-
+						// Flag other process to stop
+						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
+						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
+						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
+						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
+						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
+						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
+						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
+						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active' LIMIT 1");
 						// Stop all other script activity
 						activate(TIMEKOINSYSTEM, 0);						
 					}
@@ -2088,7 +2167,7 @@ if($_SESSION["valid_login"] == TRUE)
 					}
 				}
 				
-				$body_string .= '<tr><td colspan="5"><input type="text" size="5" name="show_more_receive" value="' . $show_last .'" /><input type="submit" name="Submit1" value="Show Last" /></FORM></td></tr>';
+				$body_string .= '<tr><td colspan="5"><hr></hr></td></tr><tr><tr><td colspan="5"><input type="text" size="5" name="show_more_receive" value="' . $show_last .'" /><input type="submit" name="Submit1" value="Show Last" /></FORM></td></tr>';
 
 				$body_string .= '</table></div>';
 
@@ -2144,7 +2223,7 @@ if($_SESSION["valid_login"] == TRUE)
 					}
 				}
 
-				$body_string .= '<tr><td colspan="5"><FORM ACTION="index.php?menu=history&send=listmore" METHOD="post"><input type="text" size="5" name="show_more_send" value="' . $show_last .'" /><input type="submit" name="Submit2" value="Show Last" /></FORM></td></tr>';
+				$body_string .= '<tr><td colspan="5"><hr></hr></td></tr><tr><tr><td colspan="5"><FORM ACTION="index.php?menu=history&send=listmore" METHOD="post"><input type="text" size="5" name="show_more_send" value="' . $show_last .'" /><input type="submit" name="Submit2" value="Show Last" /></FORM></td></tr>';
 
 				$body_string .= '</table></div>';
 
@@ -2279,7 +2358,6 @@ if($_SESSION["valid_login"] == TRUE)
 	{
 		if($_GET["action"] == "walk_history")
 		{
-			set_time_limit(99);
 			$body_string = '<strong>History Walk from Block #<font color="blue">' . $_POST["walk_history"] . '</font> can take some time, please be patient...</font></strong></br></br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>History Walk</th></tr>';
 			$block_end = $_POST["walk_history"] + 500;
@@ -2305,7 +2383,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["action"] == "repair")
 		{
-			set_time_limit(200);
+			set_time_limit(300);
 			$body_string = '<strong>Start Repair from Block #<font color="blue">' . $_POST["repair_from"] . '</font></br>
 				This can take some time, please be patient...</strong></br></br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Repair History</th></tr>';
@@ -2318,7 +2396,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["action"] == "check_tables")
 		{
-			set_time_limit(300);
+			set_time_limit(500);
 			write_log("A CHECK of the Entire Database & Tables Was Started.", "GU");
 
 			$body_string = '<strong>Checking All Database Tables</strong></font></br></br>
@@ -2516,7 +2594,7 @@ if($_SESSION["valid_login"] == TRUE)
 				<td class="style2">' . $sql_row["attribute"] . '</td></tr>';
 			}
 
-			$body_string .= '<tr><td><input type="text" size="5" name="show_more_logs" value="' . $show_last .'" /><input type="submit" name="show_last" value="Show Last" /></FORM></td>
+			$body_string .= '<tr><td colspan="3"><hr></hr></td></tr><tr><td><input type="text" size="5" name="show_more_logs" value="' . $show_last .'" /><input type="submit" name="show_last" value="Show Last" /></FORM></td>
 				<td colspan="2"><FORM ACTION="index.php?menu=tools&logs=clear" METHOD="post"><input type="submit" name="clear_logs" value="Clear All Logs" /></FORM></td></tr>';
 			$body_string .= '</table></div>';
 		}

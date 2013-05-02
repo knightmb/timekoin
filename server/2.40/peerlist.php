@@ -1,7 +1,6 @@
 <?PHP
 include 'configuration.php';
 include 'function.php';
-set_time_limit(99);
 //***********************************************************************************
 //***********************************************************************************
 if(PEERLIST_DISABLED == TRUE || TIMEKOIN_DISABLED == TRUE)
@@ -45,7 +44,7 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 				if((time() - $script_last_heartbeat) > 60) // Greater than 60s, something is wrong
 				{
 					// Main stop was unexpected
-					write_log("Main Timekoin Processor has Failed, going to try an Ambient Peer Restart", "PL");
+					write_log("Main Timekoin Processor has Failed, going to try an Ambient Peer Restart", "MA");
 
 					// Database Initialization
 					initialization_database();
@@ -68,10 +67,10 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 			if($script_loop_active > 0)
 			{
 				// Watchdog should still be active
-				if((time() - $script_last_heartbeat) > 100) // Greater 100s, something is wrong
+				if((time() - $script_last_heartbeat) > 60) // Greater 60, something is wrong
 				{
 					// Watchdog stop was unexpected
-					write_log("Watchdog has Failed, going to try an Ambient Peer Restart", "PL");
+					write_log("Watchdog has Failed, going to try an Ambient Peer Restart", "MA");
 
 					mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'watchdog_last_heartbeat' LIMIT 1");
 
@@ -349,6 +348,11 @@ else if($loop_active == 2) // Wake from sleep
 {
 	// Set the working status of 1
 	mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
+}
+else if($loop_active == 3) // Shutdown
+{
+	mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
+	exit;
 }
 else
 {
@@ -718,7 +722,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 	{
 		$sql_row = mysql_fetch_array($sql_result);
 
-		if(rand(1,3) == 2)// Randomize to avoid spamming
+		if(rand(1,2) == 2)// Randomize to avoid spamming
 		{
 			$ip_address = $sql_row["IP_Address"];
 			$domain = $sql_row["domain"];
@@ -726,7 +730,6 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 			$port_number = $sql_row["port_number"];
 			$last_heartbeat = $sql_row["last_heartbeat"];
 			$join_peer_list = $sql_row["join_peer_list"];
-			$failed_sent_heartbeat = $sql_row["failed_sent_heartbeat"];
 
 			//Send a challenge hash to see if a timekoin server is active
 			$poll_challenge = rand(1, 999999);
@@ -736,21 +739,20 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 
 			if($poll_peer == $hash_solution)
 			{
-				//Got a response from an active Timekoin server (-1 failed heartbeat)
-				$failed_sent_heartbeat--;
-				mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "', `failed_sent_heartbeat` = $failed_sent_heartbeat WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				//Got a response from an active Timekoin server (-1 to failure score)
+				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -1);
+				mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 			}		
 			else
 			{
-				//No response, record polling failure for future reference (+1 failed heartbeat)
-				$failed_sent_heartbeat++;
-				mysql_query("UPDATE `active_peer_list` SET `failed_sent_heartbeat` = '$failed_sent_heartbeat' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				//No response, record polling failure for future reference (+1 failure score)
+				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 1);
 			}
 		} // End Randomize Check
 
 	} // End for Loop
 
-	// Remove all active peers that are offline for more than 5 minutes or have failed a lot
+	// Remove all active peers that are offline for more than 5 minutes or have a high failure score
 	$peer_failure_grade = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,0);
 	
 	if(rand(1,2) == 2)// Randomize to avoid spamming DB
@@ -805,6 +807,16 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 	}
 //***********************************************************************************	
 //***********************************************************************************
+$loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,"field_data");
+
+// Check script status
+if($loop_active == 3)
+{
+	// Time to exit
+	mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
+	exit;
+}
+	
 // Script finished, set standby status to 2
 mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
 

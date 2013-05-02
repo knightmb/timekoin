@@ -1,7 +1,6 @@
 <?PHP
 include 'configuration.php';
 include 'function.php';
-set_time_limit(300);
 //***********************************************************************************
 //***********************************************************************************
 if(BALANCE_DISABLED == TRUE || TIMEKOIN_DISABLED == TRUE)
@@ -35,6 +34,11 @@ else if($loop_active == 2) // Wake from sleep
 {
 	// Set the working status of 1
 	mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
+}
+else if($loop_active == 3) // Shutdown
+{
+	mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
+	exit;
 }
 else
 {
@@ -72,6 +76,16 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 }
 //***********************************************************************************
 //***********************************************************************************
+$loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'balance_heartbeat_active' LIMIT 1"),0,"field_data");
+
+// Check script status
+if($loop_active == 3)
+{
+	// Time to exit
+	mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
+	exit;
+}
+
 // Script finished, set standby status to 2
 mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
 
