@@ -108,7 +108,16 @@ if($_GET["action"] == "poll_failure")
 	$subfolder = filter_sql($_GET["subfolder"]);
 	$port = intval($_GET["port"]);
 
-	echo mysql_result(mysql_query("SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip' OR `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port LIMIT 1"),0,0);
+	if(empty($domain) == TRUE)
+	{
+		// No Domain, IP Only
+		echo mysql_result(mysql_query("SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip' AND `subfolder` = '$subfolder' AND `port_number` = $port LIMIT 1"),0,0);
+	}
+	else
+	{
+		// Domain
+		echo mysql_result(mysql_query("SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port LIMIT 1"),0,0);
+	}
 
 	log_ip("PL");
 	exit;
