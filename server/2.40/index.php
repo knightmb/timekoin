@@ -999,13 +999,35 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["server_settings"] == "change")
 		{
+			$server_code;
+			
 			$sql = "UPDATE `options` SET `field_data` = '" . $_POST["domain"] . "' WHERE `options`.`field_name` = 'server_domain' LIMIT 1";
 			if(mysql_query($sql) == TRUE)
 			{
 				$sql = "UPDATE `options` SET `field_data` = '" . $_POST["subfolder"] . "' WHERE `options`.`field_name` = 'server_subfolder' LIMIT 1";
 				if(mysql_query($sql) == TRUE)
 				{
-					$sql = "UPDATE `options` SET `field_data` = '" . $_POST["port"] . "' WHERE `options`.`field_name` = 'server_port_number' LIMIT 1";
+					if($_POST["port"] < 1 || $_POST["port"] > 65535)
+					{
+						// Keep port within range
+						$port = 1528;
+					}
+					else
+					{
+						$port = $_POST["port"];
+					}
+
+					// Update Windows Config File if used
+					if(getenv("OS") == "Windows_NT")
+					{
+						if(update_windows_port($port) == TRUE)
+						{
+							// Update sucessful, notify user that a full shutdown/restart will be necessary for this change to take affect
+							$server_code .= '<font color="green"><strong>Port Changes will Require a Full Shutdown & Restart of the Timekoin Server to Work Properly.</strong></font>';
+						}
+					}
+					
+					$sql = "UPDATE `options` SET `field_data` = '$port' WHERE `options`.`field_name` = 'server_port_number' LIMIT 1";
 					if(mysql_query($sql) == TRUE)
 					{
 						$sql = "UPDATE `options` SET `field_data` = '" . $_POST["max_request"] . "' WHERE `options`.`field_name` = 'server_request_max' LIMIT 1";
@@ -1039,7 +1061,7 @@ if($_SESSION["valid_login"] == TRUE)
 											$sql = "UPDATE `options` SET `field_data` = '" . $_POST["perm_peer_priority"] . "' WHERE `options`.`field_name` = 'perm_peer_priority' LIMIT 1";
 											if(mysql_query($sql) == TRUE)
 											{											
-												$server_code = '</br><font color="blue"><strong>Server Settings Updated...</strong></font></br></br>';
+												$server_code .= '</br><font color="blue"><strong>Server Settings Updated...</strong></font></br></br>';
 											}											
 										}
 									}									

@@ -1864,6 +1864,38 @@ function find_file($dir, $pattern)
 }
 //***********************************************************************************
 //***********************************************************************************
+function update_windows_port($new_port)
+{
+	// Update the pms_config.ini file if it exist
+	if(file_exists("../../pms_config.ini") == TRUE)
+	{
+		//Previous port number
+		$old_port = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
+
+		if($old_port != $new_port)// Don't change unless different than before
+		{
+			$pms_config = file_get_contents('../../pms_config.ini');
+			$new_pms_config = str_replace("Port=$old_port", "Port=$new_port", $pms_config);
+
+			// Write new configuration file back to drive
+			$fh = fopen('../../pms_config.ini', 'w');
+
+			if($fh != FALSE)
+			{
+				if(fwrite($fh, $new_pms_config) > 0)
+				{
+					if(fclose($fh) == TRUE)
+					{
+						return TRUE;
+					}
+				}
+			}
+		}
+	}
+	return;
+}
+//***********************************************************************************
+//***********************************************************************************
 function generate_hashcode_permissions($pk_balance, $pk_gen_amt, $pk_recv, $send_tk, $pk_history, $pk_valid, $tk_trans_total, $pk_sent, $pk_gen_total)
 {
 	$permissions_number;
