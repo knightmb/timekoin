@@ -44,7 +44,7 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 				if((time() - $script_last_heartbeat) > 60) // Greater than 60s, something is wrong
 				{
 					// Main stop was unexpected
-					write_log("Main Timekoin Processor has Failed, going to try an Ambient Peer Restart", "MA");
+					write_log("Main Timekoin Processor has Stop, going to try an Ambient Peer Restart", "MA");
 
 					// Database Initialization
 					initialization_database();
@@ -70,7 +70,7 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 				if((time() - $script_last_heartbeat) > 60) // Greater 60, something is wrong
 				{
 					// Watchdog stop was unexpected
-					write_log("Watchdog has Failed, going to try an Ambient Peer Restart", "MA");
+					write_log("Watchdog has Stop, going to try an Ambient Peer Restart", "MA");
 
 					mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'watchdog_last_heartbeat' LIMIT 1");
 
