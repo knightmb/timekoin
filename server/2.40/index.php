@@ -84,6 +84,14 @@ if($_SESSION["valid_login"] == FALSE && $_GET["action"] != "login")
 
 				activate(TIMEKOINSYSTEM, 1); // In case this was disabled from a stop call in the server GUI
 
+				// Use uPNP to map inbound ports for Windows systems
+				if(getenv("OS") == "Windows_NT")
+				{
+					$server_port_number = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
+					$server_IP = gethostbyname(trim(`hostname`));
+					pclose(popen("start /B utils\upnpc -e Timekoin -a $server_IP $server_port_number $server_port_number TCP", "r"));
+				}				
+
 			} // End active main.php process check
 
 		}// End DB check
@@ -531,7 +539,7 @@ if($_SESSION["valid_login"] == TRUE)
 			' . trans_percent_status() . '</td></tr>
 			' . $update_available . $firewall_blocked . $time_sync_error . '</table>';
 
-		$quick_info = 'Check on the Status of the Timekoin inner workings.';
+		$quick_info = 'Check the Status of any Timekoin Server process.';
 
 		$home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
 
@@ -956,7 +964,8 @@ if($_SESSION["valid_login"] == TRUE)
 				</table>';
 
 			$quick_info = 'Shows all Active Peers.</br></br>You can manually delete or edit peers in this section.
-				</br></br>Peers in <font color="blue">Blue</font> will not expire after 5 minutes of inactivity.
+				</br></br>Peers in <font color="blue">Blue</font> will not expire after 5 minutes of inactivity or high failure scores.
+				</br></br><strong>Failure Score</strong> is a total of failed polling or data exchange events. Peers that score over the failure limit are kicked from the peer list.
 				</br></br><strong>Peer Speed</strong> is combined peer performance measured over a 10 second interval.
 				</br>Ten is the average baseline.
 				</br></br><strong>Group Response</strong> is a sample average of all peers and how long it took the group to respond to a 10 second task.
@@ -1112,6 +1121,13 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,"field_data");
 			$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,"field_data");
+
+			// Use uPNP to delete inbound ports for Windows systems
+			if(getenv("OS") == "Windows_NT")
+			{
+				$server_port_number = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
+				pclose(popen("start /B utils\upnpc -d $server_port_number TCP", "r"));
+			}
 
 			if($script_loop_active > 0)
 			{

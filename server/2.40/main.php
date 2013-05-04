@@ -78,6 +78,15 @@ if($_GET["action"]=="begin_main")
 		call_script("main.php");
 
 		activate(TIMEKOINSYSTEM, 1); // In case this was disabled from a emergency stop call in the server GUI
+
+		// Use uPNP to map inbound ports for Windows systems
+		if(getenv("OS") == "Windows_NT")
+		{
+			$server_port_number = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
+			$server_IP = gethostbyname(trim(`hostname`));
+			pclose(popen("start /B utils\upnpc -e Timekoin -a $server_IP $server_port_number $server_port_number TCP", "r"));
+		}
+
 		header("Location: index.php?menu=system&code=1");
 		exit;
 	}
