@@ -85,11 +85,11 @@ if($_SESSION["valid_login"] == FALSE && $_GET["action"] != "login")
 				activate(TIMEKOINSYSTEM, 1); // In case this was disabled from a stop call in the server GUI
 
 				// Use uPNP to map inbound ports for Windows systems
-				if(getenv("OS") == "Windows_NT")
+				if(getenv("OS") == "Windows_NT" && file_exists("utils\upnpc.exe") == TRUE)
 				{
 					$server_port_number = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
 					$server_IP = gethostbyname(trim(`hostname`));
-					pclose(popen("start /B utils\upnpc -e Timekoin -a $server_IP $server_port_number $server_port_number TCP", "r"));
+					pclose(popen("start /B utils\upnpc.exe -e Timekoin -a $server_IP $server_port_number $server_port_number TCP", "r"));
 				}				
 
 			} // End active main.php process check
@@ -1123,10 +1123,10 @@ if($_SESSION["valid_login"] == TRUE)
 			$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,"field_data");
 
 			// Use uPNP to delete inbound ports for Windows systems
-			if(getenv("OS") == "Windows_NT")
+			if(getenv("OS") == "Windows_NT" && file_exists("utils\upnpc.exe") == TRUE)
 			{
 				$server_port_number = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
-				pclose(popen("start /B utils\upnpc -d $server_port_number TCP", "r"));
+				pclose(popen("start /B utils\upnpc.exe -d $server_port_number TCP", "r"));
 			}
 
 			if($script_loop_active > 0)
