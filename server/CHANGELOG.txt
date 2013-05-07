@@ -1,0 +1,300 @@
+Timekoin Server - Change Log
+
+Timekoin Server - 2.4 (Released 2013-05-05)
+===========================================
+- User can set 0 max query now for unlimited query use
+- Added generation peer delete request ability to generation rules allowing a peer to delete themselves from the generation list
+- Merge pull request #1 from Warmach/patch-1
+- All process run independently now
+- Timestamp added to log displays to give both Unix Time and Human Timezone Formatted Time
+- Peer Scoring system added to grade peer performance and kick peers that perform poorly based on the user settings
+- Timekoin does daily software update check and notifies the user in the GUI if any updates are available for download
+- Server software update for API functions and various tweaks or fixes
+- Peer Ping & Clock Poll moved to Peerlist tab
+- Reverse Peer Grade Polling added to Peerlist tab
+- Hashcode advanced management now available in Options tab
+- Updates to transaction and generation broadcast ability to get transactions out to more peers faster per transaction cycle
+- Various updates and tweaks to back-end code to speed up performance
+- Timekoin will now use uPNP to map inbound port for user automatically (Microsoft Windows only currently)
+- Working, Idle, and Shutdown status added to Home tab process status
+- All API functions are available to network Timekoin Clients to Timekoin Servers
+
+- 0000064: [Operating System Issue] Balance in GUI can be off in the negative or positive direction
+
+Timekoin Server - 2.38 (Released 2013-04-17)
+============================================
+- Updated to use only built-in RSA crypto functions, openSSL ignored during
+errors to resolve key balance issues with Windows.
+- Transaction cycle sizes raised from 200KB to 2MB.
+- Status updated to include new api.php file.
+- Balance check external function moved from queueclerk to api.php
+
+Timekoin Server - 2.37 (Released 2013-04-15)
+============================================
+- Resolves Balance issues in GUI when OpenSSL fails in Windows.
+- History Tab coded to use RAM for sorting instead of DB, speeds up display when
+history is long.
+- IP Filtering Updated to better filter IPs mixed into the Domain Field that
+shouldn't be there.
+- Fix Transaction Checks that cycle backwards when connected with very slow
+peers.
+- Permanent Peer Priority feature added to allow user to build a custom list of
+permanent peers that are always queried first before other peers in the list.
+
+Timekoin Server - 2.36 (Released 2013-04-12)
+============================================
+- 0000062: [Operating System Issue] Windows computers can not get elected by the
+network
+[1 issue]
+
+- Priority Set Wrong for Treasurer Processor, set for low instead of normal.
+
+Timekoin Server - 2.35 (Released 2013-04-06)
+============================================
+- New Pure-PHP Implementation of RSA encryption (phpseclib) integrated into
+Timekoin removing the need for OpenSSL to be installed on systems.
+
+- Super Peer options to control how many bulk transaction cycles to send to
+other peers.
+
+- PHP file path searching available for windows users when dealing with path
+issues related to wamp installations.
+
+- Bulk transaction downloading from Super Peers tweaked for faster downloads.
+
+- 0000058: [General Issue] History Sent From does not list properly.
+- 0000059: [General Issue] Peers with no domain setup in the system tab will
+filter other peers using just IP address.
+[2 issues]
+
+Timekoin Server - 2.34 (Released 2013-03-19)
+============================================
+- 0000057: [General Issue] Transactions are refused with v2.33 due to filtering
+key bits bug.
+
+Timekoin Server - 2.33 (Released 2013-03-16)
+============================================
+New Feature: Super Peer mode setting in the "System" tab. By default it is
+disabled, only enable this feature if you have a very fast server and lots of
+bandwidth. This allows other peers to download large amounts of transaction data
+to catch up on the transaction history when far behind or new.
+
+- 0000056: [General Issue] Generation Peer Manager does repeated updates to IP
+address field for Generating Peers.
+
+Timekoin Server - 2.32 (Released 2013-03-14)
+============================================
+- 0000055: [General Issue] Queue Clerk refusing to accept inbound direct
+generation transactions
+
+Timekoin Server - 2.31 (Released 2013-03-13)
+============================================
+- New Election & Generation system to replace the old one. The new system
+requires reverse Domain/IP verification of any peer that wants to be elected for
+currency generation. This is to help stop electing keys from a single server
+pretending to be many servers.
+
+Timekoin Server - 2.21 (Released 2013-02-23)
+============================================
+- 0000051: [General Issue] Generation Peer List does not filter duplicate
+election dates
+[1 issue]
+
+Timekoin Server - 2.2 (Released 2013-02-21)
+============================================
+-- New feature added to Web GUI to display Transaction cycles processed to
+determine network update status.
+-- Peer Election now more intelligent by only submitting request when within 10
+minutes of a peer election instead of constantly to save peer traffic and
+processing time.
+-- Further script optimizations to speed up processing for slower peers.
+-- New indexes and database tweaks to further speed up processing of
+transactions and status data for the user.
+
+
+Timekoin Server - 2.15 (Released 2013-02-09)
+============================================
+-- History Tab optimized to display much quicker than previous versions.
+-- New Transaction Browser Button added to History tab.
+-- Rework of how background scripts are run in Windows environments.
+-- Updating code refreshed to now update graphics and css style sheets.
+-- Better Peer handling for offline or malfunctioning peers.
+
+
+Timekoin Server - 2.01 (Released 2013-02-03)
+============================================
+- 0000050: [General Issue] Blank peers show up in Reserve Peer List
+[1 issue]
+
+
+Timekoin Server - 2.0 (Released 2013-02-02)
+============================================
+- Updated Web interface to be more compact and offer more room for Timekoin
+controls and information for the user.
+
+- Added new script file "balance.php". The purpose of the script is to run
+regular balance indexes on random, recent public keys to help speed up
+transaction processing by the treasurer script.
+
+- Added the ability to generate new key pairs (Private/Public) in the 'options'
+section of the Web interface for Timekoin. Thus, the manual way of using
+"keys.php" is no longer necessary.
+
+- Added new feature "Check for Updates" in the 'options' section of the Web
+interface for Timekoin. This will allow the user to update the software scripts
+to the latest release version directly from the Timekoin website if desired.
+
+- Added new feature to check both Peer Clock Times and Ping Times in the
+'system' section of the Web interface for Timekoin.
+
+- Added new feature for Timekoin to do random audits of the Transaction History
+through the Transaction Foundations. The feature can be tweaked in the 'system'
+section of the Web interface for Timekoin. This can help spot damaged areas of
+the database that Timekoin is using.
+
+- Added new Peer metrics in the 'Peerlist' section. Peer Speed is combined peer
+performance measured over a 10 second interval. Ten is the average baseline.
+Group Response is a sample average of all peers and how long it took the group
+to respond to a 10 second task. Less than 10 seconds increases peer speed by +1
+and longer than 10 seconds decreases peer speed by -1.
+
+- Peer Processor is now more aggressive at connecting to other peers and
+removing offline/zombie peers from the peer list as well as fixing unique
+situations where the same peer would show up more than once in the list.
+
+- Transaction Clerk now uses the Peer Metric (Peer Speed) to fine tune
+on-the-fly transaction data exchanges. The higher the number, the more data that
+other peers are able to deliver when updating the transaction history.
+
+- Timekoin Web interface now logs invalid login attempts made by IP address,
+username and password attempted in the event logs (GUI filter).
+
+- Event logs in the 'tools' section of Web interface now have proper event
+filters for all events. Some events before were left out of the filter list
+and very difficult to find.
+
+- Generation Peer Request and Generation Transactions are restricted to one per
+IP address, otherwise the peer will ban other offending peers for 24 hours.
+
+
+Timekoin Server - 1.95 (Released 2012-12-05)
+============================================
+- 0000048: [Performance Issue] Crypto Balance Index / Check Can Take too Long on
+Slower Machines
+[1 issue]
+
+Timekoin Server - 1.9 (Released 2012-08-13)
+===========================================
+- 0000047: [New Feature] Check and Repair Entire Database buttons added to the
+Tools tab
+- 0000046: [General Issue] Re-Building Transaction Foundation #0 Can Start a
+Loop that will Never Finish
+[2 issues]
+
+Timekoin Server - 1.8 (Released 2012-08-04)
+===========================================
+- 0000045: [New Feature] Ambient Peer Restart added to System Tab
+[1 issue]
+
+Timekoin Server - 1.7 (Released 2012-07-31)
+========================================
+- 0000044: [Performance Issue] Qhash Verification is Now Required for all
+Timekoin Communications Protocols
+- 0000043: [General Issue] The Timekoin Treasurer program can become disabled
+and no longer process transactions
+- 0000042: [New Feature] SSL Between Timekoin Peers with Port 443
+- 0000041: [New Feature] First contact servers can now be modified from the
+Peerlist tab
+[4 issues]
+
+Timekoin Server - 1.6 (Released 2012-07-07)
+===========================================
+- 0000039: [New Feature] Public messages can be encoded into any transaction
+from the GUI
+- 0000038: [New Feature] Random polling of time from timekoin.net to check clock
+accuracy
+- 0000037: [New Feature] Better string building to increase performance of
+Timekoin
+[3 issues]
+
+Timekoin Server - 1.5 (Released 2012-07-04)
+===========================================
+- 0000035: [New Feature] Transaction Queue Manager per transaction verification
+ability in the queue
+- 0000034: [New Feature] Poll peer clocks for accuracy measurement
+- 0000033: [Feature Request] Allow an option to disable or enable Local IP
+filtering
+- 0000032: [New Feature] Transaction Queue Manager can now run multiple
+instances
+- 0000031: [Feature Request] Generation tab needs to show when the next peer
+election will take place
+- 0000030: [Feature Request] Ability to assign permanent peers to the peerlist
+- 0000028: [Performance Issue] Transaction Foundation creation does not have
+enough time on slower systems
+[7 issues]
+
+Timekoin Server - 1.41 (Released 2012-06-28)
+============================================
+
+Service Release to fix Windows multitasking issues.
+
+- 0000029: [Operating System Issue] Windows running Timekoin isn't multi-tasking
+properly
+[1 issue]
+
+Timekoin Server - 1.4 (Released 2012-06-27)
+===========================================
+- 0000027: [Feature Request] Easy Key integration into Web based GUI for
+Timekoin
+- 0000026: [Feature Request] Hash code for External Access by other programs or
+servers
+- 0000022: [Feature Request] Generation tab needs to show more technical details
+about the list
+- 0000024: [Feature Request] System logs need a search and filter ability
+- 0000025: [Feature Request] Area in GUI to tweak IP banning settings
+- 0000023: [Performance Issue] Timekoin does not close a connection after
+polling a peer for hash or transaction data
+[6 issues]
+
+
+Timekoin Server - 1.3 (Released 2012-06-25)
+===========================================
+- 0000021: [Performance Issue] Better memory management for longer uptimes
+- 0000020: [Feature Request] Need backup tab for server keys
+- 0000019: [General Issue] PHP specific function only works with v5.3 or higher
+- 0000016: [General Issue] Peers not aggressive enough to get elected to the
+generation pool
+- 0000018: [General Issue] Generation rate after 2 weeks inaccurate
+- 0000015: [Performance Issue] Watchdog might release a program earlier than the
+timeout is normally set
+[6 issues]
+
+
+Timekoin Server - 1.2 (Released 2012-06-22)
+===========================================
+- 0000013: [General Issue] Private IP ranges need to be filtered by Peerlist
+- 0000012: [Feature Request] Add a button to show reserve peers and a button to
+manually add peers to the Peerlist tab
+- 0000010: [Performance Issue] Generation Peerlist has trouble getting in sync
+with the rest of the network
+- 0000011: [Performance Issue] Peer IPs can get auto-banned by accident when
+traffic is busy
+- 0000009: [Performance Issue] Peerlist can get duplicates
+- 0000006: [Feature Request] Add uptime, current transaction block, current
+foundation block to system information tab
+- 0000008: [Performance Issue] Bogus or duplicate transaction not filtered from
+the queue
+- 0000005: [Performance Issue] The part of Timekoin that checks to make sure the
+database is active has a memory leak
+- 0000007: [General Issue] Last Generation time is off by 5 minutes
+- 0000003: [General Issue] Unable to jump to row 0 on MySQL result
+[10 issues]
+
+
+Timekoin Server - 1.1 (Released 2012-06-19)
+===========================================
+- 0000004: [General Issue] Malformed Attributes in Transactions can stall a
+Block check or repair.
+- 0000002: [General Issue] Server Balance can be incorrect shortly after a
+Transaction Foundation is created.
+[2 issues] 

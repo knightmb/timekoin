@@ -1,0 +1,91 @@
+This file contains all attributions to work(s) obtained from others and used in
+Timekoin.
+
+-==========================================================================-
+MiniUPnP
+http://miniupnp.tuxfamily.org/
+
+Please consider donating to the code author as he has been a big help for the
+Timekoin Team.
+-==========================================================================-
+Server2Go
+------------------------------
+Server2Go is a CD-ROm Webserver. That means it is a webserver that can run
+directly from cdrom without installation. Server2Go allows you to create a
+working web site or PHP application on a CD-ROM. Using a web browser, a user can
+run php programs as well as view html files on the CD-ROM. He only need to
+insert a CD with Server2Go under the supported Windows operations systems. The
+server starts automaticly and opens a browser with the Website of the CD-ROM
+
+Server2Go supports PHP5, SQLite and MySQL.
+
+------------------------------
+Community
+------------------------------
+You will get support, latest downloads and other things under
+http://www.server2go-web.de
+
+------------------------------
+Documentation
+------------------------------
+The documentation is available after the start of server2go.exe. If you have
+problems starting the server you can start it directly under
+htdocs/documentaion/documentation.html
+
+------------------------------
+Licence
+------------------------------
+Server2Go is Donationware. That means you can download and use it for free and
+you don't have to pay any royalty charges when distribute an application on
+CD-ROM that uses Server2Go. But if you use it commercially or like to keep it
+free available you should donate to the project. How to donate? Just take a look
+at the donation page. There are a lot of inexpensive possibilities to help.
+Every donator that is donating more then 10.- Euro is getting a user id and
+password with that he can download additional software that is not public
+available. See the download page for details. 
+
+Please consider donating to the code author as he has been a big help for the
+Timekoin Team.
+-==========================================================================- 
+PHPSecLib
+
+RSA code for key pair creation, encrypt and decrypt functions used from this
+Pure PHP implementation.
+
+http://phpseclib.sourceforge.net/
+phpseclib is licensed with the MIT-license. By virtue of not being copyleft it's
+less restrictive than the GPL, which in turn, means that it's fully GPL
+compatible.
+
+Please consider donating to the code author as he has been a big help for the
+Timekoin Team.
+-==========================================================================- 
+Spinning Wait Icons by Andrew Davidson
+http://andrewdavidson.com/articles/spinning-wait-icons/
+
+These icons are licensed under a 
+Creative Commons Attribution-NonCommercial-ShareAlike 2.5 License.
+
+You are free to copy, distribute, display, and perform the work
+to make derivative works under the following conditions:
+
+Attribution. You must attribute the work in the manner specified by the author
+or licensor.
+Noncommercial. You may not use this work for commercial purposes.
+Share Alike. If you alter, transform, or build upon this work, you may
+distribute the resulting work only under a license identical to this one.
+
+For any reuse or distribution, you must make clear to others the license terms
+of this work.
+Any of these conditions can be waived if you get permission from the copyright
+holder.
+
+Your fair use and other rights are in no way affected by the above.
+
+View the full license here:
+http://creativecommons.org/licenses/by-nc-sa/2.5/
+-============================================================================-
+Admin Interface CSS Template
+
+Developed by http://twitter.com/umutm (Umut Muhaddisoglu) 2008. 
+Updated for HTML5/CSS3 by http://mediagearhead.com (Giles Wells) 2010.
