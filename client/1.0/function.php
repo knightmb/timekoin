@@ -704,7 +704,7 @@ function check_for_updates()
 {
 	// Poll timekoin.com for any program updates
 	$context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
-	ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
+	ini_set('user_agent', 'Timekoin Client (GUI) v' . TIMEKOIN_VERSION);
 	ini_set('default_socket_timeout', 15); // Timeout for request in seconds
 
 	$update_check1 = 'Checking for Updates....</br></br>';
@@ -836,8 +836,8 @@ function do_updates()
 {
 	// Poll timekoin.com for any program updates
 	$context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
-	ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
-	ini_set('default_socket_timeout', 30); // Timeout for request in seconds
+	ini_set('user_agent', 'Timekoin Client (GUI) v' . TIMEKOIN_VERSION);
+	ini_set('default_socket_timeout', 10); // Timeout for request in seconds
 
 	$poll_version = file_get_contents("https://timekoin.com/tkcliupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
 
@@ -851,6 +851,11 @@ function do_updates()
 		$update_status .= run_script_update("CSS Template (admin.css)", "admin.css", $poll_version, $context, 0, "css");
 		//****************************************************
 		//****************************************************
+		//Check for javascript updates
+		$update_status .= 'Checking for <strong>Javascript Template</strong> Update...</br>';
+		$update_status .= run_script_update("Javascript Template (tkgraph.js)", "tkgraph.js", $poll_version, $context, 0, "js");
+		//****************************************************
+		//****************************************************
 		$update_status .= 'Checking for <strong>RSA Code</strong> Update...</br>';
 		$update_status .= run_script_update("RSA Code (RSA.php)", "RSA", $poll_version, $context);
 		//****************************************************
@@ -858,44 +863,17 @@ function do_updates()
 		$update_status .= run_script_update("Openssl Template (openssl.cnf)", "openssl.cnf", $poll_version, $context, 0);
 		//****************************************************
 		//****************************************************
-		$update_status .= 'Checking for <strong>Balace Indexer</strong> Update...</br>';
-		$update_status .= run_script_update("Balance Indexer (balance.php)", "balance", $poll_version, $context);
-		//****************************************************
-		$update_status .= 'Checking for <strong>Transaction Foundation Manager</strong> Update...</br>';
-		$update_status .= run_script_update("Transaction Foundation Manager (foundation.php)", "foundation", $poll_version, $context);
-		//****************************************************
-		$update_status .= 'Checking for <strong>Currency Generation Manager</strong> Update...</br>';
-		$update_status .= run_script_update("Currency Generation Manager (generation.php)", "generation", $poll_version, $context);
-		//****************************************************
-		$update_status .= 'Checking for <strong>Generation Peer Manager</strong> Update...</br>';
-		$update_status .= run_script_update("Generation Peer Manager (genpeer.php)", "genpeer", $poll_version, $context);
-		//****************************************************
 		$update_status .= 'Checking for <strong>Timekoin Web Interface</strong> Update...</br>';
 		$update_status .= run_script_update("Timekoin Web Interface (index.php)", "index", $poll_version, $context);
 		//****************************************************
-		$update_status .= 'Checking for <strong>Main Program</strong> Update...</br>';
-		$update_status .= run_script_update("Main Program (main.php)", "main", $poll_version, $context);
 		//****************************************************
-		$update_status .= 'Checking for <strong>Peer List Manager</strong> Update...</br>';
-		$update_status .= run_script_update("Peer List Manager (peerlist.php)", "peerlist", $poll_version, $context);
+		$update_status .= 'Checking for <strong>Timekoin Background Task</strong> Update...</br>';
+		$update_status .= run_script_update("Timekoin Background Task (task.php)", "task", $poll_version, $context);
 		//****************************************************
-		$update_status .= 'Checking for <strong>Transaction Queue Manager</strong> Update...</br>';
-		$update_status .= run_script_update("Transaction Queue Manager (queueclerk.php)", "queueclerk", $poll_version, $context);
-		//****************************************************
-		$update_status .= 'Checking for <strong>Timekoin Module Status</strong> Update...</br>';
-		$update_status .= run_script_update("Timekoin Module Status (status.php)", "status", $poll_version, $context);
 		//****************************************************
 		$update_status .= 'Checking for <strong>Web Interface Template</strong> Update...</br>';
 		$update_status .= run_script_update("Web Interface Template (templates.php)", "templates", $poll_version, $context);
 		//****************************************************
-		$update_status .= 'Checking for <strong>Transaction Clerk</strong> Update...</br>';
-		$update_status .= run_script_update("Transaction Clerk (transclerk.php)", "transclerk", $poll_version, $context);
-		//****************************************************
-		$update_status .= 'Checking for <strong>Treasurer Processor</strong> Update...</br>';
-		$update_status .= run_script_update("Treasurer Processor (treasurer.php)", "treasurer", $poll_version, $context);
-		//****************************************************
-		$update_status .= 'Checking for <strong>Process Watchdog</strong> Update...</br>';
-		$update_status .= run_script_update("Process Watchdog (watchdog.php)", "watchdog", $poll_version, $context);
 		//****************************************************
 		// We do the function storage last because it contains the version info.
 		// That way if some unknown error prevents updating the files above, this
@@ -904,7 +882,6 @@ function do_updates()
 		$update_status .= 'Checking for <strong>Function Storage</strong> Update...</br>';
 		$update_status .= run_script_update("Function Storage (function.php)", "function", $poll_version, $context);
 		//****************************************************
-
 		$finish_message = file_get_contents("https://timekoin.com/tkcliupdates/v$poll_version/ZZZfinish.txt", FALSE, $context, NULL);
 		$update_status .= '</br>' . $finish_message;
 	}
