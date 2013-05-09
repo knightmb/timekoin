@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS `active_peer_list` (
   `join_peer_list` int(10) unsigned NOT NULL,
   `failed_sent_heartbeat` smallint(5) unsigned NOT NULL,
   `code` varchar(256) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=MEMORY DEFAULT CHARSET=utf8;
 
 --
 -- Dumping data for table `active_peer_list`
@@ -46,19 +46,48 @@ CREATE TABLE IF NOT EXISTS `activity_logs` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `balance_index`
+-- Table structure for table `address_book`
 --
 
-CREATE TABLE IF NOT EXISTS `balance_index` (
-  `block` int(10) unsigned NOT NULL,
-  `public_key_hash` varchar(32) NOT NULL,
-  `balance` bigint(20) unsigned NOT NULL
-) ENGINE=MEMORY DEFAULT CHARSET=utf8;
+CREATE TABLE IF NOT EXISTS `address_book` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(256) NOT NULL,
+  `easy_key` varchar(48) NOT NULL,
+  `full_key` text NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `name` (`name`(3)),
+  KEY `easy_key` (`easy_key`(3)),
+  KEY `full_key` (`full_key`(80))
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
 
 --
--- Dumping data for table `balance_index`
+-- Dumping data for table `address_book`
 --
 
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `data_cache`
+--
+
+CREATE TABLE IF NOT EXISTS `data_cache` (
+  `field_name` varchar(32) NOT NULL,
+  `field_data` mediumtext NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+--
+-- Dumping data for table `data_cache`
+--
+
+INSERT INTO `data_cache` (`field_name`, `field_data`) VALUES
+('billfold_balance', ''),
+('graph_data_amount_total', ''),
+('graph_data_range_recv', ''),
+('graph_data_range_sent', ''),
+('graph_data_trans_total', ''),
+('trans_history_sent_from', ''),
+('trans_history_sent_to', '');
 
 -- --------------------------------------------------------
 
@@ -78,27 +107,6 @@ CREATE TABLE IF NOT EXISTS `my_keys` (
 INSERT INTO `my_keys` (`field_name`, `field_data`) VALUES
 ('server_private_key', 'Private Key Here'),
 ('server_public_key', 'Public Key Here');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `my_transaction_queue`
---
-
-CREATE TABLE IF NOT EXISTS `my_transaction_queue` (
-  `timestamp` int(10) unsigned NOT NULL,
-  `public_key` text NOT NULL,
-  `crypt_data1` varchar(256) NOT NULL,
-  `crypt_data2` varchar(256) NOT NULL,
-  `crypt_data3` varchar(256) NOT NULL,
-  `hash` varchar(64) NOT NULL,
-  `attribute` varchar(1) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-
---
--- Dumping data for table `my_transaction_queue`
---
-
 
 -- --------------------------------------------------------
 
@@ -143,10 +151,6 @@ INSERT INTO `options` (`field_name`, `field_data`) VALUES
 ('first_contact_server', '---ip=---domain=newdwpinc.homedns.org---subfolder=timekoin---port=80---code=guest---end'),
 ('first_contact_server', '---ip=---domain=amt-wisp1.dyndns.org---subfolder=timekoin---port=88---code=guest---end'),
 ('first_contact_server', '---ip=---domain=timekoin.com---subfolder=timekoin---port=80---code=guest---end'),
-('graph_data_amount_total', ''),
-('graph_data_range_recv', ''),
-('graph_data_range_sent', ''),
-('graph_data_trans_total', ''),
 ('max_active_peers', '5'),
 ('max_new_peers', '10'),
 ('password', '5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5'),
@@ -169,4 +173,9 @@ CREATE TABLE IF NOT EXISTS `transaction_queue` (
   `hash` varchar(64) NOT NULL,
   `attribute` varchar(1) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+--
+-- Dumping data for table `transaction_queue`
+--
+
 

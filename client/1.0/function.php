@@ -231,6 +231,33 @@ function transaction_history_query($to_from, $last = 1)
 	// Ask one of my active peers
 	ini_set('user_agent', 'Timekoin Client v' . TIMEKOIN_VERSION);
 	ini_set('default_socket_timeout', 5); // Timeout for request in seconds
+	$cache_refresh_time = 60;
+
+	if($to_from == 1)
+	{	
+		$trans_history_sent_to = mysql_result(mysql_query("SELECT * FROM `data_cache` WHERE `field_name` = 'trans_history_sent_to' LIMIT 1"),0,"field_data");
+		$timestamp_cache = intval(find_string("---time=", "---last", $trans_history_sent_to));
+		$last_cache = intval(find_string("---last=", "---hdata", $trans_history_sent_to));
+
+		if(time() - $cache_refresh_time < $timestamp_cache && $last == $last_cache) // Cache TTL
+		{
+			// Return Cache Data
+			return find_string("---hdata=", "---hend", $trans_history_sent_to);
+		}
+	}
+
+	if($to_from == 2)
+	{
+		$trans_history_sent_from = mysql_result(mysql_query("SELECT * FROM `data_cache` WHERE `field_name` = 'trans_history_sent_from' LIMIT 1"),0,"field_data");
+		$timestamp_cache = intval(find_string("---time=", "---last", $trans_history_sent_from));
+		$last_cache = intval(find_string("---last=", "---hdata", $trans_history_sent_from));
+
+		if(time() - $cache_refresh_time < $timestamp_cache && $last == $last_cache) // Cache TTL
+		{
+			// Return Cache Data
+			return find_string("---hdata=", "---hend", $trans_history_sent_from);
+		}
+	}
 
 	$my_public_key = base64_encode(my_public_key());
 
@@ -276,6 +303,17 @@ function transaction_history_query($to_from, $last = 1)
 
 		if(strlen($poll_peer) > 60)
 		{
+			// Update data cache
+			if($to_from == 1)
+			{
+				mysql_query("UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---last=$last---hdata=$poll_peer---hend' WHERE `data_cache`.`field_name` = 'trans_history_sent_to' LIMIT 1");
+			}
+
+			if($to_from == 2)
+			{
+				mysql_query("UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---last=$last---hdata=$poll_peer---hend' WHERE `data_cache`.`field_name` = 'trans_history_sent_from' LIMIT 1");
+			}			
+			
 			return $poll_peer;
 		}
 	}
@@ -478,51 +516,21 @@ function tk_time_convert($time)
 //***********************************************************************************
 function db_cache_balance($my_public_key)
 {
-	// Check server balance via custom memory index
-	$my_server_balance = mysql_result(mysql_query("SELECT * FROM `balance_index` WHERE `public_key_hash` = 'server_timekoin_balance' LIMIT 1"),0,"balance");
-	$my_server_balance_last = mysql_result(mysql_query("SELECT * FROM `balance_index` WHERE `public_key_hash` = 'server_timekoin_balance' LIMIT 1"),0,"block");
+	$cache_refresh_time = 30; // Refresh TTL
+	
+	// Check server balance via cache
+	$billfold_balance = mysql_result(mysql_query("SELECT * FROM `data_cache` WHERE `field_name` = 'billfold_balance' LIMIT 1"),0,"field_data");
+	$timestamp_cache = intval(find_string("---time=", "---data", $billfold_balance));
 
-	if($my_server_balance === FALSE)
+	if(time() - $cache_refresh_time < $timestamp_cache) // Cache TTL
 	{
-		// Update record with the latest balance
-		$display_balance = check_crypt_balance($my_public_key);
-
-		if($display_balance == NULL)
-		{
-			// No response from any active peers
-		}
-		else
-		{
-			// Does not exist, needs to be created
-			mysql_query("INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`)VALUES ('0', 'server_timekoin_balance', '0')");
-			mysql_query("UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$display_balance' WHERE `balance_index`.`public_key_hash` = 'server_timekoin_balance' LIMIT 1");
-		}
-	}
-	else
-	{
-		if(time() - $my_server_balance_last > 30) // Update any balance older than 30 seconds
-		{
-			// Last generated balance is older than the current cycle, needs to be updated
-			// Update record with the latest balance
-			$display_balance = check_crypt_balance($my_public_key);
-
-			if($display_balance == NULL)
-			{
-				// No response from any active peers				
-				mysql_query("DELETE FROM `balance_index` WHERE `balance_index`.`public_key_hash` = 'server_timekoin_balance'");
-			}
-			else
-			{
-				mysql_query("UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$display_balance' WHERE `balance_index`.`public_key_hash` = 'server_timekoin_balance' LIMIT 1");
-			}
-		}
-		else
-		{
-			$display_balance = $my_server_balance;
-		}
+		// Return Cache Data
+		return intval(find_string("---data=", "---end", $billfold_balance));
 	}
 
-	return $display_balance;
+	$balance = check_crypt_balance($my_public_key); // Cache stale, refresh and update cache
+	mysql_query("UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---data=$balance---end' WHERE `data_cache`.`field_name` = 'billfold_balance' LIMIT 1");
+	return $balance;
 }
 //***********************************************************************************
 //***********************************************************************************

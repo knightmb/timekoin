@@ -1,7 +1,8 @@
 <?PHP
 include 'templates.php';
 include 'function.php';
-set_time_limit(99);
+include 'configuration.php';
+set_time_limit(60);
 session_name("tkclient");
 session_start();
 
@@ -19,8 +20,6 @@ if($_SESSION["valid_login"] == FALSE && $_GET["action"] != "login")
 
 	exit;
 }
-
-include 'configuration.php';
 
 if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 {
@@ -113,13 +112,13 @@ if($_SESSION["valid_login"] == TRUE)
 //****************************************************************************
 	if($_GET["menu"] == "home" || empty($_GET["menu"]) == TRUE)
 	{
-		$body_string = '<strong>Last 20 <font color="green">Received</font> Transaction Amounts to Billfold</strong></br><canvas id="recv_graph" width="620" height="300"></canvas>';
+		$body_string = '<strong>Last 20 <font color="green">Received</font> Transaction Amounts to Billfold</strong></br><canvas id="recv_graph" width="620" height="300">Your Web Browser does not support HTML5 Canvas.</canvas>';
 		$body_string .= '<hr></hr>';
-		$body_string .= '<strong>Last 20 <font color="blue">Sent</font> Transaction Amounts from Billfold</strong></br><canvas id="sent_graph" width="620" height="300"></canvas>';
+		$body_string .= '<strong>Last 20 <font color="blue">Sent</font> Transaction Amounts from Billfold</strong></br><canvas id="sent_graph" width="620" height="300">Your Web Browser does not support HTML5 Canvas.</canvas>';
 		$body_string .= '<hr></hr>';
-		$body_string .= '<strong>Timekoin Network - Total Transactions per Cycle (Last 25 Cycles)</strong></br><canvas id="trans_total" width="620" height="200"></canvas>';
+		$body_string .= '<strong>Timekoin Network - Total Transactions per Cycle (Last 25 Cycles)</strong></br><canvas id="trans_total" width="620" height="200">Your Web Browser does not support HTML5 Canvas.</canvas>';
 		$body_string .= '<hr></hr>';
-		$body_string .= '<strong>Timekoin Network - Total Amounts Sent per Cycle (Last 20 Cycles)</strong></br><canvas id="amount_total" width="620" height="400"></canvas>';
+		$body_string .= '<strong>Timekoin Network - Total Amounts Sent per Cycle (Last 20 Cycles)</strong></br><canvas id="amount_total" width="620" height="400">Your Web Browser does not support HTML5 Canvas.</canvas>';
 
 		$display_balance = db_cache_balance(my_public_key());
 
@@ -148,6 +147,165 @@ if($_SESSION["valid_login"] == TRUE)
 		exit;
 	}
 //****************************************************************************
+	if($_GET["menu"] == "address")
+	{
+		if($_GET["font"] == "public_key")
+		{
+			if(empty($_POST["font_size"]) == FALSE)
+			{
+				// Save value in database
+				$sql = "UPDATE `options` SET `field_data` = '" . $_POST["font_size"] . "' WHERE `options`.`field_name` = 'public_key_font_size' LIMIT 1";
+				mysql_query($sql);
+
+				header("Location: index.php?menu=address");
+				exit;
+			}
+		}
+		else
+		{
+			$default_public_key_font = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
+		}
+
+		if($_GET["task"] == "delete")
+		{
+			// Remove Address Entry
+			mysql_query("DELETE FROM `address_book` WHERE `address_book`.`id` = " . $_GET["name_id"]);
+		}
+
+		if($_GET["task"] == "new")
+		{
+			// New Address Form
+			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
+				<tr><th>Address Name</th><th>Easy Key</th><th>Full Public Key</th><th></th><th></th></tr>';
+
+			$body_string .= '<FORM ACTION="index.php?menu=address&task=save_new" METHOD="post"><tr>
+			 <td class="style2" valign="top"><input type="text" name="name" size="16" /></td>
+			 <td class="style2" valign="top"><input type="text" name="easy_key" size="16" /></td>
+			 <td class="style2"><textarea name="full_key" rows="6" cols="30"></textarea></td>			 
+			 <td valign="top"><input type="image" src="img/save-icon.gif" title="Save New Address" name="submit1" border="0"></FORM></td>
+			 <td valign="top"><FORM ACTION="index.php?menu=address" METHOD="post"><input type="image" src="img/hr.gif" title="Cancel" name="submit2" border="0"></FORM>
+			 </td></tr>';
+
+			$body_string .= '</table></div>';
+		}
+
+		if($_GET["task"] == "save_new")
+		{
+			// Save New Address
+			$full_key = $_POST["full_key"];
+			
+			if(empty($_POST["easy_key"]) == FALSE)
+			{
+				// Attemp to lookup Easy Key
+				ini_set('user_agent', 'Timekoin Client (GUI) v' . TIMEKOIN_VERSION);
+				ini_set('default_socket_timeout', 10); // Timeout for request in seconds
+				$easy_key = $_POST["easy_key"];
+
+				// Translate Easy Key to Public Key and fill in field with
+				$context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
+				$full_key = filter_sql(file_get_contents("http://timekoin.net/easy.php?s=$easy_key", FALSE, $context, NULL, 500));
+
+				if($full_key == "ERROR" || empty($full_key) == TRUE)
+				{
+					$full_key = "Easy Key NOT Found";
+				}
+			}
+			
+			mysql_query("INSERT INTO `address_book` (`id`, `name`, `easy_key`, `full_key`) VALUES
+			  	(NULL, '" . $_POST["name"] . "', '$easy_key', '$full_key')");
+		}
+
+		if($_GET["task"] == "edit")
+		{
+			// Edit Address
+			$name = mysql_result(mysql_query("SELECT name FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
+			$easy_key = mysql_result(mysql_query("SELECT easy_key FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
+			$full_key = mysql_result(mysql_query("SELECT full_key FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
+
+			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
+				<tr><th>Address Name</th><th>Easy Key</th><th>Full Public Key</th><th></th><th></th></tr>';
+
+			$body_string .= '<FORM ACTION="index.php?menu=address&task=edit_save&name_id=' . $_GET["name_id"] . '" METHOD="post"><tr>
+			 <td class="style2" valign="top"><input type="text" name="name" size="16" value="' . $name . '"/></td>
+			 <td class="style2" valign="top"><input type="text" name="easy_key" size="16" value="' . $easy_key . '"/></td>
+			 <td class="style2"><textarea name="full_key" rows="6" cols="30">' . $full_key . '</textarea></td>			 
+			 <td valign="top"><input type="image" src="img/edit-icon.gif" title="Edit Address" name="submit1" border="0"></FORM></td>
+			 <td valign="top"><FORM ACTION="index.php?menu=address" METHOD="post"><input type="image" src="img/hr.gif" title="Cancel" name="submit2" border="0"></FORM>
+			 </td></tr>';
+
+			$body_string .= '</table></div>';
+		}
+
+		if($_GET["task"] == "edit_save")
+		{
+			// Save New Address
+			$full_key = $_POST["full_key"];
+			
+			if(empty($_POST["easy_key"]) == FALSE)
+			{
+				// Attemp to lookup Easy Key
+				ini_set('user_agent', 'Timekoin Client (GUI) v' . TIMEKOIN_VERSION);
+				ini_set('default_socket_timeout', 10); // Timeout for request in seconds
+				$easy_key = $_POST["easy_key"];
+
+				// Translate Easy Key to Public Key and fill in field with
+				$context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
+				$full_key = filter_sql(file_get_contents("http://timekoin.net/easy.php?s=$easy_key", FALSE, $context, NULL, 500));
+
+				if($full_key == "ERROR" || empty($full_key) == TRUE)
+				{
+					$full_key = "Easy Key NOT Found";
+				}
+			}
+
+			mysql_query("UPDATE `address_book` SET `name` = '" . $_POST["name"] . "', `easy_key` = '$easy_key', `full_key` = '$full_key' WHERE `address_book`.`id` = " . $_GET["name_id"]);
+		}
+
+		if($_GET["task"] != "new" && $_GET["task"] != "edit") // Default View
+		{
+			$sql = "SELECT * FROM `address_book` ORDER BY `address_book`.`name` ASC";
+			$sql_result = mysql_query($sql);
+			$sql_num_results = mysql_num_rows($sql_result);
+
+			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
+				<tr><th>Address Name</th><th>Easy Key</th><th>Full Public Key</th><th></th><th></th><th></th></tr>';
+
+			for ($i = 0; $i < $sql_num_results; $i++)
+			{
+				$sql_row = mysql_fetch_array($sql_result);
+				$body_string .= '<tr><td class="style2"><p style="word-wrap:break-word; width:175px; font-size:12px;">' . 	
+					$sql_row["name"] . 
+					' <a href="index.php?menu=history&name_id=' . $sql_row["id"] . '" title="' . $sql_row["name"] . ' History"><img src="img/timekoin_history.png" style="float: right;"></a></p>
+					</td><td class="style1"><p style="word-wrap:break-word; width:175px; font-size:12px;">' . $sql_row["easy_key"] . 
+					'</p></td><td class="style1"><p style="word-wrap:break-word; width:175px; font-size:' . $default_public_key_font . 'px;">' . $sql_row["full_key"] . '</p></td>
+					<td><a href="index.php?menu=address&task=delete&name_id=' . $sql_row["id"] . '" title="Delete ' . $sql_row["name"] . '" onclick="return confirm(\'Delete ' . $sql_row["name"] . '?\');"><img src="img/hr.gif"></a></td>
+					<td><a href="index.php?menu=address&task=edit&name_id=' . $sql_row["id"] . '" title="Edit ' . $sql_row["name"] . '"><img src="img/edit-icon.gif"></a></td>
+					<td><a href="index.php?menu=send&name_id=' . $sql_row["id"] . '" title="Send Koins to ' . $sql_row["name"] . '"><img src="img/timekoin_send.png"></a></td></tr>';
+			}
+
+			$body_string .= '<tr><td colspan="6"><hr></hr></td></tr><tr>
+				<td colspan="6"><FORM ACTION="index.php?menu=address&task=new" METHOD="post"><input type="submit" value="Add New Address"/></FORM></td></tr></table></div>';
+		}
+
+		if($_GET["task"] != "new") // Default View
+		{		
+			$quick_info = "The <strong>Address Book</strong> allows long, obscure public keys to be translated to friendly names.</br></br>
+	Transactions can also quickly be created from here.</br></br>
+	The scribe next to the name can be clicked to bring up a custom history of all transactions to and from the name selected.";
+		}
+		else
+		{
+			$quick_info = "<strong>Address Name</strong> is friendly name to associate with the Public Key.</br></br>
+				You can enter an <strong>Easy Key</strong> address and Timekoin will attempt to lookup the full key when saving.</br></br>
+				If no Easy Key is known or needed, just enter the full Public Key instead.";
+		}
+
+		$text_bar = '<FORM ACTION="index.php?menu=address&font=public_key" METHOD="post">
+			<table border="0" cellspacing="4"><tr><td><strong>Default Public Key Font Size</strong></td><td><input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" /><input type="submit" name="Submit3" value="Save" /></td></tr></table></FORM>';
+
+		home_screen("Address Book", $text_bar, $body_string, $quick_info);
+		exit;
+	}	
 //****************************************************************************
 	if($_GET["menu"] == "peerlist")
 	{
@@ -391,7 +549,7 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 			}
 
-			$body_string .= '<tr><td colspan="2"><FORM ACTION="index.php?menu=peerlist&show=reserve" METHOD="post"><input type="submit" value="Show Reserve Peers"/></FORM></td>
+			$body_string .= '<tr><td colspan="8"><hr></hr></td></tr><tr><td colspan="2"><FORM ACTION="index.php?menu=peerlist&show=reserve" METHOD="post"><input type="submit" value="Show Reserve Peers"/></FORM></td>
 				<td colspan="3"><FORM ACTION="index.php?menu=peerlist&edit=peer&type=new" METHOD="post"><input type="submit" value="Add New Peer"/></FORM></td>
 				<td colspan="4"><FORM ACTION="index.php?menu=peerlist&edit=peer&type=firstcontact" METHOD="post"><input type="submit" value="First Contact Servers"/></FORM></td></tr></table></div>';
 
@@ -598,9 +756,9 @@ if($_SESSION["valid_login"] == TRUE)
 						// Key has a valid history
 						$message = $_POST["send_message"];
 						$display_balance = db_cache_balance($my_public_key);
-						$body_string = send_receive_body($public_key_64, $send_amount, TRUE, NULL, $message);
-						$body_string .= '<hr></hr><font color="blue"><strong>This public key is valid.</font></br>
-							<font color="red">There is no way to recover timekoins sent to the wrong public key.</font></br>
+						$body_string = send_receive_body($public_key_64, $send_amount, TRUE, NULL, $message, $_POST["name"]);
+						$body_string .= '<hr></hr><font color="green"><strong>This public key is valid.</font></br>
+							There is no way to recover Timekoins sent to the wrong public key.</br>
 							<font color="blue">Click "Send Timekoins" to send now.</strong></font></br></br>';
 					}
 					else
@@ -608,10 +766,10 @@ if($_SESSION["valid_login"] == TRUE)
 						// No key history, might not be valid
 						$message = $_POST["send_message"];
 						$display_balance = db_cache_balance($my_public_key);
-						$body_string = send_receive_body($public_key_64, $send_amount, TRUE, NULL, $message);
-						$body_string .= '<hr></hr><font color="red"><strong>This public key may not be valid as it has no existing history of transactions.</br>
-							There is no way to recover timekoins sent to the wrong public key.</br>
-							Click "Send Timekoins" to send now.</strong></font></br></br>';
+						$body_string = send_receive_body($public_key_64, $send_amount, TRUE, NULL, $message, $_POST["name"]);
+						$body_string .= '<hr></hr><font color="red"><strong>This public key has no existing history of transactions.</br>
+							There is no way to recover Timekoins sent to the wrong public key.</font></br>
+							Click "Send Timekoins" to send now.</strong></br></br>';
 					}
 				} // End self check
 			} // End balance check
@@ -651,14 +809,14 @@ if($_SESSION["valid_login"] == TRUE)
 						if(send_timekoins($my_private_key, $my_public_key, $public_key_to, $send_amount, $message) == TRUE)
 						{
 							$display_balance = db_cache_balance($my_public_key);
-							$body_string = send_receive_body($public_key_64, $send_amount);
+							$body_string = send_receive_body($public_key_64, $send_amount, NULL, NULL, NULL, $_POST["name"]);
 							$body_string .= '<hr></hr><font color="green"><strong>You just sent ' . $send_amount . ' timekoins to the above public key.</font></br>
 								Your balance will not reflect this until the transation is recorded across the entire network.</strong></br></br>';
 						}
 						else
 						{
 							$display_balance = db_cache_balance($my_public_key);
-							$body_string = send_receive_body($public_key_64, $send_amount);
+							$body_string = send_receive_body($public_key_64, $send_amount, NULL, NULL, NULL, $_POST["name"]);
 							$body_string .= '<hr></hr><font color="red"><strong>Send failed...</strong></font></br></br>';
 						}
 					} // End duplicate self check
@@ -688,11 +846,26 @@ if($_SESSION["valid_login"] == TRUE)
 						$server_message = '<font color="blue"><strong>Easy Key Found</strong></font>';
 					}
 				}
-				
-				// No selections made, default screen
-				$display_balance = db_cache_balance($my_public_key);
-				$body_string = send_receive_body($easy_key, NULL, NULL, $last_easy_key, $message);
-				$body_string .= $server_message;
+
+
+
+				if(empty($_GET["name_id"]) == TRUE)
+				{
+					// No selections made, default screen
+					$display_balance = db_cache_balance($my_public_key);
+					$body_string = send_receive_body($easy_key, NULL, NULL, $last_easy_key, $message);
+					$body_string .= $server_message;
+				}
+				else
+				{
+					// Insert Address Book Entry
+					$name = mysql_result(mysql_query("SELECT name FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
+					$easy_key = mysql_result(mysql_query("SELECT easy_key FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
+					$full_key = mysql_result(mysql_query("SELECT full_key FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
+					
+					$display_balance = db_cache_balance($my_public_key);
+					$body_string = send_receive_body($full_key, NULL, NULL, $easy_key, $message, $name);
+				}
 			}
 		}
 
@@ -722,6 +895,7 @@ if($_SESSION["valid_login"] == TRUE)
 	if($_GET["menu"] == "history")
 	{
 		$my_public_key = my_public_key();
+		$address_name;
 
 		// Standard History View
 		if($_GET["receive"] == "listmore" || $_GET["send"] == "listmore")
@@ -758,10 +932,19 @@ if($_SESSION["valid_login"] == TRUE)
 			$default_public_key_font = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
 		}
 
+		if(empty($_GET["name_id"]) == FALSE)
+		{
+			$name = mysql_result(mysql_query("SELECT name FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
+			$full_key = mysql_result(mysql_query("SELECT full_key FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
+			$show_last = 100;
+			$name_from = ' from <font color="blue">' . $name . '</font>';
+			$name_to = ' to <font color="blue">' . $name . '</font>';			
+		}
+
 		if($hide_receive == FALSE)
 		{
-			$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transactions <font color="green">Sent To</font> This Billfold</strong></br>
-				<FORM ACTION="index.php?menu=history&receive=listmore" METHOD="post"></br>
+			$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transactions <font color="green">Sent To</font> this Billfold' . $name_from . '</strong></br>
+				<FORM ACTION="index.php?menu=history&receive=listmore" METHOD="post">
 				</br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
 				<th>Sent From</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
 
@@ -782,35 +965,62 @@ if($_SESSION["valid_login"] == TRUE)
 					break;
 				}
 
-				if($public_key_from == base64_encode($my_public_key))
+				if(empty($_GET["name_id"]) == TRUE)
 				{
-					// Self Generated
-					$public_key_from = '<td class="style2">Self Generated';
+					if($public_key_from == base64_encode($my_public_key))
+					{
+						// Self Generated
+						$public_key_from = '<td class="style2">Self Generated';
+					}
+					else
+					{
+						// Check if the key matches anyone in the address book
+						$address_name = mysql_result(mysql_query("SELECT name FROM `address_book` WHERE `full_key` = '$public_key_from'"),0,0);
+
+						if(empty($address_name) == TRUE)
+						{
+							$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:150px; font-size:' . $default_public_key_font . 'px;">' . $public_key_from . '</p>';
+						}
+						else
+						{
+							$public_key_from = '<td class="style2"><font color="blue">' . $address_name . '</font>';
+						}
+					}
+					$body_string .= '<tr>
+					<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($timestamp) . '</p></td>' 
+					. $public_key_from . '</td>
+					<td class="style2"><p style="font-size: 11px;">' . $amount . '</p></td>
+					<td class="style2"><p style="font-size: 11px;">' . $verify . '</p></td>
+					<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $message . '</p></td></tr>';
 				}
 				else
 				{
-					// Everyone else
-					$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:150px; font-size:' . $default_public_key_font . 'px;">' . $public_key_from . '</p>';
-				}
+					// Match Friendly Name to Key
+					if($public_key_from == $full_key)
+					{
+						$public_key_from = '<td class="style2"><font color="blue">' . $name . '</font>';
 
-				$body_string .= '<tr>
-				<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($timestamp) . '</p></td>' 
-				. $public_key_from . '</td>
-				<td class="style2"><p style="font-size: 11px;">' . $amount . '</p></td>
-				<td class="style2"><p style="font-size: 11px;">' . $verify . '</p></td>
-				<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $message . '</p></td></tr>';
+						$body_string .= '<tr>
+						<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($timestamp) . '</p></td>' 
+						. $public_key_from . '</td>
+						<td class="style2"><p style="font-size: 11px;">' . $amount . '</p></td>
+						<td class="style2"><p style="font-size: 11px;">' . $verify . '</p></td>
+						<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $message . '</p></td></tr>';						
+					}
+				}
 
 				$counter++;
 			}
 			
-			$body_string .= '<tr><td colspan="5"><input type="text" size="5" name="show_more_receive" value="' . $show_last .'" /><input type="submit" name="Submit1" value="Show Last" /></FORM></td></tr>';
+			$body_string .= '<tr><td colspan="5"><hr></hr></td></tr><tr><td colspan="5"><input type="text" size="5" name="show_more_receive" value="' . $show_last .'" /><input type="submit" name="Submit1" value="Show Last" /></FORM></td></tr>';
 			$body_string .= '</table></div>';
 
 		} // End hide check for receive
 
 		if($hide_send == FALSE)
 		{
-			$body_string .= '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transactions <font color="blue">Sent From</font> This Billfold</strong></br></br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
+			$body_string .= '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transactions <font color="blue">Sent From</font> this Billfold' . $name_to . '</strong></br></br>
+				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
 				<th>Sent To</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
 
 			$history_data_to = transaction_history_query(2, $show_last);
@@ -830,19 +1040,47 @@ if($_SESSION["valid_login"] == TRUE)
 					break;
 				}
 
-				$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:150px; font-size:' . $default_public_key_font . 'px;">' . $public_key_to . '</p>';
+				if(empty($_GET["name_id"]) == TRUE)
+				{				
+					// Check if the key matches anyone in the address book
+					$address_name = mysql_result(mysql_query("SELECT name FROM `address_book` WHERE `full_key` = '$public_key_to'"),0,0);
 
-				$body_string .= '<tr>
-				<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($timestamp) . '</p></td>' 
-				. $public_key_to . '</td>
-				<td class="style2"><p style="font-size: 11px;">' . $amount . '</p></td>
-				<td class="style2"><p style="font-size: 11px;">' . $verify . '</p></td>
-				<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $message . '</p></td></tr>';
+					if(empty($address_name) == TRUE)
+					{
+						$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:150px; font-size:' . $default_public_key_font . 'px;">' . $public_key_to . '</p>';
+					}
+					else
+					{
+						$public_key_to = '<td class="style2"><font color="blue">' . $address_name . '</font>';
+					}
+
+					$body_string .= '<tr>
+					<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($timestamp) . '</p></td>' 
+					. $public_key_to . '</td>
+					<td class="style2"><p style="font-size: 11px;">' . $amount . '</p></td>
+					<td class="style2"><p style="font-size: 11px;">' . $verify . '</p></td>
+					<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $message . '</p></td></tr>';					
+				}
+				else
+				{
+					// Match Friendly Name to Key
+					if($public_key_to == $full_key)
+					{
+						$public_key_to = '<td class="style2"><font color="blue">' . $name . '</font>';
+
+						$body_string .= '<tr>
+						<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($timestamp) . '</p></td>' 
+						. $public_key_to . '</td>
+						<td class="style2"><p style="font-size: 11px;">' . $amount . '</p></td>
+						<td class="style2"><p style="font-size: 11px;">' . $verify . '</p></td>
+						<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $message . '</p></td></tr>';						
+					}
+				}
 
 				$counter++;
 			}
 
-			$body_string .= '<tr><td colspan="5"><FORM ACTION="index.php?menu=history&send=listmore" METHOD="post"><input type="text" size="5" name="show_more_send" value="' . $show_last .'" /><input type="submit" name="Submit2" value="Show Last" /></FORM></td></tr>';
+			$body_string .= '<tr><td colspan="5"><hr></hr></td></tr><tr><td colspan="5"><FORM ACTION="index.php?menu=history&send=listmore" METHOD="post"><input type="text" size="5" name="show_more_send" value="' . $show_last .'" /><input type="submit" name="Submit2" value="Show Last" /></FORM></td></tr>';
 			$body_string .= '</table></div>';
 
 		} // End hide check for send
@@ -887,7 +1125,7 @@ if($_SESSION["valid_login"] == TRUE)
 		$sql_num_results = mysql_num_rows($sql_result);
 
 		$body_string = '<strong><font color="blue">( ' . number_format($sql_num_results) . ' )</font> Network Transactions Waiting for Processing</strong></br></br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
-			<th>Sent From</th><th>Sent To</th><th>Amount</th></tr>';
+			<th>Send From</th><th>Send To</th><th>Amount</th></tr>';
 
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
@@ -920,7 +1158,18 @@ if($_SESSION["valid_login"] == TRUE)
 				{
 					// Self Generated to someone else
 					$public_key_from = '<td class="style2"><font color="blue">Self Generated Transaction</font>';
-					$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:175px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
+					
+					// Check if the key matches anyone in the address book
+					$address_name = mysql_result(mysql_query("SELECT name FROM `address_book` WHERE `full_key` = '" . base64_encode($public_key_trans_to) . "'"),0,0);
+
+					if(empty($address_name) == TRUE)
+					{
+						$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:175px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
+					}
+					else
+					{
+						$public_key_to = '<td class="style2"><font color="blue">' . $address_name . '</font>';
+					}
 				}
 			}
 			else
@@ -938,11 +1187,31 @@ if($_SESSION["valid_login"] == TRUE)
 					}
 					else
 					{
-						$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:195px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
+						// Check if the key matches anyone in the address book
+						$address_name = mysql_result(mysql_query("SELECT name FROM `address_book` WHERE `full_key` = '" . base64_encode($public_key_trans_to) . "'"),0,0);
+
+						if(empty($address_name) == TRUE)
+						{
+							$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:195px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
+						}
+						else
+						{
+							$public_key_to = '<td class="style2"><font color="blue">' . $address_name . '</font>';
+						}
 					}
 				}
-				
-				$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:195px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans) . '</p>';
+
+				// Check if the key matches anyone in the address book
+				$address_name = mysql_result(mysql_query("SELECT name FROM `address_book` WHERE `full_key` = '" . base64_encode($public_key_trans) . "'"),0,0);
+
+				if(empty($address_name) == TRUE)
+				{
+					$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:195px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans) . '</p>';
+				}
+				else
+				{
+					$public_key_from = '<td class="style2"><font color="blue">' . $address_name . '</font>';
+				}
 			}
 
 			if($sql_row["attribute"] == "R")
@@ -981,7 +1250,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string = '<strong>Checking All Database Tables</strong></font></br></br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Check Database Results</th></tr><tr><td>';
 
-			$db_check = mysql_query("CHECK TABLE `activity_logs` , `my_keys` , `my_transaction_queue` , `options` , `transaction_queue`");
+			$db_check = mysql_query("CHECK TABLE `activity_logs`,`address_book`,`data_cache`,`my_keys`,`options`,`transaction_queue`");
 			$db_check_info = mysql_fetch_array($db_check);
 			$db_check_count = 0;
 			
@@ -1012,7 +1281,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string = '<strong>Repair All Database Tables</strong></font></br></br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Repair Database Results</th></tr><tr><td>';
 
-			$db_check = mysql_query("REPAIR TABLE `activity_logs` , `my_keys` , `my_transaction_queue` , `options` , `transaction_queue`");
+			$db_check = mysql_query("REPAIR TABLE `activity_logs`,`address_book`,`data_cache`,`my_keys`,`options`,`transaction_queue`");
 			$db_check_info = mysql_fetch_array($db_check);
 			$db_check_count = 0;
 			
@@ -1043,7 +1312,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string = '<strong>Optimize All Database Tables</strong></font></br></br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Optimize Database Results</th></tr><tr><td>';
 
-			$db_check = mysql_query("OPTIMIZE TABLE `activity_logs` , `my_keys` , `my_transaction_queue` , `options` , `transaction_queue`");
+			$db_check = mysql_query("OPTIMIZE TABLE `activity_logs`,`address_book`,`data_cache`,`my_keys`,`options`,`transaction_queue`");
 			$db_check_info = mysql_fetch_array($db_check);
 			$db_check_count = 0;
 			
@@ -1102,8 +1371,8 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 			}
 			
-			$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> Log Events</strong>' . $filter_by . '<table border="0" cellspacing="5"><tr><td>
-				Filter By:</td><td><FORM ACTION="index.php?menu=tools&logs=listmore" METHOD="post"><select name="filter"><option value="all" SELECTED>Show All</option>
+			$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> Log Events</strong>' . $filter_by . '<table border="0" cellspacing="5">
+				<tr><td>Filter By:</td><td><FORM ACTION="index.php?menu=tools&logs=listmore" METHOD="post"><select name="filter"><option value="all" SELECTED>Show All</option>
 				<option value="GU">GUI - Graphical User Interface</option>
 				<option value="PL">Peer Processor</option>
 				<option value="T">Transactions</option>
@@ -1133,7 +1402,7 @@ if($_SESSION["valid_login"] == TRUE)
 				<td class="style2">' . $sql_row["attribute"] . '</td></tr>';
 			}
 
-			$body_string .= '<tr><td><input type="text" size="5" name="show_more_logs" value="' . $show_last .'" /><input type="submit" name="show_last" value="Show Last" /></FORM></td>
+			$body_string .= '<tr><td colspan="3"><hr></hr></td></tr><tr><td><input type="text" size="5" name="show_more_logs" value="' . $show_last .'" /><input type="submit" name="show_last" value="Show Last" /></FORM></td>
 				<td colspan="2"><FORM ACTION="index.php?menu=tools&logs=clear" METHOD="post"><input type="submit" name="clear_logs" value="Clear All Logs" /></FORM></td></tr>';
 			$body_string .= '</table></div>';
 		}

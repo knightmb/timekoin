@@ -63,6 +63,7 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 {
 	$home;
 	$options;
+	$address;
 	$peerlist;
 	$refresh_header;
 	$send;
@@ -75,6 +76,7 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 	$graph_data_range_sent;
 	$graph_data_range_recv;
 	$graph_data_trans_total;
+	$graph_data_amount_total;	
 	$largest_sent = 10;
 	$largest_recv = 10;
 	$last = 20;
@@ -89,7 +91,7 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 	{
 		case "home":
 			$home = 'class="active"';
-			$graph_data_range_recv = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'graph_data_range_recv' LIMIT 1"),0,"field_data");
+			$graph_data_range_recv = mysql_result(mysql_query("SELECT * FROM `data_cache` WHERE `field_name` = 'graph_data_range_recv' LIMIT 1"),0,"field_data");
 			$timestamp_cache = intval(find_string("---time=", "---max", $graph_data_range_recv));
 
 			if(time() - $cache_refresh_time > $timestamp_cache) // Cache TTL
@@ -121,7 +123,7 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 				// Update data cache
 				if(empty($graph_data_range_recv) == FALSE)
 				{
-					mysql_query("UPDATE `options` SET `field_data` = '---time=" . time() . "---max=$largest_recv---data=$graph_data_range_recv---end' WHERE `options`.`field_name` = 'graph_data_range_recv' LIMIT 1");
+					mysql_query("UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---max=$largest_recv---data=$graph_data_range_recv---end' WHERE `data_cache`.`field_name` = 'graph_data_range_recv' LIMIT 1");
 				}
 			}
 			else
@@ -131,7 +133,7 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 				$graph_data_range_recv = find_string("---data=", "---end", $graph_data_range_recv);
 			}
 
-			$graph_data_range_sent = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'graph_data_range_sent' LIMIT 1"),0,"field_data");
+			$graph_data_range_sent = mysql_result(mysql_query("SELECT * FROM `data_cache` WHERE `field_name` = 'graph_data_range_sent' LIMIT 1"),0,"field_data");
 			$timestamp_cache = intval(find_string("---time=", "---max", $graph_data_range_sent));
 
 			if(time() - $cache_refresh_time > $timestamp_cache)// Cache TTL
@@ -164,7 +166,7 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 				// Update data cache
 				if(empty($graph_data_range_sent) == FALSE)
 				{
-					mysql_query("UPDATE `options` SET `field_data` = '---time=" . time() . "---max=$largest_sent---data=$graph_data_range_sent---end' WHERE `options`.`field_name` = 'graph_data_range_sent' LIMIT 1");
+					mysql_query("UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---max=$largest_sent---data=$graph_data_range_sent---end' WHERE `data_cache`.`field_name` = 'graph_data_range_sent' LIMIT 1");
 				}
 			}
 			else
@@ -174,8 +176,9 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 				$graph_data_range_sent = find_string("---data=", "---end", $graph_data_range_sent);
 			}
 
-			$graph_data_trans_total = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'graph_data_trans_total' LIMIT 1"),0,"field_data");
-			$graph_data_amount_total = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'graph_data_amount_total' LIMIT 1"),0,"field_data");			
+			$graph_data_trans_total = mysql_result(mysql_query("SELECT * FROM `data_cache` WHERE `field_name` = 'graph_data_trans_total' LIMIT 1"),0,"field_data");
+			$graph_data_amount_total = mysql_result(mysql_query("SELECT * FROM `data_cache` WHERE `field_name` = 'graph_data_amount_total' LIMIT 1"),0,"field_data");			
+		
 			$timestamp_cache = intval(find_string("---time=", "---max", $graph_data_trans_total));
 
 			if(time() - $cache_refresh_time > $timestamp_cache)// Cache TTL
@@ -227,8 +230,8 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 				// Update data cache
 				if(empty($graph_data_trans_total) == FALSE && empty($graph_data_amount_total) == FALSE)
 				{
-					mysql_query("UPDATE `options` SET `field_data` = '---time=" . time() . "---max=$max_transactions---data=$graph_data_trans_total---end' WHERE `options`.`field_name` = 'graph_data_trans_total' LIMIT 1");
-					mysql_query("UPDATE `options` SET `field_data` = '---time=" . time() . "---max=$max_amount---data=$graph_data_amount_total---end' WHERE `options`.`field_name` = 'graph_data_amount_total' LIMIT 1");
+					mysql_query("UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---max=$max_transactions---data=$graph_data_trans_total---end' WHERE `data_cache`.`field_name` = 'graph_data_trans_total' LIMIT 1");
+					mysql_query("UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---max=$max_amount---data=$graph_data_amount_total---end' WHERE `data_cache`.`field_name` = 'graph_data_amount_total' LIMIT 1");
 				}
 			}
 			else
@@ -307,6 +310,10 @@ g_graph = new Graph(
 </script>';
 			break;
 
+		case "address":
+			$address = 'class="active"';
+			break;
+
 		case "queue":
 			$queue = 'class="active"';
 			break;
@@ -352,10 +359,11 @@ g_graph = new Graph(
 <div id="header">
 <ul id="top-navigation">
 <li><a href="index.php?menu=home" <?PHP echo $home; ?>>Home</a></li>
+<li><a href="index.php?menu=address" <?PHP echo $address; ?>>Address Book</a></li>
 <li><a href="index.php?menu=peerlist" <?PHP echo $peerlist; ?>>Peerlist</a></li>
-<li><a href="index.php?menu=queue" <?PHP echo $queue; ?>>Transaction Queue</a></li>
+<li><a href="index.php?menu=queue" <?PHP echo $queue; ?>>Queue</a></li>
 <li><a href="index.php?menu=send" <?PHP echo $send; ?>>Send</a></li>
-<li><a href="index.php?menu=history" <?PHP echo $history; ?>>Transaction History</a></li>
+<li><a href="index.php?menu=history" <?PHP echo $history; ?>>History</a></li>
 <li><a href="index.php?menu=options" <?PHP echo $options; ?>>Options</a></li>
 <li><a href="index.php?menu=backup" <?PHP echo $backup; ?>>Backup</a></li>
 <li><a href="index.php?menu=tools" <?PHP echo $tools; ?>>Tools</a></li>
@@ -458,7 +466,7 @@ function options_screen3()
 } 
 //***********************************************************
 //***********************************************************
-function send_receive_body($fill_in_key, $amount, $cancel = FALSE, $easy_key, $message)
+function send_receive_body($fill_in_key, $amount, $cancel = FALSE, $easy_key, $message, $name)
 {
 	if($cancel == TRUE)
 	{
@@ -473,10 +481,18 @@ function send_receive_body($fill_in_key, $amount, $cancel = FALSE, $easy_key, $m
 		$form_action = '<FORM ACTION="index.php?menu=send&check=key" METHOD="post">';
 	}
 
-return '<strong><font color="blue">Public Key</font> to send transaction:</strong></br>' . $form_action . '<table border="0" cellpadding="6"><tr><td colspan="2">
+	if(empty($name) == FALSE)
+	{
+		// Fill in address book name
+		$hidden_name = $name;
+		$name = ' to <font color="blue">' . $name . '</font>';
+	}
+
+return '<strong><font color="blue">Public Key</font> to send transaction' . $name . ':</strong></br>' . $form_action . '<table border="0" cellpadding="6"><tr><td colspan="2">
 <textarea name="send_public_key" rows="6" cols="75">' . $fill_in_key . '</textarea></td></tr>
 <tr><td colspan="2"><strong>Message:</strong></br><input type="text" maxlength="64" size="64" value="' . $message . '" name="send_message" /></td></tr>
 <tr><td width="320" valign="top"><strong>Amount:</strong> <input type="text" size="8" value="' . $amount . '" name="send_amount" />
+<input type="hidden" name="name" value="' . $hidden_name . '">
 <input type="submit" name="Submit1" value="Send Timekoins" /></FORM></td>
 <td>' . $cancel_button  . '</td></tr>
 <tr><td></td><td>Create Your Own Here:</br><a target="_blank" href="http://easy.timekoin.net/">easy.timekoin.net</a></td></tr></table>';
@@ -485,10 +501,10 @@ return '<strong><font color="blue">Public Key</font> to send transaction:</stron
 //***********************************************************
 function tools_bar()
 {
-	return '<table cellspacing="10" border="0"><tr><td><FORM ACTION="index.php?menu=tools&action=check_tables" METHOD="post"><input type="submit" value="Check DB"/></td></FORM></td><td>|</br>|</td>
-		<td><FORM ACTION="index.php?menu=tools&action=optimize_tables" METHOD="post"><input type="submit" value="Optimize DB"/></td></FORM></td><td>|</br>|</td>
-		<td><FORM ACTION="index.php?menu=tools&action=repair_tables" METHOD="post"><input type="submit" value="Repair DB"/></td></FORM>
-		</tr></table>';
+	return '<table cellspacing="10" border="0">
+	<tr><td><FORM ACTION="index.php?menu=tools&action=check_tables" METHOD="post"><input type="submit" value="Check DB"/></FORM></td><td>|</br>|</td>
+	<td><FORM ACTION="index.php?menu=tools&action=optimize_tables" METHOD="post"><input type="submit" value="Optimize DB"/></FORM></td><td>|</br>|</td>
+	<td><FORM ACTION="index.php?menu=tools&action=repair_tables" METHOD="post"><input type="submit" value="Repair DB"/></FORM></td></tr></table>';
 }
 //***********************************************************
 //***********************************************************
