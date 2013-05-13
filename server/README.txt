@@ -22,12 +22,14 @@ any of the 3 points results in the collapse of the entire transaction data.
 The software requires these components before installing.
 
 1. Web Server (Apache, IIS, etc.)
-2. PHP (v5 or higher) for the Web Server, including the CLI, mySQL, GMP extensions (OpenSSL optional)
+2. PHP (v5 or higher) for the Web Server, including the CLI, mySQL, GMP
+extensions (OpenSSL optional)
 3. mySQL Database Server (v5 or higher, free community version works just fine)
 
 -=================== QUICK INSTALL =====================-
 
-If you are a tech guru, the software can be setup on any operating system that
+If you are a computer guru, the software can be setup on any operating system
+that
 supports the requirements above (Windows, Mac, Linux, Unix, etc.) If you already
 have or know how to quickly install these, then you will be able to get up and
 running very quickly.
@@ -64,7 +66,7 @@ account.
 
 	A. Now that the database is prepared, begin by creating a folder on your
 web server. The folder name can be whatever you like, but we recommend
-“timekoin” for these instructions. Copy all the files from the v1.X folder to
+“timekoin” for these instructions. Copy all the files from the v2.X folder to
 this new web folder. Make sure your directory structure stays intact so that the
 “css” and “img” folders make it properly to their new home.
 
