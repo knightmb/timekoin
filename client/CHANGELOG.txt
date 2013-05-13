@@ -1,0 +1,4 @@
+Timekoin Client - Change Log
+
+Timekoin Client - 1.0 (Released 2012-05-09)
+===========================================
