@@ -451,18 +451,49 @@ return '<table cellspacing="10" border="0"><tr><td width="150"><FORM ACTION="mai
 //***********************************************************
 function generation_body($generate_currency)
 {
+	$return_html = '';
 	if($generate_currency == "1")
 	{
-		return '<table border="0" cellspacing="10"><tr><td><FORM ACTION="index.php?menu=generation&generate=disable" METHOD="post"><input type="submit" value="Disable Generation"/></FORM></td>
+		$return_html = '<table border="0" cellspacing="10"><tr><td><FORM ACTION="index.php?menu=generation&generate=disable" METHOD="post"><input type="submit" value="Disable Generation"/></FORM></td>
 			<td><FORM ACTION="index.php?menu=generation&generate=showlist" METHOD="post"><input type="submit" value="Show Generation List"/></FORM></td>
 			<td><FORM ACTION="index.php?menu=generation&generate=showqueue" METHOD="post"><input type="submit" value="Show Election Queue List"/></FORM></td></tr></table>';
 	}
 	else
 	{
-		return '<table border="0"><tr><td><FORM ACTION="index.php?menu=generation&generate=enable" METHOD="post"><input type="submit" value="Enable Generation"/></FORM></td>
+		$return_html = '<table border="0"><tr><td><FORM ACTION="index.php?menu=generation&generate=enable" METHOD="post"><input type="submit" value="Enable Generation"/></FORM></td>
 			<td><FORM ACTION="index.php?menu=generation&generate=showlist" METHOD="post"><input type="submit" value="Show Generation List"/></FORM></td>
 			<td><FORM ACTION="index.php?menu=generation&generate=showqueue" METHOD="post"><input type="submit" value="Show Election Queue List"/></FORM></td></tr></table>';
 	}
+    
+    $return_html = $return_html . '<p><b>How Generation Works</b><br><ol>
+                                    <li>The server must be accessible from the
+                                    the internet and be able to accept and respond to HTTP requests on the port designated in the System tab. This allows peer servers to validate the existance of the server.
+                                    You may test you router/firewall settings using the <font color="blue"><strong><a target="_blank" href="https://timekoin.com/utility/firewall.php">firewall tool</a></strong></font>.  If you fail this test, you must modify your router or firewall settings to allow TCP connections on your port.</li>
+                                    <li>The server key must be chosen randomly for generation during an election cycle.  A key will be chosen at random by the network.  Elections are randomized, but predictable.  You
+                                    may use the <font color="blue"><strong><a target="_blank" href="http://timekoin.com/test/eclock.php?max_cycles=288">Election Calendar</a></strong></font> to see upcoming elections in the next 24 hours.</li>
+                                    <li>Once elected, your server will submit generation transactions during generation cycles.  Generation cycles occur at random, but predictable times.  Use the <font color="blue"><strong><a target="_blank" href="http://timekoin.com/test/gclock.php?max_cycles=288">Generation Calendar</a></strong></font> to see the upcoming
+                                    generation cycles in the next 24 hours.</li>
+                                    </ol></p>
+                                    <p>
+                                    The server may continue to generate currency as long as it stays online.  If the server does not generate currency for 2 hours, the network assumes it has gone offline and
+                                    they server key will be removed from the Generating Peer List.  Once the server comes back online, it will need to be re-elected before generation can begin again.
+                                    </p>
+                                    <p>
+                                    <b>Generation Amount Schedule</b><br>
+                                    The amount a server can generate is directly related to the length of time it has been online and generating in the timekoin network.<br><br>
+                                    0 - 1 week  = 1 timekoin per generation cycle<br>
+                                    1 - 2 weeks = 2 timekoin per generation cycle<br>
+                                    2 - 3 weeks = 3 timekoin per generation cycle<br>
+                                    4 - 7 weeks = 4 timekoin per generation cycle<br>
+                                    8 - 15 weeks = 5 timekoin per generation cycle<br>
+                                    16 - 31 weeks = 6 timekoin per generation cycle<br>
+                                    32 - 63 weeks = 7 timekoin per generation cycle<br>
+                                    64 - 127 weeks = 8 timekoin per generation cycle<br>
+                                    128 - 255 weeks = 9 timekoin per generation cycle<br>
+                                    256 weeks or more = 10 timekoin per generation cycle<br>
+                                    </p>';
+    
+    return $return_html;
 }
 //***********************************************************
 //***********************************************************
