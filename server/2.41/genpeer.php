@@ -115,7 +115,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 	if(election_cycle() == TRUE)
 	{
 		// Find all transactions between the Previous Transaction Cycle and the Current		
-		$sql = "SELECT * FROM `generating_peer_queue` WHERE `timestamp` < $current_generation_cycle ORDER BY `timestamp`";
+		$sql = "SELECT * FROM `generating_peer_queue` WHERE `timestamp` < $current_generation_cycle `generating_peer_list`.`IP_Address` DESC";
 
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
@@ -349,6 +349,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
 
+		ini_set('default_socket_timeout', 3); // Increase Polling Timeout
+
 		if($sql_num_results > 0)
 		{
 			for ($i = 0; $i < $sql_num_results; $i++)
@@ -391,7 +393,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						$arr1 = str_split($public_key, 181);
 
 						// Poll the address that was encrypted to check for valid Timekoin server
-						$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 256, "genpeer.php?action=gen_key_crypt"));
+						$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 257, "genpeer.php?action=gen_key_crypt"));
 						$gen_key_crypt = tk_decrypt($public_key, $gen_key_crypt);
 
 						if(empty($peer_domain) == FALSE)
@@ -425,6 +427,10 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							mysql_query("INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
 							write_log("Generation Peer Queue List was updated with My Public Key", "GP");
 						}
+						else
+						{
+							write_log("Could Not Verify: $crypt3_data", "GP");
+						}
 
 					} // Valid Crypt2 field check
 
@@ -456,7 +462,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						$arr1 = str_split($public_key, 181);
 
 						// Poll the address that was encrypted to check for valid Timekoin server
-						$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 256, "genpeer.php?action=gen_key_crypt"));
+						$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 257, "genpeer.php?action=gen_key_crypt"));
 						$gen_key_crypt = tk_decrypt($public_key, $gen_key_crypt);
 
 						if(empty($peer_domain) == FALSE)
