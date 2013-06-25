@@ -1,0 +1,142 @@
+/* main styles */
+body {
+    font-family: "Trebuchet MS",tahoma,arial,sans-serif;
+}
+
+a {
+    color: #060606;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.floatleft {
+    float: left !important;
+}
+
+.floatright {
+    float: right !important;
+}
+.alignright {
+    text-align: right !important;
+}
+
+.uglyspanhalf {
+	float: right;
+	width: 50%;
+}
+
+.block {
+    display: block !important;
+}
+
+
+/* structure */
+.container {
+    width: 55em;
+    margin: 0 auto;
+}
+
+/* nav */
+nav{
+    margin-top:1em;
+}
+nav ul{
+    text-align: center
+}
+nav > .nav-tabs > li{
+    float: none;
+    display: inline-block;
+}
+/*
+nav ul{
+    margin: 0;
+    padding:  0;
+    list-style: none;
+    text-align: center;
+    border-bottom: 1px solid #ccc;
+}
+
+nav li {
+    display: inline-block;
+}
+
+nav a {
+    color: #666;
+    display: inline-block;
+    padding: 10px 10px;
+}
+
+nav a:hover ,nav a:focus {
+    background: #eee;
+    color:#000;
+}
+
+nav a.active {
+    background: rgb(0, 109, 204);
+    color:#fff;
+    text-decoration: none!important;
+}
+
+/* content */
+.panel{
+	background: #eee;
+	padding: 20px;
+	margin-bottom: 20px;
+}
+.panel form{display: inline-block;}
+.form-row form{display: inline-block;margin-bottom: 20px;}
+
+/* info */
+#info{
+	position: fixed;
+	right:0;
+	top:0;
+	padding: 0 1em;
+	background: #eee;
+}
+#info h3 {
+	margin: 0;
+}
+#info p {
+	display: none;
+}
+#info:hover {
+	width: 20%;
+	display: block;
+}
+#info:hover h3 {
+	margin: 10px 0;
+}
+#info:hover p {
+	display: block;
+}
+
+/* footer */
+footer {
+	margin-top: 20px;
+    border-top: 1px solid #ccc;
+	text-align: center;
+    width: 100%;
+    height: 15px;
+}
+
+footer p {
+    margin: 10px;
+}
+
+table.form td:last-child {
+    padding: 1px 0 1px 5px;
+    text-align: left;
+}
+
+table.form th,
+table.form td {
+    padding-left: 10px;
+}
+
+table.form input.text {
+    width: 262px;
+}
