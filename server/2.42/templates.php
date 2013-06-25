@@ -11,7 +11,6 @@ function login_screen($error_message)
 	<title>Timekoin</title>
 	<link rel="icon" type="image/x-icon" href="img/favicon.ico" />
 	<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
-	<link href="css/library.css" rel="stylesheet" type="text/css" />
 	<link href="css/bootstrap.css" rel="stylesheet" type="text/css" />
 	<link href="css/admin.css" rel="stylesheet" type="text/css" />
 </head>
@@ -106,7 +105,6 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 	<title>Timekoin Server Administration</title>
 	<link rel="icon" type="image/x-icon" href="img/favicon.ico" />
 	<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
-	<link href="css/library.css" rel="stylesheet" type="text/css" />
 	<link href="css/bootstrap.css" rel="stylesheet" type="text/css" />
 	<link href="css/admin.css" rel="stylesheet" type="text/css" />
 	<?PHP echo $refresh_header; ?>
@@ -234,47 +232,45 @@ if($super_peer == 1)
 }
 
 return '
-<div class="row">
 <FORM ACTION="index.php?menu=options&refresh=change" METHOD="post">
-	<div class="span12">
+<div class="row">
+	<div class="span6">
 		<h3>Refresh rates</h3>
-		<p>These values indicate refresh rates in <strong>seconds</strong> for Realtime Pages [0 = disable]</p>
 	</div>
-	<div class="span4">
-		<p>Home: <input type="text" name="home_update" size="2" value="' . $home_update . '" /></p>
-	</div>
-	<div class="span4">
-		<p>Peerlist: <input type="text" name="peerlist_update" size="2" value="' . $peerlist_update . '" /></p>
-	</div>
-	<div class="span4">
-		<p>Transaction Queue: <input type="text" name="queue_update" size="2" value="' . $queue_update . '" /></p>
-	</div>
-	<div class="span12">
+	<div class="span6">
 		<h3>Peer limits</h3>
 	</div>
-	<div class="span4">
+	<div class="span2">
+		<p>Home: <input type="text" name="home_update" size="2" value="' . $home_update . '" /></p>
+	</div>
+	<div class="span2">
+		<p>Peerlist: <input type="text" name="peerlist_update" size="2" value="' . $peerlist_update . '" /></p>
+	</div>
+	<div class="span2">
+		<p>Transaction Queue: <input type="text" name="queue_update" size="2" value="' . $queue_update . '" /></p>
+	</div>
+	<div class="span3">
 		<p>Super Peer Limit (10 - 500): <input type="text" name="super_peer_limit" size="3" value="' . $super_peer . '" /></p>
 	</div>
-	<div class="span4">
+	<div class="span3">
 		<p>Peer Failure Limit (1 - 100): <input type="text" name="peer_failure_grade" size="3" value="' . $peer_failure_grade . '" /></p>
 	</div>
-	<div class="span12">
-		<p><input type="submit" class="btn btn-success" name="Submit2" value="Save rates and limits" /></p>
-	</div>
+</div>
+<p>Rates in <strong>seconds</strong> for Realtime Pages [0 = disable]</p>
+<p><input type="submit" class="btn btn-success" name="Submit2" value="Save rates and limits" /></p>
 </FORM>
-	<div class="span12">
-		<div class="form-row">
-			<FORM ACTION="index.php?menu=options&hashcode=manage" METHOD="post"><input type="submit" class="btn btn-primary" name="Submit3" value="Manage Hash Code Access" /></FORM>
-			<FORM ACTION="index.php?menu=options&upgrade=check" METHOD="post"><input type="submit" class="btn btn-primary" name="Submit3" value="Check for Updates" /></FORM>
-		</div>
-	</div>
-	<div class="span12">
-		<h3>PHP location</h3>
-	</div>
 
+<h3>Extra features</h3>
+<div class="form-row">
+	<FORM ACTION="index.php?menu=options&hashcode=manage" METHOD="post"><input type="submit" class="btn btn-primary" name="Submit3" value="Manage Hash Code Access" /></FORM>
+	<FORM ACTION="index.php?menu=options&upgrade=check" METHOD="post"><input type="submit" class="btn btn-primary" name="Submit3" value="Check for Updates" /></FORM>
+</div>
+
+<h3>PHP location</h3>
+<div class="row">
 <FORM ACTION="index.php?menu=options&find=edit_php" METHOD="post">
 	<div class="span4">
-		<p><input type="text" name="php_file_path" value="' . $php_location . '" /></p>
+		<p><input type="text" class="btn-block" name="php_file_path" value="' . $php_location . '" /></p>
 	</div>
 	<div class="span4">
 		<p><input type="submit" class="btn btn-success" name="edit_php_location" value="Update PHP location" /></p>
@@ -425,76 +421,111 @@ else
 // Database Size
 $db_size = mysql_result(mysql_query("SELECT CONCAT(SUM(ROUND(((DATA_LENGTH + INDEX_LENGTH - DATA_FREE) / 1024 / 1024),2)),\" MB\") AS Size FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA LIKE '" . MYSQL_DATABASE . "'"),0);
 
-return '<FORM ACTION="index.php?menu=system&peer_settings=change" METHOD="post">
-<table border="0" class="table"><tr><td>
-Maximum Active Peers: <input type="text" name="max_peers" size="3" value="' . $max . '"/><br>
-Maximum Reserve Peers: <input type="text" name="max_new_peers" size="3" value="' . $new . '"/><br>
-</td><td>
-<input type="submit" class="btn btn-primary" name="Submit1" value="Change Peer Settings" />
+return '
+
+<h3>Peer settings</h3>
+<FORM ACTION="index.php?menu=system&peer_settings=change" METHOD="post">
+<div class="row">
+	<div class="span4">
+		<p><label>Maximum Active Peers:</label> <input type="text" name="max_peers" size="3" value="' . $max . '"/></p>
+	</div>
+	<div class="span8">
+		<p><label>Maximum Reserve Peers:</label> <input type="text" name="max_new_peers" size="3" value="' . $new . '"/></p>
+	</div>
+	<div class="span12">
+		<p><input type="submit" class="btn btn-success" name="Submit1" value="Update Peer settings" /></p>
+	</div>
+</div>
 </FORM>
-</td></tr>
-</table>
-<hr></hr>
+
+<h3>Server settings</h3>
 <FORM ACTION="index.php?menu=system&server_settings=change" METHOD="post">
-<table border="0" class="table"><tr><td>
-Server Domain: <input type="text" name="domain" size="25" maxlength="256" value="' . $domain . '"/><br>
-Timekoin Subfolder: <input type="text" name="subfolder" size="25" maxlength="256" value="' . $subfolder . '"/><br>
-Server Port Number: <input type="text" name="port" size="6" maxlength="5" value="' . $port . '"/><br>
-Max Peer Query: <input type="text" name="max_request" size="6" maxlength="4" value="' . $request_max . '"/><br>
-<br>Allow LAN Peers: <input type="radio" name="allow_LAN" value="0" ' . $LAN_disable . '>Disable <input type="radio" name="allow_LAN" value="1" ' . $LAN_enable . '>Enable
-<br><br>Allow Ambient Peer Restarts: <input type="radio" name="allow_ambient" value="0" ' . $ambient_restart_disable . '>Disable <input type="radio" name="allow_ambient" value="1" ' . $ambient_restart_enable . '>Enable
-<br><br>Super Peer: <input type="radio" name="super_peer" value="0" ' . $super_peer_check_0 . '>Disabled <input type="radio" name="super_peer" value="1" ' . $super_peer_check_1 . '> Enable
-<br><br>Permanent Peer Priority: <input type="radio" name="perm_peer_priority" value="0" ' . $perm_peer_priority_0 . '>Disabled <input type="radio" name="perm_peer_priority" value="1" ' . $perm_peer_priority_1 . '> Enable
-<br><br>Transaction History Checks: <input type="radio" name="trans_history_check" value="0" ' . $trans_history_check_0 . '>Rare <input type="radio" name="trans_history_check" value="1" ' . $trans_history_check_1 . '> Normal <input type="radio" name="trans_history_check" value="2" ' . $trans_history_check_2 . '>Frequent
-</td><td>
-<input type="submit" class="btn btn-primary" name="Submit2" value="Change Server Settings" />
+<div class="row">
+	<div class="span4">
+		<p><label>Server Domain</label> <input type="text" class="btn-block" name="domain" maxlength="256" value="' . $domain . '" placeholder="domain.org or ip address"/></p>
+	</div>
+	<div class="span4">
+		<p><label>Timekoin Subfolder</label> <input type="text" class="btn-block" name="subfolder" maxlength="256" value="' . $subfolder . '" placeholder="timekoin (default)"/></p>
+	</div>
+	<div class="span2">
+		<p><label>Server Port Number</label> <input type="text" class="btn-block" name="port" maxlength="5" value="' . $port . '" placeholder="1528 (default)"/></p>
+	</div>
+	<div class="span2">
+		<p><label>Max Peer Query</label> <input type="text" class="btn-block" name="max_request" maxlength="4" value="' . $request_max . '" placeholder="200 (default)"/></p>
+	</div>
+	<div class="span4">
+		<p><input type="checkbox" name="allow_LAN" value="0" ' . $LAN_enable . '> <label>Allow LAN Peers</label></p>
+		<p><input type="checkbox" name="allow_ambient" value="0" ' . $ambient_restart_enable . '> <label>Allow Ambient Peer Restarts</label></p>
+	</div>
+	<div class="span4">
+		<p><input type="checkbox" name="super_peer" value="0" ' . $super_peer_check_1 . '> <label>Enable Super Peer</label></p>
+		<p><input type="checkbox" name="perm_peer_priority" value="0" ' . $perm_peer_priority_1 . '> <label>Enable Permanent Peer Priority</label></p>
+	</div>
+	<div class="span4">
+		<p>Transaction History Checks:<br>
+			<input type="radio" name="trans_history_check" value="0" ' . $trans_history_check_0 . '> <label>Rare</label><br>
+			<input type="radio" name="trans_history_check" value="1" ' . $trans_history_check_1 . '> <label>Normal</label><br>
+			<input type="radio" name="trans_history_check" value="2" ' . $trans_history_check_2 . '> <label>Frequent</label></p>
+	</div>
+</div>
+<p><input type="submit" class="btn btn-success" name="Submit2" value="Change Server settings" /></p>
 </FORM>
-</td></tr>
-</table>
+
 <h3>Server Info</h3>
-<table border="0" class="table"><tr><td class="alignright">
-Generating Peers List Hash:<br>
-Transaction History Hash:<br>
-Transaction Queue Hash:<br>
-Transaction History Records:<br>
-Transaction Cycles:<br>
-Transaction Foundations:<br>
-Uptime:<br>
-Database Size:
-</td><td>
-' . $gen_hash . '<br>
-' . $trans_history_hash_color1 . $trans_history_hash . $trans_history_hash_color2 . '<br>
-' . $trans_queue_hash . '<br>
-' . number_format($total_records) . '<br>
-' . $total_trans_hash . ' of ' . number_format(transaction_cycle(0, TRUE)) . '<br>
-' . $total_foundations . ' of ' . number_format(foundation_cycle(0, TRUE)) . '<br>
-' . tk_time_convert(time() - $uptime) . '<br>
-' . $db_size .
-'</strong></td></tr></table><hr></hr>';
+<div class="row">
+	<div class="span4">
+		<p>
+			Generating Peers List Hash:<br>
+			Transaction History Hash:<br>
+			Transaction Queue Hash:<br>
+			Transaction History Records:<br>
+			Transaction Cycles:<br>
+			Transaction Foundations:<br>
+			Uptime:<br>
+			Database Size:
+		</p>
+	</div>
+	<div class="span4">
+		<p>
+			' . $gen_hash . '<br>
+			' . $trans_history_hash_color1 . $trans_history_hash . $trans_history_hash_color2 . '<br>
+			' . $trans_queue_hash . '<br>
+			' . number_format($total_records) . '<br>
+			' . $total_trans_hash . ' of ' . number_format(transaction_cycle(0, TRUE)) . '<br>
+			' . $total_foundations . ' of ' . number_format(foundation_cycle(0, TRUE)) . '<br>
+			' . tk_time_convert(time() - $uptime) . '<br>
+			' . $db_size . '
+		</p>
+	</div>
+</div>';
 }
 //***********************************************************
 //***********************************************************
 function system_service_bar()
 {
 return '
-<div class="uglyspanhalf">
-<h3>Watchdog</h3>
-	<form action="watchdog.php?action=begin_watchdog" method="post">
-	<input type="submit" class="btn btn-success" value="Start Watchdog"/>
-	</form>
-
-	<form action="index.php?menu=system&stop=watchdog" method="post">
-	<input type="submit" class="btn btn-danger" value="Stop Watchdog"/>
-	</form>
+<div class="row">
+	<div class="span6">
+		<h3>Watchdog</h3>
+		<p>Restarts processes if not running.</p>
+		<form action="watchdog.php?action=begin_watchdog" method="post">
+			<p><input type="submit" class="btn btn-success" value="Start Watchdog"/></p>
+		</form>
+		<form action="index.php?menu=system&stop=watchdog" method="post">
+			<p><input type="submit" class="btn btn-danger" value="Stop Watchdog"/></p>
+		</form>
+	</div>
+	<div class="span6">
+		<h3>Timekoin</h3>
+		<p>Connect to nodes, verify transactions and update transaction history.</p>
+		<form action="main.php?action=begin_main" method="post">
+			<p><input type="submit" class="btn btn-success" value="Start Timekoin"/>
+		</form>
+		<form action="index.php?menu=system&stop=main" method="post">
+			<p><input type="submit" class="btn btn-danger" value="Stop Timekoin"/>
+		</form>
+	</div>
 </div>
-<h3>Timekoin</h3>
-<form action="main.php?action=begin_main" method="post">
-<input type="submit" class="btn btn-success" value="Start Timekoin"/>
-</form>
-
-<form action="index.php?menu=system&stop=main" method="post">
-<input type="submit" class="btn btn-danger" value="Stop Timekoin"/>
-</form>
 ';
 }
 //***********************************************************

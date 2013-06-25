@@ -1934,7 +1934,7 @@ class="btn btn-success" value="Save First Contact Servers"/></FORM></td></tr>';
 				}
 				else
 				{
-					$body_string .= '<tr><td><h1 id="' . $start_transaction_cycle . '">sqdfgqdfbsdgqdrgf</h1>' . $start_transaction_cycle . '</br>' . unix_timestamp_to_human($start_transaction_cycle) . '</td>
+					$body_string .= '<tr><td><h1 id="' . $start_transaction_cycle . '"></h1>' . $start_transaction_cycle . '</br>' . unix_timestamp_to_human($start_transaction_cycle) . '</td>
 						<td><table><tr>';
 				}
 
