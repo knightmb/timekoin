@@ -393,15 +393,18 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						$arr1 = str_split($public_key, 181);
 
 						// Poll the address that was encrypted to check for valid Timekoin server
-						$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 257, "genpeer.php?action=gen_key_crypt"));
+						$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 256, "genpeer.php?action=gen_key_crypt"));
 						$gen_key_crypt = tk_decrypt($public_key, $gen_key_crypt);
 
 						if(empty($peer_domain) == FALSE)
 						{
 							// Check if the hostname and IP fields actually match
 							// and not made up or unrelated.
-							if(gethostbyname($peer_domain) != $peer_ip)
+							$dns_ip = gethostbyname($peer_domain);
+							
+							if($dns_ip != $peer_ip)
 							{
+								// No match between Domain IP and Encoded IP
 								$domain_fail = TRUE;
 							}
 							else
@@ -429,7 +432,27 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						}
 						else
 						{
-							write_log("Could Not Verify: $crypt3_data", "GP");
+							// Log Error Reasons for Reverse Verification Issues
+							if($arr1[0] != $gen_key_crypt)
+							{
+								write_log("Could Not Reverse Verify Half-Crypt String for Public Key: " . base64_encode($public_key), "GP");
+							}
+							else if(empty($peer_ip) == TRUE)
+							{
+								write_log("No IP Address To Reverse Verify Public Key: " . base64_encode($public_key), "GP");
+							}
+							else if(empty($IP_exist1) == FALSE)
+							{
+								write_log("IP Address ($peer_ip) Already Exist in the Generation List for Public Key: " . base64_encode($public_key), "GP");
+							}
+							else if(empty($IP_exist2) == FALSE)
+							{
+								write_log("IP Address ($peer_ip) Already Exist in the Election Queue for Public Key: " . base64_encode($public_key), "GP");
+							}
+							else if($domain_fail == TRUE)
+							{
+								write_log("Domain IP ($dns_ip) & Encoded IP ($peer_ip)- DO NOT MATCH", "GP");
+							}
 						}
 
 					} // Valid Crypt2 field check
@@ -472,6 +495,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							if(gethostbyname($peer_domain) != $peer_ip)
 							{
 								$domain_fail = TRUE;
+								write_log("Domain IP & Encoded IP - NO MATCH: $crypt3_data", "GP");								
 							}
 							else
 							{

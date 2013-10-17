@@ -164,6 +164,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 					$my_subfolder = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_subfolder' LIMIT 1"),0,"field_data");
 					$my_port = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
 
+					// All request have the DELETE_IP attached to the end to clear out someone using a previous IP to generate currency from
 					$crypt3_data = "---ip=$my_generation_IP---domain=$my_domain---subfolder=$my_subfolder---port=$my_port---end=DELETE_IP---end2";
 					$encryptedData3 = tk_encrypt($my_private_key, $crypt3_data);
 					$encryptedData64_3 = base64_encode($encryptedData3);
