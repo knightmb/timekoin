@@ -491,6 +491,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							{
 								// Delete my IP and any public key linked to it as it belongs to a previous unknown owner
 								mysql_query("DELETE FROM `generating_peer_list` WHERE `generating_peer_list`.`IP_Address` = '$peer_ip' LIMIT 1");
+								write_log("DELETE IP Request ($peer_ip) was allowed from Public Key: " . base64_encode($public_key), "GP");
 							}
 							else
 							{
