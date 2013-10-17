@@ -451,7 +451,7 @@ return '<table cellspacing="10" border="0"><tr><td width="150"><FORM ACTION="mai
 //***********************************************************
 function generation_body($generate_currency)
 {
-	$return_html = '';
+	$return_html;
 	if($generate_currency == "1")
 	{
 		$return_html = '<table border="0" cellspacing="10"><tr><td><FORM ACTION="index.php?menu=generation&generate=disable" METHOD="post"><input type="submit" value="Disable Generation"/></FORM></td>
@@ -465,9 +465,9 @@ function generation_body($generate_currency)
 			<td><FORM ACTION="index.php?menu=generation&generate=showqueue" METHOD="post"><input type="submit" value="Show Election Queue List"/></FORM></td></tr></table>';
 	}
     
-    $return_html = $return_html . '<p><b>How Generation Works</b><br><ol>
+   $return_html .= '<p><b>How Generation Works</b><br><ol>
                                     <li>The server must be accessible from the
-                                    the internet and be able to accept and respond to HTTP requests on the port designated in the System tab. This allows peer servers to validate the existance of the server.
+                                    the Internet and be able to accept and respond to HTTP requests on the port designated in the System tab. This allows peer servers to validate the existance of the server.
                                     You may test you router/firewall settings using the <font color="blue"><strong><a target="_blank" href="https://timekoin.com/utility/firewall.php">firewall tool</a></strong></font>.  If you fail this test, you must modify your router or firewall settings to allow TCP connections on your port.</li>
                                     <li>The server key must be chosen randomly for generation during an election cycle.  A key will be chosen at random by the network.  Elections are randomized, but predictable.  You
                                     may use the <font color="blue"><strong><a target="_blank" href="http://timekoin.com/test/eclock.php?max_cycles=288">Election Calendar</a></strong></font> to see upcoming elections in the next 24 hours.</li>
