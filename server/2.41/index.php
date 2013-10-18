@@ -1698,8 +1698,6 @@ if($_SESSION["valid_login"] == TRUE)
 		$quick_info = 'You must remain online and have a valid Internet accessible server to generate currency.</br></br>
 			Timekoin will attempt to auto-detect the <font color="blue">Generation IP</font> when the field is left blank upon service starting.</br></br>
 			You can manually update this field if the IP address detected is incorrect.</br></br>
-			The longer your server participates, the more it will be allowed to generate as time progresses.</br></br>
-			If your server is offline for more than 2 hours, your server will have to rejoin the peer list and any time status will be lost.</br></br>
 			Next Peer Election in ' . $time_election . '</strong></font>';
 		
 		home_screen('Crypto Currency Generation', $text_bar, $body_string , $quick_info);

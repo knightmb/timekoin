@@ -464,34 +464,31 @@ function generation_body($generate_currency)
 			<td><FORM ACTION="index.php?menu=generation&generate=showlist" METHOD="post"><input type="submit" value="Show Generation List"/></FORM></td>
 			<td><FORM ACTION="index.php?menu=generation&generate=showqueue" METHOD="post"><input type="submit" value="Show Election Queue List"/></FORM></td></tr></table>';
 	}
-    
-   $return_html .= '<p><b>How Generation Works</b><br><ol>
-                                    <li>The server must be accessible from the
-                                    the Internet and be able to accept and respond to HTTP requests on the port designated in the System tab. This allows peer servers to validate the existance of the server.
-                                    You may test you router/firewall settings using the <font color="blue"><strong><a target="_blank" href="https://timekoin.com/utility/firewall.php">firewall tool</a></strong></font>.  If you fail this test, you must modify your router or firewall settings to allow TCP connections on your port.</li>
-                                    <li>The server key must be chosen randomly for generation during an election cycle.  A key will be chosen at random by the network.  Elections are randomized, but predictable.  You
-                                    may use the <font color="blue"><strong><a target="_blank" href="http://timekoin.com/test/eclock.php?max_cycles=288">Election Calendar</a></strong></font> to see upcoming elections in the next 24 hours.</li>
-                                    <li>Once elected, your server will submit generation transactions during generation cycles.  Generation cycles occur at random, but predictable times.  Use the <font color="blue"><strong><a target="_blank" href="http://timekoin.com/test/gclock.php?max_cycles=288">Generation Calendar</a></strong></font> to see the upcoming
-                                    generation cycles in the next 24 hours.</li>
-                                    </ol></p>
-                                    <p>
-                                    The server may continue to generate currency as long as it stays online.  If the server does not generate currency for 2 hours, the network assumes it has gone offline and
-                                    they server key will be removed from the Generating Peer List.  Once the server comes back online, it will need to be re-elected before generation can begin again.
-                                    </p>
-                                    <p>
-                                    <b>Generation Amount Schedule</b><br>
-                                    The amount a server can generate is directly related to the length of time it has been online and generating in the timekoin network.<br><br>
-                                    0 - 1 week  = 1 timekoin per generation cycle<br>
-                                    1 - 2 weeks = 2 timekoin per generation cycle<br>
-                                    2 - 3 weeks = 3 timekoin per generation cycle<br>
-                                    4 - 7 weeks = 4 timekoin per generation cycle<br>
-                                    8 - 15 weeks = 5 timekoin per generation cycle<br>
-                                    16 - 31 weeks = 6 timekoin per generation cycle<br>
-                                    32 - 63 weeks = 7 timekoin per generation cycle<br>
-                                    64 - 127 weeks = 8 timekoin per generation cycle<br>
-                                    128 - 255 weeks = 9 timekoin per generation cycle<br>
-                                    256 weeks or more = 10 timekoin per generation cycle<br>
-                                    </p>';
+
+	if($_GET["generate"] == "")
+	{
+		$return_html .= '<p><strong>How Generation Works</strong></br><ol>
+		<li>The server must be accessible from the Internet and be able to accept and respond to HTTP requests on the port designated in the System tab. This allows peer servers to validate the existence of your server. You may test you router/firewall settings using the <a target="_blank" href="https://timekoin.com/utility/firewall.php"><font color="blue"><strong>Firewall Tool</strong></font></a>.  If your server fails this test, you must modify your router or firewall settings to allow inbound TCP connections on your chosen port.</li>
+		<li>A single server key is chosen randomly for generation during an election cycle. Elections are pseudo-randomized. You may use the <a target="_blank" href="http://timekoin.com/test/eclock.php?max_cycles=288"><font color="blue"><strong>Election Calendar</strong></font></a> to see upcoming elections in the next 24 hours.</li>
+		<li>Once elected, your server will create generation transactions during generation cycles. Generation cycles occur at pseudo-random times.  Use the <a target="_blank" href="http://timekoin.com/test/gclock.php?max_cycles=288"><font color="blue"><strong>Generation Calendar</strong></font></a> to see the upcoming generation cycles in the next 24 hours.</li>
+		<li>The server may continue to generate currency as long as it stays online.  If the server does not generate currency for 2 hours, the network assumes it has gone offline and the server key will be removed from the Generating Peer List. Once the server comes back online, it will need to be re-elected before generation can begin again.</li>
+		</ol></p>
+		<p>
+		<strong>Generation Amount Schedule</strong></br>
+		The amount a server can generate is directly related to the length of time it has been online and generating currency in the Timekoin network.</br>
+		<table border="0" cellpadding="2"><tr><td><I>Time Generating</I></td><td><I>Currency per Generation Cycle</I></td></tr>
+		<tr><td>0 - 1 week</td><td><font color="green"><strong>1</font></strong></td></tr>
+		<tr><td>1 - 2 weeks</td><td><font color="green"><strong>2</font></strong></td></tr>
+		<tr><td>2 - 3 weeks</td><td><font color="green"><strong>3</font></strong></td></tr>
+		<tr><td>4 - 7 weeks</td><td><font color="green"><strong>4</font></strong></td></tr>
+		<tr><td>8 - 15 weeks</td><td><font color="green"><strong>5</font></strong></td></tr>
+		<tr><td>16 - 31 weeks</td><td><font color="green"><strong>6</font></strong></td></tr>
+		<tr><td>32 - 63 weeks</td><td><font color="green"><strong>7</font></strong></td></tr>
+		<tr><td>64 - 127 weeks</td><td><font color="green"><strong>8</font></strong></td></tr>
+		<tr><td>128 - 255 weeks</td><td><font color="green"><strong>9</font></strong></td></tr>
+		<tr><td>256 or more weeks</td><td><font color="green"><strong>10</font></strong></td></tr>
+		</table></p>';
+	}
     
     return $return_html;
 }
