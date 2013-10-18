@@ -183,7 +183,6 @@ INSERT INTO `options` (`field_name`, `field_data`) VALUES
 ('allow_LAN_peers', '0'),
 ('first_contact_server', '---ip=---domain=timekoin.com---subfolder=timekoin---port=80---end'),
 ('first_contact_server', '---ip=---domain=amt-wisp1.dyndns.org---subfolder=timekoin---port=88---end'),
-('first_contact_server', '---ip=---domain=newdwpinc.homedns.org---subfolder=timekoin---port=80---end'),
 ('first_contact_server', '---ip=---domain=timekoin2.dyndns.org---subfolder=timekoin---port=80---end'),
 ('first_contact_server', '---ip=---domain=timekoin.kicks-ass.net---subfolder=timekoin---port=1528---end'),
 ('first_contact_server', '---ip=---domain=amaranthinetech.com---subfolder=timekoin---port=80---end'),
