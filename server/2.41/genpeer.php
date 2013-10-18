@@ -396,6 +396,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 256, "genpeer.php?action=gen_key_crypt"));
 						$gen_key_crypt = tk_decrypt($public_key, $gen_key_crypt);
 
+						$domain_fail; // Reset Variable
 						if(empty($peer_domain) == FALSE)
 						{
 							// Check if the hostname and IP fields actually match
@@ -451,7 +452,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							}
 							else if($domain_fail == TRUE)
 							{
-								write_log("Domain IP ($dns_ip) & Encoded IP ($peer_ip)- DO NOT MATCH", "GP");
+								write_log("Domain ($peer_domain) IP ($dns_ip) & Encoded IP ($peer_ip)- DO NOT MATCH for Public Key: " . base64_encode($public_key), "GP");
 							}
 						}
 
@@ -485,22 +486,25 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						$arr1 = str_split($public_key, 181);
 
 						// Poll the address that was encrypted to check for valid Timekoin server
-						$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 257, "genpeer.php?action=gen_key_crypt"));
+						$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 256, "genpeer.php?action=gen_key_crypt"));
 						$gen_key_crypt = tk_decrypt($public_key, $gen_key_crypt);
 
+						$domain_fail; // Reset Variable						
 						if(empty($peer_domain) == FALSE)
 						{
 							// Check if the hostname and IP fields actually match
 							// and not made up or unrelated.
-							if(gethostbyname($peer_domain) != $peer_ip)
+							$dns_ip = gethostbyname($peer_domain);
+							
+							if($dns_ip != $peer_ip)
 							{
+								// No match between Domain IP and Encoded IP
 								$domain_fail = TRUE;
-								write_log("Domain IP & Encoded IP - NO MATCH: $crypt3_data", "GP");								
 							}
 							else
 							{
 								$domain_fail = FALSE;
-							}
+							}							
 						}
 						
 						// Does the public key half match what is encrypted in the 3rd crypt field from
@@ -515,7 +519,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							{
 								// Delete my IP and any public key linked to it as it belongs to a previous unknown owner
 								mysql_query("DELETE FROM `generating_peer_list` WHERE `generating_peer_list`.`IP_Address` = '$peer_ip' LIMIT 1");
-								write_log("DELETE IP Request ($peer_ip) was allowed from Public Key: " . base64_encode($public_key), "GP");
+								write_log("DELETE IP Request ($peer_ip) was allowed for Public Key: " . base64_encode($public_key), "GP");
 							}
 							else
 							{
@@ -535,6 +539,26 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								}
 							}
 						}
+						else
+						{
+							// Log Error Reasons for Reverse Verification Issues
+							if($arr1[0] != $gen_key_crypt)
+							{
+								write_log("Could Not Reverse Verify Half-Crypt String for Public Key: " . base64_encode($public_key), "GP");
+							}
+							else if(empty($peer_ip) == TRUE)
+							{
+								write_log("No IP Address To Reverse Verify Public Key: " . base64_encode($public_key), "GP");
+							}
+							else if(empty($IP_exist1) == FALSE)
+							{
+								write_log("IP Address ($peer_ip) Already Exist in the Generation List for Public Key: " . base64_encode($public_key), "GP");
+							}
+							else if($domain_fail == TRUE)
+							{
+								write_log("Domain ($peer_domain) IP ($dns_ip) & Encoded IP ($peer_ip)- DO NOT MATCH for Public Key: " . base64_encode($public_key), "GP");
+							}
+						}						
 
 					} // Valid Crypt2 field check
 
