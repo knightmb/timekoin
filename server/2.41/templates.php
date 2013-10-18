@@ -479,13 +479,13 @@ function generation_body($generate_currency)
 		<table border="0" cellpadding="2"><tr><td><I>Time Generating</I></td><td><I>Currency per Generation Cycle</I></td></tr>
 		<tr><td>0 - 1 week</td><td><font color="green"><strong>1</font></strong></td></tr>
 		<tr><td>1 - 2 weeks</td><td><font color="green"><strong>2</font></strong></td></tr>
-		<tr><td>2 - 3 weeks</td><td><font color="green"><strong>3</font></strong></td></tr>
-		<tr><td>4 - 7 weeks</td><td><font color="green"><strong>4</font></strong></td></tr>
-		<tr><td>8 - 15 weeks</td><td><font color="green"><strong>5</font></strong></td></tr>
-		<tr><td>16 - 31 weeks</td><td><font color="green"><strong>6</font></strong></td></tr>
-		<tr><td>32 - 63 weeks</td><td><font color="green"><strong>7</font></strong></td></tr>
-		<tr><td>64 - 127 weeks</td><td><font color="green"><strong>8</font></strong></td></tr>
-		<tr><td>128 - 255 weeks</td><td><font color="green"><strong>9</font></strong></td></tr>
+		<tr><td>2 - 4 weeks</td><td><font color="green"><strong>3</font></strong></td></tr>
+		<tr><td>4 - 8 weeks</td><td><font color="green"><strong>4</font></strong></td></tr>
+		<tr><td>8 - 16 weeks</td><td><font color="green"><strong>5</font></strong></td></tr>
+		<tr><td>16 - 32 weeks</td><td><font color="green"><strong>6</font></strong></td></tr>
+		<tr><td>32 - 64 weeks</td><td><font color="green"><strong>7</font></strong></td></tr>
+		<tr><td>64 - 128 weeks</td><td><font color="green"><strong>8</font></strong></td></tr>
+		<tr><td>128 - 256 weeks</td><td><font color="green"><strong>9</font></strong></td></tr>
 		<tr><td>256 or more weeks</td><td><font color="green"><strong>10</font></strong></td></tr>
 		</table></p>';
 	}
