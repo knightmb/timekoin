@@ -222,7 +222,7 @@ function perm_peer_mode()
 	}
 	else
 	{
-		return "SELECT IP_Address,domain,subfolder,port_number FROM `active_peer_list` UNION SELECT IP_Address,domain,subfolder,port_number FROM new_peers_list ORDER BY RAND()";
+		return "SELECT * FROM `active_peer_list` ORDER BY RAND()";
 	}
 }
 //***********************************************************************************
