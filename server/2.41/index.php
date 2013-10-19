@@ -166,16 +166,16 @@ if($_SESSION["valid_login"] == TRUE)
 	{
 		$my_public_key = mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,"field_data");
 
-		$body_string = '<table border="0" cellspacing="10" cellpadding="2" bgcolor="#FFFFFF"><tr><td></td>
+		$body_string = '<table><tr><td></td>
 			<td align="center"><strong>Process</strong></td><td align="left"><strong>Status</strong></td></tr>';
 
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,"field_data");
 		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,"field_data");
 
-		if($script_loop_active > 0)
+		if($script_loop_active> 0)
 		{
 			// Main should still be active
-			if((time() - $script_last_heartbeat) > 30) // Greater than triple the loop time, something is wrong
+			if((time() - $script_last_heartbeat)> 30) // Greater than triple the loop time, something is wrong
 			{
 				// Main has stop was unexpected
 				$body_string .= '<tr><td align="center"><img src="img/hr.gif" alt="" /></td><td><font color="red"><strong>Main Program Processor</strong></font></td>
@@ -200,7 +200,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($script_loop_active == 1)
 		{
 			// Treasurer should still be active
-			if((time() - $script_last_heartbeat) > 300)
+			if((time() - $script_last_heartbeat)> 300)
 			{
 				$body_string .= '<tr><td align="center"><img src="img/hr.gif" alt="" /></td><td><font color="red"><strong>Treasurer Processor</strong></font></td>
 					<td><strong>Process Stalled.</strong></td></tr>';
@@ -234,7 +234,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($script_loop_active == 1)
 		{
 			// Peerlist should still be active
-			if((time() - $script_last_heartbeat) > 300)
+			if((time() - $script_last_heartbeat)> 300)
 			{
 				$body_string .= '<tr><td align="center"><img src="img/hr.gif" alt="" /></td><td><font color="red"><strong>Peer Processor</strong></font></td>
 					<td><strong>Program Stalled.</strong></td></tr>';
@@ -268,7 +268,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($script_loop_active == 1)
 		{
 			// Queueclerk should still be active
-			if((time() - $script_last_heartbeat) > 300)
+			if((time() - $script_last_heartbeat)> 300)
 			{
 				$body_string .= '<tr><td align="center"><img src="img/hr.gif" alt="" /></td><td><font color="red"><strong>Transaction Queue Clerk</strong></font></td>
 					<td><strong>Program Stalled.</strong></td></tr>';
@@ -302,7 +302,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($script_loop_active == 1)
 		{
 			// Genpeer should still be active
-			if((time() - $script_last_heartbeat) > 300)
+			if((time() - $script_last_heartbeat)> 300)
 			{
 				$body_string .= '<tr><td align="center"><img src="img/hr.gif" alt="" /></td><td><font color="red"><strong>Generation Peer Manager</strong></font></td>
 					<td><strong>Program Stalled.</strong></td></tr>';
@@ -336,7 +336,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($script_loop_active == 1)
 		{
 			// Generation should still be active
-			if((time() - $script_last_heartbeat) > 300)
+			if((time() - $script_last_heartbeat)> 300)
 			{
 				// Generation has stop was unexpected
 				$body_string .= '<tr><td align="center"><img src="img/hr.gif" alt="" /></td><td><font color="red"><strong>Generation Processor</strong></font></td>
@@ -371,7 +371,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($script_loop_active == 1)
 		{
 			// Transclerk should still be active
-			if((time() - $script_last_heartbeat) > 300)
+			if((time() - $script_last_heartbeat)> 300)
 			{
 				// Script has stop was unexpected
 				$body_string .= '<tr><td align="center"><img src="img/hr.gif" alt="" /></td><td><font color="red"><strong>Transaction Clerk</strong></font></td>
@@ -406,7 +406,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($script_loop_active == 1)
 		{
 			// Foundation should still be active
-			if((time() - $script_last_heartbeat) > 300)
+			if((time() - $script_last_heartbeat)> 300)
 			{
 				// Script has stop was unexpected
 				$body_string .= '<tr><td align="center"><img src="img/hr.gif" alt="" /></td><td><font color="red"><strong>Foundation Manager</strong></font></td>
@@ -441,7 +441,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($script_loop_active == 1)
 		{
 			// Balance Indexer should still be active
-			if((time() - $script_last_heartbeat) > 500)
+			if((time() - $script_last_heartbeat)> 500)
 			{
 				// Script has stop was unexpected
 				$body_string .= '<tr><td align="center"><img src="img/hr.gif" alt="" /></td><td><font color="red"><strong>Balance Indexer</strong></font></td>
@@ -473,10 +473,10 @@ if($_SESSION["valid_login"] == TRUE)
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,"field_data");
 		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_last_heartbeat' LIMIT 1"),0,"field_data");
 
-		if($script_loop_active > 0)
+		if($script_loop_active> 0)
 		{
 			// Watchdog should still be active
-			if((time() - $script_last_heartbeat) > 60) // Greater than double the loop time, something is wrong
+			if((time() - $script_last_heartbeat)> 60) // Greater than double the loop time, something is wrong
 			{
 				// Script has stop was unexpected
 				$body_string .= '<tr><td align="center"><img src="img/hr.gif" alt="" /></td><td><font color="red"><strong>Watchdog</strong></font></td>
@@ -503,7 +503,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($firewall_blocked == TRUE)
 		{
-			$firewall_blocked = '<tr><td colspan="3"><font color="#827f00"><strong>*** Operating in Outbound Only Mode ***</strong></font></td></tr>';
+			$firewall_blocked = '<p><font color="#c00"><strong>*** Operating in Outbound Only Mode ***</strong></font></p>';
 		}
 		else
 		{
@@ -514,7 +514,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($time_sync_error == TRUE)
 		{
-			$time_sync_error = '<tr><td colspan="3"><font color="red"><strong>*** Timekoin Might Be Out of Sync with the Network Peers ***</strong></font></td></tr>';
+			$time_sync_error = '<p><font color="red"><strong>*** Timekoin Might Be Out of Sync with the Network Peers ***</strong></font></p>';
 		}
 		else
 		{
@@ -525,19 +525,18 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($update_available == TRUE)
 		{
-			$update_available = '<tr><td colspan="3"><font color="green"><strong>*** NEW SOFTWARE UPDATE AVAILABLE ***</strong></font></td></tr>';
+			$update_available = '<p><font color="green"><strong>*** NEW SOFTWARE UPDATE AVAILABLE ***</strong></font></p>';
 		}
 		else
 		{
 			$update_available = NULL;
 		}
 		
-		$text_bar = '<table border="0"><tr><td style="width:260px"><strong>Current Server Balance: <font color="green">' . number_format($display_balance) . '</font></strong></td>
-			<td style="width:180px"><strong>Peer Time: <font color="blue">' . time() . '</font></strong></td>
-			<td style="width:180px"><strong><font color="#827f00">' . tk_time_convert(transaction_cycle(1) - time()) . '</font> until next cycle</strong></td></tr>
-			<tr><td align="left" colspan="3"><strong>Transaction History:</strong>&nbsp;
-			' . trans_percent_status() . '</td></tr>
-			' . $update_available . $firewall_blocked . $time_sync_error . '</table>';
+		$text_bar = '<p><strong>Current Server Balance: <font color="green">' . number_format($display_balance) . '</font></strong></p>
+			<p><strong>Peer Time: <font color="blue">' . time() . '</font></strong></p>
+			<p><strong><font color="#827f00">' . tk_time_convert(transaction_cycle(1) - time()) . '</font> until next cycle</strong></p>
+			<p><strong>Transaction History:</strong> ' . trans_percent_status() . '</p>
+			<p>' . $update_available . $firewall_blocked . $time_sync_error . '</p>';
 
 		$quick_info = 'Check the Status of any Timekoin Server process.';
 
@@ -587,11 +586,11 @@ if($_SESSION["valid_login"] == TRUE)
 			// Wipe Current First Contact Server List and Save the New List
 			$field_numbers = intval($_POST["field_numbers"]);
 
-			if($field_numbers > 0)
+			if($field_numbers> 0)
 			{
 				mysql_query("DELETE FROM `options` WHERE `options`.`field_name` = 'first_contact_server'");
 
-				while($field_numbers > 0)
+				while($field_numbers> 0)
 				{
 					if(empty($_POST["first_contact_ip$field_numbers"]) == FALSE || empty($_POST["first_contact_domain$field_numbers"]) == FALSE)
 					{
@@ -613,8 +612,7 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
 			ini_set('default_socket_timeout', 2); // Timeout for request in seconds
-			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
-				<tr><th>Peer</th><th>Time</th><th>Variance</th><th>Ping</th></tr>';
+			$body_string = '<table class="table table-striped"><thead><tr><th>Peer</th><th>Time</th><th>Variance</th><th>Ping</th></tr></thead></thead>';
 
 			// Polling what the active peers have
 			$sql = "SELECT * FROM `active_peer_list`";
@@ -651,7 +649,7 @@ if($_SESSION["valid_login"] == TRUE)
 					$variance_total = $variance_total + abs($variance);
 					$micro_time_variance = round((microtime(TRUE) - $my_micro_time) * 1000) . " ms";
 
-					if($variance > 1)
+					if($variance> 1)
 					{
 						$variance = '+' . $variance . ' seconds';
 					}
@@ -674,17 +672,17 @@ if($_SESSION["valid_login"] == TRUE)
 					$micro_time_variance = "&infin; ms";
 				}
 
-				$body_string .= '<tr><td class="style2"><p style="word-wrap:break-word; font-size:12px;">' . $ip_address . $domain . ':' . $port_number . '/' . $subfolder . '</p></td>';
-				$body_string .= '<td class="style2"><p style="font-size:12px;">' . $poll_peer . '</p></td>';
-				$body_string .= '<td class="style2"><p style="font-size:12px;">' . $variance . '</p></td>';
-				$body_string .= '<td class="style2"><p style="font-size:12px;">' . $micro_time_variance . '</p></td></tr>';
+				$body_string .= '<tr><td>' . $ip_address . $domain . ':' . $port_number . '/' . $subfolder . '</td>';
+				$body_string .= '<td>' . $poll_peer . '</td>';
+				$body_string .= '<td>' . $variance . '</td>';
+				$body_string .= '<td>' . $micro_time_variance . '</td></tr>';
 			}
 
-			$body_string .= '</table></div>';
+			$body_string .= '</table>';
 
 			$variance_average = round($variance_total / $response_counter);
 
-			if($variance_average > 15)
+			if($variance_average> 15)
 			{
 				$variance_average = '<font color="red">' . $variance_average . '</font> seconds';
 			}
@@ -692,7 +690,7 @@ if($_SESSION["valid_login"] == TRUE)
 			{
 				$variance_average = '<font color="green">' . $variance_average . '</font> second';
 			}
-			else if($variance_average <= 15 && $variance_average > 1)
+			else if($variance_average <= 15 && $variance_average> 1)
 			{
 				$variance_average = '<font color="blue">' . $variance_average . '</font> seconds';
 			}
@@ -714,8 +712,7 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
 			ini_set('default_socket_timeout', 2); // Timeout for request in seconds
-			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
-				<tr><th>Peer</th><th>My Failure Score</th></tr>';
+			$body_string = '<table class="table table-striped"><thead><tr><th>Peer</th><th>My Failure Score</th></tr></thead></thead>';
 
 			$my_domain = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,"field_data");
 			$my_subfolder = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_subfolder' LIMIT 1"),0,"field_data");
@@ -747,11 +744,11 @@ if($_SESSION["valid_login"] == TRUE)
 					$poll_peer = intval($poll_peer);
 				}
 
-				$body_string .= '<tr><td class="style2"><p style="word-wrap:break-word; font-size:12px;">' . $ip_address . $domain . ':' . $port_number . '/' . $subfolder . '</p></td>';
-				$body_string .= '<td class="style2"><p style="font-size:12px;">' . $poll_peer . '</p></td></tr>';
+				$body_string .= '<tr><td>' . $ip_address . $domain . ':' . $port_number . '/' . $subfolder . '</td>';
+				$body_string .= '<td>' . $poll_peer . '</td></tr>';
 			}
 
-			$body_string .= '</table></div>';
+			$body_string .= '</table>';
 
 
 			$quick_info = '<strong>Failure Scores</strong> that other peers have recorded for your server.';
@@ -762,23 +759,23 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["edit"] == "peer")
 		{
-			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
-				<th>Domain</th><th>Subfolder</th><th>Port Number</th><th></th><th></th></tr>';			
+			$body_string = '<table class="table table-striped"><thead><tr><th>IP Address</th>
+				<th>Domain</th><th>Subfolder</th><th>Port Number</th><th></th><th></th></tr></thead></thead>';			
 
 			if($_GET["type"] == "new")
 			{
 				// Manually add a peer
 				$body_string .= '<FORM ACTION="index.php?menu=peerlist&save=newpeer" METHOD="post"><tr>
-				 <td class="style2"><input type="text" name="edit_ip" size="13" /></td>
-				 <td class="style2"><input type="text" name="edit_domain" size="20" /></td>
-				 <td class="style2"><input type="text" name="edit_subfolder" size="10" /></td>
-				 <td class="style2"><input type="text" name="edit_port" size="5" /></td>			 
-				 <td><input type="image" src="img/save-icon.gif" title="Save New Peer" name="submit1" border="0"></FORM></td><td>
+				 <td><input type="text" name="edit_ip" size="13" /></td>
+				 <td><input type="text" name="edit_domain" size="20" /></td>
+				 <td><input type="text" name="edit_subfolder" size="10" /></td>
+				 <td><input type="text" name="edit_port" size="5" /></td>			 
+				 <td><input type="image" src="img/save-icon.gif" title="Save New Peer" name="submit1"></FORM></td><td>
 				 <FORM ACTION="index.php?menu=peerlist" METHOD="post">
-				 <input type="image" src="img/hr.gif" title="Cancel" name="submit2" border="0"></FORM>
+				 <input type="image" src="img/hr.gif" title="Cancel" name="submit2"></FORM>
 				 </td></tr>';
 
-				$body_string .= '</table></div>';				
+				$body_string .= '</table>';				
 			}
 			else if($_GET["type"] == "firstcontact")
 			{
@@ -797,18 +794,20 @@ if($_SESSION["valid_login"] == TRUE)
 					$peer_subfolder = find_string("---subfolder=", "---port", $sql_row["field_data"]);
 					$peer_port_number = find_string("---port=", "---end", $sql_row["field_data"]);
 				
-					$body_string .= '<tr><td class="style2"><input type="text" name="first_contact_ip' . $counter . '" size="13" value="' . $peer_ip . '" /></br></br></td>
-					<td class="style2" valign="top"><input type="text" name="first_contact_domain' . $counter . '" size="20" value="' . $peer_domain . '" /></td>
-					<td class="style2" valign="top"><input type="text" name="first_contact_subfolder' . $counter . '" size="10" value="' . $peer_subfolder . '" /></td>
-					<td class="style2" valign="top"><input type="text" name="first_contact_port' . $counter . '" size="5" value="' . $peer_port_number . '" /></td>			 
+					$body_string .= '<tr><td><input type="text" name="first_contact_ip' . $counter . '" size="13" value="' . $peer_ip . '" /></br></br></td>
+					<td><input type="text" name="first_contact_domain' . $counter . '" size="20" value="' . $peer_domain . '" /></td>
+					<td><input type="text" name="first_contact_subfolder' . $counter . '" size="10" value="' . $peer_subfolder . '" /></td>
+					<td><input type="text" name="first_contact_port' . $counter . '" size="5" value="' . $peer_port_number . '" /></td>			 
 					</td></tr>';
 
 					$counter++;
 				}
 
 				$body_string .= '<input type="hidden" name="field_numbers" value="' . ($counter - 1) . '">
-					<tr><td colspan="2"><input type="submit" value="Save First Contact Servers"/></FORM></td></tr>';
-				$body_string .= '</table></div>';
+					<tr><td colspan="2"><input type="
+submit" class="btn btn-primary" 
+class="btn btn-success" value="Save First Contact Servers"/></FORM></td></tr>';
+				$body_string .= '</table>';
 			}
 			else
 			{
@@ -827,19 +826,19 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 
 				$body_string .= '<FORM ACTION="index.php?menu=peerlist&save=peer" METHOD="post"><tr>
-				<td class="style2"><input type="text" name="edit_ip" size="13" value="' . $sql_row["IP_Address"] . '" /></br></br>
+				<td><input type="text" name="edit_ip" size="13" value="' . $sql_row["IP_Address"] . '" /></br></br>
 				<select name="perm_peer"><option value="expires" ' . $perm_peer2 . '>Purge When Inactive</option><option value="perm" ' . $perm_peer1 . '>Permanent Peer</select></td>
-				<td class="style2" valign="top"><input type="text" name="edit_domain" size="20" value="' . $sql_row["domain"] . '" /></td>
-				<td class="style2" valign="top"><input type="text" name="edit_subfolder" size="10" value="' . $sql_row["subfolder"] . '" /></td>
-				<td class="style2" valign="top"><input type="text" name="edit_port" size="5" value="' . $sql_row["port_number"] . '" /></td>			 
-				<td valign="top"><input type="hidden" name="update_ip" value="' . $sql_row["IP_Address"] . '">
+				<td><input type="text" name="edit_domain" size="20" value="' . $sql_row["domain"] . '" /></td>
+				<td><input type="text" name="edit_subfolder" size="10" value="' . $sql_row["subfolder"] . '" /></td>
+				<td><input type="text" name="edit_port" size="5" value="' . $sql_row["port_number"] . '" /></td>			 
+				<td><input type="hidden" name="update_ip" value="' . $sql_row["IP_Address"] . '">
 				<input type="hidden" name="update_domain" value="' . $sql_row["domain"] . '">
-				<input type="image" src="img/save-icon.gif" title="Save Settings" name="submit1" border="0"></FORM></td>
-				<td valign="top"><FORM ACTION="index.php?menu=peerlist" METHOD="post">
-				<input type="image" src="img/hr.gif" title="Cancel Changes" name="submit2" border="0"></FORM>
+				<input type="image" src="img/save-icon.gif" title="Save Settings" name="submit1"></FORM></td>
+				<td><FORM ACTION="index.php?menu=peerlist" METHOD="post">
+				<input type="image" src="img/hr.gif" title="Cancel Changes" name="submit2"></FORM>
 				</td></tr>';
 
-				$body_string .= '</table></div>';
+				$body_string .= '</table>';
 			}
 
 			$sql = "SELECT * FROM `active_peer_list`";
@@ -859,11 +858,11 @@ if($_SESSION["valid_login"] == TRUE)
 		else
 		{
 			// Default screen
-			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr>
-				<th><p style="font-size:11px;">IP Address</p></th><th><p style="font-size:11px;">Domain</p></th>
-				<th><p style="font-size:11px;">Subfolder</p></th><th><p style="font-size:11px;">Port Number</p></th>
-				<th><p style="font-size:11px;">Last Heartbeat</p></th><th><p style="font-size:11px;">Joined</p></th>
-				<th><p style="font-size:11px;">Failure Score</p></th><th></th><th></th></tr>';			
+			$body_string = '<table class="table table-striped"><thead><tr>
+				<th>IP Address</th><th>Domain</th>
+				<th>Subfolder</th><th>Port Number</th>
+				<th>Last Heartbeat</th><th>Joined</th>
+				<th>Failure Score</th><th></th><th></th></tr></thead></thead>';			
 			
 			if($_GET["show"] == "reserve")
 			{
@@ -909,13 +908,13 @@ if($_SESSION["valid_login"] == TRUE)
 
 
 				$body_string .= '<tr>
-				 <td class="style2"><p style="word-wrap:break-word; width:95px; font-size:11px;">' . $permanent1 . $sql_row["IP_Address"] . $permanent2 . '</p></td>
-				 <td class="style2"><p style="word-wrap:break-word; width:155px; font-size:11px;">' . $permanent1 . $sql_row["domain"] . $permanent2 . '</p></td>
-				 <td class="style2"><p style="word-wrap:break-word; width:60px; font-size:11px;">' . $permanent1 . $sql_row["subfolder"] . $permanent2 . '</p></td>
-				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["port_number"] . $permanent2 . '</p></td>
-				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $last_heartbeat . $permanent2 . '</p></td>
-				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $joined . $permanent2 . '</p></td>
-				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row[$failed_column_name] . $permanent2 . '</p></td>';
+				 <td>' . $permanent1 . $sql_row["IP_Address"] . $permanent2 . '</td>
+				 <td>' . $permanent1 . $sql_row["domain"] . $permanent2 . '</td>
+				 <td>' . $permanent1 . $sql_row["subfolder"] . $permanent2 . '</td>
+				 <td>' . $permanent1 . $sql_row["port_number"] . $permanent2 . '</td>
+				 <td>' . $permanent1 . $last_heartbeat . $permanent2 . '</td>
+				 <td>' . $permanent1 . $joined . $permanent2 . '</td>
+				 <td>' . $permanent1 . $sql_row[$failed_column_name] . $permanent2 . '</td>';
 
 				if($_GET["show"] == "reserve")
 				{
@@ -923,11 +922,11 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 				else
 				{
-					$body_string .= '<td><FORM ACTION="index.php?menu=peerlist&remove=peer" METHOD="post"><input type="image" src="img/hr.gif" title="Delete Peer" name="remove' . $i . '" border="0">
+					$body_string .= '<td><FORM ACTION="index.php?menu=peerlist&remove=peer" METHOD="post"><input type="image" src="img/hr.gif" title="Delete Peer" name="remove' . $i . '">
 					 <input type="hidden" name="ip" value="' . $sql_row["IP_Address"] . '">
 					 <input type="hidden" name="domain" value="' . $sql_row["domain"] . '">
 					 </FORM></td><td>
-					 <FORM ACTION="index.php?menu=peerlist&edit=peer" METHOD="post"><input type="image" src="img/edit-icon.gif" title="Edit Peer" name="edit' . $i . '" border="0">
+					 <FORM ACTION="index.php?menu=peerlist&edit=peer" METHOD="post"><input type="image" src="img/edit-icon.gif" title="Edit Peer" name="edit' . $i . '">
 					 <input type="hidden" name="ip" value="' . $sql_row["IP_Address"] . '">
 					 <input type="hidden" name="domain" value="' . $sql_row["domain"] . '">
 					 </FORM>
@@ -935,13 +934,19 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 			}
 
-			$body_string .= '<tr><td colspan="2"><FORM ACTION="index.php?menu=peerlist&show=reserve" METHOD="post"><input type="submit" value="Show Reserve Peers"/></FORM></td>
-				<td colspan="3"><FORM ACTION="index.php?menu=peerlist&edit=peer&type=new" METHOD="post"><input type="submit" value="Add New Peer"/></FORM></td>
-				<td colspan="4"><FORM ACTION="index.php?menu=peerlist&edit=peer&type=firstcontact" METHOD="post"><input type="submit" value="First Contact Servers"/></FORM></td></tr>
-				<tr><td colspan="9"><hr></hr></td></tr>
-				<tr><td colspan="3"><FORM ACTION="index.php?menu=peerlist&time=poll" METHOD="post"><input name="Submit3" type="submit" value="Check Peer Clock & Ping Times" /></FORM></td>
-				<td colspan="6"><FORM ACTION="index.php?menu=peerlist&poll_failure=poll" METHOD="post"><input name="Submit4" type="submit" value="Poll Failure Scores" /></FORM></td>
-				</tr></table></div>';
+			$body_string .= '</tr></table>
+
+				<div class="form-row">
+					<FORM ACTION="index.php?menu=peerlist&edit=peer&type=new" METHOD="post"><input type="submit" class="btn btn-success" value="Add New Peer"/></FORM>
+					<FORM ACTION="index.php?menu=peerlist&show=reserve" METHOD="post"><input type="submit" class="btn" value="Show Reserve Peers"/></FORM>
+					<FORM ACTION="index.php?menu=peerlist&edit=peer&type=firstcontact" METHOD="post"><input type="submit" class="btn" value="First Contact Servers"/></FORM>
+				</div>
+				<div class="form-row">
+					<FORM ACTION="index.php?menu=peerlist&time=poll" METHOD="post"><input name="Submit3" type="submit" class="btn" value="Check Peer Clock & Ping Times" /></FORM>
+					<FORM ACTION="index.php?menu=peerlist&poll_failure=poll" METHOD="post"><input name="Submit4" type="submit" class="btn" value="Poll Failure Scores" /></FORM>
+				
+				</div>
+				';
 
 			
 			$sql = "SELECT * FROM `new_peers_list`";
@@ -956,12 +961,26 @@ if($_SESSION["valid_login"] == TRUE)
 			$peer_transaction_start_blocks = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_start_blocks' LIMIT 1"),0,"field_data");
 			$peer_transaction_performance = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_performance' LIMIT 1"),0,"field_data");
 
-			$peer_number_bar = '<table border="0" cellspacing="0" cellpadding="0"><tr><td style="width:125px"><strong>Active Peers: <font color="green">' . $sql_num_results . '</font></strong></td>
-				<td style="width:175px"><strong>Peers in Reserve: <font color="blue">' . $new_peers . '</font></strong></td>
-				<td style="width:125px"><strong>Peer Speed: <font color="blue">' . $peer_transaction_start_blocks . '</font></strong></td>
-				<td style="width:190px"><strong>Group Response: <font color="blue">' . $peer_transaction_performance . ' sec</font></strong></td></tr><tr><td colspan="4"><hr></hr></td></tr>
-				<tr><td align="left" colspan="4"><strong>Transaction History:</strong>&nbsp;' . trans_percent_status() . '</td></tr>
-				</table>';
+			$peer_number_bar = '
+<div class="row">
+	<div class="span3">
+		<p>Active Peers: <font color="green">' . $sql_num_results . '</font></p>
+	</div>
+	<div class="span3">
+		<p>Peers in Reserve: <font color="blue">' . $new_peers . '</font></p>
+	</div>
+	<div class="span3">
+		<p>Peer Speed: <font color="blue">' . $peer_transaction_start_blocks . '</font></p>
+	</div>
+	<div class="span3">
+		<p>Group Response: <font color="blue">' . $peer_transaction_performance . ' sec</font></p>
+	</div>
+</div>
+<div class="row">
+	<div class="span12">
+		<p>Transaction History:</strong>&nbsp;' . trans_percent_status() . '</p>
+	</div>
+</div>';
 
 			$quick_info = 'Shows all Active Peers.</br></br>You can manually delete or edit peers in this section.
 				</br></br>Peers in <font color="blue">Blue</font> will not expire after 5 minutes of inactivity or high failure scores.
@@ -1016,7 +1035,7 @@ if($_SESSION["valid_login"] == TRUE)
 				$sql = "UPDATE `options` SET `field_data` = '" . $_POST["subfolder"] . "' WHERE `options`.`field_name` = 'server_subfolder' LIMIT 1";
 				if(mysql_query($sql) == TRUE)
 				{
-					if($_POST["port"] < 1 || $_POST["port"] > 65535)
+					if($_POST["port"] < 1 || $_POST["port"]> 65535)
 					{
 						// Keep port within range
 						$port = 1528;
@@ -1087,10 +1106,10 @@ if($_SESSION["valid_login"] == TRUE)
 			$watchdog_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,"field_data");			
 			$watchdog_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_last_heartbeat' LIMIT 1"),0,"field_data");
 
-			if($watchdog_loop_active > 0)
+			if($watchdog_loop_active> 0)
 			{
 				// Watchdog should still be active
-				if((time() - $watchdog_last_heartbeat) > 60) // Greater than double the loop time, something is wrong
+				if((time() - $watchdog_last_heartbeat)> 60) // Greater than double the loop time, something is wrong
 				{
 					// Watchdog stop was unexpected
 					$sql = "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'watchdog_heartbeat_active' LIMIT 1";
@@ -1129,10 +1148,10 @@ if($_SESSION["valid_login"] == TRUE)
 				pclose(popen("start /B utils\upnpc.exe -d $server_port_number TCP", "r"));
 			}
 
-			if($script_loop_active > 0)
+			if($script_loop_active> 0)
 			{
 				// Main should still be active
-				if((time() - $script_last_heartbeat) > 30) // Greater than triple the loop time, something is wrong
+				if((time() - $script_last_heartbeat)> 30) // Greater than triple the loop time, something is wrong
 				{
 					// Main stop was unexpected
 					$sql = "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1";
@@ -1315,8 +1334,8 @@ if($_SESSION["valid_login"] == TRUE)
 					{
 						$super_peer_limit = intval($_POST["super_peer_limit"]);
 
-						if($super_peer_limit > 0 && $super_peer_limit < 10) { $super_peer_limit = 10; }
-						if($super_peer_limit > 500) { $super_peer_limit = 500; }
+						if($super_peer_limit> 0 && $super_peer_limit < 10) { $super_peer_limit = 10; }
+						if($super_peer_limit> 500) { $super_peer_limit = 500; }
 
 						$sql = "UPDATE `options` SET `field_data` = '$super_peer_limit' WHERE `options`.`field_name` = 'super_peer' LIMIT 1";
 						if(mysql_query($sql) == TRUE)
@@ -1324,7 +1343,7 @@ if($_SESSION["valid_login"] == TRUE)
 							mysql_query("UPDATE `main_loop_status` SET `field_data` = '$super_peer_limit' WHERE `main_loop_status`.`field_name` = 'super_peer' LIMIT 1");
 
 							$peer_failure_grade = intval($_POST["peer_failure_grade"]);
-							if($peer_failure_grade < 1 || $peer_failure_grade > 100) { $peer_failure_grade = 30; }
+							if($peer_failure_grade < 1 || $peer_failure_grade> 100) { $peer_failure_grade = 30; }
 
 							$sql = "UPDATE `options` SET `field_data` = '$peer_failure_grade' WHERE `options`.`field_name` = 'peer_failure_grade' LIMIT 1";
 							if(mysql_query($sql) == TRUE)
@@ -1477,7 +1496,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$hashcode_permissions;
 			$counter = 1;
 
-			$body_text = '<table border="0"><tr><td style="width:230px"><FORM ACTION="index.php?menu=options&hashcode=save" METHOD="post"></td></tr>';
+			$body_text = '<table><tr><td style="width:230px"><FORM ACTION="index.php?menu=options&hashcode=save" METHOD="post"></td></tr>';
 
 			while($counter <= 5)
 			{
@@ -1485,7 +1504,7 @@ if($_SESSION["valid_login"] == TRUE)
 				$hashcode_name = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'hashcode" . $counter . "_name' LIMIT 1"),0,"field_data");
 				$hashcode_permissions = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'hashcode" . $counter . "_permissions' LIMIT 1"),0,"field_data");
 
-				$body_text .= '<tr><td valign="bottom" align="right"><strong>Name: <input type="text" name="name'. $counter . '" size="15" value="' . $hashcode_name . '"/>
+				$body_text .= '<tr><td valign="bottom"><strong>Name: <input type="text" name="name'. $counter . '" size="15" value="' . $hashcode_name . '"/>
 				</br>Hashcode: <input type="text" name="hashcode'. $counter . '" size="15" value="' . $hashcode . '"/></strong></td>
 				<td><input type="checkbox" name="pk_balance'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_balance", TRUE) . '>pk_balance 
 				<input type="checkbox" name="pk_gen_amt'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_gen_amt", TRUE) . '>pk_gen_amt
@@ -1501,7 +1520,7 @@ if($_SESSION["valid_login"] == TRUE)
 				$counter++;
 			}
 
-			$body_text .= '</table><input type="submit" name="save_hashcode" value="Save Settings" /></FORM>';
+			$body_text .= '</table><input type="submit" class="btn btn-success" name="save_hashcode"  value="Save Settings" /></FORM>';
 
 			if($hash_settings_saved == TRUE) { $body_text .= '</br><font color="blue"><strong>Hashcode Settings Saved!</strong></font>'; }
 		}
@@ -1575,8 +1594,8 @@ if($_SESSION["valid_login"] == TRUE)
 			$my_generation_IP = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,"field_data");
 
 			$my_gen_IP_form = '<FORM ACTION="index.php?menu=generation&IP=change" METHOD="post">
-				Generation IP <input type="text" name="gen_IP" size="15" maxlength="46" value="' . $my_generation_IP . '"/>
-				<input type="submit" name="IPChange" value="Update" /></FORM>' . $IP_save;
+				<label for="gen_IP">Generation IP:</label> <input type="text" id="gen_IP" name="gen_IP" size="15" maxlength="46" value="' . $my_generation_IP . '"/>
+				<input type="submit" class="btn btn-success" name="IPChange" value="Update" /></FORM>' . $IP_save;
 
 			if(time() - $join_peer_list < 3600)
 			{
@@ -1590,7 +1609,7 @@ if($_SESSION["valid_login"] == TRUE)
 				// Not elected to the generating peer list yet
 				$generate_currency = 'Generation <font color="green"><strong>Enabled</strong></font>';
 				$generate_rate = '@ <font color="green"><strong>' . peer_gen_amount($my_public_key) . '</strong></font> per Cycle';
-				$continuous_production = '<font color="red"><strong>This Peer Has Not</br> Been Elected Yet</strong></font>';
+				$continuous_production = '<font color="red"><strong>This Peer Has Not Been Elected Yet</strong></font>';
 			}
 			else
 			{
@@ -1615,7 +1634,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$my_public_key = mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,"field_data");
 
 			$body_string = $body_string . '<hr></hr><strong>Current Generation List</strong>
-				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Public Key</th><th>Joined</th><th>Last Generated</th></tr>';
+				<table class="table table-striped"><thead><tr><th>Public Key</th><th>Joined</th><th>Last Generated</th></tr></thead></thead>';
 
 			$sql = "SELECT * FROM `generating_peer_list` ORDER BY `join_peer_list` ASC";
 			$sql_result = mysql_query($sql);
@@ -1635,12 +1654,12 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 
 				$body_string .= '<tr>
-				<td class="style2">' . $public_key . '</p></td>
-				<td class="style2"><p style="font-size:10px;">' . unix_timestamp_to_human($sql_row["join_peer_list"]) . '</p></td>
-				<td class="style2"><p style="font-size:10px;">' . tk_time_convert(time() - $sql_row["last_generation"]) . ' ago</p></td></tr>';
+				<td>' . $public_key . '</td>
+				<td>' . unix_timestamp_to_human($sql_row["join_peer_list"]) . '</td>
+				<td>' . tk_time_convert(time() - $sql_row["last_generation"]) . ' ago</td></tr>';
 			}
 
-			$body_string .= '</table></div>';
+			$body_string .= '</table>';
 		}
 
 		if($_GET["generate"] == "showqueue")
@@ -1649,7 +1668,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$my_public_key = mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,"field_data");
 
 			$body_string .= '<hr></hr><strong>Election Queue List</strong>
-				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Public Key</th><th>Join Queue</th></tr>';
+				<table class="table table-striped"><thead><tr><th>Public Key</th><th>Join Queue</th></tr></thead></thead>';
 
 			$sql = "SELECT * FROM `generating_peer_queue` ORDER BY `timestamp` ASC";
 			$sql_result = mysql_query($sql);
@@ -1669,11 +1688,11 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 
 				$body_string .= '<tr>
-				<td class="style2">' . $public_key . '</p></td>
-				<td class="style2"><p style="font-size:10px;">' . tk_time_convert(time() - $sql_row["timestamp"]) . ' ago</p></td></tr>';
+				<td>' . $public_key . '</td>
+				<td>' . tk_time_convert(time() - $sql_row["timestamp"]) . ' ago</td></tr>';
 			}
 
-			$body_string .= '</table></div>';
+			$body_string .= '</table>';
 		}
 
 		// Next Election Calculator
@@ -1690,10 +1709,23 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 		}
 
-		$text_bar = '<table cellspacing="10" border="0"><tr><td valign="top" width="230">' . $generate_currency . '</td><td>Generating Peers: <font color="green"><strong>' . $generating_peers_now . '</strong></font></br>
-			Queue for Election: <font color="blue"><strong>' . $generate_peer_queue . '</strong></font></td></tr>
-			<tr><td align="right">' . $continuous_production . '</td><td>' . $generate_rate . '</td></tr>
-			<tr><td colspan="2">' . $my_gen_IP_form . '</td></tr></table>';
+		$text_bar = '
+<div class="row">
+	<div class="span3">
+		<p>' . $generate_currency . '</p>
+	</div>
+	<div class="span5">
+		<p>' . $continuous_production . '</p>
+		<p>' . $generate_rate . '</p>
+	</div>
+	<div class="span4">
+		<p>Generating Peers: <font color="green"><strong>' . $generating_peers_now . '</strong></font></p>
+		<p>Queue for Election: <font color="blue"><strong>' . $generate_peer_queue . '</strong></font></p>
+	</div>
+	<div class="span12">
+		<p>' . $my_gen_IP_form . '</p>
+	</div>
+</div>';
 
 		$quick_info = 'You must remain online and have a valid Internet accessible server to generate currency.</br></br>
 			Timekoin will attempt to auto-detect the <font color="blue">Generation IP</font> when the field is left blank upon service starting.</br></br>
@@ -1717,7 +1749,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$public_key_to = base64_decode($public_key_64);
 			$current_balance = db_cache_balance($my_public_key);			
 
-			if($send_amount > $current_balance)
+			if($send_amount> $current_balance)
 			{
 				// Can't send this much silly
 				$display_balance = db_cache_balance($my_public_key);
@@ -1773,7 +1805,7 @@ if($_SESSION["valid_login"] == TRUE)
 				$public_key_to = base64_decode($public_key_64);
 				$current_balance = db_cache_balance($my_public_key);			
 
-				if($send_amount > $current_balance)
+				if($send_amount> $current_balance)
 				{
 					// Can't send this much silly
 					$display_balance = db_cache_balance($my_public_key);
@@ -1842,7 +1874,7 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 		}
 
-		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong>Current Server Balance: <font color="green">' . number_format($display_balance) . '</font></strong></td></tr>
+		$text_bar = '<table><tr><td><strong>Current Server Balance: <font color="green">' . number_format($display_balance) . '</font></strong></td></tr>
 			<tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
 			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
 
@@ -1866,7 +1898,7 @@ if($_SESSION["valid_login"] == TRUE)
 			set_time_limit(300);
 			
 			//Open Transaction Browser
-			if($_POST["show_more"] > 0)
+			if($_POST["show_more"]> 0)
 			{
 				$show_last = $_POST["show_more"];
 			}
@@ -1878,45 +1910,45 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transaction Cycles</strong>';
 
 			// Start the Transaction Browser section
-			$body_string .= '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Transaction Cycle</th>
-				<th>Transactions</th></tr>';
+			$body_string .= '<table class="table table-striped"><thead><tr><th>Transaction Cycle</th>
+				<th>Transactions</th></tr></thead></thead>';
 
 			// How many transactions back from the present time to display?
 			$show_last_counter = $show_last;
 			$counter = -1; // Transaction back from present cycle
 
-			while($show_last_counter > 0)
+			while($show_last_counter> 0)
 			{
 				$start_transaction_cycle = transaction_cycle($counter);
 				$end_transaction_cycle = transaction_cycle($counter + 1);
 				$jump_to_transaction = transaction_cycle($counter + 5);
 
-				$sql = "SELECT * FROM `transaction_history` WHERE `timestamp` >= '$start_transaction_cycle' AND `timestamp` < '$end_transaction_cycle'";
+				$sql = "SELECT * FROM `transaction_history` WHERE `timestamp`>= '$start_transaction_cycle' AND `timestamp` < '$end_transaction_cycle'";
 				$sql_result = mysql_query($sql);
 				$sql_num_results = mysql_num_rows($sql_result);
 
 				if($_POST["highlight_cycle"] - 1500 == $start_transaction_cycle)
 				{
-					$body_string .= '<tr><td class="style2"><p style="font-size: 12px;"><h9 id="' . $start_transaction_cycle . '"></h9><font color="blue">' . $start_transaction_cycle . '</br>' . unix_timestamp_to_human($start_transaction_cycle) . '</font></p></td>
-						<td class="style2"><table border="0" cellspacing="0" cellpadding="0"><tr>';
+					$body_string .= '<tr><td><h1 id="' . $start_transaction_cycle . '">wdgqsdfqsdf</h1><font color="blue">' . $start_transaction_cycle . '</br>' . unix_timestamp_to_human($start_transaction_cycle) . '</font></td>
+						<td><table><tr>';
 				}
 				else
 				{
-					$body_string .= '<tr><td class="style2"><p style="font-size: 12px;"><h9 id="' . $start_transaction_cycle . '"></h9>' . $start_transaction_cycle . '</br>' . unix_timestamp_to_human($start_transaction_cycle) . '</p></td>
-						<td class="style2"><table border="0" cellspacing="0" cellpadding="0"><tr>';
+					$body_string .= '<tr><td><h1 id="' . $start_transaction_cycle . '">sqdfgqdfbsdgqdrgf</h1>' . $start_transaction_cycle . '</br>' . unix_timestamp_to_human($start_transaction_cycle) . '</td>
+						<td><table><tr>';
 				}
 
 				$koin_kounter = 0;
 				$row_count_limit = 12;
 
-				if($sql_num_results > 1)
+				if($sql_num_results> 1)
 				{
 					// Build row with icons
 					for ($i = 0; $i < $sql_num_results; $i++)
 					{
 						$sql_row = mysql_fetch_array($sql_result);
 
-						if($koin_kounter >= $row_count_limit)
+						if($koin_kounter>= $row_count_limit)
 						{
 							$body_string .= '</tr><tr>';
 							$koin_kounter = 0;
@@ -1934,7 +1966,7 @@ if($_SESSION["valid_login"] == TRUE)
 							<input type="hidden" name="trans_cycle" value="' . $jump_to_transaction . '">
 							<input type="hidden" name="timestamp" value="' . $sql_row["timestamp"] . '">
 							<input type="hidden" name="hash" value="' . $sql_row["hash"] . '">
-							<input type="image" src="img/timekoin_green.png" title="Amount: ' . $transaction_amount . '" name="submit2" border="0"></FORM></td>';
+							<input type="image" src="img/timekoin_green.png" title="Amount: ' . $transaction_amount . '" name="submit2"></FORM></td>';
 
 							$koin_kounter++;
 						}
@@ -1946,7 +1978,7 @@ if($_SESSION["valid_login"] == TRUE)
 							<input type="hidden" name="trans_cycle" value="' . $jump_to_transaction . '">
 							<input type="hidden" name="timestamp" value="' . $sql_row["timestamp"] . '">
 							<input type="hidden" name="hash" value="' . $sql_row["hash"] . '">
-							<input type="image" src="img/timekoin_blue.png" title="Amount: ' . $transaction_amount . '" name="submit2" border="0"></FORM></td>';
+							<input type="image" src="img/timekoin_blue.png" title="Amount: ' . $transaction_amount . '" name="submit2"></FORM></td>';
 
 							$koin_kounter++;
 						}
@@ -1963,16 +1995,17 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 
 			$body_string .= '<tr><FORM ACTION="index.php?menu=history&trans_browse=open" METHOD="post">
-				<td colspan="2" align="left"><input type="text" size="5" name="show_more" value="' . $show_last .'" /><input type="submit" name="Submit1" value="Show Last" /></FORM></td></tr>';
+				<td colspan="2" align="left"><input type="text" size="5" name="show_more" value="' . $show_last .'" /><input type="submit" class="btn btn-primary" name="Submit1" 
+class="btn btn-primary" value="Show Last" /></FORM></td></tr>';
 
-			$body_string .= '</table></div>';
+			$body_string .= '</table>';
 
 			$color_key1 = '<td><img src="img/timekoin_green.png" /></td>';
 			$color_key2 = '<td><img src="img/timekoin_blue.png" /></td>';
 
-			$text_bar = '<table border="0" cellspacing="0" cellpadding="0"><tr><td style="width:125px;"><strong>Color Chart:</strong></td>
+			$text_bar = '<table><tr><td style="width:125px;"><strong>Color Chart:</strong></td>
 				<td>New Currency</td>' . $color_key1 . '
-				<td style="width:115px;" align="right">Transaction</td>' . $color_key2 . '
+				<td style="width:115px;">Transaction</td>' . $color_key2 . '
 				</tr></table>';
 			$quick_info = '<strong>Transaction History Browser</strong> allows the user to get a quick visual glance of past transactions.</br></br>
 				The color code graphic shows various types of transactions.</br></br>
@@ -2062,9 +2095,10 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string .= '<hr></hr><FORM ACTION="index.php?menu=history&trans_browse=open#' . $_POST["trans_cycle"] . '" METHOD="post">
 				<input type="hidden" name="show_more" value="' . $_POST["show_more"] . '">
 				<input type="hidden" name="highlight_cycle" value="' . $_POST["trans_cycle"] . '">				
-				<input type="submit" name="Submit5" value="Return to Transaction Browser" /></FORM><hr></hr>';
+				<input type="
+submit" class="btn btn-primary" name="Submit5" value="Return to Transaction Browser" /></FORM><hr></hr>';
 
-			$text_bar = '<table border="0" cellspacing="0" cellpadding="0"><tr><td style="width:190px;"><strong>Timestamp:</strong> (' . $_POST["timestamp"] . 
+			$text_bar = '<table><tr><td style="width:190px;"><strong>Timestamp:</strong> (' . $_POST["timestamp"] . 
 				')</td><td>' . unix_timestamp_to_human($_POST["timestamp"]) . '</td></tr>
 				<tr><td colspan="2"><strong>Hash:</strong>' . $triple1 . $_POST["hash"] . $triple2 . '</font></td></tr></table>';
 			$quick_info = '<strong>Timestamp</strong> represents when the transaction request to be recorded in the transaction history.</br></br>
@@ -2155,8 +2189,8 @@ if($_SESSION["valid_login"] == TRUE)
 				$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> ' . $filter_GUI . ' <font color="green">Sent To</font> This Server</strong></br>
 					<FORM ACTION="index.php?menu=history&receive=listmore" METHOD="post"><select name="filter"><option value="transactions" ' . $sent_to_selected_trans . '>Transactions Only</option>
 					<option value="generation" ' . $sent_to_selected_gen . '>Generation Only</option><option value="all" ' . $sent_to_selected_both . '>Both</option></option></select></br>
-					</br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
-					<th>Sent From</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
+					</br><table class="table table-striped"><thead><tr><th>Date</th>
+					<th>Sent From</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr></thead></thead>';
 
 				// Find the last X transactions sent to this public key
 				$sql = "SELECT timestamp, public_key_from, crypt_data3, attribute FROM `transaction_history` WHERE `public_key_to` = '$my_public_key' ORDER BY `transaction_history`.`timestamp` DESC";
@@ -2167,7 +2201,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
-					if($result_limit >= $show_last)
+					if($result_limit>= $show_last)
 					{
 						// Have the amount to show, break from the loop early
 						break;
@@ -2189,7 +2223,7 @@ if($_SESSION["valid_login"] == TRUE)
 						if($sql_row["public_key_from"] == $my_public_key)
 						{
 							// Self Generated
-							$public_key_from = '<td class="style2">Self Generated';
+							$public_key_from = '<td>Self Generated';
 						}
 						else
 						{
@@ -2201,26 +2235,28 @@ if($_SESSION["valid_login"] == TRUE)
 						$cycles_back = intval((time() - $sql_row["timestamp"]) / 300);
 
 						$body_string .= '<tr>
-						<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>' 
+						<td>' . unix_timestamp_to_human($sql_row["timestamp"]) . '</td>' 
 						. $public_key_from . '</td>
-						<td class="style2"><p style="font-size: 11px;">' . $transaction_amount . '</p></td>
-						<td class="style2"><p style="font-size: 11px;">' . $cycles_back . '</p></td>
-						<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $inside_message . '</p></td></tr>';
+						<td>' . $transaction_amount . '</td>
+						<td>' . $cycles_back . '</td>
+						<td>' . $inside_message . '</td></tr>';
 
 						$result_limit++;						
 					}
 				}
 				
-				$body_string .= '<tr><td colspan="5"><hr></hr></td></tr><tr><tr><td colspan="5"><input type="text" size="5" name="show_more_receive" value="' . $show_last .'" /><input type="submit" name="Submit1" value="Show Last" /></FORM></td></tr>';
+				$body_string .= '<tr><td colspan="5"><hr></hr></td></tr><tr><tr><td colspan="5"><input type="text" size="5" name="show_more_receive" value="' . $show_last .'" /><input type="
+submit" class="btn btn-primary" name="Submit1" 
+class="btn btn-primary" value="Show Last" /></FORM></td></tr>';
 
-				$body_string .= '</table></div>';
+				$body_string .= '</table>';
 
 			} // End hide check for receive
 
 			if($hide_send == FALSE)
 			{
-				$body_string .= '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transactions <font color="blue">Sent From</font> This Server</strong></br></br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
-					<th>Sent To</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
+				$body_string .= '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transactions <font color="blue">Sent From</font> This Server</strong></br></br><table class="table table-striped"><thead><tr><th>Date</th>
+					<th>Sent To</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr></thead>';
 
 				// Find the last X transactions from to this public key
 				$sql = "SELECT timestamp, public_key_from, public_key_to, crypt_data3, attribute FROM `transaction_history` WHERE `public_key_from` = '$my_public_key' ORDER BY `transaction_history`.`timestamp` DESC";
@@ -2231,7 +2267,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
-					if($result_limit >= $show_last)
+					if($result_limit>= $show_last)
 					{
 						// Have the amount to show, break from the loop early
 						break;
@@ -2257,26 +2293,40 @@ if($_SESSION["valid_login"] == TRUE)
 						$cycles_back = intval((time() - $sql_row["timestamp"]) / 300);
 
 						$body_string .= '<tr>
-						<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>' 
+						<td>' . unix_timestamp_to_human($sql_row["timestamp"]) . '</td>' 
 						. $public_key_from . '</td>
-						<td class="style2"><p style="font-size: 11px;">' . $transaction_amount . '</p></td>
-						<td class="style2"><p style="font-size: 11px;">' . $cycles_back . '</p></td>
-						<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $inside_message . '</p></td></tr>';
+						<td>' . $transaction_amount . '</td>
+						<td>' . $cycles_back . '</td>
+						<td>' . $inside_message . '</td></tr>';
 
 						$result_limit++;
 					}
 				}
 
-				$body_string .= '<tr><td colspan="5"><hr></hr></td></tr><tr><tr><td colspan="5"><FORM ACTION="index.php?menu=history&send=listmore" METHOD="post"><input type="text" size="5" name="show_more_send" value="' . $show_last .'" /><input type="submit" name="Submit2" value="Show Last" /></FORM></td></tr>';
+				$body_string .= '<tr><td colspan="5"><hr></hr></td></tr><tr><tr><td colspan="5"><FORM ACTION="index.php?menu=history&send=listmore" METHOD="post"><input type="text" size="5" name="show_more_send" value="' . $show_last .'" /><input type="
+submit" class="btn btn-primary" name="Submit2" 
+class="btn btn-primary" value="Show Last" /></FORM></td></tr>';
 
-				$body_string .= '</table></div>';
+				$body_string .= '</table>';
 
 			} // End hide check for send
 
-			$text_bar = '<FORM ACTION="index.php?menu=history&font=public_key" METHOD="post">
-				<table border="0" cellspacing="4"><tr><td><strong>Default Public Key Font Size</strong></td>
-				<td style="width:250px"><input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" /><input type="submit" name="Submit3" value="Save" /></FORM></td>
-				<td><FORM ACTION="index.php?menu=history&trans_browse=open" METHOD="post"><input type="submit" name="Submit4" value="Transaction Browser" /></FORM></td></tr></table>';
+			$text_bar = '
+			<FORM ACTION="index.php?menu=history&font=public_key" METHOD="post">
+			<p>
+			<label>Default Public Key Font Size</label>
+			<input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" />
+			</p>
+			<p>
+			<input type="submit" name="Submit3" class="btn btn-success" value="Save" />
+			</p>
+			</FORM>
+
+			<FORM ACTION="index.php?menu=history&trans_browse=open" METHOD="post">
+			<p>
+			<input type="submit" class="btn btn-primary" name="Submit4" value="Transaction Browser" />
+			</p>
+			</FORM>';
 
 			$quick_info = 'Verification Level represents how deep in the transaction history the transaction exist.</br></br>
 				The larger the number, the more time that all the peers have examined it and agree that it is a valid transaction.</br></br>
@@ -2313,8 +2363,8 @@ if($_SESSION["valid_login"] == TRUE)
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
 
-		$body_string = '<strong><font color="blue">( ' . number_format($sql_num_results) . ' )</font> Network Transactions Waiting for Processing</strong></br></br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
-			<th>Sent From</th><th>Sent To</th><th>Amount</th></tr>';
+		$body_string = '<strong><font color="blue">( ' . number_format($sql_num_results) . ' )</font> Network Transactions Waiting for Processing</strong></br></br><table class="table table-striped"><thead><tr><th>Date</th>
+			<th>Sent From</th><th>Sent To</th><th>Amount</th></tr></thead>';
 
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
@@ -2340,13 +2390,13 @@ if($_SESSION["valid_login"] == TRUE)
 				if($public_key_trans_to == $my_public_key)
 				{
 					// Currency Generation
-					$public_key_from = '<td class="style2"><font color="blue">Currency Generation</font>';
-					$public_key_to = '<td class="style2"><font color="green">Self</font>';
+					$public_key_from = '<td><font color="blue">Currency Generation</font>';
+					$public_key_to = '<td><font color="green">Self</font>';
 				}
 				else
 				{
 					// Self Generated to someone else
-					$public_key_from = '<td class="style2"><font color="blue">Self Generated Transaction</font>';
+					$public_key_from = '<td><font color="blue">Self Generated Transaction</font>';
 					$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:175px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
 				}
 			}
@@ -2355,13 +2405,13 @@ if($_SESSION["valid_login"] == TRUE)
 				// Everyone else
 				if($sql_row["attribute"] == "G")
 				{
-					$public_key_to = '<td class="style2"><font color="green">Currency Generation</font>';
+					$public_key_to = '<td><font color="green">Currency Generation</font>';
 				}
 				else
 				{
 					if($public_key_trans_to == $my_public_key)
 					{
-						$public_key_to = '<td class="style2"><font color="green">My Public Key</font>';
+						$public_key_to = '<td><font color="green">My Public Key</font>';
 					}
 					else
 					{
@@ -2379,16 +2429,25 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 
 			$body_string .= '<tr>
-			<td class="style2">' . unix_timestamp_to_human($sql_row["timestamp"]) . '</td>' 
+			<td>' . unix_timestamp_to_human($sql_row["timestamp"]) . '</td>' 
 			. $public_key_from . '</td>'
 			. $public_key_to . '</td>
-			<td class="style2">' . $transaction_amount . '</td></tr>';
+			<td>' . $transaction_amount . '</td></tr>';
 		}
 		
-		$body_string .= '</table></div>';
+		$body_string .= '</table>';
 
-		$text_bar = '<FORM ACTION="index.php?menu=queue&font=public_key" METHOD="post">
-			<table border="0" cellspacing="4"><tr><td><strong>Default Public Key Font Size</strong></td><td><input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" /><input type="submit" name="Submit3" value="Save" /></td></tr></table></FORM>';
+		$text_bar = '
+			<FORM ACTION="index.php?menu=queue&font=public_key" METHOD="post">
+			<p>
+			<label>Default Public Key Font Size</label>
+			<input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" />
+			</p>
+			<p>
+			<input type="submit" name="Submit3" class="btn btn-success" value="Save" />
+			</p>
+			</FORM>
+			';
 
 		$quick_info = 'This section contains all the network transactions that are queued to be stored in the transaction history.';
 		
@@ -2403,11 +2462,11 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["action"] == "walk_history")
 		{
 			$body_string = '<strong>History Walk from Block #<font color="blue">' . $_POST["walk_history"] . '</font> can take some time, please be patient...</font></strong></br></br>
-				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>History Walk</th></tr>';
+				<table class="table table-striped"><thead><tr><th>History Walk</th></tr></thead>';
 			$block_end = $_POST["walk_history"] + 500;
 
 			$body_string .= visual_walkhistory($_POST["walk_history"], $block_end);
-			$body_string .= '</table></div>';
+			$body_string .= '</table>';
 		}
 
 		if($_GET["action"] == "schedule_check")
@@ -2430,10 +2489,10 @@ if($_SESSION["valid_login"] == TRUE)
 			set_time_limit(300);
 			$body_string = '<strong>Start Repair from Block #<font color="blue">' . $_POST["repair_from"] . '</font></br>
 				This can take some time, please be patient...</strong></br></br>
-				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Repair History</th></tr>';
+				<table class="table table-striped"><thead><tr><th>Repair History</th></tr></thead>';
 
 			$body_string .= visual_repair($_POST["repair_from"]);
-			$body_string .= '</table></div>';
+			$body_string .= '</table>';
 
 			write_log("A History Block Repair was started from #" . $_POST["repair_from"], "GU");
 		}
@@ -2444,7 +2503,7 @@ if($_SESSION["valid_login"] == TRUE)
 			write_log("A CHECK of the Entire Database & Tables Was Started.", "GU");
 
 			$body_string = '<strong>Checking All Database Tables</strong></font></br></br>
-				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Check Database Results</th></tr><tr><td>';
+				<table class="table table-striped"><thead><tr><th>Check Database Results</th></tr></thead><tr><td>';
 
 			$db_check = mysql_query("CHECK TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
 			$db_check_info = mysql_fetch_array($db_check);
@@ -2464,7 +2523,7 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 			}
 
-			$body_string .= '<strong>CHECK COMPLETE</strong></td></tr></table></div>';
+			$body_string .= '<strong>CHECK COMPLETE</strong></td></tr></table>';
 
 			write_log("A CHECK of the Entire Database & Tables Was Finished.", "GU");			
 		}
@@ -2475,7 +2534,7 @@ if($_SESSION["valid_login"] == TRUE)
 			write_log("A REPAIR of the Entire Database & Tables Was Started.", "GU");
 
 			$body_string = '<strong>Repair All Database Tables</strong></font></br></br>
-				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Repair Database Results</th></tr><tr><td>';
+				<table class="table table-striped"><thead><tr><th>Repair Database Results</th></tr></thead><tr><td>';
 
 			$db_check = mysql_query("REPAIR TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
 			$db_check_info = mysql_fetch_array($db_check);
@@ -2495,7 +2554,7 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 			}
 
-			$body_string .= '<strong>REPAIR FINISHED</strong></td></tr></table></div>';
+			$body_string .= '<strong>REPAIR FINISHED</strong></td></tr></table>';
 
 			write_log("A REPAIR of the Entire Database & Tables Was Finished.", "GU");			
 		}
@@ -2506,7 +2565,7 @@ if($_SESSION["valid_login"] == TRUE)
 			write_log("An OPTIMIZE of the Entire Database & Tables Was Started.", "GU");
 
 			$body_string = '<strong>Optimize All Database Tables</strong></font></br></br>
-				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Optimize Database Results</th></tr><tr><td>';
+				<table class="table table-striped"><thead><tr><th>Optimize Database Results</th></tr></thead><tr><td>';
 
 			$db_check = mysql_query("OPTIMIZE TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
 			$db_check_info = mysql_fetch_array($db_check);
@@ -2526,7 +2585,7 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 			}
 
-			$body_string .= '<strong>OPTIMIZE FINISHED</strong></td></tr></table></div>';
+			$body_string .= '<strong>OPTIMIZE FINISHED</strong></td></tr></table>';
 
 			write_log("An OPTIMIZE of the Entire Database & Tables Was Finished.", "GU");			
 		}
@@ -2608,12 +2667,12 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 			}
 			
-			$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> Log Events</strong>' . $filter_by . '<table border="0" cellspacing="5"><tr><td>
+			$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> Log Events</strong>' . $filter_by . '<table><tr><td>
 				Filter By:</td><td><FORM ACTION="index.php?menu=tools&logs=listmore" METHOD="post"><select name="filter"><option value="all" SELECTED>Show All</option><option value="BA">Balance Indexer</option>
 				<option value="FO">Foundation Manager</option><option value="G">Generation Events</option><option value="GP">Generation Peer Manager</option><option value="GU">GUI - Graphical User Interface</option>
 				<option value="R">Generation Request</option><option value="MA">Main Program</option><option value="PL">Peer Processor</option><option value="TC">Transaction Clerk</option>
 				<option value="T">Transactions</option><option value="TR">Treasurer Processor</option><option value="QC">Queue Clerk</option><option value="WA">Watchdog</option></select></td></tr></table>
-				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th><th>Log</th><th>Attribute</th></tr>';
+				<table class="table table-striped"><thead><tr><th>Date</th><th>Log</th><th>Attribute</th></tr></thead>';
 
 			// Find the last X amount of log events
 			if($_POST["filter"] == "all" || empty($_POST["filter"]) == TRUE)
@@ -2633,14 +2692,17 @@ if($_SESSION["valid_login"] == TRUE)
 				$sql_row = mysql_fetch_array($sql_result);
 
 				$body_string .= '<tr>
-				<td class="style2"><p style="width:162px;">[ ' . $sql_row["timestamp"] . ' ]</br>' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>
-				<td class="style2"><p style="word-wrap:break-word; width:360px;">' . $sql_row["log"] . '</p></td>
-				<td class="style2">' . $sql_row["attribute"] . '</td></tr>';
+				<td>[ ' . $sql_row["timestamp"] . ' ]</br>' . unix_timestamp_to_human($sql_row["timestamp"]) . '</td>
+				<td>' . $sql_row["log"] . '</td>
+				<td>' . $sql_row["attribute"] . '</td></tr>';
 			}
 
-			$body_string .= '<tr><td colspan="3"><hr></hr></td></tr><tr><td><input type="text" size="5" name="show_more_logs" value="' . $show_last .'" /><input type="submit" name="show_last" value="Show Last" /></FORM></td>
-				<td colspan="2"><FORM ACTION="index.php?menu=tools&logs=clear" METHOD="post"><input type="submit" name="clear_logs" value="Clear All Logs" /></FORM></td></tr>';
-			$body_string .= '</table></div>';
+			$body_string .= '<tr><td colspan="3"><hr></hr></td></tr><tr><td><input type="text" size="5" name="show_more_logs" value="' . $show_last .'" /><input type="
+submit" class="btn btn-primary" name="show_last" 
+class="btn btn-primary" value="Show Last" /></FORM></td>
+				<td colspan="2"><FORM ACTION="index.php?menu=tools&logs=clear" METHOD="post"><input type="
+submit" class="btn btn-primary" name="clear_logs" value="Clear All Logs" /></FORM></td></tr>';
+			$body_string .= '</table>';
 		}
 		
 		$text_bar = tools_bar();
@@ -2711,9 +2773,9 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$body_string .= $server_message;
 
-		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong><font color="blue">Private Key</font> to send transactions:</strong></td></tr>
+		$text_bar = '<table><tr><td><strong><font color="blue">Private Key</font> to send transactions:</strong></td></tr>
 			<tr><td><textarea readonly="readonly" rows="8" cols="75">' . base64_encode($my_private_key) . '</textarea></td></tr></table>
-			<table border="0" cellpadding="6"><tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
+			<table><tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
 			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
 
 		$quick_info = '<strong>Do Not</strong> share your Private Key with anyone for any reason.</br></br>
