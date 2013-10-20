@@ -656,7 +656,10 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 			$crypto_balance -= $transaction_amount_sent;
 		}
 	}
-// END - Find every TimeKoin sent FROM this public Key
+	// END - Find every TimeKoin sent FROM this public Key
+
+	// Unset variable to free up RAM
+	unset($sql_result);
 
 	return $crypto_balance;
 }
