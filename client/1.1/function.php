@@ -231,7 +231,7 @@ function transaction_history_query($to_from, $last = 1)
 	// Ask one of my active peers
 	ini_set('user_agent', 'Timekoin Client v' . TIMEKOIN_VERSION);
 	ini_set('default_socket_timeout', 5); // Timeout for request in seconds
-	$cache_refresh_time = 60;
+	$cache_refresh_time = 60; // Default cache time in seconds
 
 	if($to_from == 1)
 	{	
@@ -435,6 +435,8 @@ function check_crypt_balance($public_key)
 
 	$sql_result = mysql_query("SELECT * FROM `active_peer_list` ORDER BY RAND()");
 	$sql_num_results = mysql_num_rows($sql_result);
+	$zero_balance; // Flag for true zero balance
+	$zero_balance_counter; // Count true rezo balance responses
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
@@ -448,13 +450,28 @@ function check_crypt_balance($public_key)
 
 		if(strlen($poll_peer) >= 1)
 		{
-			return $poll_peer;
+			if($poll_peer !== "0" || $zero_balance_counter > 1) // If the peer returns 0, try another peer just to make sure
+			{
+				// If enough peers are reporting a true zero balance, return it to speed up response
+				return $poll_peer;
+			}
+			else
+			{
+				$zero_balance = TRUE;
+				$zero_balance_counter++; // Count how many peers report a true zero balance
+			}
 		}
+	}
+
+	if($zero_balance == TRUE)
+	{
+		// Peers must have reported a true 0 balance
+		return 0;
 	}
 
 	// No peers would respond
 	write_log("No Peers Answered the Public Key Balance Poll", "GU");
-	return;
+	return "NA";
 }
 //***********************************************************************************
 //***********************************************************************************
@@ -516,13 +533,13 @@ function tk_time_convert($time)
 //***********************************************************************************
 function db_cache_balance($my_public_key)
 {
-	$cache_refresh_time = 30; // Refresh TTL
+	$cache_refresh_time = 30; // Refresh TTL in seconds
 	
 	// Check server balance via cache
 	$billfold_balance = mysql_result(mysql_query("SELECT * FROM `data_cache` WHERE `field_name` = 'billfold_balance' LIMIT 1"),0,"field_data");
 	$timestamp_cache = intval(find_string("---time=", "---data", $billfold_balance));
 
-	if(time() - $cache_refresh_time < $timestamp_cache) // Cache TTL
+	if(time() - $cache_refresh_time <= $timestamp_cache) // Cache TTL
 	{
 		// Return Cache Data
 		return intval(find_string("---data=", "---end", $billfold_balance));
