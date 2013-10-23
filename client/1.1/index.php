@@ -51,6 +51,9 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 				// All match, set login variable and store username in cookie
 				$_SESSION["login_username"] = $http_username;
 				$_SESSION["valid_login"] = TRUE;
+
+				initialization_database(); // Do any required data upgrades
+
 				header("Location: index.php");
 				exit;
 			}
@@ -131,8 +134,19 @@ if($_SESSION["valid_login"] == TRUE)
 			$display_balance = number_format($display_balance);
 		}
 
-		$text_bar = '<table border="0"><tr><td style="width:260px"><strong>Current Billfold Balance: <font color="green">' . $display_balance . '</font></strong></td></tr>
-			<tr></table>';
+		$update_available = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'update_available' LIMIT 1"),0,"field_data");
+
+		if($update_available == TRUE)
+		{
+			$update_available = '<tr><td><font color="green"><strong>*** NEW SOFTWARE UPDATE AVAILABLE ***</strong></font></td></tr>';
+		}
+		else
+		{
+			$update_available = NULL;
+		}
+
+		$text_bar = '<table border="0"><tr><td style="width:325px"><strong>Current Billfold Balance: <font color="green">' . $display_balance . '</font></strong></td></tr>
+			<tr>' . $update_available . '</table>';
 
 		$quick_info = 'This section will contain helpful information about each tab in the software.';
 

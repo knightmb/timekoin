@@ -619,6 +619,15 @@ function tk_client_task()
 	// Repeat Task
 	peer_list();
 	transaction_queue();
+	
+	if(rand(1,300) == 100) // Check for updates
+	{
+		if(check_for_updates(TRUE) == 1)
+		{
+			// Update available, alert user
+			mysql_query("UPDATE `options` SET `field_data` = '1' WHERE `options`.`field_name` = 'update_available' LIMIT 1");
+		}
+	}
 	return;
 }
 //***********************************************************************************

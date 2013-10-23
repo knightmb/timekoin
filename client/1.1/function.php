@@ -717,7 +717,7 @@ function generate_new_keys()
 }
 //***********************************************************************************	
 //***********************************************************************************
-function check_for_updates()
+function check_for_updates($code_feedback = FALSE)
 {
 	// Poll timekoin.com for any program updates
 	$context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
@@ -730,12 +730,17 @@ function check_for_updates()
 
 	if($poll_version > TIMEKOIN_VERSION && empty($poll_version) == FALSE)
 	{
+		if($code_feedback == TRUE) { return 1; } // Code feedback only that update is available
+		
 		$update_check1 .= '<strong>New Version Available <font color="blue">' . $poll_version . '</font></strong></br></br>
 		<FORM ACTION="index.php?menu=options&upgrade=doupgrade" METHOD="post"><input type="submit" name="Submit3" value="Perform Software Update" /></FORM>';
 	}
 	else if($poll_version <= TIMEKOIN_VERSION && empty($poll_version) == FALSE)
 	{
+		// No update available
 		$update_check1 .= 'Current Version: <strong>' . TIMEKOIN_VERSION . '</strong></br></br><font color="blue">No Update Necessary.</font>';	
+		// Reset available update alert
+		mysql_query("UPDATE `options` SET `field_data` = '0' WHERE `options`.`field_name` = 'update_available' LIMIT 1");
 	}
 	else
 	{
@@ -901,6 +906,9 @@ function do_updates()
 		//****************************************************
 		$finish_message = file_get_contents("https://timekoin.com/tkcliupdates/v$poll_version/ZZZfinish.txt", FALSE, $context, NULL);
 		$update_status .= '</br>' . $finish_message;
+
+		// Reset available update alert
+		mysql_query("UPDATE `options` SET `field_data` = '0' WHERE `options`.`field_name` = 'update_available' LIMIT 1");
 	}
 	else
 	{
@@ -910,21 +918,15 @@ function do_updates()
 	return $update_status;
 }
 //***********************************************************************************
-function find_file($dir, $pattern)
+function initialization_database()
 {
-	// Get a list of all matching files in the current directory
-	$files = glob("$dir/$pattern");
-
-	// Find a list of all directories in the current directory
-	//foreach (glob("$dir/{.[^.]*,*}", GLOB_BRACE|GLOB_ONLYDIR) as $sub_dir)
-	foreach (glob("$dir/{*}", GLOB_BRACE|GLOB_ONLYDIR) as $sub_dir)
+	// Automatic Update Check Record
+	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'update_available' LIMIT 1"),0,0);
+	if($new_record_check === FALSE)
 	{
-		$arr = find_file($sub_dir, $pattern);  // Resursive call
-		$files = array_merge($files, $arr); // Merge array with files from subdirectory
+		// Does not exist, create it
+		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('update_available', '0')");
 	}
-
-	return $files;
 }
 //***********************************************************************************
-
 ?>
