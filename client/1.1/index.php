@@ -190,7 +190,6 @@ if($_SESSION["valid_login"] == TRUE)
 
 				if($full_key == "ERROR" || empty($full_key) == TRUE)
 				{
-					//$full_key = "Easy Key NOT Found";
 					$easy_key_fail = TRUE;
 				}
 			}
@@ -224,27 +223,6 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string .= '</table></div>';
 		}
 
-		if($_GET["task"] == "edit")
-		{
-			// Edit Address
-			$name = mysql_result(mysql_query("SELECT name FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
-			$easy_key = mysql_result(mysql_query("SELECT easy_key FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
-			$full_key = mysql_result(mysql_query("SELECT full_key FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
-
-			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
-				<tr><th>Address Name</th><th>Easy Key</th><th>Full Public Key</th><th></th><th></th></tr>';
-
-			$body_string .= '<FORM ACTION="index.php?menu=address&task=edit_save&name_id=' . $_GET["name_id"] . '" METHOD="post"><tr>
-			 <td class="style2" valign="top"><input type="text" name="name" size="16" value="' . $name . '"/></td>
-			 <td class="style2" valign="top"><input type="text" name="easy_key" size="16" value="' . $easy_key . '"/></td>
-			 <td class="style2"><textarea name="full_key" rows="6" cols="30">' . $full_key . '</textarea></td>			 
-			 <td valign="top"><input type="image" src="img/edit-icon.gif" title="Edit Address" name="submit1" border="0"></FORM></td>
-			 <td valign="top"><FORM ACTION="index.php?menu=address" METHOD="post"><input type="image" src="img/hr.gif" title="Cancel" name="submit2" border="0"></FORM>
-			 </td></tr>';
-
-			$body_string .= '</table></div>';
-		}
-
 		if($_GET["task"] == "edit_save")
 		{
 			// Save New Address
@@ -263,14 +241,48 @@ if($_SESSION["valid_login"] == TRUE)
 
 				if($full_key == "ERROR" || empty($full_key) == TRUE)
 				{
-					$full_key = "Easy Key NOT Found";
+					$easy_key_edit_fail = TRUE;
 				}
 			}
 
-			mysql_query("UPDATE `address_book` SET `name` = '" . $_POST["name"] . "', `easy_key` = '$easy_key', `full_key` = '$full_key' WHERE `address_book`.`id` = " . $_GET["name_id"]);
+			if($easy_key_edit_fail == FALSE)
+			{
+				mysql_query("UPDATE `address_book` SET `name` = '" . $_POST["name"] . "', `easy_key` = '$easy_key', `full_key` = '$full_key' WHERE `address_book`.`id` = " . $_GET["name_id"]);
+			}
 		}
 
-		if($_GET["task"] != "new" && $_GET["task"] != "edit" && $easy_key_fail == FALSE) // Default View
+		if($_GET["task"] == "edit" || $easy_key_edit_fail == TRUE)
+		{
+			if($easy_key_edit_fail == TRUE)
+			{
+				$easy_edit_messasge = '<font color="red"><strong>Easy Key Lookup Failed</strong></font>';
+				$name = $_POST["name"];
+				$easy_key = $_POST["easy_key"];
+				$full_key = $_POST["full_key"];
+			}			
+			else
+			{
+				// Edit Address
+				$name = mysql_result(mysql_query("SELECT name FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
+				$easy_key = mysql_result(mysql_query("SELECT easy_key FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
+				$full_key = mysql_result(mysql_query("SELECT full_key FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
+			}
+
+			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
+				<tr><th>Address Name</th><th>Easy Key</th><th>Full Public Key</th><th></th><th></th></tr>';
+
+			$body_string .= '<FORM ACTION="index.php?menu=address&task=edit_save&name_id=' . $_GET["name_id"] . '" METHOD="post"><tr>
+			 <td class="style2" valign="top"><input type="text" name="name" size="16" value="' . $name . '"/></td>
+			 <td class="style2" valign="top"><input type="text" name="easy_key" size="16" value="' . $easy_key . '" /></br>'.$easy_edit_messasge.'</td>
+			 <td class="style2"><textarea name="full_key" rows="6" cols="30">' . $full_key . '</textarea></td>			 
+			 <td valign="top"><input type="image" src="img/edit-icon.gif" title="Edit Address" name="submit1" border="0"></FORM></td>
+			 <td valign="top"><FORM ACTION="index.php?menu=address" METHOD="post"><input type="image" src="img/hr.gif" title="Cancel" name="submit2" border="0"></FORM>
+			 </td></tr>';
+
+			$body_string .= '</table></div>';
+		}
+
+		if($_GET["task"] != "new" && $_GET["task"] != "edit" && $easy_key_fail == FALSE && $easy_key_edit_fail == FALSE) // Default View
 		{
 			$sql = "SELECT * FROM `address_book` ORDER BY `address_book`.`name` ASC";
 			$sql_result = mysql_query($sql);
@@ -296,7 +308,7 @@ if($_SESSION["valid_login"] == TRUE)
 				<td colspan="6"><FORM ACTION="index.php?menu=address&task=new" METHOD="post"><input type="submit" value="Add New Address"/></FORM></td></tr></table></div>';
 		}
 
-		if($_GET["task"] != "new" && $easy_key_fail == FALSE) // Default View
+		if($_GET["task"] != "new" && $easy_key_fail == FALSE && $easy_key_edit_fail == FALSE) // Default View
 		{		
 			$quick_info = "The <strong>Address Book</strong> allows long, obscure public keys to be translated to friendly names.</br></br>
 	Transactions can also quickly be created from here.</br></br>
