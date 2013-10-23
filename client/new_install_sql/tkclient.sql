@@ -155,6 +155,7 @@ INSERT INTO `options` (`field_name`, `field_data`) VALUES
 ('password', '5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5'),
 ('public_key_font_size', '3'),
 ('refresh_realtime_home', '10'),
+('update_available', '0'),
 ('username', 'ee27af0f210c0e6d81cb852197a04cb21f11bad4967365b5023ebd8cb513cbe8');
 
 -- --------------------------------------------------------
