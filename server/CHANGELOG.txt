@@ -1,12 +1,15 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 2.42 (Released 2013-10-24)
+============================================
+- 0000068: [General Issue] Transaction Foundation Manager can get stuck in a repair loop
+
 Timekoin Server - 2.41 (Released 2013-10-17)
 ============================================
 - Merge pull request #3 from Warmach/patch-3
 - Merge pull request #2 from Warmach/patch-2
 - Added more logging for peer elections to help with server operators troubleshooting issues
 - 0000065: [General Issue] Bug in Domain check variable in genpeer.php prevents peers from joining election queue
-
 
 Timekoin Server - 2.4 (Released 2013-05-05)
 ===========================================
