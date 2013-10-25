@@ -354,7 +354,6 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 		}
 		else
 		{
-			// Took longer than 10 seconds to complete
 			if($hash_check_counter <= 1) // Limit lowest poll to 1
 			{
 				$new_peer_poll_blocks = 1;
@@ -369,7 +368,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				else
 				{
 					$new_peer_poll_blocks = $hash_check_counter - 1;
-				}
+				}				
 			}
 		}
 

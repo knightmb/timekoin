@@ -104,6 +104,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 	$foundation_hash_match = 0;
 	$foundation_hash_different = 0;
 	$poll_errors = 0;
+	$repair_block = FALSE;
 
 	if($sql_num_results > 0)
 	{
@@ -236,6 +237,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 					{
 						if($foundation_hash_different / $sql_num_results >= 2 / 3)
 						{
+							// 2/3 or more of peers say something is wrong
 							$repair_block = TRUE;
 						}
 					}
@@ -246,6 +248,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 					// to disagree before a block wipe/repair is scheduled.
 					if($foundation_hash_match == 0 && $poll_errors == 0)
 					{
+						// 100% of all peers say something is wrong
 						$repair_block = TRUE;
 					}
 				}
@@ -316,10 +319,8 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 		if($current_generation_block - ($current_foundation_block * 500) > 50 || $current_foundation_block - $foundation_blocks > 1)
 		{
 			// Numbers don't match, what do we have?
-			$sql = "SELECT * FROM `transaction_foundation` ORDER BY `block`";
+			$sql = "SELECT * FROM `transaction_foundation` ORDER BY `transaction_foundation`.`block` ASC";
 			$sql_result = mysql_query($sql);
-
-			$build_success = 0;
 
 			for ($i = 0; $i < $current_foundation_block; $i++)
 			{
@@ -329,7 +330,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 
 				if($i === intval($block))
 				{
-					//Block exist in the correct order
+					// Block exist in the correct order
 					if(empty($hash) == FALSE)
 					{
 						// Hash already exist, no need to check again
@@ -337,13 +338,13 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 					}
 					else
 					{
-						// Need to rebuild this transaction foundation
+						// Need to build this transaction foundation
 						$rebuild_foundation = TRUE;
 					}
 				} // End block exist check
 				else
 				{
-					// Need to rebuild this transaction foundation
+					// Need to build this transaction foundation
 					$rebuild_foundation = TRUE;
 				}
 
@@ -355,9 +356,10 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 
 					if($transclerk_block_check < ($i + 1) * 500 && $transclerk_block_check != "0")
 					{
-						// Break out of loop; doing anything until transclerk is finished with this range
+						// Break out of loop; Don't do anything until transclerk is finished with this range
 						break;
 					}
+
 					write_log("Building New Transaction Foundation #$i", "FO");
 
 					// Start the process to rebuild the transaction foundation
@@ -400,17 +402,12 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 							{
 								write_log("FAILED to Clear Balance Index Table after Transaction Foundation #$i was Created", "FO");
 							}
-
-							$build_success++;
-
-							if($build_success >= 5)
-							{
-								// Break out of this loop in case there is a lot
-								// of history to catch up on. We don't want to tie
-								// up the server with building many transaction foundations
-								// in a row.
-								break;
-							}
+							
+							// Break out of this loop in case there is a lot
+							// of history to catch up on. We don't want to tie
+							// up the server with building many transaction foundations
+							// in a row.
+							break;
 						}
 					}
 					else
@@ -440,6 +437,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 } // End transaction cycle allowed check
 
 // Unset variable to free up RAM
+	unset($sql_result);
 	unset($sql_result2);
 
 //***********************************************************************************
