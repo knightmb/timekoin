@@ -181,6 +181,7 @@ CREATE TABLE IF NOT EXISTS `options` (
 INSERT INTO `options` (`field_name`, `field_data`) VALUES
 ('allow_ambient_peer_restart', '0'),
 ('allow_LAN_peers', '0'),
+('auto_update_generation_IP', '0'),
 ('first_contact_server', '---ip=---domain=timekoin.com---subfolder=timekoin---port=80---end'),
 ('first_contact_server', '---ip=---domain=amt-wisp1.dyndns.org---subfolder=timekoin---port=88---end'),
 ('first_contact_server', '---ip=---domain=timekoin2.dyndns.org---subfolder=timekoin---port=80---end'),

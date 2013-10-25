@@ -182,6 +182,41 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 	}
 //***********************************************************************************
 //***********************************************************************************
+// Generation IP Auto Update Detection
+	$auto_update_generation_IP = intval(mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,"field_data"));
+	
+	if(rand(1,100) == 100 && $auto_update_generation_IP == 1) // Randomize to avoid spamming
+	{
+		$generation_IP = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,"field_data");
+		$poll_IP = filter_sql(poll_peer(NULL, 'timekoin.net', NULL, 80, 46, "ipv4.php"));
+
+		if(empty($generation_IP) == TRUE) // IP Field Empty
+		{
+			if(empty($poll_IP) == FALSE)
+			{
+				if(mysql_query("UPDATE `options` SET `field_data` = '$poll_IP' WHERE `options`.`field_name` = 'generation_IP' LIMIT 1") == TRUE)
+				{
+					write_log("Generation IP Updated to ($poll_IP)", "GP");
+				}
+			}
+		}
+		else
+		{
+			// Check that existing IP still matches current IP and update if there is no match
+			if($generation_IP != $poll_IP)
+			{
+				if(empty($poll_IP) == FALSE)
+				{
+					if(mysql_query("UPDATE `options` SET `field_data` = '$poll_IP' WHERE `options`.`field_name` = 'generation_IP' LIMIT 1") == TRUE)
+					{
+						write_log("Generation IP Updated from ($generation_IP) to ($poll_IP)", "GP");
+					}
+				}
+			}
+		}
+	}
+//***********************************************************************************	
+//***********************************************************************************
 	// How does my generation peer list compare to others?
 	// Ask all of my active peers
 	ini_set('user_agent', 'Timekoin Server (Genpeer) v' . TIMEKOIN_VERSION);	

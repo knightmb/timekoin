@@ -1346,6 +1346,13 @@ function initialization_database()
 	{
 		// Does not exist, create it
 		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('peer_failure_grade', '30')");
+	}
+
+	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,0);
+	if($new_record_check === FALSE)
+	{
+		// Does not exist, create it
+		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('auto_update_generation_IP', '0')");
 	}	
 //**************************************
 	// Check for an empty generation IP address,
@@ -1356,9 +1363,9 @@ function initialization_database()
 	if(empty($poll_IP) == TRUE)
 	{
 		ini_set('user_agent', 'Timekoin Server (Main) v' . TIMEKOIN_VERSION);
-		ini_set('default_socket_timeout', 5); // Timeout for request in seconds
+		ini_set('default_socket_timeout', 3); // Timeout for request in seconds
 		
-		$poll_IP = poll_peer(NULL, 'timekoin.net', NULL, 80, 46, "ipv4.php");
+		$poll_IP = filter_sql(poll_peer(NULL, 'timekoin.net', NULL, 80, 46, "ipv4.php"));
 
 		if(empty($poll_IP) == FALSE)
 		{

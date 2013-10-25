@@ -1,5 +1,11 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 2.43 (Released 2013-10-26)
+============================================
+- 0000053: [Feature Request] Display how long until the next generation cycle
+- 0000069: [General Issue] Server Peers with dynamic IPs on Domain Names can get out of sync IPs with the generation IP
+
+
 Timekoin Server - 2.42 (Released 2013-10-24)
 ============================================
 - 0000068: [General Issue] Transaction Foundation Manager can get stuck in a repair loop

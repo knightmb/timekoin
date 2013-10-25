@@ -1070,10 +1070,14 @@ if($_SESSION["valid_login"] == TRUE)
 											$sql = "UPDATE `options` SET `field_data` = '" . $_POST["perm_peer_priority"] . "' WHERE `options`.`field_name` = 'perm_peer_priority' LIMIT 1";
 											if(mysql_query($sql) == TRUE)
 											{											
-												$server_code .= '</br><font color="blue"><strong>Server Settings Updated...</strong></font></br></br>';
-											}											
+												$sql = "UPDATE `options` SET `field_data` = '" . $_POST["auto_update_IP"] . "' WHERE `options`.`field_name` = 'auto_update_generation_IP' LIMIT 1";
+												if(mysql_query($sql) == TRUE)
+												{
+													$server_code .= '</br><font color="blue"><strong>Server Settings Updated...</strong></font></br></br>';
+												}
+											}										
 										}
-									}									
+									}							
 								}
 							}
 						}
@@ -1690,6 +1694,17 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 		}
 
+		for ($i = 0; $i < $max_cycles_ahead; $i++)
+		{
+			$current_generation_cycle = transaction_cycle($i);
+
+			if(generation_cycle($i) == TRUE)
+			{
+				$time_generate = '<font color="blue"><strong>' . tk_time_convert($current_generation_cycle - time());
+				break;
+			}
+		}
+
 		$text_bar = '<table cellspacing="10" border="0"><tr><td valign="top" width="230">' . $generate_currency . '</td><td>Generating Peers: <font color="green"><strong>' . $generating_peers_now . '</strong></font></br>
 			Queue for Election: <font color="blue"><strong>' . $generate_peer_queue . '</strong></font></td></tr>
 			<tr><td align="right">' . $continuous_production . '</td><td>' . $generate_rate . '</td></tr>
@@ -1697,8 +1712,10 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$quick_info = 'You must remain online and have a valid Internet accessible server to generate currency.</br></br>
 			Timekoin will attempt to auto-detect the <font color="blue">Generation IP</font> when the field is left blank upon service starting.</br></br>
+			There also exist a setting in the system tab to auto-update the server IP if is changes frequently.</br></br>
 			You can manually update this field if the IP address detected is incorrect.</br></br>
-			Next Peer Election in ' . $time_election . '</strong></font>';
+			Next Peer Election in</br>' . $time_election . '</strong></font></br></br>
+			Currency Generation in</br>' . $time_generate . '</strong></font>';
 		
 		home_screen('Crypto Currency Generation', $text_bar, $body_string , $quick_info);
 		exit;
