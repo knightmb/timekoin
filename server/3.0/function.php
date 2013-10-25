@@ -5,7 +5,7 @@ define("TRANSACTION_EPOCH","1338576300"); // Epoch timestamp: 1338576300
 define("ARBITRARY_KEY","01110100011010010110110101100101"); // Space filler for non-encryption data
 define("SHA256TEST","8c49a2b56ebd8fc49a17956dc529943eb0d73c00ee6eafa5d8b3ba1274eb3ea4"); // Known SHA256 Test Result
 define("TIMEKOIN_VERSION","3.0"); // This Timekoin Software Version
-define("NEXT_VERSION","current_version19.txt"); // What file to check for future versions
+define("NEXT_VERSION","current_version20.txt"); // What file to check for future versions
 
 error_reporting(E_ERROR | E_CORE_ERROR | E_COMPILE_ERROR); // Disable most error reporting except for fatal errors
 ini_set('display_errors', FALSE);
@@ -656,10 +656,7 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 			$crypto_balance -= $transaction_amount_sent;
 		}
 	}
-	// END - Find every TimeKoin sent FROM this public Key
-
-	// Unset variable to free up RAM
-	unset($sql_result);
+// END - Find every TimeKoin sent FROM this public Key
 
 	return $crypto_balance;
 }
@@ -1349,6 +1346,13 @@ function initialization_database()
 	{
 		// Does not exist, create it
 		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('peer_failure_grade', '30')");
+	}
+
+	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,0);
+	if($new_record_check === FALSE)
+	{
+		// Does not exist, create it
+		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('auto_update_generation_IP', '0')");
 	}	
 //**************************************
 	// Check for an empty generation IP address,
@@ -1359,9 +1363,9 @@ function initialization_database()
 	if(empty($poll_IP) == TRUE)
 	{
 		ini_set('user_agent', 'Timekoin Server (Main) v' . TIMEKOIN_VERSION);
-		ini_set('default_socket_timeout', 5); // Timeout for request in seconds
+		ini_set('default_socket_timeout', 3); // Timeout for request in seconds
 		
-		$poll_IP = poll_peer(NULL, 'timekoin.net', NULL, 80, 46, "ipv4.php");
+		$poll_IP = filter_sql(poll_peer(NULL, 'timekoin.net', NULL, 80, 46, "ipv4.php"));
 
 		if(empty($poll_IP) == FALSE)
 		{
