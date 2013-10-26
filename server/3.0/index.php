@@ -1356,69 +1356,6 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_text = options_screen2();
 		}
 
-		if($_GET["find"] == "edit_php")
-		{
-			// Save manual php program location entry
-			$sql = "UPDATE `options` SET `field_data` = '" . addslashes($_POST["php_file_path"]) . "' WHERE `options`.`field_name` = 'php_location' LIMIT 1";
-
-			if(mysql_query($sql) == TRUE)
-			{
-				$body_text = options_screen2();
-				$body_text .= '<font color="blue"><strong>PHP File Location Saved!</strong></font>';
-			}
-			else
-			{
-				$body_text .= '<strong>PHP File Location ERROR.</strong>';
-			}
-		}
-
-		if($_GET["find"] == "php")
-		{
-			set_time_limit(300); // This could take a while
-
-			// Search the entire hard drive looking for the php program
-			if(getenv("OS") == "Windows_NT")
-			{
-				$find_php = find_file('C:', 'php-win.exe');
-
-				if(empty($find_php[0]) == TRUE)
-				{
-					// Try D: if not found on C:
-					$find_php = find_file('D:', 'php-win.exe');
-				}
-
-				// Filter strings
-				$symbols = array("/");
-				$find_php[0] = str_replace($symbols, "\\", $find_php[0]);
-
-				// Filter for path setting
-				$symbols = array("php-win.exe");
-				$find_php[0] = str_replace($symbols, "", $find_php[0]);
-			}
-			else
-			{
-				$find_php = find_file('/usr', 'php');
-			}
-
-			if(empty($find_php[0]) == TRUE)
-			{
-				// PHP File not found
-				$body_text = options_screen2();
-				$body_text .= '<font color="red"><strong>Could NOT locate PHP program file!</strong></font>';
-			}
-			else
-			{
-				// Save the found php path
-				$sql = "UPDATE `options` SET `field_data` = '" . addslashes($find_php[0]) . "' WHERE `options`.`field_name` = 'php_location' LIMIT 1";
-
-				if(mysql_query($sql) == TRUE)
-				{
-					$body_text = options_screen2();
-					$body_text .= '<font color="blue"><strong>PHP File Location Found & Saved!</strong></font>';
-				}
-			}
-		}
-
 		if($_GET["newkeys"] == "confirm")
 		{
 			if(generate_new_keys() == TRUE)
@@ -1510,6 +1447,13 @@ if($_SESSION["valid_login"] == TRUE)
 			if($hash_settings_saved == TRUE) { $body_text .= '</br><font color="blue"><strong>Hashcode Settings Saved!</strong></font>'; }
 		}
 
+		if($_GET["manage"] == "tabs")
+		{
+			home_screen("Show/Hide Tabs", NULL, options_screen4() , "You can hide or show certain tabs at the top.");
+			exit;
+		}
+
+
 		if($_GET["upgrade"] == "check" || $_GET["upgrade"] == "doupgrade")
 		{
 			$quick_info = 'This will check with the Timekoin website for any software updates that can be installed.';
@@ -1530,8 +1474,7 @@ if($_SESSION["valid_login"] == TRUE)
 			</br></br><strong>Generate New Keys</strong> will create a new random key pair and save it in the database.
 			</br></br><strong>Check for Updates</strong> will check for any program updates that can be downloaded directly into Timekoin.
 			</br></br><strong>Hash Code</strong> is a private code you create for any external program or server that request access to more advanced features of your Timekoin server.
-			</br></br><strong>Super Peer Limit</strong> controls how many transaction cycles other peers will download in bulk.
-			</br></br><strong>PHP File Path</strong> is for Windows OS users having path issues with PHP. Leave blank to turn off this option.';
+			</br></br><strong>Super Peer Limit</strong> controls how many transaction cycles other peers will download in bulk.';
 
 			home_screen("Options & Personal Settings", options_screen(), $body_text , $quick_info);
 		}

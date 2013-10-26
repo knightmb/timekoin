@@ -222,7 +222,6 @@ function options_screen2()
 $home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
 $peerlist_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_peerlist' LIMIT 1"),0,"field_data");
 $queue_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_queue' LIMIT 1"),0,"field_data");
-$php_location = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,"field_data");
 $super_peer = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'super_peer' LIMIT 1"),0,"field_data");
 $peer_failure_grade = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,"field_data");
 
@@ -231,24 +230,23 @@ if($super_peer == 1)
 	$super_peer = 500;
 }
 
-return '<table border="0"><tr><td><strong>Refresh Rates (seconds) for Realtime Pages [0 = disable]</strong></br></br><FORM ACTION="index.php?menu=options&refresh=change" METHOD="post"></td></tr>
-<tr><td style="width:415px" valign="bottom" align="right">
+return '<table border="0"><tr><td style="width:415px" valign="bottom" align="right"><strong>Refresh Rates (seconds) for Realtime Pages [0 = disable]</strong></br></br>
+<FORM ACTION="index.php?menu=options&refresh=change" METHOD="post"></td><td style="width:215px"></td></tr>
+<tr><td valign="bottom" align="right">
 Home: <input type="text" name="home_update" size="2" value="' . $home_update . '" /></br>
 Peerlist: <input type="text" name="peerlist_update" size="2" value="' . $peerlist_update . '" /></br>
-Transaction Queue: <input type="text" name="queue_update" size="2" value="' . $queue_update . '" /></td></tr>
-<tr><td></td></tr>
-<tr><td align="right"><strong>Super Peer Limit (10 - 500)</strong></br><input type="text" name="super_peer_limit" size="3" value="' . $super_peer . '" /></br></td></tr>
-<tr><td></td></tr>
-<tr><td align="right"><strong>Peer Failure Limit (1 - 100)</strong></br><input type="text" name="peer_failure_grade" size="3" value="' . $peer_failure_grade . '" /></br></td>
-<tr><td align="right"><input type="submit" name="Submit2" value="Save Options" /></FORM></td></tr>
-<tr><td><hr></hr></td></tr>
+Transaction Queue: <input type="text" name="queue_update" size="2" value="' . $queue_update . '" /></td><td></td></tr>
+<tr><td></td><td></td></tr>
+<tr><td align="right"><strong>Super Peer Limit (10 - 500)</strong></br><input type="text" name="super_peer_limit" size="3" value="' . $super_peer . '" /></br></td><td></td></tr>
+<tr><td></td><td></td></tr>
+<tr><td align="right"><strong>Peer Failure Limit (1 - 100)</strong></br><input type="text" name="peer_failure_grade" size="3" value="' . $peer_failure_grade . '" /></br></td><td></td>
+<tr><td align="right"><input type="submit" name="Submit2" value="Save Options" /></FORM></td><td></td></tr>
+<tr><td colspan="2"><hr></hr></td></tr>
 <tr><td align="right"><FORM ACTION="index.php?menu=options&hashcode=manage" METHOD="post"><input type="submit" name="Submit3" value="Manage Hash Code Access" /></FORM></td>
-</td><td style="width:215px" valign="bottom" align="right"><FORM ACTION="index.php?menu=options&upgrade=check" METHOD="post"><input type="submit" name="Submit3" value="Check for Updates" /></FORM></td></tr>
-</table>
-<table border="0"><tr><td colspan="2" style="width:630px"><hr></hr></td></tr>
-<tr><td><FORM ACTION="index.php?menu=options&find=edit_php" METHOD="post">
-<strong>PHP File Path:</strong> <input type="text" size="40" name="php_file_path" value="' . $php_location . '" /><input type="submit" name="edit_php_location" value="Change" /></FORM></td>
-<td><FORM ACTION="index.php?menu=options&find=php" METHOD="post"><input type="submit" name="find_php_location" value="Find PHP" /></FORM></td></tr>
+</td><td valign="bottom" align="right"><FORM ACTION="index.php?menu=options&upgrade=check" METHOD="post"><input type="submit" name="Submit3" value="Check for Updates" /></FORM></td></tr>
+<tr><td colspan="2"><hr></hr></td></tr>
+<tr><td align="right"><FORM ACTION="index.php?menu=options&manage=tabs" METHOD="post"><input type="submit" name="Submit4" value="Menu Tabs" /></FORM></td>
+<td align="right"><FORM ACTION="index.php?menu=options&manage=plugins" METHOD="post"><input type="submit" name="Submit5" value="Manage Plugins" /></FORM></td></tr>
 </table>
 ';
 
@@ -267,6 +265,42 @@ function options_screen3()
 	}	
 	
 	return;
+} 
+//***********************************************************
+//***********************************************************
+function options_screen4()
+{
+$home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
+
+
+return '<table border="0" cellpadding="3"><tr><td style="width:200px" valign="bottom" align="center" colspan="2"><strong>Standard Tabs</strong>
+<FORM ACTION="index.php?menu=options&tabs=change" METHOD="post"></td></tr>
+<tr><td valign="top" align="right">Peerlist</td>
+<td valign="top" align="left" style="width:200px"><input type="radio" name="tab_peerlist" value="0" ' . $tab_peerlist_disable . '>Disable <input type="radio" name="tab_peerlist" value="1" ' . $tab_peerlist_enable . '>Enable</td></tr>
+<tr><td valign="top" align="right">Transaction Queue</td>
+<td valign="top" align="left"><input type="radio" name="tab_trans_queue" value="0" ' . $trans_queue_disable . '>Disable <input type="radio" name="tab_trans_queue" value="1" ' . $trans_queue_enable . '>Enable</td></tr>
+<tr><td valign="top" align="right">Send / Receive</td>
+<td valign="top" align="left"><input type="radio" name="tab_send_receive" value="0" ' . $send_receive_disable . '>Disable <input type="radio" name="tab_send_receive" value="1" ' . $send_receive_enable . '>Enable</td></tr>
+<tr><td valign="top" align="right">History</td>
+<td valign="top" align="left"><input type="radio" name="tab_history" value="0" ' . $history_disable . '>Disable <input type="radio" name="tab_history" value="1" ' . $history_enable . '>Enable</td></tr>
+<tr><td valign="top" align="right">Generation</td>
+<td valign="top" align="left"><input type="radio" name="tab_generation" value="0" ' . $generation_disable . '>Disable <input type="radio" name="tab_generation" value="1" ' . $generation_enable . '>Enable</td></tr>
+<tr><td valign="top" align="right">System</td>
+<td valign="top" align="left"><input type="radio" name="tab_system" value="0" ' . $system_disable . '>Disable <input type="radio" name="tab_system" value="1" ' . $system_enable . '>Enable</td></tr>
+<tr><td valign="top" align="right">Backup</td>
+<td valign="top" align="left"><input type="radio" name="tab_backup" value="0" ' . $backup_disable . '>Disable <input type="radio" name="tab_backup" value="1" ' . $backup_enable . '>Enable</td></tr>
+<tr><td valign="top" align="right">Tools</td>
+<td valign="top" align="left"><input type="radio" name="tab_tools" value="0" ' . $tools_disable . '>Disable <input type="radio" name="tab_tools" value="1" ' . $tools_enable . '>Enable</td></tr>
+<tr><td colspan="2"><hr></hr></td></tr>
+<td valign="bottom" align="center" colspan="2"><strong>Plugin Tabs</strong></td></tr>
+<tr><td valign="top" align="right">Plugin1</td>
+<td valign="top" align="left"><input type="radio" name="plugin1" value="0" CHECKED>Disable <input type="radio" name="plugin1" value="1" >Enable</td></tr>
+
+
+<tr><td align="right" colspan="2"><input type="submit" name="Submit1" value="Save Tabs" /></FORM></td></tr>
+</table>
+';
+
 } 
 //***********************************************************
 //***********************************************************

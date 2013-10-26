@@ -24,52 +24,6 @@ if($_GET["action"]=="begin_main")
 		// Database Initialization
 		initialization_database();
 
-		// Check if a custom PHP path is being used
-		$php_location = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,"field_data");
-		
-		if(empty($php_location) == FALSE)
-		{
-			// Check to make sure the binary/exe file exist before starting
-			if(getenv("OS") == "Windows_NT")
-			{
-				if(file_exists($php_location . "php-win.exe") == FALSE)
-				{
-					set_time_limit(99);					
-					// Can't start Timekoin, php-win.exe is missing or the path is wrong.
-					// Try to find the file before starting.
-					$find_php = find_file('C:', 'php-win.exe');
-
-					if(empty($find_php[0]) == TRUE)
-					{
-						// Try D: if not found on C:
-						$find_php = find_file('D:', 'php-win.exe');
-					}
-
-					// Filter strings
-					$symbols = array("/");
-					$find_php[0] = str_replace($symbols, "\\", $find_php[0]);
-
-					// Filter for path setting
-					$symbols = array("php-win.exe");
-					$find_php[0] = str_replace($symbols, "", $find_php[0]);
-
-					if(empty($find_php[0]) == TRUE)
-					{
-						// Could not find it anywhere :(
-						header("Location: index.php?menu=system&code=98");
-						exit;
-					}
-					else
-					{
-						// Found it! Save location and start Timekoin
-						mysql_query("UPDATE `options` SET `field_data` = '" . addslashes($find_php[0]) . "' WHERE `options`.`field_name` = 'php_location' LIMIT 1");
-					}
-				} // Check if php-win.exe exist check
-
-			} // Windows OS Check
-
-		} // End Database Check for custom PHP location
-
 		mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'main_last_heartbeat' LIMIT 1");
 
 		// Set loop at active now
