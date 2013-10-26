@@ -1655,7 +1655,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$quick_info = 'You must remain online and have a valid Internet accessible server to generate currency.</br></br>
 			Timekoin will attempt to auto-detect the <font color="blue">Generation IP</font> when the field is left blank upon service starting.</br></br>
-			There also exist a setting in the system tab to auto-update the server IP if is changes frequently.</br></br>
+			There also exist a setting in the system tab to auto-update the server IP if it changes frequently.</br></br>
 			You can manually update this field if the IP address detected is incorrect.</br></br>
 			Next Peer Election in</br>' . $time_election . '</strong></font></br></br>
 			Currency Generation in</br>' . $time_generate . '</strong></font>';
