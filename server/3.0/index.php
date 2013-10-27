@@ -701,9 +701,9 @@ if($_SESSION["valid_login"] == TRUE)
 				$variance_average = '<font color="green">' . $variance_average . '</font> seconds';
 			}
 
-			$body_string .= '<strong>Variance Average: ' . $variance_average . '</strong></br></br>';
+			$body_string .= '<strong>Variance Average: ' . $variance_average . '</strong><br><br>';
 
-			$quick_info = '<strong>Variance</strong> of 15 seconds or less with the other peers is good.</br></br>
+			$quick_info = '<strong>Variance</strong> of 15 seconds or less with the other peers is good.<br><br>
 			<strong>Ping</strong> response time greater than 3000 ms will timeout during data exchanges.';
 
 			home_screen('Check Peer Clocks & Ping Times', NULL, $body_string , $quick_info);
@@ -797,7 +797,7 @@ if($_SESSION["valid_login"] == TRUE)
 					$peer_subfolder = find_string("---subfolder=", "---port", $sql_row["field_data"]);
 					$peer_port_number = find_string("---port=", "---end", $sql_row["field_data"]);
 				
-					$body_string .= '<tr><td class="style2"><input type="text" name="first_contact_ip' . $counter . '" size="13" value="' . $peer_ip . '" /></br></br></td>
+					$body_string .= '<tr><td class="style2"><input type="text" name="first_contact_ip' . $counter . '" size="13" value="' . $peer_ip . '" /><br><br></td>
 					<td class="style2" valign="top"><input type="text" name="first_contact_domain' . $counter . '" size="20" value="' . $peer_domain . '" /></td>
 					<td class="style2" valign="top"><input type="text" name="first_contact_subfolder' . $counter . '" size="10" value="' . $peer_subfolder . '" /></td>
 					<td class="style2" valign="top"><input type="text" name="first_contact_port' . $counter . '" size="5" value="' . $peer_port_number . '" /></td>			 
@@ -827,7 +827,7 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 
 				$body_string .= '<FORM ACTION="index.php?menu=peerlist&save=peer" METHOD="post"><tr>
-				<td class="style2"><input type="text" name="edit_ip" size="13" value="' . $sql_row["IP_Address"] . '" /></br></br>
+				<td class="style2"><input type="text" name="edit_ip" size="13" value="' . $sql_row["IP_Address"] . '" /><br><br>
 				<select name="perm_peer"><option value="expires" ' . $perm_peer2 . '>Purge When Inactive</option><option value="perm" ' . $perm_peer1 . '>Permanent Peer</select></td>
 				<td class="style2" valign="top"><input type="text" name="edit_domain" size="20" value="' . $sql_row["domain"] . '" /></td>
 				<td class="style2" valign="top"><input type="text" name="edit_subfolder" size="10" value="' . $sql_row["subfolder"] . '" /></td>
@@ -850,8 +850,8 @@ if($_SESSION["valid_login"] == TRUE)
 
 			$peer_number_bar = '<strong>Active Peers: <font color="green">' . $active_peers . '</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Peers in Reserve: <font color="blue">' . $new_peers . '</font></strong>';
 
-			$quick_info = 'Shows all Active Peers.</br></br>
-				You can manually delete or edit peers in this section.</br></br>
+			$quick_info = 'Shows all Active Peers.<br><br>
+				You can manually delete or edit peers in this section.<br><br>
 				<font color="blue">First Contact Servers</font> can be changed, deleted, or new ones added to the bottom of the list.';
 
 			home_screen('Realtime Network Peer List', $peer_number_bar, $body_string , $quick_info);
@@ -938,7 +938,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string .= '<tr><td colspan="2"><FORM ACTION="index.php?menu=peerlist&show=reserve" METHOD="post"><input type="submit" value="Show Reserve Peers"/></FORM></td>
 				<td colspan="3"><FORM ACTION="index.php?menu=peerlist&edit=peer&type=new" METHOD="post"><input type="submit" value="Add New Peer"/></FORM></td>
 				<td colspan="4"><FORM ACTION="index.php?menu=peerlist&edit=peer&type=firstcontact" METHOD="post"><input type="submit" value="First Contact Servers"/></FORM></td></tr>
-				<tr><td colspan="9"><hr></hr></td></tr>
+				<tr><td colspan="9"><hr></td></tr>
 				<tr><td colspan="3"><FORM ACTION="index.php?menu=peerlist&time=poll" METHOD="post"><input name="Submit3" type="submit" value="Check Peer Clock & Ping Times" /></FORM></td>
 				<td colspan="6"><FORM ACTION="index.php?menu=peerlist&poll_failure=poll" METHOD="post"><input name="Submit4" type="submit" value="Poll Failure Scores" /></FORM></td>
 				</tr></table></div>';
@@ -959,17 +959,17 @@ if($_SESSION["valid_login"] == TRUE)
 			$peer_number_bar = '<table border="0" cellspacing="0" cellpadding="0"><tr><td style="width:125px"><strong>Active Peers: <font color="green">' . $sql_num_results . '</font></strong></td>
 				<td style="width:175px"><strong>Peers in Reserve: <font color="blue">' . $new_peers . '</font></strong></td>
 				<td style="width:125px"><strong>Peer Speed: <font color="blue">' . $peer_transaction_start_blocks . '</font></strong></td>
-				<td style="width:190px"><strong>Group Response: <font color="blue">' . $peer_transaction_performance . ' sec</font></strong></td></tr><tr><td colspan="4"><hr></hr></td></tr>
+				<td style="width:190px"><strong>Group Response: <font color="blue">' . $peer_transaction_performance . ' sec</font></strong></td></tr><tr><td colspan="4"><hr></td></tr>
 				<tr><td align="left" colspan="4"><strong>Transaction History:</strong>&nbsp;' . trans_percent_status() . '</td></tr>
 				</table>';
 
-			$quick_info = 'Shows all Active Peers.</br></br>You can manually delete or edit peers in this section.
-				</br></br>Peers in <font color="blue">Blue</font> will not expire after 5 minutes of inactivity or high failure scores.
-				</br></br><strong>Failure Score</strong> is a total of failed polling or data exchange events. Peers that score over the failure limit are kicked from the peer list.
-				</br></br><strong>Peer Speed</strong> is combined peer performance measured over a 10 second interval.
-				</br>Ten is the average baseline.
-				</br></br><strong>Group Response</strong> is a sample average of all peers and how long it took the group to respond to a 10 second task.
-				</br>Less than 10 seconds increases peer speed by +1 and longer than 10 seconds decreases peer speed by -1.';
+			$quick_info = 'Shows all Active Peers.<br><br>You can manually delete or edit peers in this section.
+				<br><br>Peers in <font color="blue">Blue</font> will not expire after 5 minutes of inactivity or high failure scores.
+				<br><br><strong>Failure Score</strong> is a total of failed polling or data exchange events. Peers that score over the failure limit are kicked from the peer list.
+				<br><br><strong>Peer Speed</strong> is combined peer performance measured over a 10 second interval.
+				<br>Ten is the average baseline.
+				<br><br><strong>Group Response</strong> is a sample average of all peers and how long it took the group to respond to a 10 second task.
+				<br>Less than 10 seconds increases peer speed by +1 and longer than 10 seconds decreases peer speed by -1.';
 
 			$peerlist_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_peerlist' LIMIT 1"),0,"field_data");
 
@@ -1001,7 +1001,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 				if(mysql_query($sql) == TRUE)
 				{
-					$server_code = '</br><font color="green"><strong>Peer Settings Updated...</strong></font></br></br>';
+					$server_code = '<br><font color="green"><strong>Peer Settings Updated...</strong></font><br><br>';
 				}
 			}
 		}
@@ -1073,7 +1073,7 @@ if($_SESSION["valid_login"] == TRUE)
 												$sql = "UPDATE `options` SET `field_data` = '" . $_POST["auto_update_IP"] . "' WHERE `options`.`field_name` = 'auto_update_generation_IP' LIMIT 1";
 												if(mysql_query($sql) == TRUE)
 												{
-													$server_code .= '</br><font color="blue"><strong>Server Settings Updated...</strong></font></br></br>';
+													$server_code .= '<br><font color="blue"><strong>Server Settings Updated...</strong></font><br><br>';
 												}
 											}										
 										}
@@ -1101,7 +1101,7 @@ if($_SESSION["valid_login"] == TRUE)
 					
 					if(mysql_query($sql) == TRUE)
 					{
-						$server_code = '</br><font color="red"><strong>Watchdog was already Stopped...</strong></font></br></br>';
+						$server_code = '<br><font color="red"><strong>Watchdog was already Stopped...</strong></font><br><br>';
 					}
 				}
 				else
@@ -1111,13 +1111,13 @@ if($_SESSION["valid_login"] == TRUE)
 					
 					if(mysql_query($sql) == TRUE)
 					{
-						$server_code = '</br><font color="blue"><strong>Watchdog Stopping...</strong></font></br></br>';
+						$server_code = '<br><font color="blue"><strong>Watchdog Stopping...</strong></font><br><br>';
 					}
 				}
 			}
 			else
 			{
-				$server_code = '</br><font color="red"><strong>Watchdog was already Stopped...</strong></font></br></br>';
+				$server_code = '<br><font color="red"><strong>Watchdog was already Stopped...</strong></font><br><br>';
 			}
 		}
 
@@ -1143,7 +1143,7 @@ if($_SESSION["valid_login"] == TRUE)
 					
 					if(mysql_query($sql) == TRUE)
 					{
-						$server_code = '</br><font color="red"><strong>Timekoin Main Processor was already Stopped...</strong></font></br></br>';
+						$server_code = '<br><font color="red"><strong>Timekoin Main Processor was already Stopped...</strong></font><br><br>';
 						// Clear transaction queue to avoid unnecessary peer confusion
 						mysql_query("TRUNCATE TABLE `transaction_queue`");
 
@@ -1168,7 +1168,7 @@ if($_SESSION["valid_login"] == TRUE)
 					
 					if(mysql_query($sql) == TRUE)
 					{
-						$server_code = '</br><font color="blue"><strong>Timekoin Main Processor Stopping...</strong></font></br></br>';
+						$server_code = '<br><font color="blue"><strong>Timekoin Main Processor Stopping...</strong></font><br><br>';
 						// Clear transaction queue to avoid unnecessary peer confusion
 						mysql_query("TRUNCATE TABLE `transaction_queue`");
 
@@ -1188,7 +1188,7 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 			else
 			{
-				$server_code = '</br><font color="red"><strong>Timekoin Main Processor was already Stopped...</strong></font></br></br>';
+				$server_code = '<br><font color="red"><strong>Timekoin Main Processor was already Stopped...</strong></font><br><br>';
 				// Clear transaction queue to avoid unnecessary peer confusion
 				mysql_query("TRUNCATE TABLE `transaction_queue`");
 
@@ -1199,34 +1199,34 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["code"] == "1")
 		{
-			$server_code = '</br><font color="green"><strong>Main Timekoin Processing Started...</strong></font></br></br>';
+			$server_code = '<br><font color="green"><strong>Main Timekoin Processing Started...</strong></font><br><br>';
 		}
 		if($_GET["code"] == "99")
 		{
-			$server_code = '</br><font color="blue"><strong>Timekoin Already Active...</strong></font></br></br>';
+			$server_code = '<br><font color="blue"><strong>Timekoin Already Active...</strong></font><br><br>';
 		}
 		if($_GET["code"] == "98")
 		{
-			$server_code = '</br><font color="red"><strong>PHP File Path Missing...</strong></font></br></br>';
+			$server_code = '<br><font color="red"><strong>PHP File Path Missing...</strong></font><br><br>';
 		}		
 		if($_GET["code"] == "2")
 		{
-			$server_code = '</br><font color="green"><strong>Watchdog Started...</strong></font></br></br>';
+			$server_code = '<br><font color="green"><strong>Watchdog Started...</strong></font><br><br>';
 		}
 		if($_GET["code"] == "89")
 		{
-			$server_code = '</br><font color="blue"><strong>Watchdog Already Active...</strong></font></br></br>';
+			$server_code = '<br><font color="blue"><strong>Watchdog Already Active...</strong></font><br><br>';
 		}
 
 		$body_string = system_screen();
 		$body_string .= $server_code;
 
-		$quick_info = '<strong>Start</strong> will activate all Timekoin Processing.</br></br>
-			<strong>Stop</strong> will halt Timekoin from further processing.</br></br>
-			<strong>Max Peer Query</strong> is the per 10 seconds limit imposed on each individual peer before being banned for 24 hours.</br></br>
-			<strong>Allow LAN Peers</strong> controls if LAN peers will be allowed to populate the peer list.</br></br>
-			<strong>Allow Ambient Peer Restarts</strong> controls if other peers can restart Timekoin from unknown failures.</br></br>
-			<strong>Super Peer</strong> will enable peers to download bulk transactions from your server.</br></br>';
+		$quick_info = '<strong>Start</strong> will activate all Timekoin Processing.<br><br>
+			<strong>Stop</strong> will halt Timekoin from further processing.<br><br>
+			<strong>Max Peer Query</strong> is the per 10 seconds limit imposed on each individual peer before being banned for 24 hours.<br><br>
+			<strong>Allow LAN Peers</strong> controls if LAN peers will be allowed to populate the peer list.<br><br>
+			<strong>Allow Ambient Peer Restarts</strong> controls if other peers can restart Timekoin from unknown failures.<br><br>
+			<strong>Super Peer</strong> will enable peers to download bulk transactions from your server.<br><br>';
 
 		home_screen('System Settings', system_service_bar(), $body_string , $quick_info);
 		exit;
@@ -1289,11 +1289,11 @@ if($_SESSION["valid_login"] == TRUE)
 
 			if($username_change == TRUE)
 			{
-				$body_text = $body_text . '<font color="blue"><strong>Username Change Complete!</strong></font></br>';
+				$body_text = $body_text . '<font color="blue"><strong>Username Change Complete!</strong></font><br>';
 			}
 			else
 			{
-				$body_text = $body_text . '<strong>Username Has Not Been Changed</strong></br>';
+				$body_text = $body_text . '<strong>Username Has Not Been Changed</strong><br>';
 			}
 
 			if($password_change == TRUE)
@@ -1344,11 +1344,11 @@ if($_SESSION["valid_login"] == TRUE)
 
 			if($refresh_change == TRUE)
 			{
-				$body_text .= '<font color="blue"><strong>Refresh Settings, Super Peer Limit, & Peer Failure Limit Saved!</strong></font></br>';
+				$body_text .= '<font color="blue"><strong>Refresh Settings, Super Peer Limit, & Peer Failure Limit Saved!</strong></font><br>';
 			}
 			else
 			{
-				$body_text .= '<strong>Refresh / Hash Code Update ERROR...</strong></br>';
+				$body_text .= '<strong>Refresh / Hash Code Update ERROR...</strong><br>';
 			}
 		} // End refresh update save
 		else if(empty($_GET["password"]) == TRUE && empty($_GET["refresh"]) == TRUE)
@@ -1360,11 +1360,11 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			if(generate_new_keys() == TRUE)
 			{
-				$body_text .= '<font color="green"><strong>New Private & Public Key Pair Generated!</strong></font></br>';
+				$body_text .= '<font color="green"><strong>New Private & Public Key Pair Generated!</strong></font><br>';
 			}
 			else
 			{
-				$body_text .= '<font color="red"><strong>OpenSSL Error, New Key Creation Failed!</strong></font></br>';
+				$body_text .= '<font color="red"><strong>OpenSSL Error, New Key Creation Failed!</strong></font><br>';
 			}
 		}
 
@@ -1427,24 +1427,150 @@ if($_SESSION["valid_login"] == TRUE)
 				$hashcode_permissions = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'hashcode" . $counter . "_permissions' LIMIT 1"),0,"field_data");
 
 				$body_text .= '<tr><td valign="bottom" align="right"><strong>Name: <input type="text" name="name'. $counter . '" size="15" value="' . $hashcode_name . '"/>
-				</br>Hashcode: <input type="text" name="hashcode'. $counter . '" size="15" value="' . $hashcode . '"/></strong></td>
+				<br>Hashcode: <input type="text" name="hashcode'. $counter . '" size="15" value="' . $hashcode . '"/></strong></td>
 				<td><input type="checkbox" name="pk_balance'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_balance", TRUE) . '>pk_balance 
 				<input type="checkbox" name="pk_gen_amt'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_gen_amt", TRUE) . '>pk_gen_amt
 				<input type="checkbox" name="pk_gen_total'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_gen_total", TRUE) . '>pk_gen_total
-				<input type="checkbox" name="pk_history'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_history", TRUE) . '>pk_history</br>
+				<input type="checkbox" name="pk_history'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_history", TRUE) . '>pk_history<br>
 				<input type="checkbox" name="pk_recv'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_recv", TRUE) . '>pk_recv
 				<input type="checkbox" name="pk_sent'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_sent", TRUE) . '>pk_sent
 				<input type="checkbox" name="pk_valid'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_valid", TRUE) . '>pk_valid
-				<input type="checkbox" name="send_tk'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "send_tk", TRUE) . '>send_tk</br>
+				<input type="checkbox" name="send_tk'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "send_tk", TRUE) . '>send_tk<br>
 				<input type="checkbox" name="tk_trans_total'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "tk_trans_total", TRUE) . '>tk_trans_total
-				</td></tr><tr><td colspan="2"><hr></hr></td></tr>';
+				</td></tr><tr><td colspan="2"><hr></td></tr>';
 
 				$counter++;
 			}
 
 			$body_text .= '</table><input type="submit" name="save_hashcode" value="Save Settings" /></FORM>';
 
-			if($hash_settings_saved == TRUE) { $body_text .= '</br><font color="blue"><strong>Hashcode Settings Saved!</strong></font>'; }
+			if($hash_settings_saved == TRUE) { $body_text .= '<br><font color="blue"><strong>Hashcode Settings Saved!</strong></font>'; }
+		}
+
+		if($_GET["plugin"] == "install")
+		{
+			// Install New Plugin
+			$plugin_install = file_upload("plugin_file");
+			
+			if($plugin_install == FALSE)
+			{
+				$plugin_install_output .= '<font color="red">Plugin File (' . $plugin_install . ') Install FAILED!</font><br>';
+			}
+			else
+			{
+				$plugin_install_output .= '<font color="blue">Plugin File (' . $plugin_install . ') Install Complete</font><br>';
+			}
+
+			// Scan file to find variables to create database variables
+			$new_plugin_contents = read_plugin("plugins/" . $plugin_install);
+
+			$plugin_name = find_string("PLUGIN_NAME=", "---END", $new_plugin_contents);
+			$plugin_tab = find_string("PLUGIN_TAB=", "---END", $new_plugin_contents);
+			$plugin_service = find_string("PLUGIN_SERVICE=", "---END", $new_plugin_contents);
+
+			$sql = "INSERT INTO `options` (`field_name` ,`field_data`)VALUES 
+				('installed_plugins', '---file=$plugin_install---enable=0---show=0---name=$plugin_name---tab=$plugin_tab---service=$plugin_service---end')";
+
+			if(mysql_query($sql) == TRUE)
+			{
+				$plugin_install_output .= '<font color="blue">Plugin (' . $plugin_name . ') Install Into Database Complete</font><br>';
+			}
+			else
+			{
+				$plugin_install_output .= '<font color="red">Plugin (' . $plugin_name . ') Install Into Database FAILED?</font><br>';
+			}
+
+			home_screen("Plugin Manager", $plugin_install_output, options_screen5() , "You can enable or disable plugins.");
+			exit;
+		}
+
+		if($_GET["plugin"] == "new")
+		{
+			// New Plugin Install Screen
+			home_screen("Plugin Manager", NULL, options_screen6() , "This will allow a new plugin to be installed.");
+			exit;
+		}
+
+		if($_GET["manage"] == "plugins")
+		{
+			home_screen("Plugin Manager", NULL, options_screen5() , "You can enable or disable plugins.");
+			exit;
+		}
+
+		if($_GET["plugin"] == "disable")
+		{
+			// Disable selected plugin, search for script file name in database
+			$plugin_filename = $_POST["pluginfile"];
+			$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'installed_plugins' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+
+			// Rewrite String to Disable plugin
+			$new_disable_string = str_replace("enable=1", "enable=0", $installed_plugins);
+		
+			// Update String in Database
+			mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` = 'installed_plugins' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
+
+			home_screen("Plugin Manager", NULL, options_screen5() , "You can enable or disable plugins.");
+			exit;
+		}
+
+		if($_GET["plugin"] == "enable")
+		{
+			// Enable selected plugin, search for script file name in database
+			$plugin_filename = $_POST["pluginfile"];
+			$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'installed_plugins' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+
+			// Rewrite String to Enable plugin
+			$new_disable_string = str_replace("enable=0", "enable=1", $installed_plugins);
+		
+			// Update String in Database
+			mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` = 'installed_plugins' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
+
+			home_screen("Plugin Manager", NULL, options_screen5() , "You can enable or disable plugins.");
+			exit;
+		}
+
+		if($_GET["remove"] == "plugin")
+		{
+			// Enable selected plugin, search for script file name in database
+			$plugin_filename = $_POST["pluginfile"];
+			$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'installed_plugins' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+
+			// Find the file name for the plugin
+			$plugin_file = find_string("---file=", "---enable", $installed_plugins);
+
+			$plugin_remove_output;
+
+			// Check if the file exist
+			if(file_exists("plugins/" . $plugin_file) == TRUE)
+			{
+				if(unlink("plugins/" . $plugin_file) == TRUE)
+				{
+					$plugin_remove_output .= '<font color="blue">Plugin File (' . $plugin_file . ') Deleted</font><br>';
+				}
+				else
+				{
+					$plugin_remove_output .= '<font color="red"><strong>Plugin File (' . $plugin_file . ') Could NOT Be Deleted?</strong></font><br>';
+				}
+			}
+			else
+			{
+				$plugin_remove_output .= '<font color="red">Plugin File (' . $plugin_file . ') Did Not Exist to Delete?</font><br>';
+			}
+
+			// Delete Database Entry
+			$sql = "DELETE FROM `options` WHERE `options`.`field_name` = 'installed_plugins' AND `options`.`field_data` = '$installed_plugins' LIMIT 1";
+			
+			if(mysql_query($sql) == TRUE)
+			{
+				$plugin_remove_output .= '<font color="blue">Plugin Database Entry Deleted</font><br>';
+			}
+			else
+			{
+				$plugin_remove_output .= '<font color="red"><strong>Plugin Database Entry Could NOT Be Deleted?</strong></font><br>';
+			}
+
+			home_screen("Plugin Manager", $plugin_remove_output, options_screen5() , "You can enable or disable plugins.");
+			exit;
 		}
 
 		if($_GET["manage"] == "tabs")
@@ -1453,6 +1579,61 @@ if($_SESSION["valid_login"] == TRUE)
 			exit;
 		}
 
+		if($_GET["tabs"] == "change")
+		{
+			$standard_tabs_settings = standard_tab_settings($_POST["tab_peerlist"], $_POST["tab_trans_queue"], $_POST["tab_send_receive"], 
+				$_POST["tab_history"], $_POST["tab_generation"], $_POST["tab_system"], $_POST["tab_backup"], $_POST["tab_tools"]);
+
+			$sql = "UPDATE `options` SET `field_data` = '$standard_tabs_settings' WHERE `options`.`field_name` = 'standard_tabs_settings' LIMIT 1";
+
+			if(mysql_query($sql) == TRUE)
+			{
+				$text_bar = '<font color="blue"><strong>Standard Tab Settings Updated</strong></font><br>';
+
+				if($_POST["plugins_installed"] == "1")
+				{
+					// Cycle through all plugins and set hide/show status for tabs
+					$cycle_counter = 0;
+					while(empty($_POST["plugins_$cycle_counter"]) == FALSE)
+					{
+						$plugin_filename = $_POST["plugins_$cycle_counter"];
+
+						$show_status = $_POST["plugins_status_$cycle_counter"];
+
+						if($show_status == TRUE)
+						{
+							// Show Plugin Tab
+							$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'installed_plugins' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+
+							// Rewrite String to Show Plugin Tab
+							$new_disable_string = str_replace("show=0", "show=1", $installed_plugins);
+						
+							// Update String in Database
+							mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` = 'installed_plugins' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
+						}
+						else
+						{
+							// Hide Plugin Tab
+							$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'installed_plugins' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+
+							// Rewrite String to Show Plugin Tab
+							$new_disable_string = str_replace("show=1", "show=0", $installed_plugins);
+						
+							// Update String in Database
+							mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` = 'installed_plugins' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
+						}
+
+						$cycle_counter++; // Next Plugin
+					}
+
+					$text_bar .= '<font color="blue"><strong>Plugin Tab Settings Updated</strong></font><br>';
+
+				}
+				
+				home_screen("Show/Hide Tabs", $text_bar, options_screen4() , "You can hide or show certain tabs at the top.");
+				exit;
+			}
+		}
 
 		if($_GET["upgrade"] == "check" || $_GET["upgrade"] == "doupgrade")
 		{
@@ -1462,7 +1643,7 @@ if($_SESSION["valid_login"] == TRUE)
 		}
 		else if($_GET["hashcode"] == "manage" || $_GET["hashcode"] == "save")
 		{
-			$quick_info = 'Manage which Hash Codes have access to desired external functions of the server API.</br></br>
+			$quick_info = 'Manage which Hash Codes have access to desired external functions of the server API.<br><br>
 				Hash Codes can only be letters and/or numbers with no spaces.';
 
 			home_screen("Manage Hash Code Access", $body_text, NULL , $quick_info);
@@ -1470,11 +1651,11 @@ if($_SESSION["valid_login"] == TRUE)
 		else
 		{		
 			$quick_info = 'You may change the username and password individually or at the same time.
-			</br></br>Remember that usernames and passwords are Case Sensitive.
-			</br></br><strong>Generate New Keys</strong> will create a new random key pair and save it in the database.
-			</br></br><strong>Check for Updates</strong> will check for any program updates that can be downloaded directly into Timekoin.
-			</br></br><strong>Hash Code</strong> is a private code you create for any external program or server that request access to more advanced features of your Timekoin server.
-			</br></br><strong>Super Peer Limit</strong> controls how many transaction cycles other peers will download in bulk.';
+			<br><br>Remember that usernames and passwords are Case Sensitive.
+			<br><br><strong>Generate New Keys</strong> will create a new random key pair and save it in the database.
+			<br><br><strong>Check for Updates</strong> will check for any program updates that can be downloaded directly into Timekoin.
+			<br><br><strong>Hash Code</strong> is a private code you create for any external program or server that request access to more advanced features of your Timekoin server.
+			<br><br><strong>Super Peer Limit</strong> controls how many transaction cycles other peers will download in bulk.';
 
 			home_screen("Options & Personal Settings", options_screen(), $body_text , $quick_info);
 		}
@@ -1537,7 +1718,7 @@ if($_SESSION["valid_login"] == TRUE)
 				// Not elected to the generating peer list yet
 				$generate_currency = 'Generation <font color="green"><strong>Enabled</strong></font>';
 				$generate_rate = '@ <font color="green"><strong>' . peer_gen_amount($my_public_key) . '</strong></font> per Cycle';
-				$continuous_production = '<font color="red"><strong>This Peer Has Not</br> Been Elected Yet</strong></font>';
+				$continuous_production = '<font color="red"><strong>This Peer Has Not<br> Been Elected Yet</strong></font>';
 			}
 			else
 			{
@@ -1546,7 +1727,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 				$generate_currency = 'Generation <font color="green"><strong>Enabled</strong></font>';
 				$generate_rate = '@ <font color="green"><strong>' . peer_gen_amount($my_public_key) . '</strong></font> per Cycle';
-				$continuous_production = 'Continuous Production for ' . $production_time . '</br>Last Generated ' . $last_generation . ' ago';
+				$continuous_production = 'Continuous Production for ' . $production_time . '<br>Last Generated ' . $last_generation . ' ago';
 			}
 		}
 		else
@@ -1561,7 +1742,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$default_public_key_font = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
 			$my_public_key = mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,"field_data");
 
-			$body_string = $body_string . '<hr></hr><strong>Current Generation List</strong>
+			$body_string = $body_string . '<hr><strong>Current Generation List</strong>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Public Key</th><th>Joined</th><th>Last Generated</th></tr>';
 
 			$sql = "SELECT * FROM `generating_peer_list` ORDER BY `join_peer_list` ASC";
@@ -1595,7 +1776,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$default_public_key_font = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
 			$my_public_key = mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,"field_data");
 
-			$body_string .= '<hr></hr><strong>Election Queue List</strong>
+			$body_string .= '<hr><strong>Election Queue List</strong>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Public Key</th><th>Join Queue</th></tr>';
 
 			$sql = "SELECT * FROM `generating_peer_queue` ORDER BY `timestamp` ASC";
@@ -1648,17 +1829,17 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 		}
 
-		$text_bar = '<table cellspacing="10" border="0"><tr><td valign="top" width="230">' . $generate_currency . '</td><td>Generating Peers: <font color="green"><strong>' . $generating_peers_now . '</strong></font></br>
+		$text_bar = '<table cellspacing="10" border="0"><tr><td valign="top" width="230">' . $generate_currency . '</td><td>Generating Peers: <font color="green"><strong>' . $generating_peers_now . '</strong></font><br>
 			Queue for Election: <font color="blue"><strong>' . $generate_peer_queue . '</strong></font></td></tr>
 			<tr><td align="right">' . $continuous_production . '</td><td>' . $generate_rate . '</td></tr>
 			<tr><td colspan="2">' . $my_gen_IP_form . '</td></tr></table>';
 
-		$quick_info = 'You must remain online and have a valid Internet accessible server to generate currency.</br></br>
-			Timekoin will attempt to auto-detect the <font color="blue">Generation IP</font> when the field is left blank upon service starting.</br></br>
-			There also exist a setting in the system tab to auto-update the server IP if it changes frequently.</br></br>
-			You can manually update this field if the IP address detected is incorrect.</br></br>
-			Next Peer Election in</br>' . $time_election . '</strong></font></br></br>
-			Currency Generation in</br>' . $time_generate . '</strong></font>';
+		$quick_info = 'You must remain online and have a valid Internet accessible server to generate currency.<br><br>
+			Timekoin will attempt to auto-detect the <font color="blue">Generation IP</font> when the field is left blank upon service starting.<br><br>
+			There also exist a setting in the system tab to auto-update the server IP if it changes frequently.<br><br>
+			You can manually update this field if the IP address detected is incorrect.<br><br>
+			Next Peer Election in<br>' . $time_election . '</strong></font><br><br>
+			Currency Generation in<br>' . $time_generate . '</strong></font>';
 		
 		home_screen('Crypto Currency Generation', $text_bar, $body_string , $quick_info);
 		exit;
@@ -1680,7 +1861,7 @@ if($_SESSION["valid_login"] == TRUE)
 				// Can't send this much silly
 				$display_balance = db_cache_balance($my_public_key);
 				$body_string = send_receive_body($public_key_64);
-				$body_string .= '<hr></hr><font color="red"><strong>This exceeds your current balance, send failed...</strong></font></br></br>';
+				$body_string .= '<hr><font color="red"><strong>This exceeds your current balance, send failed...</strong></font><br><br>';
 			}
 			else
 			{
@@ -1689,7 +1870,7 @@ if($_SESSION["valid_login"] == TRUE)
 					// Can't send to yourself
 					$display_balance = db_cache_balance($my_public_key);
 					$body_string = send_receive_body();
-					$body_string .= '<hr></hr><font color="red"><strong>Can not send to yourself, send failed...</strong></font></br></br>';
+					$body_string .= '<hr><font color="red"><strong>Can not send to yourself, send failed...</strong></font><br><br>';
 				}
 				else
 				{
@@ -1703,9 +1884,9 @@ if($_SESSION["valid_login"] == TRUE)
 						$message = $_POST["send_message"];
 						$display_balance = db_cache_balance($my_public_key);
 						$body_string = send_receive_body($public_key_64, $send_amount, TRUE, NULL, $message);
-						$body_string .= '<hr></hr><font color="red"><strong>This public key may not be valid as it has no existing history of transactions.</br>
-							There is no way to recover timekoins sent to the wrong public key.</br>
-							Click "Send Timekoins" to send now.</strong></font></br></br>';
+						$body_string .= '<hr><font color="red"><strong>This public key may not be valid as it has no existing history of transactions.<br>
+							There is no way to recover timekoins sent to the wrong public key.<br>
+							Click "Send Timekoins" to send now.</strong></font><br><br>';
 					}
 					else
 					{
@@ -1713,9 +1894,9 @@ if($_SESSION["valid_login"] == TRUE)
 						$message = $_POST["send_message"];
 						$display_balance = db_cache_balance($my_public_key);
 						$body_string = send_receive_body($public_key_64, $send_amount, TRUE, NULL, $message);
-						$body_string .= '<hr></hr><font color="blue"><strong>This public key is valid.</font></br>
-							<font color="red">There is no way to recover timekoins sent to the wrong public key.</font></br>
-							<font color="blue">Click "Send Timekoins" to send now.</strong></font></br></br>';
+						$body_string .= '<hr><font color="blue"><strong>This public key is valid.</font><br>
+							<font color="red">There is no way to recover timekoins sent to the wrong public key.</font><br>
+							<font color="blue">Click "Send Timekoins" to send now.</strong></font><br><br>';
 					}
 				} // End self check
 			} // End balance check
@@ -1736,7 +1917,7 @@ if($_SESSION["valid_login"] == TRUE)
 					// Can't send this much silly
 					$display_balance = db_cache_balance($my_public_key);
 					$body_string = send_receive_body($public_key_64);
-					$body_string .= '<hr></hr><font color="red"><strong>This exceeds your current balance, send failed...</strong></font></br></br>';
+					$body_string .= '<hr><font color="red"><strong>This exceeds your current balance, send failed...</strong></font><br><br>';
 				}
 				else
 				{
@@ -1745,7 +1926,7 @@ if($_SESSION["valid_login"] == TRUE)
 						// Can't send to yourself
 						$display_balance = db_cache_balance($my_public_key);
 						$body_string = send_receive_body();
-						$body_string .= '<hr></hr><font color="red"><strong>Can not send to yourself, send failed...</strong></font></br></br>';
+						$body_string .= '<hr><font color="red"><strong>Can not send to yourself, send failed...</strong></font><br><br>';
 					}
 					else
 					{
@@ -1756,14 +1937,14 @@ if($_SESSION["valid_login"] == TRUE)
 						{
 							$display_balance = db_cache_balance($my_public_key);
 							$body_string = send_receive_body($public_key_64, $send_amount);
-							$body_string .= '<hr></hr><font color="green"><strong>You just sent ' . $send_amount . ' timekoins to the above public key.</font></br>
-								Your balance will not reflect this until the transaction is recorded across the entire network.</strong></br></br>';
+							$body_string .= '<hr><font color="green"><strong>You just sent ' . $send_amount . ' timekoins to the above public key.</font><br>
+								Your balance will not reflect this until the transaction is recorded across the entire network.</strong><br><br>';
 						}
 						else
 						{
 							$display_balance = db_cache_balance($my_public_key);
 							$body_string = send_receive_body($public_key_64, $send_amount);
-							$body_string .= '<hr></hr><font color="red"><strong>Send failed...</strong></font></br></br>';
+							$body_string .= '<hr><font color="red"><strong>Send failed...</strong></font><br><br>';
 						}
 					} // End duplicate self check
 				} // End Balance Check
@@ -1804,11 +1985,11 @@ if($_SESSION["valid_login"] == TRUE)
 			<tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
 			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
 
-		$quick_info = 'Send your own Timekoins to someone else.</br></br>
-			Your server will attempt to verify if the public key is valid by examing the transaction history before sending.</br></br>
-			New public keys with no history could appear invalid for this reason, so always double check.</br></br>
-			You can enter an <strong>Easy Key</strong> and Timekoin will fill in the Public Key field for you.</br></br>
-			Messages encoded into your transaction are limited to <strong>64</strong> characters and are visible to anyone.</br>No <strong>| ? = \' ` * %</strong> characters allowed.';
+		$quick_info = 'Send your own Timekoins to someone else.<br><br>
+			Your server will attempt to verify if the public key is valid by examing the transaction history before sending.<br><br>
+			New public keys with no history could appear invalid for this reason, so always double check.<br><br>
+			You can enter an <strong>Easy Key</strong> and Timekoin will fill in the Public Key field for you.<br><br>
+			Messages encoded into your transaction are limited to <strong>64</strong> characters and are visible to anyone.<br>No <strong>| ? = \' ` * %</strong> characters allowed.';
 
 		home_screen('Send / Receive Timekoins', $text_bar, $body_string , $quick_info);
 		exit;
@@ -1855,12 +2036,12 @@ if($_SESSION["valid_login"] == TRUE)
 
 				if($_POST["highlight_cycle"] - 1500 == $start_transaction_cycle)
 				{
-					$body_string .= '<tr><td class="style2"><p style="font-size: 12px;"><h9 id="' . $start_transaction_cycle . '"></h9><font color="blue">' . $start_transaction_cycle . '</br>' . unix_timestamp_to_human($start_transaction_cycle) . '</font></p></td>
+					$body_string .= '<tr><td class="style2"><p style="font-size: 12px;"><h9 id="' . $start_transaction_cycle . '"></h9><font color="blue">' . $start_transaction_cycle . '<br>' . unix_timestamp_to_human($start_transaction_cycle) . '</font></p></td>
 						<td class="style2"><table border="0" cellspacing="0" cellpadding="0"><tr>';
 				}
 				else
 				{
-					$body_string .= '<tr><td class="style2"><p style="font-size: 12px;"><h9 id="' . $start_transaction_cycle . '"></h9>' . $start_transaction_cycle . '</br>' . unix_timestamp_to_human($start_transaction_cycle) . '</p></td>
+					$body_string .= '<tr><td class="style2"><p style="font-size: 12px;"><h9 id="' . $start_transaction_cycle . '"></h9>' . $start_transaction_cycle . '<br>' . unix_timestamp_to_human($start_transaction_cycle) . '</p></td>
 						<td class="style2"><table border="0" cellspacing="0" cellpadding="0"><tr>';
 				}
 
@@ -1932,9 +2113,9 @@ if($_SESSION["valid_login"] == TRUE)
 				<td>New Currency</td>' . $color_key1 . '
 				<td style="width:115px;" align="right">Transaction</td>' . $color_key2 . '
 				</tr></table>';
-			$quick_info = '<strong>Transaction History Browser</strong> allows the user to get a quick visual glance of past transactions.</br></br>
-				The color code graphic shows various types of transactions.</br></br>
-				Hovering the cursor over the icon will show the transaction amount.</br></br>
+			$quick_info = '<strong>Transaction History Browser</strong> allows the user to get a quick visual glance of past transactions.<br><br>
+				The color code graphic shows various types of transactions.<br><br>
+				Hovering the cursor over the icon will show the transaction amount.<br><br>
 				Clicking the icon will display the full details of the selected transaction.';
 
 			home_screen('Transaction History (Browser)', $text_bar, $body_string , $quick_info);
@@ -1973,24 +2154,24 @@ if($_SESSION["valid_login"] == TRUE)
 				$body_string .= "<strong>Type:</strong> Currency Creation";
 			}			
 
-			$body_string .= "</br></br><strong>Amount:</strong> $transaction_amount";
-			$body_string .= "</br></br><strong>Created:</strong> ($timestamp_created) " . unix_timestamp_to_human($timestamp_created);
-			$body_string .= "</br></br><strong>Message:</strong> $inside_message";
-			$body_string .= "</br></br><strong>Inside Hash:</strong> $inside_transaction_hash";
+			$body_string .= "<br><br><strong>Amount:</strong> $transaction_amount";
+			$body_string .= "<br><br><strong>Created:</strong> ($timestamp_created) " . unix_timestamp_to_human($timestamp_created);
+			$body_string .= "<br><br><strong>Message:</strong> $inside_message";
+			$body_string .= "<br><br><strong>Inside Hash:</strong> $inside_transaction_hash";
 
 			// Check Inside Has for tampering comparison
 			$crypt_1_2_hash = hash('sha256', $sql_row["crypt_data1"] . $sql_row["crypt_data2"]);
 
 			if($inside_transaction_hash == $crypt_1_2_hash)
 			{
-				$body_string .= '</br><font color="green">(Match for Crypt Fields 1 & 2)</font>';
+				$body_string .= '<br><font color="green">(Match for Crypt Fields 1 & 2)</font>';
 			}
 			else
 			{
-				$body_string .= '</br><font color="red">(NO MATCH for Crypt Fields 1 & 2)</font>';
+				$body_string .= '<br><font color="red">(NO MATCH for Crypt Fields 1 & 2)</font>';
 			}
 
-			$body_string .= '<hr></hr><strong>Public Key From:</strong></br><p style="word-wrap:break-word;">' . base64_encode($sql_row["public_key_from"]) . '</p>';
+			$body_string .= '<hr><strong>Public Key From:</strong><br><p style="word-wrap:break-word;">' . base64_encode($sql_row["public_key_from"]) . '</p>';
 			
 			if($crypt1_data . $crypt2_data == $sql_row["public_key_to"])
 			{
@@ -2001,35 +2182,35 @@ if($_SESSION["valid_login"] == TRUE)
 				$match_pub_key = '<font color="red">(Public Key NO MATCH for Crypt Fields 1 & 2)</font>';
 			}			
 			
-			$body_string .= '<hr></hr><strong>Public Key To:</strong> ' . $match_pub_key . '</br><p style="word-wrap:break-word;">' . base64_encode($sql_row["public_key_to"]) . '</p>';
+			$body_string .= '<hr><strong>Public Key To:</strong> ' . $match_pub_key . '<br><p style="word-wrap:break-word;">' . base64_encode($sql_row["public_key_to"]) . '</p>';
 
 			$triple_hash_check = hash('sha256', $sql_row["crypt_data1"] . $sql_row["crypt_data2"] . $sql_row["crypt_data3"]);
 
 			if($triple_hash_check == $_POST["hash"])
 			{
 				$triple1 = '<font color="green">';
-				$triple2 = '</br>(Match for Crypt Fields 1,2,3)';
+				$triple2 = '<br>(Match for Crypt Fields 1,2,3)';
 			}
 			else
 			{
 				$triple1 = '<font color="red">';
-				$triple2 = '</br>(NO MATCH for Crypt Fields 1,2,3)';				
+				$triple2 = '<br>(NO MATCH for Crypt Fields 1,2,3)';				
 			}
 
 			// Return Button
-			$body_string .= '<hr></hr><FORM ACTION="index.php?menu=history&trans_browse=open#' . $_POST["trans_cycle"] . '" METHOD="post">
+			$body_string .= '<hr><FORM ACTION="index.php?menu=history&trans_browse=open#' . $_POST["trans_cycle"] . '" METHOD="post">
 				<input type="hidden" name="show_more" value="' . $_POST["show_more"] . '">
 				<input type="hidden" name="highlight_cycle" value="' . $_POST["trans_cycle"] . '">				
-				<input type="submit" name="Submit5" value="Return to Transaction Browser" /></FORM><hr></hr>';
+				<input type="submit" name="Submit5" value="Return to Transaction Browser" /></FORM><hr>';
 
 			$text_bar = '<table border="0" cellspacing="0" cellpadding="0"><tr><td style="width:190px;"><strong>Timestamp:</strong> (' . $_POST["timestamp"] . 
 				')</td><td>' . unix_timestamp_to_human($_POST["timestamp"]) . '</td></tr>
 				<tr><td colspan="2"><strong>Hash:</strong>' . $triple1 . $_POST["hash"] . $triple2 . '</font></td></tr></table>';
-			$quick_info = '<strong>Timestamp</strong> represents when the transaction request to be recorded in the transaction history.</br></br>
-				<strong>Hash</strong> is included with the transaction to allow Timekoin to check if any of the encrypted fields have been tampered with.</br></br>
-				<strong>Created</strong> is when Timekoin generated the transaction.</br></br>
-				<strong>Message</strong> is any included text set by the user at the time of the transaction creation.</br></br>
-				<strong>Inside Hash</strong> is included to make sure the destination public key for the transfer has not been tampered with.</br></br>
+			$quick_info = '<strong>Timestamp</strong> represents when the transaction request to be recorded in the transaction history.<br><br>
+				<strong>Hash</strong> is included with the transaction to allow Timekoin to check if any of the encrypted fields have been tampered with.<br><br>
+				<strong>Created</strong> is when Timekoin generated the transaction.<br><br>
+				<strong>Message</strong> is any included text set by the user at the time of the transaction creation.<br><br>
+				<strong>Inside Hash</strong> is included to make sure the destination public key for the transfer has not been tampered with.<br><br>
 				<strong>Return to Transaction Browser</strong> will highlight in <font color="blue">blue</font>, the last transaction cycle this transaction came from.';
 
 			home_screen('Transaction History (Examine Transaction)', $text_bar, $body_string , $quick_info);
@@ -2110,10 +2291,10 @@ if($_SESSION["valid_login"] == TRUE)
 					$sent_to_selected_trans = "SELECTED";
 				}
 
-				$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> ' . $filter_GUI . ' <font color="green">Sent To</font> This Server</strong></br>
+				$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> ' . $filter_GUI . ' <font color="green">Sent To</font> This Server</strong><br>
 					<FORM ACTION="index.php?menu=history&receive=listmore" METHOD="post"><select name="filter"><option value="transactions" ' . $sent_to_selected_trans . '>Transactions Only</option>
-					<option value="generation" ' . $sent_to_selected_gen . '>Generation Only</option><option value="all" ' . $sent_to_selected_both . '>Both</option></option></select></br>
-					</br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
+					<option value="generation" ' . $sent_to_selected_gen . '>Generation Only</option><option value="all" ' . $sent_to_selected_both . '>Both</option></option></select><br>
+					<br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
 					<th>Sent From</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
 
 				// Find the last X transactions sent to this public key
@@ -2169,7 +2350,7 @@ if($_SESSION["valid_login"] == TRUE)
 					}
 				}
 				
-				$body_string .= '<tr><td colspan="5"><hr></hr></td></tr><tr><tr><td colspan="5"><input type="text" size="5" name="show_more_receive" value="' . $show_last .'" /><input type="submit" name="Submit1" value="Show Last" /></FORM></td></tr>';
+				$body_string .= '<tr><td colspan="5"><hr></td></tr><tr><tr><td colspan="5"><input type="text" size="5" name="show_more_receive" value="' . $show_last .'" /><input type="submit" name="Submit1" value="Show Last" /></FORM></td></tr>';
 
 				$body_string .= '</table></div>';
 
@@ -2177,7 +2358,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			if($hide_send == FALSE)
 			{
-				$body_string .= '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transactions <font color="blue">Sent From</font> This Server</strong></br></br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
+				$body_string .= '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transactions <font color="blue">Sent From</font> This Server</strong><br><br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
 					<th>Sent To</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
 
 				// Find the last X transactions from to this public key
@@ -2225,7 +2406,7 @@ if($_SESSION["valid_login"] == TRUE)
 					}
 				}
 
-				$body_string .= '<tr><td colspan="5"><hr></hr></td></tr><tr><tr><td colspan="5"><FORM ACTION="index.php?menu=history&send=listmore" METHOD="post"><input type="text" size="5" name="show_more_send" value="' . $show_last .'" /><input type="submit" name="Submit2" value="Show Last" /></FORM></td></tr>';
+				$body_string .= '<tr><td colspan="5"><hr></td></tr><tr><tr><td colspan="5"><FORM ACTION="index.php?menu=history&send=listmore" METHOD="post"><input type="text" size="5" name="show_more_send" value="' . $show_last .'" /><input type="submit" name="Submit2" value="Show Last" /></FORM></td></tr>';
 
 				$body_string .= '</table></div>';
 
@@ -2236,8 +2417,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<td style="width:250px"><input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" /><input type="submit" name="Submit3" value="Save" /></FORM></td>
 				<td><FORM ACTION="index.php?menu=history&trans_browse=open" METHOD="post"><input type="submit" name="Submit4" value="Transaction Browser" /></FORM></td></tr></table>';
 
-			$quick_info = 'Verification Level represents how deep in the transaction history the transaction exist.</br></br>
-				The larger the number, the more time that all the peers have examined it and agree that it is a valid transaction.</br></br>
+			$quick_info = 'Verification Level represents how deep in the transaction history the transaction exist.<br><br>
+				The larger the number, the more time that all the peers have examined it and agree that it is a valid transaction.<br><br>
 				<strong>Transaction Browser</strong> will allow the user to examine the details of the transaction history.';
 
 			home_screen('Transaction History', $text_bar, $body_string , $quick_info);
@@ -2271,7 +2452,7 @@ if($_SESSION["valid_login"] == TRUE)
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
 
-		$body_string = '<strong><font color="blue">( ' . number_format($sql_num_results) . ' )</font> Network Transactions Waiting for Processing</strong></br></br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
+		$body_string = '<strong><font color="blue">( ' . number_format($sql_num_results) . ' )</font> Network Transactions Waiting for Processing</strong><br><br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
 			<th>Sent From</th><th>Sent To</th><th>Amount</th></tr>';
 
 		for ($i = 0; $i < $sql_num_results; $i++)
@@ -2360,7 +2541,7 @@ if($_SESSION["valid_login"] == TRUE)
 	{
 		if($_GET["action"] == "walk_history")
 		{
-			$body_string = '<strong>History Walk from Block #<font color="blue">' . $_POST["walk_history"] . '</font> can take some time, please be patient...</font></strong></br></br>
+			$body_string = '<strong>History Walk from Block #<font color="blue">' . $_POST["walk_history"] . '</font> can take some time, please be patient...</font></strong><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>History Walk</th></tr>';
 			$block_end = $_POST["walk_history"] + 500;
 
@@ -2385,9 +2566,9 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["action"] == "repair")
 		{
-			set_time_limit(300);
-			$body_string = '<strong>Start Repair from Block #<font color="blue">' . $_POST["repair_from"] . '</font></br>
-				This can take some time, please be patient...</strong></br></br>
+			set_time_limit(999);
+			$body_string = '<strong>Start Repair from Block #<font color="blue">' . $_POST["repair_from"] . '</font><br>
+				This can take some time, please be patient...</strong><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Repair History</th></tr>';
 
 			$body_string .= visual_repair($_POST["repair_from"]);
@@ -2398,10 +2579,10 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["action"] == "check_tables")
 		{
-			set_time_limit(500);
+			set_time_limit(999);
 			write_log("A CHECK of the Entire Database & Tables Was Started.", "GU");
 
-			$body_string = '<strong>Checking All Database Tables</strong></font></br></br>
+			$body_string = '<strong>Checking All Database Tables</strong></font><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Check Database Results</th></tr><tr><td>';
 
 			$db_check = mysql_query("CHECK TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
@@ -2429,10 +2610,10 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["action"] == "repair_tables")
 		{
-			set_time_limit(500);
+			set_time_limit(999);
 			write_log("A REPAIR of the Entire Database & Tables Was Started.", "GU");
 
-			$body_string = '<strong>Repair All Database Tables</strong></font></br></br>
+			$body_string = '<strong>Repair All Database Tables</strong></font><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Repair Database Results</th></tr><tr><td>';
 
 			$db_check = mysql_query("REPAIR TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
@@ -2460,10 +2641,10 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["action"] == "optimize_tables")
 		{
-			set_time_limit(500);
+			set_time_limit(999);
 			write_log("An OPTIMIZE of the Entire Database & Tables Was Started.", "GU");
 
-			$body_string = '<strong>Optimize All Database Tables</strong></font></br></br>
+			$body_string = '<strong>Optimize All Database Tables</strong></font><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Optimize Database Results</th></tr><tr><td>';
 
 			$db_check = mysql_query("OPTIMIZE TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
@@ -2591,24 +2772,24 @@ if($_SESSION["valid_login"] == TRUE)
 				$sql_row = mysql_fetch_array($sql_result);
 
 				$body_string .= '<tr>
-				<td class="style2"><p style="width:162px;">[ ' . $sql_row["timestamp"] . ' ]</br>' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>
+				<td class="style2"><p style="width:162px;">[ ' . $sql_row["timestamp"] . ' ]<br>' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>
 				<td class="style2"><p style="word-wrap:break-word; width:360px;">' . $sql_row["log"] . '</p></td>
 				<td class="style2">' . $sql_row["attribute"] . '</td></tr>';
 			}
 
-			$body_string .= '<tr><td colspan="3"><hr></hr></td></tr><tr><td><input type="text" size="5" name="show_more_logs" value="' . $show_last .'" /><input type="submit" name="show_last" value="Show Last" /></FORM></td>
+			$body_string .= '<tr><td colspan="3"><hr></td></tr><tr><td><input type="text" size="5" name="show_more_logs" value="' . $show_last .'" /><input type="submit" name="show_last" value="Show Last" /></FORM></td>
 				<td colspan="2"><FORM ACTION="index.php?menu=tools&logs=clear" METHOD="post"><input type="submit" name="clear_logs" value="Clear All Logs" /></FORM></td></tr>';
 			$body_string .= '</table></div>';
 		}
 		
 		$text_bar = tools_bar();
 
-		$quick_info = '<strong>History Walk</strong> will manually test all transactions starting at the specified block and give a status for each block.</br></br>
-			<strong>Schedule Check</strong> will schedule Timekoin to check and repair the specified block.</br></br>
-			<strong>Repair</strong> will force Timekoin to recalculate all verification hashes from the specified block to now.</br></br>
-			<strong>Check DB</strong> will check the data integrity of all tables in the database.</br></br>
-			<strong>Optimize DB</strong> will optimize all tables & indexes in the database.</br></br>
-			<strong>Repair DB</strong> will attempt to repair all tables in the database.</br></br>			
+		$quick_info = '<strong>History Walk</strong> will manually test all transactions starting at the specified block and give a status for each block.<br><br>
+			<strong>Schedule Check</strong> will schedule Timekoin to check and repair the specified block.<br><br>
+			<strong>Repair</strong> will force Timekoin to recalculate all verification hashes from the specified block to now.<br><br>
+			<strong>Check DB</strong> will check the data integrity of all tables in the database.<br><br>
+			<strong>Optimize DB</strong> will optimize all tables & indexes in the database.<br><br>
+			<strong>Repair DB</strong> will attempt to repair all tables in the database.<br><br>			
 			<i>Note:</i> The database utilities can take a long time to process and complete.';
 		
 		home_screen('Tools & Utilities', $text_bar, $body_string , $quick_info);
@@ -2626,11 +2807,11 @@ if($_SESSION["valid_login"] == TRUE)
 				// Blank reverse crypto data field
 				mysql_query("UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");				
 				
-				$server_message = '</br><font color="blue"><strong>Private Key Restore Complete!</strong></font></br></br>';
+				$server_message = '<br><font color="blue"><strong>Private Key Restore Complete!</strong></font><br><br>';
 			}
 			else
 			{
-				$server_message = '</br><font color="red"><strong>Private Key Restore FAILED!</strong></font></br></br>';
+				$server_message = '<br><font color="red"><strong>Private Key Restore FAILED!</strong></font><br><br>';
 			}
 		}
 
@@ -2643,11 +2824,11 @@ if($_SESSION["valid_login"] == TRUE)
 				// Blank reverse crypto data field
 				mysql_query("UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
 
-				$server_message = '</br><font color="blue"><strong>Public Key Restore Complete!</strong></font></br></br>';
+				$server_message = '<br><font color="blue"><strong>Public Key Restore Complete!</strong></font><br><br>';
 			}
 			else
 			{
-				$server_message = '</br><font color="red"><strong>Public Key Restore FAILED!</strong></font></br></br>';
+				$server_message = '<br><font color="red"><strong>Public Key Restore FAILED!</strong></font><br><br>';
 			}
 		}
 
@@ -2674,9 +2855,9 @@ if($_SESSION["valid_login"] == TRUE)
 			<table border="0" cellpadding="6"><tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
 			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
 
-		$quick_info = '<strong>Do Not</strong> share your Private Key with anyone for any reason.</br></br>
-			The Private Key encrypts all transactions from your server.</br></br>
-			You should make a backup of both keys in case you want to transfer your balance to a new server or restore from a server failure.</br></br>
+		$quick_info = '<strong>Do Not</strong> share your Private Key with anyone for any reason.<br><br>
+			The Private Key encrypts all transactions from your server.<br><br>
+			You should make a backup of both keys in case you want to transfer your balance to a new server or restore from a server failure.<br><br>
 			Save both keys in a password protected text file or external device that you can secure (CD, Flash Drive, Printed Paper, etc.)';
 
 		home_screen('Backup & Restore Keys', $text_bar, $body_string , $quick_info);

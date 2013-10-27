@@ -1296,64 +1296,16 @@ function initialization_database()
 	// Record when started
 	mysql_query("UPDATE `options` SET `field_data` = '" . time() . "' WHERE `options`.`field_name` = 'timekoin_start_time' LIMIT 1");
 //**************************************
-// Upgrade Database from v1.9x or earlier 2.x
+// Upgrade Database from v2.x
 
-	// Allow LAN IPs in the Peer List
-	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'trans_history_check' LIMIT 1"),0,0);
+	// Standard Tabs Settings
+	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'standard_tabs_settings' LIMIT 1"),0,0);
 	if($new_record_check === FALSE)
 	{
 		// Does not exist, create it
-		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('trans_history_check', '1')");
+		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('standard_tabs_settings', '0')");
 	}
-
-	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,0);
-	if($new_record_check === FALSE)
-	{
-		// Does not exist, create it
-		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('generation_IP', '')");
-	}
-
-	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'generation_key_crypt' LIMIT 1"),0,0);
-	if($new_record_check === FALSE)
-	{
-		// Does not exist, create it
-		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('generation_key_crypt', '')");
-	}
-
-	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'super_peer' LIMIT 1"),0,0);
-	if($new_record_check === FALSE)
-	{
-		// Does not exist, create it
-		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('super_peer', '0')");
-	}
-
-	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,0);
-	if($new_record_check === FALSE)
-	{
-		// Does not exist, create it
-		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('php_location', '')");
-	}
-
-	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'perm_peer_priority' LIMIT 1"),0,0);
-	if($new_record_check === FALSE)
-	{
-		// Does not exist, create it
-		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('perm_peer_priority', '0')");
-	}
-
-	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,0);
-	if($new_record_check === FALSE)
-	{
-		// Does not exist, create it
-		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('peer_failure_grade', '30')");
-	}
-
-	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,0);
-	if($new_record_check === FALSE)
-	{
-		// Does not exist, create it
-		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('auto_update_generation_IP', '0')");
-	}	
+	
 //**************************************
 	// Check for an empty generation IP address,
 	// if none exist, attempt to auto-detect one
@@ -1399,10 +1351,8 @@ function initialization_database()
 	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('treasurer_last_heartbeat', '$time')");
 	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('watchdog_heartbeat_active', '0')");
 	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('watchdog_last_heartbeat', '$time')");
-//**************************************
 	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('peer_transaction_start_blocks', '10')");
 	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('peer_transaction_performance', '10')");
-//**************************************
 	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('block_check_back', '1')");
 	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('block_check_start', '0')");	
 	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('firewall_blocked_peer', '0')");	
@@ -1905,7 +1855,7 @@ function update_windows_port($new_port)
 //***********************************************************************************
 function generate_hashcode_permissions($pk_balance, $pk_gen_amt, $pk_recv, $send_tk, $pk_history, $pk_valid, $tk_trans_total, $pk_sent, $pk_gen_total)
 {
-	$permissions_number;
+	$permissions_number = 0;
 
 	if($pk_balance == 1) { $permissions_number += 1; }
 	if($pk_gen_amt == 1) { $permissions_number += 2; }
@@ -2108,10 +2058,170 @@ function check_hashcode_permissions($permissions_number, $pk_api_check, $checkbo
 		{
 			return FALSE;
 		}
-	}	
+	}
 
 	// Some other error
 	return FALSE;
+}
+//***********************************************************************************
+//***********************************************************************************
+function standard_tab_settings($peerlist, $trans_queue, $send_receive, $history, $generation, $system, $backup, $tools)
+{
+	$permissions_number = 0;
+
+	if($peerlist == 1) { $permissions_number += 1; }
+	if($trans_queue == 1) { $permissions_number += 2; }
+	if($send_receive == 1) { $permissions_number += 4; }
+	if($history == 1) { $permissions_number += 8; }
+	if($generation == 1) { $permissions_number += 16; }
+	if($system == 1) { $permissions_number += 32; }
+	if($backup == 1) { $permissions_number += 64; }
+	if($tools == 1) { $permissions_number += 128; }
+
+	return $permissions_number;
+}
+//***********************************************************************************
+//***********************************************************************************
+function check_standard_tab_settings($permissions_number, $standard_tab)
+{
+// Tools Tab
+	if($permissions_number - 256 >= 0) { $permissions_number -= 256; } // Subtract Active Permission
+	if($standard_tab == 128)
+	{ 
+		if($permissions_number >= 128) // Show Tab
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+
+// Backup Tab
+	if($permissions_number - 128 >= 0) { $permissions_number -= 128; } // Subtract Active Permission
+	if($standard_tab == 64)
+	{ 
+		if($permissions_number >= 64) // Show Tab
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+
+// System Tab
+	if($permissions_number - 64 >= 0) { $permissions_number -= 64; } // Subtract Active Permission
+	if($standard_tab == 32)
+	{ 
+		if($permissions_number >= 32) // Show Tab
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}	
+	
+// Generation Tab
+	if($permissions_number - 32 >= 0) { $permissions_number -= 32; } // Subtract Active Permission
+	if($standard_tab == 16)
+	{ 
+		if($permissions_number >= 16) // Show Tab
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	
+// History Tab
+	if($permissions_number - 16 >= 0) { $permissions_number -= 16; } // Subtract Active Permission
+	if($standard_tab == 8)
+	{ 
+		if($permissions_number >= 8) // Show Tab
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	
+// Send / Receive Queue Tab
+	if($permissions_number - 8 >= 0) { $permissions_number -= 8; } // Subtract Active Permission
+	if($standard_tab == 4)
+	{ 
+		if($permissions_number >= 4) // Show Tab
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	
+// Transaction Queue Tab
+	if($permissions_number - 4 >= 0) { $permissions_number -= 4; } // Subtract Active Permission
+	if($standard_tab == 2)
+	{ 
+		if($permissions_number >= 2) // Show Tab
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	
+// Peerlist Tab
+	if($permissions_number - 2 >= 0) { $permissions_number -= 2; } // Subtract Active Permission
+	if($standard_tab == 1)
+	{ 
+		if($permissions_number >= 1) // Show Tab
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+
+	// Some other error
+	return FALSE;
+}
+//***********************************************************************************
+function file_upload($http_file_name)
+{
+	$user_file_upload = strtolower(basename($_FILES[$http_file_name]['name']));
+
+	if(move_uploaded_file($_FILES[$http_file_name]['tmp_name'], "plugins/" . $user_file_upload) == TRUE)
+	{
+		// Upload successful
+		return $user_file_upload;
+	}
+	else
+	{
+		// Error during upload
+		return FALSE;
+	}	
+}
+//***********************************************************************************
+function read_plugin($filename)
+{
+	$handle = fopen($filename, "r");
+	$contents = stream_get_contents($handle);
+	fclose($handle);
+	return $contents;
 }
 //***********************************************************************************
 ?>
