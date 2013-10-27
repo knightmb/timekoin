@@ -147,16 +147,6 @@ if(check_standard_tab_settings($standard_settings_number, 128) == TRUE) { $tools
 		}
 	}
 
-
-
-
-
-
-
-
-
-
-
 ?>
 <!DOCTYPE html>
 <html>
@@ -223,11 +213,11 @@ function trans_percent_status()
 	}
 	else if($percent_update < 100 && $percent_update >= 98)
 	{
-		$status = '<font color="#5858FA"><strong>' . number_format($percent_update, 3) . '%</font> (' . number_format(transaction_cycle(0, TRUE) - $total_trans_hash) . ' Transaction Cycles to Update)</strong>';
+		$status = '<font color="#5858FA"><strong>' . number_format($percent_update, 3) . '%</strong></font><strong> (' . number_format(transaction_cycle(0, TRUE) - $total_trans_hash) . ' Transaction Cycles to Update)</strong>';
 	}
 	else
 	{
-		$status = '<font color="red"><strong>' . number_format($percent_update, 2) . '%</font> (' . number_format(transaction_cycle(0, TRUE) - $total_trans_hash) . ' Transaction Cycles to Update)</strong>';
+		$status = '<font color="red"><strong>' . number_format($percent_update, 2) . '%</strong></font><strong> (' . number_format(transaction_cycle(0, TRUE) - $total_trans_hash) . ' Transaction Cycles to Update)</strong>';
 	}
 
 	return $status;
@@ -240,14 +230,14 @@ function options_screen()
 	{
 		// Offer Confirmation Screen
 		$confirm_message = '<strong><font color="red">Generating New Keys will delete the old keys in the database.</font><br>Be sure to make backups if you intend on keeping any balance associated with the current keys.<br><font color="blue">Continue?</font></strong>';
-		$form_action = '<FORM ACTION="index.php?menu=options&newkeys=confirm" METHOD="post">';
+		$form_action = '<FORM ACTION="index.php?menu=options&amp;newkeys=confirm" METHOD="post">';
 	}
 	else
 	{
-		$form_action = '<FORM ACTION="index.php?menu=options&newkeys=generate" METHOD="post">';
+		$form_action = '<FORM ACTION="index.php?menu=options&amp;newkeys=generate" METHOD="post">';
 	}
 	
-return '<FORM ACTION="index.php?menu=options&password=change" METHOD="post">
+return '<FORM ACTION="index.php?menu=options&amp;password=change" METHOD="post">
 <table border="0"><tr><td style="width:325px" valign="bottom" align="right">
 Current Username: <input type="text" name="current_username" /><br>
 New Username: <input type="text" name="new_username" /><br>
@@ -280,7 +270,7 @@ if($super_peer == 1)
 }
 
 return '<table border="0"><tr><td style="width:415px" valign="bottom" align="right"><strong>Refresh Rates (seconds) for Realtime Pages [0 = disable]</strong><br><br>
-<FORM ACTION="index.php?menu=options&refresh=change" METHOD="post"></td><td style="width:215px"></td></tr>
+<FORM ACTION="index.php?menu=options&amp;refresh=change" METHOD="post"></td><td style="width:215px"></td></tr>
 <tr><td valign="bottom" align="right">
 Home: <input type="text" name="home_update" size="2" value="' . $home_update . '" /><br>
 Peerlist: <input type="text" name="peerlist_update" size="2" value="' . $peerlist_update . '" /><br>
@@ -291,11 +281,11 @@ Transaction Queue: <input type="text" name="queue_update" size="2" value="' . $q
 <tr><td align="right"><strong>Peer Failure Limit (1 - 100)</strong><br><input type="text" name="peer_failure_grade" size="3" value="' . $peer_failure_grade . '" /><br></td><td></td>
 <tr><td align="right"><input type="submit" name="Submit2" value="Save Options" /></FORM></td><td></td></tr>
 <tr><td colspan="2"><hr></td></tr>
-<tr><td align="right"><FORM ACTION="index.php?menu=options&hashcode=manage" METHOD="post"><input type="submit" name="Submit3" value="Manage Hash Code Access" /></FORM></td>
-</td><td valign="bottom" align="right"><FORM ACTION="index.php?menu=options&upgrade=check" METHOD="post"><input type="submit" name="Submit3" value="Check for Updates" /></FORM></td></tr>
+<tr><td align="right"><FORM ACTION="index.php?menu=options&amp;hashcode=manage" METHOD="post"><input type="submit" name="Submit3" value="Manage Hash Code Access" /></FORM></td>
+</td><td valign="bottom" align="right"><FORM ACTION="index.php?menu=options&amp;upgrade=check" METHOD="post"><input type="submit" name="Submit3" value="Check for Updates" /></FORM></td></tr>
 <tr><td colspan="2"><hr></td></tr>
-<tr><td align="right"><FORM ACTION="index.php?menu=options&manage=tabs" METHOD="post"><input type="submit" name="Submit4" value="Menu Tabs" /></FORM></td>
-<td align="right"><FORM ACTION="index.php?menu=options&manage=plugins" METHOD="post"><input type="submit" name="Submit5" value="Manage Plugins" /></FORM></td></tr>
+<tr><td align="right"><FORM ACTION="index.php?menu=options&amp;manage=tabs" METHOD="post"><input type="submit" name="Submit4" value="Menu Tabs" /></FORM></td>
+<td align="right"><FORM ACTION="index.php?menu=options&amp;manage=plugins" METHOD="post"><input type="submit" name="Submit5" value="Manage Plugins" /></FORM></td></tr>
 </table>
 ';
 
@@ -360,7 +350,7 @@ function options_screen4()
 		}
 	}
 
-return '<FORM ACTION="index.php?menu=options&tabs=change" METHOD="post">
+return '<FORM ACTION="index.php?menu=options&amp;tabs=change" METHOD="post">
 <table border="0" cellpadding="3"><tr><td style="width:200px" valign="bottom" align="center" colspan="2"><strong>Standard Tabs</strong></td></tr>
 <tr><td valign="top" align="right">Peerlist</td>
 <td valign="top" align="left" style="width:200px"><input type="radio" name="tab_peerlist" value="0" ' . $tab_peerlist_disable . '>Hide <input type="radio" name="tab_peerlist" value="1" ' . $tab_peerlist_enable . '>Show</td></tr>
@@ -408,18 +398,18 @@ function options_screen5()
 
 		if($plugin_enable == TRUE)
 		{
-			$plugin_toggle = '<FORM ACTION="index.php?menu=options&plugin=disable" METHOD="post"><font color="blue"><strong>Enabled</strong></font><br><input type="submit" name="Submit'.$i.'" value="Disable Here" />
+			$plugin_toggle = '<FORM ACTION="index.php?menu=options&amp;plugin=disable" METHOD="post"><font color="blue"><strong>Enabled</strong></font><br><input type="submit" name="Submit'.$i.'" value="Disable Here" />
 				<input type="hidden" name="pluginfile" value="' . $plugin_file . '"></FORM>';
 		}
 		else
 		{
-			$plugin_toggle = '<FORM ACTION="index.php?menu=options&plugin=enable" METHOD="post"><font color="red">Disabled</font><br><input type="submit" name="Submit'.$i.'" value="Enable Here" />
+			$plugin_toggle = '<FORM ACTION="index.php?menu=options&amp;plugin=enable" METHOD="post"><font color="red">Disabled</font><br><input type="submit" name="Submit'.$i.'" value="Enable Here" />
 				<input type="hidden" name="pluginfile" value="' . $plugin_file . '"></FORM>';
 		}
 
 		$plugin_output .= '<tr><td>' . $plugin_name . '</td><td>' . $plugin_tab . '</td><td>' . $plugin_file . '</td><td>' . $plugin_service . '</td>
 		<td valign="top" align="center">' . $plugin_toggle . '</td>
-		<td><FORM ACTION="index.php?menu=options&remove=plugin" METHOD="post" onclick="return confirm(\'Delete ' . $plugin_name . '?\');"><input type="image" src="img/hr.gif" title="Delete ' . $plugin_name . '" name="remove' . $i . '" border="0">
+		<td><FORM ACTION="index.php?menu=options&amp;remove=plugin" METHOD="post" onclick="return confirm(\'Delete ' . $plugin_name . '?\');"><input type="image" src="img/hr.gif" title="Delete ' . $plugin_name . '" name="remove' . $i . '" border="0">
 		<input type="hidden" name="pluginfile" value="' . $plugin_file . '"></FORM></td></tr>
 		<tr><td colspan="6"><hr></td></tr>';
 	}
@@ -429,7 +419,7 @@ return '<table border="0" cellpadding="2" cellspacing="10"><tr><td valign="botto
 <tr><td align="center"><strong>Name</strong></td><td align="center"><strong>Tab</strong></td><td align="center"><strong>File</strong></td>
 <td align="center"><strong>Service</strong></td><td align="center"><strong>Status</strong></td><td align="center">X</td></tr>
 ' . $plugin_output . '
-<tr><td align="right" colspan="6"><FORM ACTION="index.php?menu=options&plugin=new" METHOD="post"><input type="submit" name="SubmitNew" value="Install New Plugin" /></FORM></td></tr>
+<tr><td align="right" colspan="6"><FORM ACTION="index.php?menu=options&amp;plugin=new" METHOD="post"><input type="submit" name="SubmitNew" value="Install New Plugin" /></FORM></td></tr>
 </table>
 ';
 
@@ -440,7 +430,7 @@ function options_screen6()
 {
 
 return 'Plugin Installation<br><br>
-<FORM ENCTYPE="multipart/form-data" METHOD="POST" ACTION="index.php?menu=options&plugin=install">
+<FORM ENCTYPE="multipart/form-data" METHOD="POST" ACTION="index.php?menu=options&amp;plugin=install">
 <INPUT NAME="plugin_file" TYPE="file" SIZE=32><br><br>
 <input type="submit" name="SubmitNew" value="Install New Plugin" /></FORM>';
 
@@ -576,7 +566,7 @@ else
 // Database Size
 $db_size = mysql_result(mysql_query("SELECT CONCAT(SUM(ROUND(((DATA_LENGTH + INDEX_LENGTH - DATA_FREE) / 1024 / 1024),2)),\" MB\") AS Size FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA LIKE '" . MYSQL_DATABASE . "'"),0);
 
-return '<FORM ACTION="index.php?menu=system&peer_settings=change" METHOD="post">
+return '<FORM ACTION="index.php?menu=system&amp;peer_settings=change" METHOD="post">
 <table border="0"><tr><td align="right">
 Maximum Active Peers: <input type="text" name="max_peers" size="3" value="' . $max . '"/><br>
 Maximum Reserve Peers: <input type="text" name="max_new_peers" size="3" value="' . $new . '"/><br>
@@ -586,7 +576,7 @@ Maximum Reserve Peers: <input type="text" name="max_new_peers" size="3" value="'
 </td></tr>
 </table>
 <hr>
-<FORM ACTION="index.php?menu=system&server_settings=change" METHOD="post">
+<FORM ACTION="index.php?menu=system&amp;server_settings=change" METHOD="post">
 <table border="0"><tr><td align="right">
 Server Domain: <input type="text" name="domain" size="25" maxlength="256" value="' . $domain . '"/><br>
 Timekoin Subfolder: <input type="text" name="subfolder" size="25" maxlength="256" value="' . $subfolder . '"/><br>
@@ -631,9 +621,9 @@ Database Size:
 function system_service_bar()
 {
 return '<table cellspacing="10" border="0"><tr><td width="150"><FORM ACTION="main.php?action=begin_main" METHOD="post"><input type="submit" value="Start Timekoin"/></FORM></td>
-	<td width="150"><FORM ACTION="index.php?menu=system&stop=main" METHOD="post"><input type="submit" value="Stop Timekoin"/></FORM></td></tr></table><hr>
+	<td width="150"><FORM ACTION="index.php?menu=system&amp;stop=main" METHOD="post"><input type="submit" value="Stop Timekoin"/></FORM></td></tr></table><hr>
 	<table cellspacing="10" border="0"><tr><td width="150"><FORM ACTION="watchdog.php?action=begin_watchdog" METHOD="post"><input type="submit" value="Start Watchdog"/></FORM></td>
-	<td width="150"><FORM ACTION="index.php?menu=system&stop=watchdog" METHOD="post"><input type="submit" value="Stop Watchdog"/></FORM></td></tr></table>';
+	<td width="150"><FORM ACTION="index.php?menu=system&amp;stop=watchdog" METHOD="post"><input type="submit" value="Stop Watchdog"/></FORM></td></tr></table>';
 }
 //***********************************************************
 //***********************************************************
@@ -642,15 +632,15 @@ function generation_body($generate_currency)
 	$return_html;
 	if($generate_currency == "1")
 	{
-		$return_html = '<table border="0" cellspacing="10"><tr><td><FORM ACTION="index.php?menu=generation&generate=disable" METHOD="post"><input type="submit" value="Disable Generation"/></FORM></td>
-			<td><FORM ACTION="index.php?menu=generation&generate=showlist" METHOD="post"><input type="submit" value="Show Generation List"/></FORM></td>
-			<td><FORM ACTION="index.php?menu=generation&generate=showqueue" METHOD="post"><input type="submit" value="Show Election Queue List"/></FORM></td></tr></table>';
+		$return_html = '<table border="0" cellspacing="10"><tr><td><FORM ACTION="index.php?menu=generation&amp;generate=disable" METHOD="post"><input type="submit" value="Disable Generation"/></FORM></td>
+			<td><FORM ACTION="index.php?menu=generation&amp;generate=showlist" METHOD="post"><input type="submit" value="Show Generation List"/></FORM></td>
+			<td><FORM ACTION="index.php?menu=generation&amp;generate=showqueue" METHOD="post"><input type="submit" value="Show Election Queue List"/></FORM></td></tr></table>';
 	}
 	else
 	{
-		$return_html = '<table border="0"><tr><td><FORM ACTION="index.php?menu=generation&generate=enable" METHOD="post"><input type="submit" value="Enable Generation"/></FORM></td>
-			<td><FORM ACTION="index.php?menu=generation&generate=showlist" METHOD="post"><input type="submit" value="Show Generation List"/></FORM></td>
-			<td><FORM ACTION="index.php?menu=generation&generate=showqueue" METHOD="post"><input type="submit" value="Show Election Queue List"/></FORM></td></tr></table>';
+		$return_html = '<table border="0"><tr><td><FORM ACTION="index.php?menu=generation&amp;generate=enable" METHOD="post"><input type="submit" value="Enable Generation"/></FORM></td>
+			<td><FORM ACTION="index.php?menu=generation&amp;generate=showlist" METHOD="post"><input type="submit" value="Show Generation List"/></FORM></td>
+			<td><FORM ACTION="index.php?menu=generation&amp;generate=showqueue" METHOD="post"><input type="submit" value="Show Election Queue List"/></FORM></td></tr></table>';
 	}
 
 	if($_GET["generate"] == "")
@@ -688,13 +678,13 @@ function send_receive_body($fill_in_key, $amount, $cancel = FALSE, $easy_key, $m
 	{
 		// Redo menu to show cancel or complete send buttons
 		$cancel_button = '<FORM ACTION="index.php?menu=send" METHOD="post"><input type="submit" name="Submit2" value="Cancel" /></FORM>';
-		$form_action = '<FORM ACTION="index.php?menu=send&complete=send" METHOD="post">';
+		$form_action = '<FORM ACTION="index.php?menu=send&amp;complete=send" METHOD="post">';
 	}
 	else
 	{
-		$cancel_button = '<FORM ACTION="index.php?menu=send&easykey=grab" METHOD="post"><input type="text" size="24" name="easy_key" value="' . $easy_key . '" /><br>
+		$cancel_button = '<FORM ACTION="index.php?menu=send&amp;easykey=grab" METHOD="post"><input type="text" size="24" name="easy_key" value="' . $easy_key . '" /><br>
 			<input type="submit" value="Easy Key" /></FORM>';
-		$form_action = '<FORM ACTION="index.php?menu=send&check=key" METHOD="post">';
+		$form_action = '<FORM ACTION="index.php?menu=send&amp;check=key" METHOD="post">';
 	}
 
 return '<strong><font color="blue">Public Key</font> to send transaction:</strong><br>' . $form_action . '<table border="0" cellpadding="6"><tr><td colspan="2">
@@ -713,15 +703,15 @@ function tools_bar()
 	$default_check = transaction_cycle(0, TRUE) - 10;
 	$default_current = transaction_cycle(0, TRUE);
 
-	return '<table cellspacing="10" border="0"><tr><td><FORM ACTION="index.php?menu=tools&action=walk_history" METHOD="post"><input type="submit" value="History Walk"/></td>
+	return '<table cellspacing="10" border="0"><tr><td><FORM ACTION="index.php?menu=tools&amp;action=walk_history" METHOD="post"><input type="submit" value="History Walk"/></td>
 		<td>Block#<input type="text" size="7" name="walk_history" value="' . $default_walk . '" /></td></FORM><td>|<br>|</td>
-		<td><FORM ACTION="index.php?menu=tools&action=check_tables" METHOD="post" onclick="return confirm(\'Database Check Can Take a Long Time. Continue?\');"><input type="submit" value="Check DB"/></td></FORM></td><td>|<br>|</td>
-		<td><FORM ACTION="index.php?menu=tools&action=optimize_tables" METHOD="post" onclick="return confirm(\'Database Optimize Can Take a Long Time. Continue?\');"><input type="submit" value="Optimize DB"/></td></FORM></td><td>|<br>|</td>
-		<td><FORM ACTION="index.php?menu=tools&action=repair_tables" METHOD="post" onclick="return confirm(\'Database Repair Can Take a Long Time. Continue?\');"><input type="submit" value="Repair DB"/></td></FORM>
+		<td><FORM ACTION="index.php?menu=tools&amp;action=check_tables" METHOD="post" onclick="return confirm(\'Database Check Can Take a Long Time. Continue?\');"><input type="submit" value="Check DB"/></td></FORM></td><td>|<br>|</td>
+		<td><FORM ACTION="index.php?menu=tools&amp;action=optimize_tables" METHOD="post" onclick="return confirm(\'Database Optimize Can Take a Long Time. Continue?\');"><input type="submit" value="Optimize DB"/></td></FORM></td><td>|<br>|</td>
+		<td><FORM ACTION="index.php?menu=tools&amp;action=repair_tables" METHOD="post" onclick="return confirm(\'Database Repair Can Take a Long Time. Continue?\');"><input type="submit" value="Repair DB"/></td></FORM>
 		</tr></table><hr>
-		<table cellspacing="10" border="0"><tr><td><FORM ACTION="index.php?menu=tools&action=schedule_check" METHOD="post"><input type="submit" value="Schedule Check"/></td>
+		<table cellspacing="10" border="0"><tr><td><FORM ACTION="index.php?menu=tools&amp;action=schedule_check" METHOD="post"><input type="submit" value="Schedule Check"/></td>
 		<td>Block#<input type="text" size="7" name="schedule_check" value="' . $default_check . '" /></td></FORM><td>|<br>|</td>
-		<td><FORM ACTION="index.php?menu=tools&action=repair" METHOD="post" onclick="return confirm(\'Transaction Repair Can Take a Long Time. Continue?\');"><input type="submit" value="Repair"/></td>
+		<td><FORM ACTION="index.php?menu=tools&amp;action=repair" METHOD="post" onclick="return confirm(\'Transaction Repair Can Take a Long Time. Continue?\');"><input type="submit" value="Repair"/></td>
 		<td>From Block#<input type="text" size="7" name="repair_from" value="' . $default_check . '" /></td>
 		</FORM></tr></table>';
 }
@@ -733,24 +723,24 @@ function backup_body($private_key, $public_key, $cancel_private = FALSE, $cancel
 	{
 		// Redo menu to show cancel or complete buttons
 		$private_cancel_button = '<FORM ACTION="index.php?menu=backup" METHOD="post"><input type="submit" value="Cancel" /></FORM>';
-		$form_action = '<FORM ACTION="index.php?menu=backup&dorestore=private" METHOD="post">';
+		$form_action = '<FORM ACTION="index.php?menu=backup&amp;dorestore=private" METHOD="post">';
 		$are_you_sure = '<br><font color="red"><strong>This will over-write the Private Key<br> for your server. Are you sure?</strong></font>';
 	}
 	else
 	{
-		$form_action = '<FORM ACTION="index.php?menu=backup&restore=private" METHOD="post">';
+		$form_action = '<FORM ACTION="index.php?menu=backup&amp;restore=private" METHOD="post">';
 	}
 
 	if($cancel_public == TRUE)
 	{
 		// Redo menu to show cancel or complete buttons
 		$public_cancel_button = '<FORM ACTION="index.php?menu=backup" METHOD="post"><input type="submit" value="Cancel" /></FORM>';
-		$form_action2 = '<FORM ACTION="index.php?menu=backup&dorestore=public" METHOD="post">';
+		$form_action2 = '<FORM ACTION="index.php?menu=backup&amp;dorestore=public" METHOD="post">';
 		$are_you_sure2 = '<br><font color="red"><strong>This will over-write the Public Key<br> for your server. Are you sure?</strong></font>';		
 	}
 	else
 	{
-		$form_action2 = '<FORM ACTION="index.php?menu=backup&restore=public" METHOD="post">';
+		$form_action2 = '<FORM ACTION="index.php?menu=backup&amp;restore=public" METHOD="post">';
 	}
 
 return '<table border="0" cellpadding="6"><tr><td colspan="2"><strong><font color="blue">Restore Private Key</font></strong></td></tr>

@@ -706,7 +706,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$quick_info = '<strong>Variance</strong> of 15 seconds or less with the other peers is good.<br><br>
 			<strong>Ping</strong> response time greater than 3000 ms will timeout during data exchanges.';
 
-			home_screen('Check Peer Clocks & Ping Times', NULL, $body_string , $quick_info);
+			home_screen('Check Peer Clocks &amp; Ping Times', NULL, $body_string , $quick_info);
 			exit;
 		}
 
@@ -736,7 +736,7 @@ if($_SESSION["valid_login"] == TRUE)
 				$port_number = $sql_row["port_number"];
 
 				// Poll and give my domain to check against
-				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 3, "peerlist.php?action=poll_failure&domain=$my_domain&subfolder=$my_subfolder&port=$my_port");
+				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 3, "peerlist.php?action=poll_failure&amp;domain=$my_domain&amp;subfolder=$my_subfolder&amp;port=$my_port");
 
 				if($poll_peer == "")
 				{
@@ -768,7 +768,7 @@ if($_SESSION["valid_login"] == TRUE)
 			if($_GET["type"] == "new")
 			{
 				// Manually add a peer
-				$body_string .= '<FORM ACTION="index.php?menu=peerlist&save=newpeer" METHOD="post"><tr>
+				$body_string .= '<FORM ACTION="index.php?menu=peerlist&amp;save=newpeer" METHOD="post"><tr>
 				 <td class="style2"><input type="text" name="edit_ip" size="13" /></td>
 				 <td class="style2"><input type="text" name="edit_domain" size="20" /></td>
 				 <td class="style2"><input type="text" name="edit_subfolder" size="10" /></td>
@@ -786,7 +786,7 @@ if($_SESSION["valid_login"] == TRUE)
 				$sql_result = mysql_query($sql);
 				$sql_num_results = mysql_num_rows($sql_result) + 2;
 				$counter = 1;
-				$body_string .= '<FORM ACTION="index.php?menu=peerlist&save=firstcontact" METHOD="post">';
+				$body_string .= '<FORM ACTION="index.php?menu=peerlist&amp;save=firstcontact" METHOD="post">';
 
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
@@ -826,7 +826,7 @@ if($_SESSION["valid_login"] == TRUE)
 					$perm_peer2 = "SELECTED";
 				}
 
-				$body_string .= '<FORM ACTION="index.php?menu=peerlist&save=peer" METHOD="post"><tr>
+				$body_string .= '<FORM ACTION="index.php?menu=peerlist&amp;save=peer" METHOD="post"><tr>
 				<td class="style2"><input type="text" name="edit_ip" size="13" value="' . $sql_row["IP_Address"] . '" /><br><br>
 				<select name="perm_peer"><option value="expires" ' . $perm_peer2 . '>Purge When Inactive</option><option value="perm" ' . $perm_peer1 . '>Permanent Peer</select></td>
 				<td class="style2" valign="top"><input type="text" name="edit_domain" size="20" value="' . $sql_row["domain"] . '" /></td>
@@ -923,11 +923,11 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 				else
 				{
-					$body_string .= '<td><FORM ACTION="index.php?menu=peerlist&remove=peer" METHOD="post"><input type="image" src="img/hr.gif" title="Delete Peer" name="remove' . $i . '" border="0">
+					$body_string .= '<td><FORM ACTION="index.php?menu=peerlist&amp;remove=peer" METHOD="post"><input type="image" src="img/hr.gif" title="Delete Peer" name="remove' . $i . '" border="0">
 					 <input type="hidden" name="ip" value="' . $sql_row["IP_Address"] . '">
 					 <input type="hidden" name="domain" value="' . $sql_row["domain"] . '">
 					 </FORM></td><td>
-					 <FORM ACTION="index.php?menu=peerlist&edit=peer" METHOD="post"><input type="image" src="img/edit-icon.gif" title="Edit Peer" name="edit' . $i . '" border="0">
+					 <FORM ACTION="index.php?menu=peerlist&amp;edit=peer" METHOD="post"><input type="image" src="img/edit-icon.gif" title="Edit Peer" name="edit' . $i . '" border="0">
 					 <input type="hidden" name="ip" value="' . $sql_row["IP_Address"] . '">
 					 <input type="hidden" name="domain" value="' . $sql_row["domain"] . '">
 					 </FORM>
@@ -935,12 +935,12 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 			}
 
-			$body_string .= '<tr><td colspan="2"><FORM ACTION="index.php?menu=peerlist&show=reserve" METHOD="post"><input type="submit" value="Show Reserve Peers"/></FORM></td>
-				<td colspan="3"><FORM ACTION="index.php?menu=peerlist&edit=peer&type=new" METHOD="post"><input type="submit" value="Add New Peer"/></FORM></td>
-				<td colspan="4"><FORM ACTION="index.php?menu=peerlist&edit=peer&type=firstcontact" METHOD="post"><input type="submit" value="First Contact Servers"/></FORM></td></tr>
+			$body_string .= '<tr><td colspan="2"><FORM ACTION="index.php?menu=peerlist&amp;show=reserve" METHOD="post"><input type="submit" value="Show Reserve Peers"/></FORM></td>
+				<td colspan="3"><FORM ACTION="index.php?menu=peerlist&amp;edit=peer&amp;type=new" METHOD="post"><input type="submit" value="Add New Peer"/></FORM></td>
+				<td colspan="4"><FORM ACTION="index.php?menu=peerlist&amp;edit=peer&amp;type=firstcontact" METHOD="post"><input type="submit" value="First Contact Servers"/></FORM></td></tr>
 				<tr><td colspan="9"><hr></td></tr>
-				<tr><td colspan="3"><FORM ACTION="index.php?menu=peerlist&time=poll" METHOD="post"><input name="Submit3" type="submit" value="Check Peer Clock & Ping Times" /></FORM></td>
-				<td colspan="6"><FORM ACTION="index.php?menu=peerlist&poll_failure=poll" METHOD="post"><input name="Submit4" type="submit" value="Poll Failure Scores" /></FORM></td>
+				<tr><td colspan="3"><FORM ACTION="index.php?menu=peerlist&amp;time=poll" METHOD="post"><input name="Submit3" type="submit" value="Check Peer Clock &amp; Ping Times" /></FORM></td>
+				<td colspan="6"><FORM ACTION="index.php?menu=peerlist&amp;poll_failure=poll" METHOD="post"><input name="Submit4" type="submit" value="Poll Failure Scores" /></FORM></td>
 				</tr></table></div>';
 
 			
@@ -1032,7 +1032,7 @@ if($_SESSION["valid_login"] == TRUE)
 						if(update_windows_port($port) == TRUE)
 						{
 							// Update sucessful, notify user that a full shutdown/restart will be necessary for this change to take affect
-							$server_code .= '<font color="green"><strong>Port Changes will Require a Full Shutdown & Restart of the Timekoin Server to Work Properly.</strong></font>';
+							$server_code .= '<font color="green"><strong>Port Changes will Require a Full Shutdown &amp; Restart of the Timekoin Server to Work Properly.</strong></font>';
 						}
 					}
 					
@@ -1344,7 +1344,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			if($refresh_change == TRUE)
 			{
-				$body_text .= '<font color="blue"><strong>Refresh Settings, Super Peer Limit, & Peer Failure Limit Saved!</strong></font><br>';
+				$body_text .= '<font color="blue"><strong>Refresh Settings, Super Peer Limit, &amp; Peer Failure Limit Saved!</strong></font><br>';
 			}
 			else
 			{
@@ -1360,7 +1360,7 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			if(generate_new_keys() == TRUE)
 			{
-				$body_text .= '<font color="green"><strong>New Private & Public Key Pair Generated!</strong></font><br>';
+				$body_text .= '<font color="green"><strong>New Private &amp; Public Key Pair Generated!</strong></font><br>';
 			}
 			else
 			{
@@ -1418,7 +1418,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$hashcode_permissions;
 			$counter = 1;
 
-			$body_text = '<table border="0"><tr><td style="width:230px"><FORM ACTION="index.php?menu=options&hashcode=save" METHOD="post"></td></tr>';
+			$body_text = '<table border="0"><tr><td style="width:230px"><FORM ACTION="index.php?menu=options&amp;hashcode=save" METHOD="post"></td></tr>';
 
 			while($counter <= 5)
 			{
@@ -1657,7 +1657,7 @@ if($_SESSION["valid_login"] == TRUE)
 			<br><br><strong>Hash Code</strong> is a private code you create for any external program or server that request access to more advanced features of your Timekoin server.
 			<br><br><strong>Super Peer Limit</strong> controls how many transaction cycles other peers will download in bulk.';
 
-			home_screen("Options & Personal Settings", options_screen(), $body_text , $quick_info);
+			home_screen("Options &amp; Personal Settings", options_screen(), $body_text , $quick_info);
 		}
 		exit;
 	}	
@@ -1702,7 +1702,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$last_generation = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$my_public_key' LIMIT 1"),0,"last_generation");
 			$my_generation_IP = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,"field_data");
 
-			$my_gen_IP_form = '<FORM ACTION="index.php?menu=generation&IP=change" METHOD="post">
+			$my_gen_IP_form = '<FORM ACTION="index.php?menu=generation&amp;IP=change" METHOD="post">
 				Generation IP <input type="text" name="gen_IP" size="15" maxlength="46" value="' . $my_generation_IP . '"/>
 				<input type="submit" name="IPChange" value="Update" /></FORM>' . $IP_save;
 
@@ -2068,7 +2068,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 						if($sql_row["attribute"] == 'G')
 						{
-							$body_string .= '<td><FORM ACTION="index.php?menu=history&examine=transaction" METHOD="post">
+							$body_string .= '<td><FORM ACTION="index.php?menu=history&amp;examine=transaction" METHOD="post">
 							<input type="hidden" name="show_more" value="' . $show_last . '">
 							<input type="hidden" name="trans_cycle" value="' . $jump_to_transaction . '">
 							<input type="hidden" name="timestamp" value="' . $sql_row["timestamp"] . '">
@@ -2080,7 +2080,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 						if($sql_row["attribute"] == 'T')
 						{
-							$body_string .= '<td><FORM ACTION="index.php?menu=history&examine=transaction" METHOD="post">
+							$body_string .= '<td><FORM ACTION="index.php?menu=history&amp;examine=transaction" METHOD="post">
 							<input type="hidden" name="show_more" value="' . $show_last . '">
 							<input type="hidden" name="trans_cycle" value="' . $jump_to_transaction . '">
 							<input type="hidden" name="timestamp" value="' . $sql_row["timestamp"] . '">
@@ -2101,7 +2101,7 @@ if($_SESSION["valid_login"] == TRUE)
 				$show_last_counter--;
 			}
 
-			$body_string .= '<tr><FORM ACTION="index.php?menu=history&trans_browse=open" METHOD="post">
+			$body_string .= '<tr><FORM ACTION="index.php?menu=history&amp;trans_browse=open" METHOD="post">
 				<td colspan="2" align="left"><input type="text" size="5" name="show_more" value="' . $show_last .'" /><input type="submit" name="Submit1" value="Show Last" /></FORM></td></tr>';
 
 			$body_string .= '</table></div>';
@@ -2164,22 +2164,22 @@ if($_SESSION["valid_login"] == TRUE)
 
 			if($inside_transaction_hash == $crypt_1_2_hash)
 			{
-				$body_string .= '<br><font color="green">(Match for Crypt Fields 1 & 2)</font>';
+				$body_string .= '<br><font color="green">(Match for Crypt Fields 1 &amp; 2)</font>';
 			}
 			else
 			{
-				$body_string .= '<br><font color="red">(NO MATCH for Crypt Fields 1 & 2)</font>';
+				$body_string .= '<br><font color="red">(NO MATCH for Crypt Fields 1 &amp; 2)</font>';
 			}
 
 			$body_string .= '<hr><strong>Public Key From:</strong><br><p style="word-wrap:break-word;">' . base64_encode($sql_row["public_key_from"]) . '</p>';
 			
 			if($crypt1_data . $crypt2_data == $sql_row["public_key_to"])
 			{
-				$match_pub_key = '<font color="green">(Public Key Match for Crypt Fields 1 & 2)</font>';
+				$match_pub_key = '<font color="green">(Public Key Match for Crypt Fields 1 &amp; 2)</font>';
 			}
 			else
 			{
-				$match_pub_key = '<font color="red">(Public Key NO MATCH for Crypt Fields 1 & 2)</font>';
+				$match_pub_key = '<font color="red">(Public Key NO MATCH for Crypt Fields 1 &amp; 2)</font>';
 			}			
 			
 			$body_string .= '<hr><strong>Public Key To:</strong> ' . $match_pub_key . '<br><p style="word-wrap:break-word;">' . base64_encode($sql_row["public_key_to"]) . '</p>';
@@ -2198,7 +2198,7 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 
 			// Return Button
-			$body_string .= '<hr><FORM ACTION="index.php?menu=history&trans_browse=open#' . $_POST["trans_cycle"] . '" METHOD="post">
+			$body_string .= '<hr><FORM ACTION="index.php?menu=history&amp;trans_browse=open#' . $_POST["trans_cycle"] . '" METHOD="post">
 				<input type="hidden" name="show_more" value="' . $_POST["show_more"] . '">
 				<input type="hidden" name="highlight_cycle" value="' . $_POST["trans_cycle"] . '">				
 				<input type="submit" name="Submit5" value="Return to Transaction Browser" /></FORM><hr>';
@@ -2279,7 +2279,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 						case "all":
 							$filter_results = "ALL";
-							$filter_GUI = "Transactions & Currency Generation";
+							$filter_GUI = "Transactions &amp; Currency Generation";
 							$sent_to_selected_both = "SELECTED";
 							break;							
 					}
@@ -2292,7 +2292,7 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 
 				$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> ' . $filter_GUI . ' <font color="green">Sent To</font> This Server</strong><br>
-					<FORM ACTION="index.php?menu=history&receive=listmore" METHOD="post"><select name="filter"><option value="transactions" ' . $sent_to_selected_trans . '>Transactions Only</option>
+					<FORM ACTION="index.php?menu=history&amp;receive=listmore" METHOD="post"><select name="filter"><option value="transactions" ' . $sent_to_selected_trans . '>Transactions Only</option>
 					<option value="generation" ' . $sent_to_selected_gen . '>Generation Only</option><option value="all" ' . $sent_to_selected_both . '>Both</option></option></select><br>
 					<br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
 					<th>Sent From</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
@@ -2406,16 +2406,16 @@ if($_SESSION["valid_login"] == TRUE)
 					}
 				}
 
-				$body_string .= '<tr><td colspan="5"><hr></td></tr><tr><tr><td colspan="5"><FORM ACTION="index.php?menu=history&send=listmore" METHOD="post"><input type="text" size="5" name="show_more_send" value="' . $show_last .'" /><input type="submit" name="Submit2" value="Show Last" /></FORM></td></tr>';
+				$body_string .= '<tr><td colspan="5"><hr></td></tr><tr><tr><td colspan="5"><FORM ACTION="index.php?menu=history&amp;send=listmore" METHOD="post"><input type="text" size="5" name="show_more_send" value="' . $show_last .'" /><input type="submit" name="Submit2" value="Show Last" /></FORM></td></tr>';
 
 				$body_string .= '</table></div>';
 
 			} // End hide check for send
 
-			$text_bar = '<FORM ACTION="index.php?menu=history&font=public_key" METHOD="post">
+			$text_bar = '<FORM ACTION="index.php?menu=history&amp;font=public_key" METHOD="post">
 				<table border="0" cellspacing="4"><tr><td><strong>Default Public Key Font Size</strong></td>
 				<td style="width:250px"><input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" /><input type="submit" name="Submit3" value="Save" /></FORM></td>
-				<td><FORM ACTION="index.php?menu=history&trans_browse=open" METHOD="post"><input type="submit" name="Submit4" value="Transaction Browser" /></FORM></td></tr></table>';
+				<td><FORM ACTION="index.php?menu=history&amp;trans_browse=open" METHOD="post"><input type="submit" name="Submit4" value="Transaction Browser" /></FORM></td></tr></table>';
 
 			$quick_info = 'Verification Level represents how deep in the transaction history the transaction exist.<br><br>
 				The larger the number, the more time that all the peers have examined it and agree that it is a valid transaction.<br><br>
@@ -2526,7 +2526,7 @@ if($_SESSION["valid_login"] == TRUE)
 		
 		$body_string .= '</table></div>';
 
-		$text_bar = '<FORM ACTION="index.php?menu=queue&font=public_key" METHOD="post">
+		$text_bar = '<FORM ACTION="index.php?menu=queue&amp;font=public_key" METHOD="post">
 			<table border="0" cellspacing="4"><tr><td><strong>Default Public Key Font Size</strong></td><td><input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" /><input type="submit" name="Submit3" value="Save" /></td></tr></table></FORM>';
 
 		$quick_info = 'This section contains all the network transactions that are queued to be stored in the transaction history.';
@@ -2580,7 +2580,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["action"] == "check_tables")
 		{
 			set_time_limit(999);
-			write_log("A CHECK of the Entire Database & Tables Was Started.", "GU");
+			write_log("A CHECK of the Entire Database &amp; Tables Was Started.", "GU");
 
 			$body_string = '<strong>Checking All Database Tables</strong></font><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Check Database Results</th></tr><tr><td>';
@@ -2605,13 +2605,13 @@ if($_SESSION["valid_login"] == TRUE)
 
 			$body_string .= '<strong>CHECK COMPLETE</strong></td></tr></table></div>';
 
-			write_log("A CHECK of the Entire Database & Tables Was Finished.", "GU");			
+			write_log("A CHECK of the Entire Database &amp; Tables Was Finished.", "GU");			
 		}
 
 		if($_GET["action"] == "repair_tables")
 		{
 			set_time_limit(999);
-			write_log("A REPAIR of the Entire Database & Tables Was Started.", "GU");
+			write_log("A REPAIR of the Entire Database &amp; Tables Was Started.", "GU");
 
 			$body_string = '<strong>Repair All Database Tables</strong></font><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Repair Database Results</th></tr><tr><td>';
@@ -2636,13 +2636,13 @@ if($_SESSION["valid_login"] == TRUE)
 
 			$body_string .= '<strong>REPAIR FINISHED</strong></td></tr></table></div>';
 
-			write_log("A REPAIR of the Entire Database & Tables Was Finished.", "GU");			
+			write_log("A REPAIR of the Entire Database &amp; Tables Was Finished.", "GU");			
 		}
 
 		if($_GET["action"] == "optimize_tables")
 		{
 			set_time_limit(999);
-			write_log("An OPTIMIZE of the Entire Database & Tables Was Started.", "GU");
+			write_log("An OPTIMIZE of the Entire Database &amp; Tables Was Started.", "GU");
 
 			$body_string = '<strong>Optimize All Database Tables</strong></font><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Optimize Database Results</th></tr><tr><td>';
@@ -2667,7 +2667,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			$body_string .= '<strong>OPTIMIZE FINISHED</strong></td></tr></table></div>';
 
-			write_log("An OPTIMIZE of the Entire Database & Tables Was Finished.", "GU");			
+			write_log("An OPTIMIZE of the Entire Database &amp; Tables Was Finished.", "GU");			
 		}
 
 		if($_GET["logs"] == "listmore")
@@ -2748,7 +2748,7 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 			
 			$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> Log Events</strong>' . $filter_by . '<table border="0" cellspacing="5"><tr><td>
-				Filter By:</td><td><FORM ACTION="index.php?menu=tools&logs=listmore" METHOD="post"><select name="filter"><option value="all" SELECTED>Show All</option><option value="BA">Balance Indexer</option>
+				Filter By:</td><td><FORM ACTION="index.php?menu=tools&amp;logs=listmore" METHOD="post"><select name="filter"><option value="all" SELECTED>Show All</option><option value="BA">Balance Indexer</option>
 				<option value="FO">Foundation Manager</option><option value="G">Generation Events</option><option value="GP">Generation Peer Manager</option><option value="GU">GUI - Graphical User Interface</option>
 				<option value="R">Generation Request</option><option value="MA">Main Program</option><option value="PL">Peer Processor</option><option value="TC">Transaction Clerk</option>
 				<option value="T">Transactions</option><option value="TR">Treasurer Processor</option><option value="QC">Queue Clerk</option><option value="WA">Watchdog</option></select></td></tr></table>
@@ -2778,7 +2778,7 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 
 			$body_string .= '<tr><td colspan="3"><hr></td></tr><tr><td><input type="text" size="5" name="show_more_logs" value="' . $show_last .'" /><input type="submit" name="show_last" value="Show Last" /></FORM></td>
-				<td colspan="2"><FORM ACTION="index.php?menu=tools&logs=clear" METHOD="post"><input type="submit" name="clear_logs" value="Clear All Logs" /></FORM></td></tr>';
+				<td colspan="2"><FORM ACTION="index.php?menu=tools&amp;logs=clear" METHOD="post"><input type="submit" name="clear_logs" value="Clear All Logs" /></FORM></td></tr>';
 			$body_string .= '</table></div>';
 		}
 		
@@ -2788,11 +2788,11 @@ if($_SESSION["valid_login"] == TRUE)
 			<strong>Schedule Check</strong> will schedule Timekoin to check and repair the specified block.<br><br>
 			<strong>Repair</strong> will force Timekoin to recalculate all verification hashes from the specified block to now.<br><br>
 			<strong>Check DB</strong> will check the data integrity of all tables in the database.<br><br>
-			<strong>Optimize DB</strong> will optimize all tables & indexes in the database.<br><br>
+			<strong>Optimize DB</strong> will optimize all tables &amp; indexes in the database.<br><br>
 			<strong>Repair DB</strong> will attempt to repair all tables in the database.<br><br>			
 			<i>Note:</i> The database utilities can take a long time to process and complete.';
 		
-		home_screen('Tools & Utilities', $text_bar, $body_string , $quick_info);
+		home_screen('Tools &amp; Utilities', $text_bar, $body_string , $quick_info);
 		exit;
 	}
 //****************************************************************************
@@ -2860,7 +2860,7 @@ if($_SESSION["valid_login"] == TRUE)
 			You should make a backup of both keys in case you want to transfer your balance to a new server or restore from a server failure.<br><br>
 			Save both keys in a password protected text file or external device that you can secure (CD, Flash Drive, Printed Paper, etc.)';
 
-		home_screen('Backup & Restore Keys', $text_bar, $body_string , $quick_info);
+		home_screen('Backup &amp; Restore Keys', $text_bar, $body_string , $quick_info);
 		exit;		
 	}
 //****************************************************************************
