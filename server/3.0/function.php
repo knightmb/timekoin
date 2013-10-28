@@ -1115,7 +1115,7 @@ function visual_walkhistory($block_start = 0, $block_end = 0)
 
 		if($next_timestamp != $timestamp)
 		{
-			$output .= '</br><strong><font color=red>Hash Timestamp Sequence Wrong... Should Be: ' . $next_timestamp . '</font></strong>';
+			$output .= '<br><strong><font color=red>Hash Timestamp Sequence Wrong... Should Be: ' . $next_timestamp . '</font></strong>';
 			$wrong_timestamp++;
 			$wrong_block_numbers .= " " . $i;
 		}
@@ -1124,17 +1124,17 @@ function visual_walkhistory($block_start = 0, $block_end = 0)
 
 		$my_hash = hash('sha256', $my_hash);
 
-		$output .= '</br>Timestamp in Database: ' . $timestamp;
-		$output .= '</br>Calculated Hash: ' . $my_hash;
-		$output .= '</br>&nbsp;Database Hash : ' . $next_hash;
+		$output .= '<br>Timestamp in Database: ' . $timestamp;
+		$output .= '<br>Calculated Hash: ' . $my_hash;
+		$output .= '<br>&nbsp;Database Hash : ' . $next_hash;
 
 		if($my_hash == $next_hash)
 		{
-			$output .= '</br><font color=green>Hash Match...</font>';
+			$output .= '<br><font color=green>Hash Match...</font>';
 		}
 		else
 		{
-			$output .= '</br><strong><font color=red>Hash MISMATCH</font></strong></td></tr>';
+			$output .= '<br><strong><font color=red>Hash MISMATCH</font></strong></td></tr>';
 			$wrong_hash++;
 			$wrong_hash_numbers = $wrong_hash_numbers . " " . $i;			
 		}
@@ -1151,9 +1151,9 @@ function visual_walkhistory($block_start = 0, $block_end = 0)
 	}
 
 	$output .= '<tr><td class="style2"><strong><font color="blue">Total Wrong Sequence: ' . $wrong_timestamp . '</strong></font>';
-	$output .= '</br><strong><font color="red">Blocks Wrong:</font> ' . $wrong_block_numbers . '</strong></td></tr>';
+	$output .= '<br><strong><font color="red">Blocks Wrong:</font> ' . $wrong_block_numbers . '</strong></td></tr>';
 	$output .= '<tr><td class="style2"><strong><font color="blue">Total Wrong Hash: ' . $wrong_hash . '</strong></font>';
-	$output .= '</br><strong><font color="red">Blocks Wrong:</font> ' . $wrong_hash_numbers . '</strong></td></tr>';	
+	$output .= '<br><strong><font color="red">Blocks Wrong:</font> ' . $wrong_hash_numbers . '</strong></td></tr>';	
 
 	return $output;
 
@@ -1209,11 +1209,11 @@ function visual_repair($block_start = 0)
 		if(mysql_query($sql) == FALSE)
 		{
 			// Something failed
-			$output .= '</br><strong><font color="red">Repair ERROR in Database</font></strong></td></tr>';
+			$output .= '<br><strong><font color="red">Repair ERROR in Database</font></strong></td></tr>';
 		}
 		else
 		{
-			$output .= '</br><strong><font color="blue">Repair Complete...</font></strong></td></tr>';
+			$output .= '<br><strong><font color="blue">Repair Complete...</font></strong></td></tr>';
 		}
 	} // End for loop
 
@@ -1586,7 +1586,7 @@ function check_for_updates($code_feedback = FALSE)
 	ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
 	ini_set('default_socket_timeout', 10); // Timeout for request in seconds
 
-	$update_check1 = 'Checking for Updates....</br></br>';
+	$update_check1 = 'Checking for Updates....<br><br>';
 
 	$poll_version = file_get_contents("https://timekoin.com/tkupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
 
@@ -1594,12 +1594,12 @@ function check_for_updates($code_feedback = FALSE)
 	{
 		if($code_feedback == TRUE) { return 1; } // Code feedback only that update is available
 		
-		$update_check1 .= '<strong>New Version Available <font color="blue">' . $poll_version . '</font></strong></br></br>
+		$update_check1 .= '<strong>New Version Available <font color="blue">' . $poll_version . '</font></strong><br><br>
 		<FORM ACTION="index.php?menu=options&upgrade=doupgrade" METHOD="post"><input type="submit" name="Submit3" value="Perform Software Update" /></FORM>';
 	}
 	else if($poll_version <= TIMEKOIN_VERSION && empty($poll_version) == FALSE)
 	{
-		$update_check1 .= 'Current Version: <strong>' . TIMEKOIN_VERSION . '</strong></br></br><font color="blue">No Update Necessary.</font>';	
+		$update_check1 .= 'Current Version: <strong>' . TIMEKOIN_VERSION . '</strong><br><br><font color="blue">No Update Necessary.</font>';	
 	}
 	else
 	{
@@ -1621,17 +1621,17 @@ function install_update_script($script_name, $script_file)
 			if(fclose($fh) == TRUE)
 			{
 				// Update Complete
-				return '<strong><font color="green">Update Complete...</strong></font></br></br>';
+				return '<font color="green"><strong>Update Complete...</strong></font><br><br>';
 			}
 			else
 			{
-				return '<strong><font color="red">ERROR: Update FAILED with a file Close Error.</strong></font></br></br>';
+				return '<font color="red"><strong>ERROR: Update FAILED with a file Close Error.</strong></font><br><br>';
 			}
 		}
 	}
 	else
 	{
-		return '<strong><font color="red">ERROR: Update FAILED with unable to Open File Error.</strong></font></br></br>';
+		return '<font color="red"><strong>ERROR: Update FAILED with unable to Open File Error.</strong></font><br><br>';
 	}
 }
 //***********************************************************************************
@@ -1653,8 +1653,8 @@ function check_update_script($script_name, $script, $php_script_file, $poll_vers
 		}
 		else
 		{
-			$update_status_return .= 'Server SHA: <strong>' . $poll_sha . '</strong></br>Download SHA: <strong>' . $download_sha . '</strong></br>';
-			$update_status_return .= '<strong>' . $script_name . '</strong> SHA Match...</br>';
+			$update_status_return .= 'Server SHA: <strong>' . $poll_sha . '</strong><br>Download SHA: <strong>' . $download_sha . '</strong><br>';
+			$update_status_return .= '<strong>' . $script_name . '</strong> SHA Match...<br>';
 			return $update_status_return;
 		}
 	}
@@ -1675,7 +1675,7 @@ function run_script_update($script_name, $script_php, $poll_version, $context, $
 	
 	if(empty($php_file) == TRUE)
 	{
-		return ' - <strong>No Update Available</strong>...</br></br>';
+		return ' - <strong>No Update Available</strong>...<br><br>';
 	}
 	else
 	{
@@ -1684,7 +1684,7 @@ function run_script_update($script_name, $script_php, $poll_version, $context, $
 
 		if($sha_check == FALSE)
 		{
-			return ' - <strong>ERROR: Unable to Download File Properly</strong>...</br></br>';
+			return ' - <strong>ERROR: Unable to Download File Properly</strong>...<br><br>';
 		}
 		else
 		{
@@ -1722,80 +1722,80 @@ function do_updates()
 
 	$poll_version = file_get_contents("https://timekoin.com/tkupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
 
-	$update_status = 'Starting Update Process...</br></br>';
+	$update_status = 'Starting Update Process...<br><br>';
 
 	if(empty($poll_version) == FALSE)
 	{
 		//****************************************************
 		//Check for CSS updates
-		$update_status .= 'Checking for <strong>CSS Template</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>CSS Template</strong> Update...<br>';
 		$update_status .= run_script_update("CSS Template (admin.css)", "admin.css", $poll_version, $context, 0, "css");
 		//****************************************************
 		//****************************************************
-		$update_status .= 'Checking for <strong>RSA Code</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>RSA Code</strong> Update...<br>';
 		$update_status .= run_script_update("RSA Code (RSA.php)", "RSA", $poll_version, $context);
 		//****************************************************
-		$update_status .= 'Checking for <strong>Openssl Template</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>Openssl Template</strong> Update...<br>';
 		$update_status .= run_script_update("Openssl Template (openssl.cnf)", "openssl.cnf", $poll_version, $context, 0);
 		//****************************************************
 		//****************************************************
-		$update_status .= 'Checking for <strong>API Access</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>API Access</strong> Update...<br>';
 		$update_status .= run_script_update("API Access (api.php)", "api", $poll_version, $context);
 		//****************************************************
 		//****************************************************
-		$update_status .= 'Checking for <strong>Balace Indexer</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>Balace Indexer</strong> Update...<br>';
 		$update_status .= run_script_update("Balance Indexer (balance.php)", "balance", $poll_version, $context);
 		//****************************************************
-		$update_status .= 'Checking for <strong>Transaction Foundation Manager</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>Transaction Foundation Manager</strong> Update...<br>';
 		$update_status .= run_script_update("Transaction Foundation Manager (foundation.php)", "foundation", $poll_version, $context);
 		//****************************************************
-		$update_status .= 'Checking for <strong>Currency Generation Manager</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>Currency Generation Manager</strong> Update...<br>';
 		$update_status .= run_script_update("Currency Generation Manager (generation.php)", "generation", $poll_version, $context);
 		//****************************************************
-		$update_status .= 'Checking for <strong>Generation Peer Manager</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>Generation Peer Manager</strong> Update...<br>';
 		$update_status .= run_script_update("Generation Peer Manager (genpeer.php)", "genpeer", $poll_version, $context);
 		//****************************************************
-		$update_status .= 'Checking for <strong>Timekoin Web Interface</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>Timekoin Web Interface</strong> Update...<br>';
 		$update_status .= run_script_update("Timekoin Web Interface (index.php)", "index", $poll_version, $context);
 		//****************************************************
-		$update_status .= 'Checking for <strong>Main Program</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>Main Program</strong> Update...<br>';
 		$update_status .= run_script_update("Main Program (main.php)", "main", $poll_version, $context);
 		//****************************************************
-		$update_status .= 'Checking for <strong>Peer List Manager</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>Peer List Manager</strong> Update...<br>';
 		$update_status .= run_script_update("Peer List Manager (peerlist.php)", "peerlist", $poll_version, $context);
 		//****************************************************
-		$update_status .= 'Checking for <strong>Transaction Queue Manager</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>Transaction Queue Manager</strong> Update...<br>';
 		$update_status .= run_script_update("Transaction Queue Manager (queueclerk.php)", "queueclerk", $poll_version, $context);
 		//****************************************************
-		$update_status .= 'Checking for <strong>Timekoin Module Status</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>Timekoin Module Status</strong> Update...<br>';
 		$update_status .= run_script_update("Timekoin Module Status (status.php)", "status", $poll_version, $context);
 		//****************************************************
-		$update_status .= 'Checking for <strong>Web Interface Template</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>Web Interface Template</strong> Update...<br>';
 		$update_status .= run_script_update("Web Interface Template (templates.php)", "templates", $poll_version, $context);
 		//****************************************************
-		$update_status .= 'Checking for <strong>Transaction Clerk</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>Transaction Clerk</strong> Update...<br>';
 		$update_status .= run_script_update("Transaction Clerk (transclerk.php)", "transclerk", $poll_version, $context);
 		//****************************************************
-		$update_status .= 'Checking for <strong>Treasurer Processor</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>Treasurer Processor</strong> Update...<br>';
 		$update_status .= run_script_update("Treasurer Processor (treasurer.php)", "treasurer", $poll_version, $context);
 		//****************************************************
-		$update_status .= 'Checking for <strong>Process Watchdog</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>Process Watchdog</strong> Update...<br>';
 		$update_status .= run_script_update("Process Watchdog (watchdog.php)", "watchdog", $poll_version, $context);
 		//****************************************************
 		// We do the function storage last because it contains the version info.
 		// That way if some unknown error prevents updating the files above, this
 		// will allow the user to try again for an update without being stuck in
 		// a new version that is half-updated.
-		$update_status .= 'Checking for <strong>Function Storage</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>Function Storage</strong> Update...<br>';
 		$update_status .= run_script_update("Function Storage (function.php)", "function", $poll_version, $context);
 		//****************************************************
 
 		$finish_message = file_get_contents("https://timekoin.com/tkupdates/v$poll_version/ZZZfinish.txt", FALSE, $context, NULL);
-		$update_status .= '</br>' . $finish_message;
+		$update_status .= '<br>' . $finish_message;
 	}
 	else
 	{
-		$update_status .= '<strong><font color="red">ERROR: Could Not Contact Secure Server https://timekoin.com</font></strong>';
+		$update_status .= '<font color="red"><strong>ERROR: Could Not Contact Secure Server https://timekoin.com</strong></font>';
 	}
 
 	return $update_status;

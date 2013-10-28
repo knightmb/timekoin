@@ -168,8 +168,6 @@ if(check_standard_tab_settings($standard_settings_number, 128) == TRUE) { $menu_
 		$menu_output .= '<li><a href="index.php?menu=logoff">Log Out</a></li>';
 	}
 
-
-
 ?>
 <!DOCTYPE html>
 <html>
@@ -319,12 +317,11 @@ Home: <input type="text" name="home_update" size="2" value="' . $home_update . '
 Peerlist: <input type="text" name="peerlist_update" size="2" value="' . $peerlist_update . '" /><br>
 Transaction Queue: <input type="text" name="queue_update" size="2" value="' . $queue_update . '" /></td><td></td></tr>
 <tr><td></td><td></td></tr>
-<tr><td align="right"><strong>Super Peer Limit (10 - 500)</strong><br><input type="text" name="super_peer_limit" size="3" value="' . $super_peer . '" /><br></td><td></td></tr>
+<tr><td align="right"><strong>Super Peer Limit (10 - 500)</strong><br><input type="text" name="super_peer_limit" size="3" value="' . $super_peer . '" /><br></td>
+<td><input type="submit" name="Submit2" value="Save Options" /></td></tr>
 <tr><td></td><td></td></tr>
 <tr><td align="right"><strong>Peer Failure Limit (1 - 100)</strong><br><input type="text" name="peer_failure_grade" size="3" value="' . $peer_failure_grade . '" /><br></td><td></td>
-<tr><td align="right"><input type="submit" name="Submit2" value="Save Options" /></td><td></td></tr>
 <tr><td colspan="2"><hr></td></tr></table></FORM>
-
 <table border="0"><tr><td style="width:415px" align="right"><FORM ACTION="index.php?menu=options&amp;hashcode=manage" METHOD="post"><input type="submit" name="Submit3" value="Manage Hash Code Access" /></FORM></td>
 <td style="width:215px" valign="bottom" align="right"><FORM ACTION="index.php?menu=options&amp;upgrade=check" METHOD="post"><input type="submit" name="Submit3" value="Check for Updates" /></FORM></td></tr>
 <tr><td colspan="2"><hr></td></tr>
@@ -616,9 +613,8 @@ Maximum Active Peers: <input type="text" name="max_peers" size="3" value="' . $m
 Maximum Reserve Peers: <input type="text" name="max_new_peers" size="3" value="' . $new . '"/><br>
 </td><td align="right">
 <input type="submit" name="Submit1" value="Change Peer Settings" />
-</FORM>
 </td></tr>
-</table>
+</table></FORM>
 <hr>
 <FORM ACTION="index.php?menu=system&amp;server_settings=change" METHOD="post">
 <table border="0"><tr><td align="right">
@@ -634,9 +630,8 @@ Max Peer Query: <input type="text" name="max_request" size="6" maxlength="4" val
 <br><br>Transaction History Checks: <input type="radio" name="trans_history_check" value="0" ' . $trans_history_check_0 . '>Rare <input type="radio" name="trans_history_check" value="1" ' . $trans_history_check_1 . '> Normal <input type="radio" name="trans_history_check" value="2" ' . $trans_history_check_2 . '>Frequent
 </td><td align="right">
 <input type="submit" name="Submit2" value="Change Server Settings" />
-</FORM>
 </td></tr>
-</table>
+</table></FORM>
 <hr>
 <table border="0"><tr><td align="right">
 <strong>Miscellaneous Server</strong><br><br>
@@ -664,10 +659,10 @@ Database Size:
 //***********************************************************
 function system_service_bar()
 {
-return '<table cellspacing="10" border="0"><tr><td width="150"><FORM ACTION="main.php?action=begin_main" METHOD="post"><input type="submit" value="Start Timekoin"/></FORM></td>
-	<td width="150"><FORM ACTION="index.php?menu=system&amp;stop=main" METHOD="post" onclick="return confirm(\'Are You Sure? This Will Stop Timekoin and All Running Process.\');"><input type="submit" value="Stop Timekoin"/></FORM></td></tr></table><hr>
-	<table cellspacing="10" border="0"><tr><td width="150"><FORM ACTION="watchdog.php?action=begin_watchdog" METHOD="post"><input type="submit" value="Start Watchdog"/></FORM></td>
-	<td width="150"><FORM ACTION="index.php?menu=system&amp;stop=watchdog" METHOD="post" onclick="return confirm(\'Are You Sure? This Will Stop the Watchdog Process.\');"><input type="submit" value="Stop Watchdog"/></FORM></td></tr></table>';
+return '<table cellspacing="10" border="0"><tr><td style="width:150px"><FORM ACTION="main.php?action=begin_main" METHOD="post"><input type="submit" value="START Timekoin"/></FORM></td>
+	<td style="width:150px"><FORM ACTION="index.php?menu=system&amp;stop=main" METHOD="post" onclick="return confirm(\'Are You Sure? This Will Stop Timekoin and All Running Process.\');"><input type="submit" value="STOP Timekoin"/></FORM></td></tr></table><hr>
+	<table cellspacing="10" border="0"><tr><td style="width:150px"><FORM ACTION="watchdog.php?action=begin_watchdog" METHOD="post"><input type="submit" value="Start Watchdog"/></FORM></td>
+	<td style="width:150px"><FORM ACTION="index.php?menu=system&amp;stop=watchdog" METHOD="post" onclick="return confirm(\'Are You Sure? This Will Stop the Watchdog Process.\');"><input type="submit" value="Stop Watchdog"/></FORM></td></tr></table>';
 }
 //***********************************************************
 //***********************************************************
@@ -689,27 +684,27 @@ function generation_body($generate_currency)
 
 	if($_GET["generate"] == "")
 	{
-		$return_html .= '<p><strong>How Generation Works</strong><br><ol>
+		$return_html .= '<br><strong>How Generation Works</strong><br><ol>
 		<li>The server must be accessible from the Internet and be able to accept and respond to HTTP requests on the port designated in the System tab. This allows peer servers to validate the existence of your server. You may test you router/firewall settings using the <a target="_blank" href="https://timekoin.com/utility/firewall.php"><font color="blue"><strong>Firewall Tool</strong></font></a>.  If your server fails this test, you must modify your router or firewall settings to allow inbound TCP connections on your chosen port.</li>
 		<li>A single server key is chosen randomly for generation during an election cycle. Elections are pseudo-randomized. You may use the <a target="_blank" href="http://timekoin.com/test/eclock.php?max_cycles=288"><font color="blue"><strong>Election Calendar</strong></font></a> to see upcoming elections in the next 24 hours.</li>
 		<li>Once elected, your server will create generation transactions during generation cycles. Generation cycles occur at pseudo-random times.  Use the <a target="_blank" href="http://timekoin.com/test/gclock.php?max_cycles=288"><font color="blue"><strong>Generation Calendar</strong></font></a> to see the upcoming generation cycles in the next 24 hours.</li>
 		<li>The server may continue to generate currency as long as it stays online.  If the server does not generate currency for 2 hours, the network assumes it has gone offline and the server key will be removed from the Generating Peer List. Once the server comes back online, it will need to be re-elected before generation can begin again.</li>
-		</ol></p>
-		<p>
+		</ol>
+
 		<strong>Generation Amount Schedule</strong><br>
 		The amount a server can generate is directly related to the length of time it has been online and generating currency in the Timekoin network.<br>
 		<table border="0" cellpadding="2"><tr><td><I>Time Generating</I></td><td><I>Currency per Generation Cycle</I></td></tr>
-		<tr><td>0 - 1 week</td><td><font color="green"><strong>1</font></strong></td></tr>
-		<tr><td>1 - 2 weeks</td><td><font color="green"><strong>2</font></strong></td></tr>
-		<tr><td>2 - 4 weeks</td><td><font color="green"><strong>3</font></strong></td></tr>
-		<tr><td>4 - 8 weeks</td><td><font color="green"><strong>4</font></strong></td></tr>
-		<tr><td>8 - 16 weeks</td><td><font color="green"><strong>5</font></strong></td></tr>
-		<tr><td>16 - 32 weeks</td><td><font color="green"><strong>6</font></strong></td></tr>
-		<tr><td>32 - 64 weeks</td><td><font color="green"><strong>7</font></strong></td></tr>
-		<tr><td>64 - 128 weeks</td><td><font color="green"><strong>8</font></strong></td></tr>
-		<tr><td>128 - 256 weeks</td><td><font color="green"><strong>9</font></strong></td></tr>
-		<tr><td>256 or more weeks</td><td><font color="green"><strong>10</font></strong></td></tr>
-		</table></p>';
+		<tr><td>0 - 1 week</td><td><font color="green"><strong>1</strong></font></td></tr>
+		<tr><td>1 - 2 weeks</td><td><font color="green"><strong>2</strong></font></td></tr>
+		<tr><td>2 - 4 weeks</td><td><font color="green"><strong>3</strong></font></td></tr>
+		<tr><td>4 - 8 weeks</td><td><font color="green"><strong>4</strong></font></td></tr>
+		<tr><td>8 - 16 weeks</td><td><font color="green"><strong>5</strong></font></td></tr>
+		<tr><td>16 - 32 weeks</td><td><font color="green"><strong>6</strong></font></td></tr>
+		<tr><td>32 - 64 weeks</td><td><font color="green"><strong>7</strong></font></td></tr>
+		<tr><td>64 - 128 weeks</td><td><font color="green"><strong>8</strong></font></td></tr>
+		<tr><td>128 - 256 weeks</td><td><font color="green"><strong>9</strong></font></td></tr>
+		<tr><td>256 or more weeks</td><td><font color="green"><strong>10</strong></font></td></tr>
+		</table><br>';
 	}
     
     return $return_html;
@@ -733,11 +728,11 @@ function send_receive_body($fill_in_key, $amount, $cancel = FALSE, $easy_key, $m
 
 return '<strong><font color="blue">Public Key</font> to send transaction:</strong><br>' . $form_action . '<table border="0" cellpadding="6"><tr><td colspan="2">
 <textarea name="send_public_key" rows="6" cols="75">' . $fill_in_key . '</textarea></td></tr>
-<tr><td colspan="2"><strong>Message:</strong><br><input type="text" maxlength="64" size="64" value="' . $message . '" name="send_message" /></td></tr>
-<tr><td width="320" valign="top"><strong>Amount:</strong> <input type="text" size="8" value="' . $amount . '" name="send_amount" />
-<input type="submit" name="Submit1" value="Send Timekoins" /></FORM></td>
-<td>' . $cancel_button  . '</td></tr>
-<tr><td></td><td>Create Your Own Here:<br><a target="_blank" href="http://easy.timekoin.net/">easy.timekoin.net</a></td></tr></table>';
+<tr><td style="width:580px" colspan="2"><strong>Message:</strong><br><input type="text" maxlength="64" size="64" value="' . $message . '" name="send_message" /></td></tr>
+<tr><td valign="top"><strong>Amount:</strong> <input type="text" size="8" value="' . $amount . '" name="send_amount" />
+<input type="submit" name="Submit1" value="Send Timekoins" /></td></tr></table></FORM>
+<table border="0" cellpadding="6"><tr><td style="width:580px" align="right">' . $cancel_button  . '</td></tr>
+<tr><td align="right">Create Your Own Here:<br><a target="_blank" href="http://easy.timekoin.net/">easy.timekoin.net</a></td></tr></table>';
 }
 //***********************************************************
 //***********************************************************
@@ -766,7 +761,6 @@ function backup_body($private_key, $public_key, $cancel_private = FALSE, $cancel
 	if($cancel_private == TRUE)
 	{
 		// Redo menu to show cancel or complete buttons
-		$private_cancel_button = '<FORM ACTION="index.php?menu=backup" METHOD="post"><input type="submit" value="Cancel" /></FORM>';
 		$form_action = '<FORM ACTION="index.php?menu=backup&amp;dorestore=private" METHOD="post">';
 		$are_you_sure = '<br><font color="red"><strong>This will over-write the Private Key<br> for your server. Are you sure?</strong></font>';
 	}
@@ -778,7 +772,6 @@ function backup_body($private_key, $public_key, $cancel_private = FALSE, $cancel
 	if($cancel_public == TRUE)
 	{
 		// Redo menu to show cancel or complete buttons
-		$public_cancel_button = '<FORM ACTION="index.php?menu=backup" METHOD="post"><input type="submit" value="Cancel" /></FORM>';
 		$form_action2 = '<FORM ACTION="index.php?menu=backup&amp;dorestore=public" METHOD="post">';
 		$are_you_sure2 = '<br><font color="red"><strong>This will over-write the Public Key<br> for your server. Are you sure?</strong></font>';		
 	}
@@ -787,13 +780,14 @@ function backup_body($private_key, $public_key, $cancel_private = FALSE, $cancel
 		$form_action2 = '<FORM ACTION="index.php?menu=backup&amp;restore=public" METHOD="post">';
 	}
 
-return '<table border="0" cellpadding="6"><tr><td colspan="2"><strong><font color="blue">Restore Private Key</font></strong></td></tr>
-			<tr><td colspan="2">' . $form_action . '<textarea name="restore_private_key" rows="5" cols="75">' . $private_key . '</textarea></td></tr>
-			<tr><td><input type="submit" value="Restore Private Key"/></FORM>' . $are_you_sure . '</td><td align="left" valign="top">' . $private_cancel_button . '</td></tr>
-			<tr><td colspan="2"><hr></td></tr>
+return $form_action . '<table border="0" cellpadding="6"><tr><td colspan="2"><strong><font color="blue">Restore Private Key</font></strong></td></tr>
+			<tr><td colspan="2"><textarea name="restore_private_key" rows="5" cols="75">' . $private_key . '</textarea></td></tr>
+			<tr><td><input type="submit" value="Restore Private Key"/>' . $are_you_sure . '</td></tr>
+			<tr><td colspan="2"><hr></td></tr></table></FORM>
+			' . $form_action2 . '<table border="0" cellpadding="6">
 			<tr><td colspan="2"><strong><font color="green">Restore Public Key</font></strong></td></tr>
-			<tr><td colspan="2">' . $form_action2 . '<textarea name="restore_public_key" rows="5" cols="75">' . $public_key . '</textarea></td></tr>
-			<tr><td><input type="submit" value="Restore Public Key"/></FORM>' . $are_you_sure2 . '<td align="left" valign="top">' . $public_cancel_button . '</td></tr></table>';
+			<tr><td colspan="2"><textarea name="restore_public_key" rows="5" cols="75">' . $public_key . '</textarea></td></tr>
+			<tr><td><input type="submit" value="Restore Public Key"/>' . $are_you_sure2 . '</td></tr></table></FORM>';
 }
 //***********************************************************
 //***********************************************************

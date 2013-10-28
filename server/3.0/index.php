@@ -823,23 +823,18 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["edit"] == "peer")
 		{
-			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
-				<th>Domain</th><th>Subfolder</th><th>Port Number</th><th></th><th></th></tr>';			
-
 			if($_GET["type"] == "new")
 			{
 				// Manually add a peer
-				$body_string .= '<FORM ACTION="index.php?menu=peerlist&amp;save=newpeer" METHOD="post"><tr>
-				 <td class="style2"><input type="text" name="edit_ip" size="13" /></td>
-				 <td class="style2"><input type="text" name="edit_domain" size="20" /></td>
-				 <td class="style2"><input type="text" name="edit_subfolder" size="10" /></td>
-				 <td class="style2"><input type="text" name="edit_port" size="5" /></td>			 
-				 <td><input type="image" src="img/save-icon.gif" title="Save New Peer" name="submit1" border="0"></FORM></td><td>
-				 <FORM ACTION="index.php?menu=peerlist" METHOD="post">
-				 <input type="image" src="img/hr.gif" title="Cancel" name="submit2" border="0"></FORM>
-				 </td></tr>';
-
-				$body_string .= '</table></div>';				
+				$body_string .= '<div class="table"><FORM ACTION="index.php?menu=peerlist&amp;save=newpeer" METHOD="post">
+					<table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
+		<th>Domain</th><th>Subfolder</th><th>Port Number</th><th></th><th></th></tr>
+		<tr><td class="style2"><input type="text" name="edit_ip" size="13" /></td>
+		<td class="style2"><input type="text" name="edit_domain" size="20" /></td>
+		<td class="style2"><input type="text" name="edit_subfolder" size="10" /></td>
+		<td class="style2"><input type="text" name="edit_port" size="5" /></td>			 
+		<td><input type="image" src="img/save-icon.gif" title="Save New Peer" name="submit1" border="0"></td>
+		<td></td></tr></table></FORM></div>';
 			}
 			else if($_GET["type"] == "firstcontact")
 			{
@@ -847,7 +842,9 @@ if($_SESSION["valid_login"] == TRUE)
 				$sql_result = mysql_query($sql);
 				$sql_num_results = mysql_num_rows($sql_result) + 2;
 				$counter = 1;
-				$body_string .= '<FORM ACTION="index.php?menu=peerlist&amp;save=firstcontact" METHOD="post">';
+				$body_string .= '<FORM ACTION="index.php?menu=peerlist&amp;save=firstcontact" METHOD="post">
+					<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
+				<th>Domain</th><th>Subfolder</th><th>Port Number</th><th></th><th></th></tr>';
 
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
@@ -862,14 +859,14 @@ if($_SESSION["valid_login"] == TRUE)
 					<td class="style2" valign="top"><input type="text" name="first_contact_domain' . $counter . '" size="20" value="' . $peer_domain . '" /></td>
 					<td class="style2" valign="top"><input type="text" name="first_contact_subfolder' . $counter . '" size="10" value="' . $peer_subfolder . '" /></td>
 					<td class="style2" valign="top"><input type="text" name="first_contact_port' . $counter . '" size="5" value="' . $peer_port_number . '" /></td>			 
-					</td></tr>';
+					</tr>';
 
 					$counter++;
 				}
 
 				$body_string .= '<input type="hidden" name="field_numbers" value="' . ($counter - 1) . '">
-					<tr><td colspan="2"><input type="submit" value="Save First Contact Servers"/></FORM></td></tr>';
-				$body_string .= '</table></div>';
+					<tr><td colspan="2"><input type="submit" value="Save First Contact Servers"/></td></tr>';
+				$body_string .= '</table></div></FORM>';
 			}
 			else
 			{
@@ -887,20 +884,18 @@ if($_SESSION["valid_login"] == TRUE)
 					$perm_peer2 = "SELECTED";
 				}
 
-				$body_string .= '<FORM ACTION="index.php?menu=peerlist&amp;save=peer" METHOD="post"><tr>
-				<td class="style2"><input type="text" name="edit_ip" size="13" value="' . $sql_row["IP_Address"] . '" /><br><br>
+				$body_string .= '<FORM ACTION="index.php?menu=peerlist&amp;save=peer" METHOD="post">
+				<table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
+				<th>Domain</th><th>Subfolder</th><th>Port Number</th><th></th><th></th></tr>
+				<tr><td class="style2"><input type="text" name="edit_ip" size="13" value="' . $sql_row["IP_Address"] . '" /><br><br>
 				<select name="perm_peer"><option value="expires" ' . $perm_peer2 . '>Purge When Inactive</option><option value="perm" ' . $perm_peer1 . '>Permanent Peer</select></td>
 				<td class="style2" valign="top"><input type="text" name="edit_domain" size="20" value="' . $sql_row["domain"] . '" /></td>
 				<td class="style2" valign="top"><input type="text" name="edit_subfolder" size="10" value="' . $sql_row["subfolder"] . '" /></td>
 				<td class="style2" valign="top"><input type="text" name="edit_port" size="5" value="' . $sql_row["port_number"] . '" /></td>			 
 				<td valign="top"><input type="hidden" name="update_ip" value="' . $sql_row["IP_Address"] . '">
 				<input type="hidden" name="update_domain" value="' . $sql_row["domain"] . '">
-				<input type="image" src="img/save-icon.gif" title="Save Settings" name="submit1" border="0"></FORM></td>
-				<td valign="top"><FORM ACTION="index.php?menu=peerlist" METHOD="post">
-				<input type="image" src="img/hr.gif" title="Cancel Changes" name="submit2" border="0"></FORM>
-				</td></tr>';
-
-				$body_string .= '</table></div>';
+				<input type="image" src="img/save-icon.gif" title="Save Settings" name="submit1" border="0"></td>
+				<td valign="top"></td></tr></table></FORM>';
 			}
 
 			$sql = "SELECT * FROM `active_peer_list`";
@@ -1811,7 +1806,7 @@ if($_SESSION["valid_login"] == TRUE)
 		}
 		else
 		{
-			$generate_currency = 'Generation <font color="red">Disabled</strong></font>';
+			$generate_currency = 'Generation <font color="red">Disabled</font>';
 		}
 
 		$body_string = generation_body($generate_currency_enabled);
@@ -1973,9 +1968,9 @@ if($_SESSION["valid_login"] == TRUE)
 						$message = $_POST["send_message"];
 						$display_balance = db_cache_balance($my_public_key);
 						$body_string = send_receive_body($public_key_64, $send_amount, TRUE, NULL, $message);
-						$body_string .= '<hr><font color="blue"><strong>This public key is valid.</font><br>
-							<font color="red">There is no way to recover timekoins sent to the wrong public key.</font><br>
-							<font color="blue">Click "Send Timekoins" to send now.</strong></font><br><br>';
+						$body_string .= '<hr><font color="blue"><strong>This public key is valid.</strong></font><br>
+							<font color="red"><strong>There is no way to recover Timekoins sent to the wrong public key.</strong></font><br>
+							<font color="blue"><strong>Click "Send Timekoins" to send now.</strong></font><br><br>';
 					}
 				} // End self check
 			} // End balance check
@@ -2005,7 +2000,7 @@ if($_SESSION["valid_login"] == TRUE)
 						// Can't send to yourself
 						$display_balance = db_cache_balance($my_public_key);
 						$body_string = send_receive_body();
-						$body_string .= '<hr><font color="red"><strong>Can not send to yourself, send failed...</strong></font><br><br>';
+						$body_string .= '<hr><font color="red"><strong>Can Not send to yourself, send failed...</strong></font><br><br>';
 					}
 					else
 					{
@@ -2016,8 +2011,8 @@ if($_SESSION["valid_login"] == TRUE)
 						{
 							$display_balance = db_cache_balance($my_public_key);
 							$body_string = send_receive_body($public_key_64, $send_amount);
-							$body_string .= '<hr><font color="green"><strong>You just sent ' . $send_amount . ' timekoins to the above public key.</font><br>
-								Your balance will not reflect this until the transaction is recorded across the entire network.</strong><br><br>';
+							$body_string .= '<hr><font color="green"><strong>You just sent ' . $send_amount . ' timekoins to the above public key.</strong></font><br>
+							<font color="blue"><strong>Your balance will not reflect this until the transaction is recorded across the entire network.</strong></font><br><br>';
 						}
 						else
 						{
@@ -2033,7 +2028,7 @@ if($_SESSION["valid_login"] == TRUE)
 				if($_GET["easykey"] == "grab")
 				{
 					ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
-					ini_set('default_socket_timeout', 10); // Timeout for request in seconds
+					ini_set('default_socket_timeout', 7); // Timeout for request in seconds
 					$message = $_POST["send_message"];
 					$easy_key = filter_sql($_POST["easy_key"]); // Filter SQL just in case
 					$last_easy_key = filter_sql($_POST["easy_key"]); // Filter SQL just in case
@@ -2049,7 +2044,7 @@ if($_SESSION["valid_login"] == TRUE)
 					}
 					else
 					{
-						$server_message = '<font color="blue"><strong>Easy Key Found</strong></font>';
+						$server_message = '<table border="0"><tr><td style="width:580px" align="right"><font color="blue"><strong>Easy Key Found</strong></font></td></tr></table>';
 					}
 				}
 				
@@ -2372,7 +2367,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 				$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> ' . $filter_GUI . ' <font color="green">Sent To</font> This Server</strong><br>
 					<FORM ACTION="index.php?menu=history&amp;receive=listmore" METHOD="post"><select name="filter"><option value="transactions" ' . $sent_to_selected_trans . '>Transactions Only</option>
-					<option value="generation" ' . $sent_to_selected_gen . '>Generation Only</option><option value="all" ' . $sent_to_selected_both . '>Both</option></option></select><br>
+					<option value="generation" ' . $sent_to_selected_gen . '>Generation Only</option><option value="all" ' . $sent_to_selected_both . '>Both</option></select><br>
 					<br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
 					<th>Sent From</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
 
@@ -2429,9 +2424,8 @@ if($_SESSION["valid_login"] == TRUE)
 					}
 				}
 				
-				$body_string .= '<tr><td colspan="5"><hr></td></tr><tr><tr><td colspan="5"><input type="text" size="5" name="show_more_receive" value="' . $show_last .'" /><input type="submit" name="Submit1" value="Show Last" /></FORM></td></tr>';
-
-				$body_string .= '</table></div>';
+				$body_string .= '<tr><td colspan="5"><hr></td></tr><tr><tr><td colspan="5"><input type="text" size="5" name="show_more_receive" value="' . $show_last .'" />
+					<input type="submit" name="Submit1" value="Show Last" /></td></tr></table></div></FORM>';
 
 			} // End hide check for receive
 
@@ -2485,16 +2479,17 @@ if($_SESSION["valid_login"] == TRUE)
 					}
 				}
 
-				$body_string .= '<tr><td colspan="5"><hr></td></tr><tr><tr><td colspan="5"><FORM ACTION="index.php?menu=history&amp;send=listmore" METHOD="post"><input type="text" size="5" name="show_more_send" value="' . $show_last .'" /><input type="submit" name="Submit2" value="Show Last" /></FORM></td></tr>';
-
-				$body_string .= '</table></div>';
+				$body_string .= '<tr><td colspan="5"><hr></td></tr><tr><tr><td colspan="5">
+					<FORM ACTION="index.php?menu=history&amp;send=listmore" METHOD="post">
+					<input type="text" size="5" name="show_more_send" value="' . $show_last .'" />
+					<input type="submit" name="Submit2" value="Show Last" /></FORM></td></tr></table></div>';
 
 			} // End hide check for send
 
 			$text_bar = '<FORM ACTION="index.php?menu=history&amp;font=public_key" METHOD="post">
-				<table border="0" cellspacing="4"><tr><td><strong>Default Public Key Font Size</strong></td>
-				<td style="width:250px"><input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" /><input type="submit" name="Submit3" value="Save" /></FORM></td>
-				<td><FORM ACTION="index.php?menu=history&amp;trans_browse=open" METHOD="post"><input type="submit" name="Submit4" value="Transaction Browser" /></FORM></td></tr></table>';
+				<table style="float: left;" border="0" cellspacing="4"><tr><td><strong>Default Public Key Font Size</strong></td>
+				<td style="width:250px"><input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" /><input type="submit" name="Submit3" value="Save" /></td></tr></table></FORM>
+				<FORM ACTION="index.php?menu=history&amp;trans_browse=open" METHOD="post"><table border="0"><tr><td><input type="submit" name="Submit4" value="Transaction Browser" /></td></tr></table></FORM>';
 
 			$quick_info = 'Verification Level represents how deep in the transaction history the transaction exist.<br><br>
 				The larger the number, the more time that all the peers have examined it and agree that it is a valid transaction.<br><br>
