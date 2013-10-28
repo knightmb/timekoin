@@ -465,6 +465,28 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 
 							$inside_transaction_hash = find_string("HASH=", "", $transaction_info, TRUE);
 
+							$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
+
+							$transaction_amount_sent_test = intval($transaction_amount_sent);
+
+							if($transaction_amount_sent_test == $transaction_amount_sent)
+							{
+								// Is a valid integer, amount greater than zero?
+								if($transaction_amount_sent > 0)
+								{
+									$valid_amount = TRUE;
+								}
+								else
+								{
+									$valid_amount = FALSE;
+								}
+							}
+							else
+							{
+								// Is NOT a valid integer, fail check
+								$valid_amount = FALSE;
+							}
+
 							// Check if a message is encoded in this data as well
 							if(strlen($inside_transaction_hash) != 64)
 							{
@@ -484,7 +506,8 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 						&& $inside_transaction_hash == $final_hash_compare 
 						&& strlen($transaction_public_key) > 300 
 						&& $transaction_timestamp >= $current_transaction_cycle 
-						&& $transaction_timestamp < $next_transaction_cycle)
+						&& $transaction_timestamp < $next_transaction_cycle
+						&& $valid_amount == TRUE)
 					{
 						// Check for 100 public key limit in the transaction queue
 						$sql = "SELECT * FROM `transaction_queue` WHERE `public_key` = '$transaction_public_key'";

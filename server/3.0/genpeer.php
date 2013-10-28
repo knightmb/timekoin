@@ -151,7 +151,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 					{
 						$public_key_winner = $public_key;
 						$highest_score = $public_key_score;
-						$IP_Address = $sql_row["IP_Address"];						
+						$IP_Address = $sql_row["IP_Address"];
 					}
 				}
 
@@ -319,6 +319,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 			{
 				// Too many loops for peers, something is wrong or peer
 				// is giving out garbage information, break from loop
+				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 5);
 				break;
 			}
 			

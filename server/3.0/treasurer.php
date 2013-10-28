@@ -564,6 +564,6 @@ mysql_query("UPDATE `main_loop_status` SET `field_data` = 2 WHERE `main_loop_sta
 mysql_query("UPDATE `main_loop_status` SET `field_data` = " . time() . " WHERE `main_loop_status`.`field_name` = 'treasurer_last_heartbeat' LIMIT 1");
 
 //***********************************************************************************
-sleep(10);
+sleep(5);
 } // End Infinite Loop
 ?>
