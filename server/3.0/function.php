@@ -308,23 +308,14 @@ function poll_peer($ip_address, $domain, $subfolder, $port_number, $max_length, 
 }
 //***********************************************************************************
 //***********************************************************************************
-function call_script($script, $priority = 1)
+function call_script($script, $priority = 1, $plugin = FALSE)
 {
 	if($priority == 1)
 	{
 		// Normal Priority
 		if(getenv("OS") == "Windows_NT")
 		{
-			$php_location = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,0);
-
-			if(empty($php_location) == TRUE)
-			{
-				pclose(popen("start php-win $script", "r"));// This will execute without waiting for it to finish
-			}
-			else
-			{
-				pclose(popen("set PATH=%PATH%;$php_location&& start php-win $script", "r"));// This will execute without waiting for it to finish
-			}
+			pclose(popen("start php-win $script", "r"));// This will execute without waiting for it to finish
 		}
 		else
 		{
@@ -336,21 +327,24 @@ function call_script($script, $priority = 1)
 		// No PHP CLI Extensions for some odd reason, call from web server instead
 		poll_peer(NULL, "localhost", my_subfolder(), my_port_number(), 1, $script);
 	}
+	else if($plugin == TRUE)
+	{
+		// Normal Priority
+		if(getenv("OS") == "Windows_NT")
+		{
+			pclose(popen("start php-win plugins/$script", "r"));// This will execute without waiting for it to finish
+		}
+		else
+		{
+			exec("php plugins/$script &> /dev/null &"); // This will execute without waiting for it to finish
+		}
+	}
 	else
 	{
 		// Below Normal Priority
 		if(getenv("OS") == "Windows_NT")
 		{
-			$php_location = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,0);
-			
-			if(empty($php_location) == TRUE)
-			{			
-				pclose(popen("start /BELOWNORMAL php-win $script", "r"));// This will execute without waiting for it to finish
-			}
-			else
-			{
-				pclose(popen("set PATH=%PATH%;$php_location&& start /BELOWNORMAL php-win $script", "r"));// This will execute without waiting for it to finish				
-			}
+			pclose(popen("start /BELOWNORMAL php-win $script", "r"));// This will execute without waiting for it to finish
 		}
 		else
 		{
@@ -657,6 +651,9 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 		}
 	}
 // END - Find every TimeKoin sent FROM this public Key
+	
+// Unset variable to free up RAM
+	unset($sql_result);
 
 	return $crypto_balance;
 }

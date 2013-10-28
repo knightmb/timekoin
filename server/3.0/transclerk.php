@@ -789,8 +789,14 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			}
 			else
 			{
-				//Reset failsafe counter
+				// Reset Failsafe Counter
 				$double_check_counter = 0;
+				// Log Repair Success
+				if($block_number == $hash_number)
+				{
+					write_log("Repair For Transaction Cycle #$block_number Complete.", "TC");
+					$transaction_repair_made = TRUE;
+				}
 			}
 
 			$hash_number++;
@@ -806,7 +812,17 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 		{
 			if($error_check_active == FALSE)
 			{
-				write_log("Automatic History Check Complete. No Errors Found from Transaction Cycle #" . ($hash_number - ($hash_check_counter - 1)) . " to #" . $hash_number, "TC");
+				if($transaction_repair_made == TRUE)
+				{
+					write_log("Automatic History Check From Transaction Cycle #" . ($hash_number - ($hash_check_counter - 1)) . " to #" . $hash_number . " Completed With Repairs", "TC");
+				}
+				else
+				{
+					write_log("Automatic History Check Complete. No Errors Found from Transaction Cycle #" . ($hash_number - ($hash_check_counter - 1)) . " to #" . $hash_number, "TC");
+				}
+
+				// Reset Repair Notification Flag
+				$transaction_repair_made = FALSE;
 			}
 
 			// The number of block checks equals the number in sync
@@ -837,7 +853,17 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			// Reset error block
 			mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1");
 
-			write_log("Manual History Check Complete. No Errors Found with Transaction Cycle #$transaction_history_block_check to #" . ($transaction_history_block_check + $hash_check_counter - 1), "TC");
+			if($transaction_repair_made == TRUE)
+			{
+				write_log("Manual History Check From Transaction Cycle #$transaction_history_block_check to #" . ($transaction_history_block_check + $hash_check_counter - 1) . " Completed With Repairs", "TC");
+			}
+			else
+			{
+				write_log("Manual History Check Complete. No Errors Found with Transaction Cycle #$transaction_history_block_check to #" . ($transaction_history_block_check + $hash_check_counter - 1), "TC");
+			}
+
+			// Reset Repair Notification Flag
+			$transaction_repair_made = FALSE;
 		}
 
 		// Flag that high speed peer checking should be used

@@ -41,6 +41,30 @@ if($_GET["action"]=="begin_main")
 			pclose(popen("start /B utils\upnpc.exe -e Timekoin -a $server_IP $server_port_number $server_port_number TCP", "r"));
 		}
 
+		// Start any plugins
+		$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' ORDER BY `options`.`field_name` ASC";
+		$sql_result = mysql_query($sql);
+		$sql_num_results = mysql_num_rows($sql_result);
+
+		for ($i = 0; $i < $sql_num_results; $i++)
+		{
+			$sql_row = mysql_fetch_array($sql_result);
+
+			$plugin_file = find_string("---file=", "---enable", $sql_row["field_data"]);		
+			$plugin_enable = intval(find_string("---enable=", "---show", $sql_row["field_data"]));
+			$plugin_service = find_string("---service=", "---end", $sql_row["field_data"]);
+
+			if($plugin_enable == TRUE && empty($plugin_service) == FALSE)
+			{
+				// Start Plugin Service
+				call_script($plugin_file, 0, TRUE);
+
+				// Log Service Start
+				write_log("Started Plugin Service: $plugin_service", "MA");
+			}
+		}
+		// Finish Starting Plugin Services
+
 		header("Location: index.php?menu=system&code=1");
 		exit;
 	}

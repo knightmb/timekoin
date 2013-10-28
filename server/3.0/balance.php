@@ -56,6 +56,32 @@ $foundation_active = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_s
 // Not allowed 120 seconds before and 40 seconds after transaction cycle.
 if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cycle) > 40 && $foundation_active != 1)
 {
+	// Build Balance Index for Transactions about to be Processed in the Queue
+	$sql = "SELECT public_key FROM `transaction_queue`";
+	$sql_result = mysql_query($sql);
+	$sql_num_results = mysql_num_rows($sql_result);
+
+	if($sql_num_results > 0)
+	{
+		for ($i = 0; $i < $sql_num_results; $i++)
+		{
+			$sql_row = mysql_fetch_array($sql_result);
+
+			$public_key_from = hash('md5', $sql_row["public_key"]);
+
+			// Run a balance index if one does not already exist
+			$balance_index = mysql_result(mysql_query("SELECT public_key_hash FROM `balance_index` WHERE `public_key_hash` = '$public_key_from' LIMIT 1"),0,0);
+
+			if(empty($balance_index) == TRUE)
+			{
+				// No index balance, go ahead and create one
+				write_log("Updating Balance Index From Transaction Queue", "BA");
+				check_crypt_balance($sql_row["public_key"]);
+				break;
+			}		
+		}
+	}
+
 	// 2000 Transaction Cycles Back in time to index
 	$time_2000 = time() - 600000;
 
@@ -71,8 +97,10 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 	if(empty($balance_index) == TRUE)
 	{
 		// No index balance, go ahead and create one
+		write_log("Updating Balance Index From Transaction History", "BA");
 		check_crypt_balance($sql_row["public_key_to"]);
 	}
+
 }
 //***********************************************************************************
 //***********************************************************************************

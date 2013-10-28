@@ -30,8 +30,8 @@ function login_screen($error_message)
 <div class="select-bar">
 <FORM ACTION="index.php?action=login" METHOD="post">
 <table border="0"><tr><td align="right">
-Username: <input type="text" name="timekoin_username" /><br>
-Password: <input type="password" name="timekoin_password" />	
+Username: <input type="text" size="20" name="timekoin_username" /><br>
+Password: <input type="password" size="20" name="timekoin_password" />	
 </td><td>
 <input type="submit" name="Submit" value="Login" /></td></tr></table>
 </FORM>
@@ -43,12 +43,12 @@ Password: <input type="password" name="timekoin_password" />
 <div id="footer"><p>Timekoin Crypto Currency - <a href="http://timekoin.org">http://timekoin.org</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?></p></div>
 </div>
 </body>
-</html>	
+</html>
 <?PHP
 } 
 //***********************************************************
 //***********************************************************
-function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
+function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0, $plugin_reference = FALSE)
 {
 	$home;
 	$options;
@@ -109,17 +109,8 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0)
 	}
 
 	$standard_settings_number = intval(mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'standard_tabs_settings' LIMIT 1"),0,"field_data"));
-		
-if(check_standard_tab_settings($standard_settings_number, 1) == TRUE) { $peerlist_enable = '<li><a href="index.php?menu=peerlist" ' . $peerlist . '>Peerlist</a></li>'; }
-if(check_standard_tab_settings($standard_settings_number, 2) == TRUE) { $trans_queue_enable = '<li><a href="index.php?menu=queue" ' . $queue . '>Transaction Queue</a></li>'; }
-if(check_standard_tab_settings($standard_settings_number, 4) == TRUE) { $send_receive_enable = '<li><a href="index.php?menu=send" ' . $send . '>Send / Receive</a></li>'; }
-if(check_standard_tab_settings($standard_settings_number, 8) == TRUE) { $history_enable = '<li><a href="index.php?menu=history" ' . $history . '>History</a></li>'; }
-if(check_standard_tab_settings($standard_settings_number, 16) == TRUE) { $generation_enable = '<li><a href="index.php?menu=generation" ' . $generation . '>Generation</a></li>'; }
-if(check_standard_tab_settings($standard_settings_number, 32) == TRUE) { $system_enable = '<li><a href="index.php?menu=system" ' . $system . '>System</a></li>'; }
-if(check_standard_tab_settings($standard_settings_number, 64) == TRUE) { $backup_enable = '<li><a href="index.php?menu=backup" ' . $backup . '>Backup</a></li>'; }
-if(check_standard_tab_settings($standard_settings_number, 128) == TRUE) { $tools_enable = '<li><a href="index.php?menu=tools" ' . $tools . '>Tools</a></li>'; }
 
-	$sql = "SELECT * FROM `options` WHERE `field_name` = 'installed_plugins'";
+	$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' ORDER BY `options`.`field_name` ASC";
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 	$plugin_output;
@@ -130,53 +121,104 @@ if(check_standard_tab_settings($standard_settings_number, 128) == TRUE) { $tools
 
 		$plugin_file = find_string("---file=", "---enable", $sql_row["field_data"]);		
 		$plugin_tab = find_string("---tab=", "---service", $sql_row["field_data"]);
-
+		$plugin_enable = intval(find_string("---enable=", "---show", $sql_row["field_data"]));
 		$plugin_show = intval(find_string("---show=", "---name", $sql_row["field_data"]));
 
-		if($plugin_show == TRUE)
+		if($plugin_enable == TRUE && $plugin_show == TRUE)
 		{
-			$plugin_output .= '<tr><td valign="top" align="right">' . $plugin_name . '</td>
-<td valign="top" align="left"><input type="radio" name="plugins_status_' . $i . '" value="0">Hide <input type="radio" name="plugins_status_' . $i . '" value="1" CHECKED>Show</td></tr>
-<input type="hidden" name="plugins_'. $i .'" value="' . $plugin_file . '">';
+			if($plugin_reference == TRUE)
+			{
+				$plugin_output .= '<li><a href="' . $plugin_file . '">' . $plugin_tab . '</a></li>';
+			}
+			else
+			{
+				$plugin_output .= '<li><a href="plugins/' . $plugin_file . '">' . $plugin_tab . '</a></li>';
+			}
 		}
-		else
-		{
-			$plugin_output .= '<tr><td valign="top" align="right">' . $plugin_name . '</td>
-<td valign="top" align="left"><input type="radio" name="plugins_status_' . $i . '" value="0" CHECKED>Hide <input type="radio" name="plugins_status_' . $i . '" value="1">Show</td></tr>
-<input type="hidden" name="plugins_'. $i .'" value="' . $plugin_file . '">';
-		}
+	}	
+
+	if($plugin_reference == TRUE)
+	{
+		$menu_output = '<li><a href="../index.php?menu=home" ' . $home . '>Home</a></li>';		
+if(check_standard_tab_settings($standard_settings_number, 1) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=peerlist" ' . $peerlist . '>Peerlist</a></li>'; }
+if(check_standard_tab_settings($standard_settings_number, 2) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=queue" ' . $queue . '>Transaction Queue</a></li>'; }
+if(check_standard_tab_settings($standard_settings_number, 4) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=send" ' . $send . '>Send / Receive</a></li>'; }
+if(check_standard_tab_settings($standard_settings_number, 8) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=history" ' . $history . '>History</a></li>'; }
+if(check_standard_tab_settings($standard_settings_number, 16) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=generation" ' . $generation . '>Generation</a></li>'; }
+if(check_standard_tab_settings($standard_settings_number, 32) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=system" ' . $system . '>System</a></li>'; }
+		$menu_output .= '<li><a href="../index.php?menu=options" ' . $options . '>Options</a></li>';
+if(check_standard_tab_settings($standard_settings_number, 64) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=backup" ' . $backup . '>Backup</a></li>'; }
+if(check_standard_tab_settings($standard_settings_number, 128) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=tools" ' . $tools . '>Tools</a></li>'; }
+		$menu_output .= $plugin_output;
+		$menu_output .= '<li><a href="../index.php?menu=logoff">Log Out</a></li>';
 	}
+	else
+	{
+		$menu_output = '<li><a href="index.php?menu=home" ' . $home . '>Home</a></li>';		
+if(check_standard_tab_settings($standard_settings_number, 1) == TRUE) { $menu_output .= '<li><a href="index.php?menu=peerlist" ' . $peerlist . '>Peerlist</a></li>'; }
+if(check_standard_tab_settings($standard_settings_number, 2) == TRUE) { $menu_output .= '<li><a href="index.php?menu=queue" ' . $queue . '>Transaction Queue</a></li>'; }
+if(check_standard_tab_settings($standard_settings_number, 4) == TRUE) { $menu_output .= '<li><a href="index.php?menu=send" ' . $send . '>Send / Receive</a></li>'; }
+if(check_standard_tab_settings($standard_settings_number, 8) == TRUE) { $menu_output .= '<li><a href="index.php?menu=history" ' . $history . '>History</a></li>'; }
+if(check_standard_tab_settings($standard_settings_number, 16) == TRUE) { $menu_output .= '<li><a href="index.php?menu=generation" ' . $generation . '>Generation</a></li>'; }
+if(check_standard_tab_settings($standard_settings_number, 32) == TRUE) { $menu_output .= '<li><a href="index.php?menu=system" ' . $system . '>System</a></li>'; }
+		$menu_output .= '<li><a href="index.php?menu=options" ' . $options . '>Options</a></li>';
+if(check_standard_tab_settings($standard_settings_number, 64) == TRUE) { $menu_output .= '<li><a href="index.php?menu=backup" ' . $backup . '>Backup</a></li>'; }
+if(check_standard_tab_settings($standard_settings_number, 128) == TRUE) { $menu_output .= '<li><a href="index.php?menu=tools" ' . $tools . '>Tools</a></li>'; }
+		$menu_output .= $plugin_output;
+		$menu_output .= '<li><a href="index.php?menu=logoff">Log Out</a></li>';
+	}
+
+
 
 ?>
 <!DOCTYPE html>
 <html>
 <head>
 <title>Timekoin Server Administration</title>
+<?PHP 
+
+	if($plugin_reference == TRUE)
+	{
+		// Redirect File Reference for Plugin
+		?>
+<link rel="icon" type="image/x-icon" href="../img/favicon.ico" />
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+<link  href="../css/admin.css" rel="stylesheet" type="text/css" />
+		<?PHP
+	}
+	else
+	{
+		// No Plugin
+		?>
 <link rel="icon" type="image/x-icon" href="img/favicon.ico" />
 <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
 <link  href="css/admin.css" rel="stylesheet" type="text/css" />
+		<?PHP
+	}
+
+?>
+
 <?PHP echo $refresh_header; ?>
 </head>
 <body>
 <div id="main">
 <div id="header">
 <ul id="top-navigation">
-<li><a href="index.php?menu=home" <?PHP echo $home; ?>>Home</a></li>
-<?PHP echo $peerlist_enable; ?>
-<?PHP echo $trans_queue_enable; ?>
-<?PHP echo $send_receive_enable; ?>
-<?PHP echo $history_enable; ?>
-<?PHP echo $generation_enable; ?>
-<?PHP echo $system_enable; ?>
-<li><a href="index.php?menu=options" <?PHP echo $options; ?>>Options</a></li>
-<?PHP echo $backup_enable; ?>
-<?PHP echo $tools_enable; ?>
-<li><a href="index.php?menu=logoff">Log Out</a></li>					 
+<?PHP echo $menu_output; ?>
 </ul>
 </div>
 <div id="middle">
 <div id="left-column">
-<img src="img/timekoin_logo.png" width="125" height="125" alt="" />
+<?PHP
+	if($plugin_reference == TRUE)
+	{
+		echo '<img src="../img/timekoin_logo.png" width="80" height="80" alt="" />';
+	}
+	else
+	{
+		echo '<img src="img/timekoin_logo.png" width="80" height="80" alt="" />';
+	}	
+?>
 </div>
 <div id="center-column">
 <div class="top-bar">
@@ -249,7 +291,7 @@ Current Password: <input type="password" name="current_password" /><br>
 New Password: <input type="password" name="new_password" /><br>
 Confirm Password: <input type="password" name="confirm_password" /><br><br>
 <input type="submit" name="Submit" value="Change" />
-</FORM></td></tr></table>
+</td></tr></table></FORM>
 <table border="0"><tr><td style="width:630px" valign="bottom" align="right">' . $confirm_message . $form_action .'
 <input type="submit" name="Submit2" value="Generate New Keys" /></FORM></td></tr>
 </table>';
@@ -269,8 +311,9 @@ if($super_peer == 1)
 	$super_peer = 500;
 }
 
-return '<table border="0"><tr><td style="width:415px" valign="bottom" align="right"><strong>Refresh Rates (seconds) for Realtime Pages [0 = disable]</strong><br><br>
-<FORM ACTION="index.php?menu=options&amp;refresh=change" METHOD="post"></td><td style="width:215px"></td></tr>
+return '<FORM ACTION="index.php?menu=options&amp;refresh=change" METHOD="post">
+<table border="0"><tr><td style="width:415px" valign="bottom" align="right"><strong>Refresh Rates (seconds) for Realtime Pages [0 = disable]</strong><br><br>
+</td><td style="width:215px"></td></tr>
 <tr><td valign="bottom" align="right">
 Home: <input type="text" name="home_update" size="2" value="' . $home_update . '" /><br>
 Peerlist: <input type="text" name="peerlist_update" size="2" value="' . $peerlist_update . '" /><br>
@@ -279,10 +322,11 @@ Transaction Queue: <input type="text" name="queue_update" size="2" value="' . $q
 <tr><td align="right"><strong>Super Peer Limit (10 - 500)</strong><br><input type="text" name="super_peer_limit" size="3" value="' . $super_peer . '" /><br></td><td></td></tr>
 <tr><td></td><td></td></tr>
 <tr><td align="right"><strong>Peer Failure Limit (1 - 100)</strong><br><input type="text" name="peer_failure_grade" size="3" value="' . $peer_failure_grade . '" /><br></td><td></td>
-<tr><td align="right"><input type="submit" name="Submit2" value="Save Options" /></FORM></td><td></td></tr>
-<tr><td colspan="2"><hr></td></tr>
-<tr><td align="right"><FORM ACTION="index.php?menu=options&amp;hashcode=manage" METHOD="post"><input type="submit" name="Submit3" value="Manage Hash Code Access" /></FORM></td>
-</td><td valign="bottom" align="right"><FORM ACTION="index.php?menu=options&amp;upgrade=check" METHOD="post"><input type="submit" name="Submit3" value="Check for Updates" /></FORM></td></tr>
+<tr><td align="right"><input type="submit" name="Submit2" value="Save Options" /></td><td></td></tr>
+<tr><td colspan="2"><hr></td></tr></table></FORM>
+
+<table border="0"><tr><td style="width:415px" align="right"><FORM ACTION="index.php?menu=options&amp;hashcode=manage" METHOD="post"><input type="submit" name="Submit3" value="Manage Hash Code Access" /></FORM></td>
+<td style="width:215px" valign="bottom" align="right"><FORM ACTION="index.php?menu=options&amp;upgrade=check" METHOD="post"><input type="submit" name="Submit3" value="Check for Updates" /></FORM></td></tr>
 <tr><td colspan="2"><hr></td></tr>
 <tr><td align="right"><FORM ACTION="index.php?menu=options&amp;manage=tabs" METHOD="post"><input type="submit" name="Submit4" value="Menu Tabs" /></FORM></td>
 <td align="right"><FORM ACTION="index.php?menu=options&amp;manage=plugins" METHOD="post"><input type="submit" name="Submit5" value="Manage Plugins" /></FORM></td></tr>
@@ -321,7 +365,7 @@ function options_screen4()
 	if(check_standard_tab_settings($standard_settings_number, 128) == TRUE) { $tools_enable = "CHECKED"; }else{ $tools_disable = "CHECKED"; }
 
 //	Plugin Tabs
-	$sql = "SELECT * FROM `options` WHERE `field_name` = 'installed_plugins'";
+	$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' ORDER BY `options`.`field_name` ASC";
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 	$plugin_output;
@@ -380,7 +424,7 @@ return '<FORM ACTION="index.php?menu=options&amp;tabs=change" METHOD="post">
 //***********************************************************
 function options_screen5()
 {
-	$sql = "SELECT * FROM `options` WHERE `field_name` = 'installed_plugins'";
+	$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' ORDER BY `options`.`field_name` ASC";
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 	$plugin_output;
@@ -417,7 +461,7 @@ function options_screen5()
 return '<table border="0" cellpadding="2" cellspacing="10"><tr><td valign="bottom" align="center" colspan="6"><strong>Plugin Information</strong>
 </td></tr>
 <tr><td align="center"><strong>Name</strong></td><td align="center"><strong>Tab</strong></td><td align="center"><strong>File</strong></td>
-<td align="center"><strong>Service</strong></td><td align="center"><strong>Status</strong></td><td align="center">X</td></tr>
+<td align="center"><strong>Service</strong></td><td align="center"><strong>Status</strong></td><td></td></tr>
 ' . $plugin_output . '
 <tr><td align="right" colspan="6"><FORM ACTION="index.php?menu=options&amp;plugin=new" METHOD="post"><input type="submit" name="SubmitNew" value="Install New Plugin" /></FORM></td></tr>
 </table>
@@ -429,8 +473,8 @@ return '<table border="0" cellpadding="2" cellspacing="10"><tr><td valign="botto
 function options_screen6()
 {
 
-return 'Plugin Installation<br><br>
-<FORM ENCTYPE="multipart/form-data" METHOD="POST" ACTION="index.php?menu=options&amp;plugin=install">
+return '<strong>Use the Browse Button to Select the Plugin File to Install</strong><br><br>
+<FORM ENCTYPE="multipart/form-data" METHOD="POST" ACTION="index.php?menu=options&amp;plugin=install" onclick="return confirm(\'Always Use Caution When Installing Plugins From Untrusted Sources.\');">
 <INPUT NAME="plugin_file" TYPE="file" SIZE=32><br><br>
 <input type="submit" name="SubmitNew" value="Install New Plugin" /></FORM>';
 
@@ -621,9 +665,9 @@ Database Size:
 function system_service_bar()
 {
 return '<table cellspacing="10" border="0"><tr><td width="150"><FORM ACTION="main.php?action=begin_main" METHOD="post"><input type="submit" value="Start Timekoin"/></FORM></td>
-	<td width="150"><FORM ACTION="index.php?menu=system&amp;stop=main" METHOD="post"><input type="submit" value="Stop Timekoin"/></FORM></td></tr></table><hr>
+	<td width="150"><FORM ACTION="index.php?menu=system&amp;stop=main" METHOD="post" onclick="return confirm(\'Are You Sure? This Will Stop Timekoin and All Running Process.\');"><input type="submit" value="Stop Timekoin"/></FORM></td></tr></table><hr>
 	<table cellspacing="10" border="0"><tr><td width="150"><FORM ACTION="watchdog.php?action=begin_watchdog" METHOD="post"><input type="submit" value="Start Watchdog"/></FORM></td>
-	<td width="150"><FORM ACTION="index.php?menu=system&amp;stop=watchdog" METHOD="post"><input type="submit" value="Stop Watchdog"/></FORM></td></tr></table>';
+	<td width="150"><FORM ACTION="index.php?menu=system&amp;stop=watchdog" METHOD="post" onclick="return confirm(\'Are You Sure? This Will Stop the Watchdog Process.\');"><input type="submit" value="Stop Watchdog"/></FORM></td></tr></table>';
 }
 //***********************************************************
 //***********************************************************

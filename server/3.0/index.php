@@ -495,8 +495,6 @@ if($_SESSION["valid_login"] == TRUE)
 				<td><strong>Disabled</strong></td></tr>';
 		}
 
-		$body_string = $body_string . '</table>';
-
 		$display_balance = db_cache_balance($my_public_key);
 
 		$firewall_blocked = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'firewall_blocked_peer' LIMIT 1"),0,"field_data");
@@ -531,7 +529,70 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			$update_available = NULL;
 		}
-		
+
+		// Check for Plugin Services Active
+		$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' ORDER BY `options`.`field_name` ASC";
+		$sql_result = mysql_query($sql);
+		$sql_num_results = mysql_num_rows($sql_result);
+
+		$plugin_service_output = '<tr><td colspan="3"><hr></td></tr>';
+
+		for ($i = 0; $i < $sql_num_results; $i++)
+		{
+			$sql_row = mysql_fetch_array($sql_result);
+
+			$plugin_file = find_string("---file=", "---enable", $sql_row["field_data"]);		
+			$plugin_enable = intval(find_string("---enable=", "---show", $sql_row["field_data"]));
+			$plugin_service = find_string("---service=", "---end", $sql_row["field_data"]);
+
+			if($plugin_enable == TRUE && empty($plugin_service) == FALSE)
+			{
+				// Flag for active plugins
+				$plugins_active_bar = TRUE;
+				
+				// Does Plugin Service Report Any Status?
+				$plugin_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = '$plugin_file' LIMIT 1"),0,"field_data");
+
+				if($plugin_active === FALSE)
+				{
+					// Does not exist
+					$plugin_service_output .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="DodgerBlue"><strong>' . $plugin_service . '</strong></font></td>
+						<td><strong>NA</strong></td></tr>';
+				}
+				else if($plugin_active == 1)
+				{
+					// Plugin Active/Working
+					$plugin_service_output .= '<tr><td align="center"><img src="img/wait16trans.gif" alt="" /></td><td><font color="DodgerBlue"><strong>' . $plugin_service . '</strong></font></td>
+						<td><strong>Working...</strong></td></tr>';
+				}
+				else if($plugin_active == 2)
+				{
+					// Plugin Idle
+					$plugin_service_output .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="DodgerBlue"><strong>' . $plugin_service . '</strong></font></td>
+						<td><strong>Idle</strong></td></tr>';
+				}
+				else if($plugin_active == 3)
+				{
+					// Plugin Shutting Down
+					$plugin_service_output .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="DodgerBlue"><strong>' . $plugin_service . '</strong></font></td>
+						<td><strong>Shutting Down...</strong></td></tr>';
+				}
+				else
+				{
+					// Plugin Doing Something Else?
+					$plugin_service_output .= '<tr><td align="center"><img src="img/hr.gif" alt="" /></td><td><font color="DodgerBlue"><strong>' . $plugin_service . '</strong></font></td>
+						<td><strong>OFFLINE</strong></td></tr>';
+				}
+			}
+		}
+
+		if($plugins_active_bar == TRUE)
+		{
+			$body_string .= $plugin_service_output;
+		}
+
+		$body_string = $body_string . '</table>';
+
 		$text_bar = '<table border="0"><tr><td style="width:260px"><strong>Current Server Balance: <font color="green">' . number_format($display_balance) . '</font></strong></td>
 			<td style="width:180px"><strong>Peer Time: <font color="blue">' . time() . '</font></strong></td>
 			<td style="width:180px"><strong><font color="#827f00">' . tk_time_convert(transaction_cycle(1) - time()) . '</font> until next cycle</strong></td></tr>
@@ -860,9 +921,9 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			// Default screen
 			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr>
-				<th><p style="font-size:11px;">IP Address</p></th><th><p style="font-size:11px;">Domain</p></th>
-				<th><p style="font-size:11px;">Subfolder</p></th><th><p style="font-size:11px;">Port Number</p></th>
-				<th><p style="font-size:11px;">Last Heartbeat</p></th><th><p style="font-size:11px;">Joined</p></th>
+				<th><p style="font-size:11px; width:95px;">IP Address</p></th><th><p style="font-size:11px;">Domain</p></th>
+				<th><p style="font-size:11px; width:60px;">Subfolder</p></th><th><p style="font-size:11px;">Port Number</p></th>
+				<th><p style="font-size:11px;">Last Heartbeat</p></th><th><p style="font-size:11px; width:50px;">Joined</p></th>
 				<th><p style="font-size:11px;">Failure Score</p></th><th></th><th></th></tr>';			
 			
 			if($_GET["show"] == "reserve")
@@ -909,9 +970,9 @@ if($_SESSION["valid_login"] == TRUE)
 
 
 				$body_string .= '<tr>
-				 <td class="style2"><p style="word-wrap:break-word; width:95px; font-size:11px;">' . $permanent1 . $sql_row["IP_Address"] . $permanent2 . '</p></td>
-				 <td class="style2"><p style="word-wrap:break-word; width:155px; font-size:11px;">' . $permanent1 . $sql_row["domain"] . $permanent2 . '</p></td>
-				 <td class="style2"><p style="word-wrap:break-word; width:60px; font-size:11px;">' . $permanent1 . $sql_row["subfolder"] . $permanent2 . '</p></td>
+				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["IP_Address"] . $permanent2 . '</p></td>
+				 <td class="style2"><p style="word-wrap:break-word; width:160px; font-size:11px;">' . $permanent1 . $sql_row["domain"] . $permanent2 . '</p></td>
+				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["subfolder"] . $permanent2 . '</p></td>
 				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["port_number"] . $permanent2 . '</p></td>
 				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $last_heartbeat . $permanent2 . '</p></td>
 				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $joined . $permanent2 . '</p></td>
@@ -1468,8 +1529,26 @@ if($_SESSION["valid_login"] == TRUE)
 			$plugin_tab = find_string("PLUGIN_TAB=", "---END", $new_plugin_contents);
 			$plugin_service = find_string("PLUGIN_SERVICE=", "---END", $new_plugin_contents);
 
-			$sql = "INSERT INTO `options` (`field_name` ,`field_data`)VALUES 
-				('installed_plugins', '---file=$plugin_install---enable=0---show=0---name=$plugin_name---tab=$plugin_tab---service=$plugin_service---end')";
+			// Find Empty Record Location
+			$record_number = 1;
+			$record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'installed_plugins_1' LIMIT 1"),0,0);
+			
+			while(empty($record_check) == FALSE)
+			{
+				$record_number++;
+				$record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'installed_plugins_$record_number' LIMIT 1"),0,0);
+			}
+
+			if(empty($plugin_service) == TRUE)
+			{
+				$sql = "INSERT INTO `options` (`field_name` ,`field_data`)VALUES 
+					('installed_plugins_$record_number', '---file=$plugin_install---enable=0---show=1---name=$plugin_name---tab=$plugin_tab---service=$plugin_service---end')";
+			}
+			else
+			{
+				$sql = "INSERT INTO `options` (`field_name` ,`field_data`)VALUES 
+					('installed_plugins_$record_number', '---file=$plugin_install---enable=0---show=0---name=$plugin_name---tab=$plugin_tab---service=$plugin_service---end')";
+			}
 
 			if(mysql_query($sql) == TRUE)
 			{
@@ -1501,13 +1580,13 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			// Disable selected plugin, search for script file name in database
 			$plugin_filename = $_POST["pluginfile"];
-			$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'installed_plugins' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+			$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
 
 			// Rewrite String to Disable plugin
 			$new_disable_string = str_replace("enable=1", "enable=0", $installed_plugins);
 		
 			// Update String in Database
-			mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` = 'installed_plugins' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
+			mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
 
 			home_screen("Plugin Manager", NULL, options_screen5() , "You can enable or disable plugins.");
 			exit;
@@ -1517,13 +1596,13 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			// Enable selected plugin, search for script file name in database
 			$plugin_filename = $_POST["pluginfile"];
-			$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'installed_plugins' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+			$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
 
 			// Rewrite String to Enable plugin
 			$new_disable_string = str_replace("enable=0", "enable=1", $installed_plugins);
 		
 			// Update String in Database
-			mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` = 'installed_plugins' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
+			mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
 
 			home_screen("Plugin Manager", NULL, options_screen5() , "You can enable or disable plugins.");
 			exit;
@@ -1533,7 +1612,7 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			// Enable selected plugin, search for script file name in database
 			$plugin_filename = $_POST["pluginfile"];
-			$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'installed_plugins' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+			$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
 
 			// Find the file name for the plugin
 			$plugin_file = find_string("---file=", "---enable", $installed_plugins);
@@ -1558,7 +1637,7 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 
 			// Delete Database Entry
-			$sql = "DELETE FROM `options` WHERE `options`.`field_name` = 'installed_plugins' AND `options`.`field_data` = '$installed_plugins' LIMIT 1";
+			$sql = "DELETE FROM `options` WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1";
 			
 			if(mysql_query($sql) == TRUE)
 			{
@@ -1603,24 +1682,24 @@ if($_SESSION["valid_login"] == TRUE)
 						if($show_status == TRUE)
 						{
 							// Show Plugin Tab
-							$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'installed_plugins' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+							$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
 
 							// Rewrite String to Show Plugin Tab
 							$new_disable_string = str_replace("show=0", "show=1", $installed_plugins);
 						
 							// Update String in Database
-							mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` = 'installed_plugins' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
+							mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
 						}
 						else
 						{
 							// Hide Plugin Tab
-							$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'installed_plugins' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+							$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
 
 							// Rewrite String to Show Plugin Tab
 							$new_disable_string = str_replace("show=1", "show=0", $installed_plugins);
 						
 							// Update String in Database
-							mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` = 'installed_plugins' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
+							mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
 						}
 
 						$cycle_counter++; // Next Plugin
@@ -2682,6 +2761,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["logs"] == "clear")
 		{
 			mysql_query("TRUNCATE TABLE `activity_logs`");
+			write_log("All Logs Cleared.", "GU");
 		}
 
 		if(empty($_GET["action"]) == TRUE)
@@ -2778,7 +2858,7 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 
 			$body_string .= '<tr><td colspan="3"><hr></td></tr><tr><td><input type="text" size="5" name="show_more_logs" value="' . $show_last .'" /><input type="submit" name="show_last" value="Show Last" /></FORM></td>
-				<td colspan="2"><FORM ACTION="index.php?menu=tools&amp;logs=clear" METHOD="post"><input type="submit" name="clear_logs" value="Clear All Logs" /></FORM></td></tr>';
+				<td colspan="2"><FORM ACTION="index.php?menu=tools&amp;logs=clear" METHOD="post" onclick="return confirm(\'Clear All Logs?\');"><input type="submit" name="clear_logs" value="Clear All Logs" /></FORM></td></tr>';
 			$body_string .= '</table></div>';
 		}
 		
