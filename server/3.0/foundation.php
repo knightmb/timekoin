@@ -312,124 +312,116 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 	}
 	else
 	{
-		// Check to make sure enough lead time exist in advance to building
-		// another transaction foundation. (50 blocks) or over 4 hours
-		// This can be bypassed if the server is building transaction foundations that are older
-		// than the current foundation.
-		if($current_generation_block - ($current_foundation_block * 500) > 50 || $current_foundation_block - $foundation_blocks > 1)
+		// Numbers don't match, what do we have?
+		$sql = "SELECT * FROM `transaction_foundation` ORDER BY `transaction_foundation`.`block` ASC";
+		$sql_result = mysql_query($sql);
+
+		for ($i = 0; $i < $current_foundation_block; $i++)
 		{
-			// Numbers don't match, what do we have?
-			$sql = "SELECT * FROM `transaction_foundation` ORDER BY `transaction_foundation`.`block` ASC";
-			$sql_result = mysql_query($sql);
+			$sql_row = mysql_fetch_array($sql_result);
+			$block = $sql_row["block"];
+			$hash = $sql_row["hash"];
 
-			for ($i = 0; $i < $current_foundation_block; $i++)
+			if($i === intval($block))
 			{
-				$sql_row = mysql_fetch_array($sql_result);
-				$block = $sql_row["block"];
-				$hash = $sql_row["hash"];
-
-				if($i === intval($block))
+				// Block exist in the correct order
+				if(empty($hash) == FALSE)
 				{
-					// Block exist in the correct order
-					if(empty($hash) == FALSE)
-					{
-						// Hash already exist, no need to check again
-						$rebuild_foundation = FALSE;
-					}
-					else
-					{
-						// Need to build this transaction foundation
-						$rebuild_foundation = TRUE;
-					}
-				} // End block exist check
+					// Hash already exist, no need to check again
+					$rebuild_foundation = FALSE;
+				}
 				else
 				{
 					// Need to build this transaction foundation
 					$rebuild_foundation = TRUE;
 				}
+			} // End block exist check
+			else
+			{
+				// Need to build this transaction foundation
+				$rebuild_foundation = TRUE;
+			}
 
-				if($rebuild_foundation == TRUE)
+			if($rebuild_foundation == TRUE)
+			{
+				// Don't do a history walk if the transclerk is currently working on the
+				// transaction database
+				$transclerk_block_check = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'block_check_start' LIMIT 1"),0,"field_data");				
+
+				if($transclerk_block_check < ($i + 1) * 500 && $transclerk_block_check != "0")
 				{
-					// Don't do a history walk if the transclerk is currently working on the
-					// transaction database
-					$transclerk_block_check = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'block_check_start' LIMIT 1"),0,"field_data");				
+					// Break out of loop; Don't do anything until transclerk is finished with this range
+					break;
+				}
 
-					if($transclerk_block_check < ($i + 1) * 500 && $transclerk_block_check != "0")
+				write_log("Building New Transaction Foundation #$i", "FO");
+
+				// Start the process to rebuild the transaction foundation
+				// but walk the history of that range first to check for errors.
+				$foundation_time_start = $i * 500;
+				$foundation_time_end = ($i * 500) + 500;
+
+				$do_history_walk = walkhistory($foundation_time_start, $foundation_time_end);
+
+				if($do_history_walk == 0)
+				{
+					// History walk checks out, start building the transaction foundation hash
+					// out of every piece of data in the database
+					$time1 = transaction_cycle(0 - $current_generation_block + $foundation_time_start);
+					$time2 = transaction_cycle(0 - $current_generation_block + $foundation_time_end);
+
+					$sql = "SELECT timestamp, public_key_from, public_key_to, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` <= $time2 ORDER BY `timestamp`, `hash`";
+					$sql_result2 = mysql_query($sql);
+					$sql_num_results2 = mysql_num_rows($sql_result2);
+
+					$hash = $sql_num_results2;
+
+					for ($f = 0; $f < $sql_num_results2; $f++)
 					{
-						// Break out of loop; Don't do anything until transclerk is finished with this range
+						$sql_row2 = mysql_fetch_array($sql_result2);
+						$hash .= $sql_row2["timestamp"] . $sql_row2["public_key_from"] . $sql_row2["public_key_to"] . $sql_row2["hash"] . $sql_row2["attribute"];
+					}	
+
+					$hash = hash('sha256', $hash);
+
+					$sql = "INSERT INTO `transaction_foundation` (`block` ,`hash`)VALUES ('$i', '$hash')";
+
+					if(mysql_query($sql) == TRUE)
+					{
+						// Success
+						write_log("New Transaction Foundation #$i Complete", "FO");
+
+						// Wipe Balance Index table to reset index creation of public key balances
+						if(mysql_query("TRUNCATE TABLE `balance_index`") == FALSE)
+						{
+							write_log("FAILED to Clear Balance Index Table after Transaction Foundation #$i was Created", "FO");
+						}
+						
+						// Break out of this loop in case there is a lot
+						// of history to catch up on. We don't want to tie
+						// up the server with building many transaction foundations
+						// in a row.
 						break;
 					}
+				}
+				else
+				{
+					write_log("Transaction History Walk FAILED. A Transaction History Check has been scheduled to Examine Transaction Cycle #$do_history_walk", "FO");
+					
+					// The history walk failed due to an error somewhere, can't continue.
+					// Schedule a block check at the location -1 in hopes that it will be cleared up for the next loop
+					$sql = "UPDATE `main_loop_status` SET `field_data` = '" . ($do_history_walk - 1) . "' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1";
 
-					write_log("Building New Transaction Foundation #$i", "FO");
-
-					// Start the process to rebuild the transaction foundation
-					// but walk the history of that range first to check for errors.
-					$foundation_time_start = $i * 500;
-					$foundation_time_end = ($i * 500) + 500;
-
-					$do_history_walk = walkhistory($foundation_time_start, $foundation_time_end);
-
-					if($do_history_walk == 0)
+					if(mysql_query($sql) == TRUE)
 					{
-						// History walk checks out, start building the transaction foundation hash
-						// out of every piece of data in the database
-						$time1 = transaction_cycle(0 - $current_generation_block + $foundation_time_start);
-						$time2 = transaction_cycle(0 - $current_generation_block + $foundation_time_end);
-
-						$sql = "SELECT timestamp, public_key_from, public_key_to, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` <= $time2 ORDER BY `timestamp`, `hash`";
-						$sql_result2 = mysql_query($sql);
-						$sql_num_results2 = mysql_num_rows($sql_result2);
-
-						$hash = $sql_num_results2;
-
-						for ($f = 0; $f < $sql_num_results2; $f++)
-						{
-							$sql_row2 = mysql_fetch_array($sql_result2);
-							$hash .= $sql_row2["timestamp"] . $sql_row2["public_key_from"] . $sql_row2["public_key_to"] . $sql_row2["hash"] . $sql_row2["attribute"];
-						}	
-
-						$hash = hash('sha256', $hash);
-
-						$sql = "INSERT INTO `transaction_foundation` (`block` ,`hash`)VALUES ('$i', '$hash')";
-
-						if(mysql_query($sql) == TRUE)
-						{
-							// Success
-							write_log("New Transaction Foundation #$i Complete", "FO");
-
-							// Wipe Balance Index table to reset index creation of public key balances
-							if(mysql_query("TRUNCATE TABLE `balance_index`") == FALSE)
-							{
-								write_log("FAILED to Clear Balance Index Table after Transaction Foundation #$i was Created", "FO");
-							}
-							
-							// Break out of this loop in case there is a lot
-							// of history to catch up on. We don't want to tie
-							// up the server with building many transaction foundations
-							// in a row.
-							break;
-						}
+						// Break out of this loop to prevent confusing block checks in the database
+						break;
 					}
-					else
-					{
-						write_log("Transaction History Walk FAILED. A Transaction History Check has been scheduled to Examine Transaction Cycle #$do_history_walk", "FO");
-						
-						// The history walk failed due to an error somewhere, can't continue.
-						// Schedule a block check at the location -1 in hopes that it will be cleared up for the next loop
-						$sql = "UPDATE `main_loop_status` SET `field_data` = '" . ($do_history_walk - 1) . "' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1";
+				}
 
-						if(mysql_query($sql) == TRUE)
-						{
-							// Break out of this loop to prevent confusing block checks in the database
-							break;
-						}
-					}
+			} // End rebuild foundation check
 
-				} // End rebuild foundation check
-
-			}	// End for loop
-
-		} // End cycle greater than 50 blocks check
+		}	// End for loop
 
 	} // End foundation block totals vs current check
 

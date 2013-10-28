@@ -171,9 +171,17 @@ function transaction_history_hash()
 	$previous_foundation_block = foundation_cycle(-1, TRUE);
 	$current_foundation_cycle = foundation_cycle(0);
 	$next_foundation_cycle = foundation_cycle(1);			
-	$current_history_foundation = mysql_result(mysql_query("SELECT * FROM `transaction_foundation` WHERE `block` = $previous_foundation_block LIMIT 1"),0,"hash");
 
-	$hash .= $current_history_foundation;
+	$current_generation_block = transaction_cycle(0, TRUE);
+	$current_foundation_block = foundation_cycle(0, TRUE);
+
+	// Check to make sure enough lead time exist before another transaction foundation is built.
+	// (50 blocks) or over 4 hours
+	if($current_generation_block - ($current_foundation_block * 500) > 50)
+	{
+		$current_history_foundation = mysql_result(mysql_query("SELECT * FROM `transaction_foundation` WHERE `block` = $previous_foundation_block LIMIT 1"),0,"hash");
+		$hash .= $current_history_foundation;
+	}
 
 	$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $current_foundation_cycle AND `timestamp` < $next_foundation_cycle AND `attribute` = 'H' ORDER BY `timestamp`";
 	$sql_result = mysql_query($sql);
