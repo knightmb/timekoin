@@ -1310,7 +1310,7 @@ function initialization_database()
 	if($new_record_check === FALSE)
 	{
 		// Does not exist, create it
-		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('standard_tabs_settings', '0')");
+		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('standard_tabs_settings', '255')");
 	}
 
 	if(is_dir('plugins') == FALSE) // Create /plugins directory if it does not exist
