@@ -1389,7 +1389,11 @@ if($_SESSION["valid_login"] == TRUE)
 							$sql = "UPDATE `options` SET `field_data` = '$peer_failure_grade' WHERE `options`.`field_name` = 'peer_failure_grade' LIMIT 1";
 							if(mysql_query($sql) == TRUE)
 							{
-								$refresh_change = TRUE;
+								$sql = "UPDATE `options` SET `field_data` = '" . $_POST["timezone"] . "' WHERE `options`.`field_name` = 'default_timezone' LIMIT 1";
+								if(mysql_query($sql) == TRUE)
+								{
+									$refresh_change = TRUE;
+								}
 							}
 						}
 					}

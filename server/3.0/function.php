@@ -1063,8 +1063,15 @@ function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $a
 //***********************************************************************************
 function unix_timestamp_to_human($timestamp = "", $format = 'D d M Y - H:i:s')
 {
-	 if (empty($timestamp) || ! is_numeric($timestamp)) $timestamp = time();
-	 return ($timestamp) ? date($format, $timestamp) : date($format, $timestamp);
+	$default_timezone = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,"field_data");
+
+	if(empty($default_timezone) == FALSE)
+	{	
+		date_default_timezone_set($default_timezone);
+	}
+	
+	if (empty($timestamp) || ! is_numeric($timestamp)) $timestamp = time();
+	return ($timestamp) ? date($format, $timestamp) : date($format, $timestamp);
 }
 //***********************************************************************************
 //***********************************************************************************
@@ -1311,6 +1318,13 @@ function initialization_database()
 	{
 		// Does not exist, create it
 		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('standard_tabs_settings', '255')");
+	}
+
+	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,0);
+	if($new_record_check === FALSE)
+	{
+		// Does not exist, create it
+		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('default_timezone', '')");
 	}
 
 	if(is_dir('plugins') == FALSE) // Create /plugins directory if it does not exist
