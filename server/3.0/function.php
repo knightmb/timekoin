@@ -1093,7 +1093,7 @@ function visual_walkhistory($block_start = 0, $block_end = 0)
 
 	for ($i = $block_start; $i < $block_end; $i++)
 	{
-		$output .= '<tr><td class="style2">Block # ' . $i;
+		$output .= '<tr><td class="style2">Transaction Cycle # ' . $i;
 		$time1 = transaction_cycle(0 - $current_generation_block + $i);
 		$time2 = transaction_cycle(0 - $current_generation_block + 1 + $i);	
 
@@ -1123,7 +1123,7 @@ function visual_walkhistory($block_start = 0, $block_end = 0)
 
 		if($next_timestamp != $timestamp)
 		{
-			$output .= '<br><strong><font color=red>Hash Timestamp Sequence Wrong... Should Be: ' . $next_timestamp . '</font></strong>';
+			$output .= '<br><font color=red><strong>Hash Timestamp Sequence Wrong... Should Be: ' . $next_timestamp . '</strong></font>';
 			$wrong_timestamp++;
 			$wrong_block_numbers .= " " . $i;
 		}
@@ -1142,7 +1142,7 @@ function visual_walkhistory($block_start = 0, $block_end = 0)
 		}
 		else
 		{
-			$output .= '<br><strong><font color=red>Hash MISMATCH</font></strong></td></tr>';
+			$output .= '<br><font color=red><strong>Hash MISMATCH</strong></font></td></tr>';
 			$wrong_hash++;
 			$wrong_hash_numbers = $wrong_hash_numbers . " " . $i;			
 		}
@@ -1158,12 +1158,14 @@ function visual_walkhistory($block_start = 0, $block_end = 0)
 		$wrong_hash_numbers = '<font color="blue">None</font>';
 	}
 
-	$output .= '<tr><td class="style2"><strong><font color="blue">Total Wrong Sequence: ' . $wrong_timestamp . '</strong></font>';
-	$output .= '<br><strong><font color="red">Blocks Wrong:</font> ' . $wrong_block_numbers . '</strong></td></tr>';
-	$output .= '<tr><td class="style2"><strong><font color="blue">Total Wrong Hash: ' . $wrong_hash . '</strong></font>';
-	$output .= '<br><strong><font color="red">Blocks Wrong:</font> ' . $wrong_hash_numbers . '</strong></td></tr>';	
+	$finish_output;
 
-	return $output;
+	$finish_output .= '<tr><td class="style2"><font color="blue"><strong>Total Wrong Sequence: ' . $wrong_timestamp . '</strong></font>';
+	$finish_output .= '<br><font color="red"><strong>Transaction Cycles Wrong:</strong></font><strong> ' . $wrong_block_numbers . '</strong></td></tr>';
+	$finish_output .= '<tr><td class="style2"><font color="blue"><strong>Total Wrong Hash: ' . $wrong_hash . '</strong></font>';
+	$finish_output .= '<br><font color="red"><strong>Transaction Cycles Wrong:</strong></font><strong> ' . $wrong_hash_numbers . '</strong></td></tr>';
+
+	return $finish_output . $output . $finish_output;
 
 }
 //***********************************************************************************
@@ -1310,7 +1312,17 @@ function initialization_database()
 		// Does not exist, create it
 		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('standard_tabs_settings', '0')");
 	}
-	
+
+	if(is_dir('plugins') == FALSE) // Create /plugins directory if it does not exist
+	{
+		write_log("/plugins Directory Does Not Exist", "MA");
+		
+		// Create plugins directory if it does not exist
+		if(mkdir('plugins') == TRUE)
+		{
+			write_log("/plugins Directory CREATED!", "MA");
+		}
+	}
 //**************************************
 	// Check for an empty generation IP address,
 	// if none exist, attempt to auto-detect one

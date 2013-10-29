@@ -471,9 +471,9 @@ function options_screen6()
 {
 
 return '<strong>Use the Browse Button to Select the Plugin File to Install</strong><br><br>
-<FORM ENCTYPE="multipart/form-data" METHOD="POST" ACTION="index.php?menu=options&amp;plugin=install" onclick="return confirm(\'Always Use Caution When Installing Plugins From Untrusted Sources.\');">
+<FORM ENCTYPE="multipart/form-data" METHOD="POST" ACTION="index.php?menu=options&amp;plugin=install">
 <INPUT NAME="plugin_file" TYPE="file" SIZE=32><br><br>
-<input type="submit" name="SubmitNew" value="Install New Plugin" /></FORM>';
+<input type="submit" name="SubmitNew" value="Install New Plugin" onclick="return confirm(\'Always Use Caution When Installing Plugins From Untrusted Sources.\');" /></FORM>';
 
 } 
 //***********************************************************
@@ -742,17 +742,23 @@ function tools_bar()
 	$default_check = transaction_cycle(0, TRUE) - 10;
 	$default_current = transaction_cycle(0, TRUE);
 
-	return '<table cellspacing="10" border="0"><tr><td><FORM ACTION="index.php?menu=tools&amp;action=walk_history" METHOD="post"><input type="submit" value="History Walk"/></td>
-		<td>Block#<input type="text" size="7" name="walk_history" value="' . $default_walk . '" /></td></FORM><td>|<br>|</td>
-		<td><FORM ACTION="index.php?menu=tools&amp;action=check_tables" METHOD="post" onclick="return confirm(\'Database Check Can Take a Long Time. Continue?\');"><input type="submit" value="Check DB"/></td></FORM></td><td>|<br>|</td>
-		<td><FORM ACTION="index.php?menu=tools&amp;action=optimize_tables" METHOD="post" onclick="return confirm(\'Database Optimize Can Take a Long Time. Continue?\');"><input type="submit" value="Optimize DB"/></td></FORM></td><td>|<br>|</td>
-		<td><FORM ACTION="index.php?menu=tools&amp;action=repair_tables" METHOD="post" onclick="return confirm(\'Database Repair Can Take a Long Time. Continue?\');"><input type="submit" value="Repair DB"/></td></FORM>
-		</tr></table><hr>
-		<table cellspacing="10" border="0"><tr><td><FORM ACTION="index.php?menu=tools&amp;action=schedule_check" METHOD="post"><input type="submit" value="Schedule Check"/></td>
-		<td>Block#<input type="text" size="7" name="schedule_check" value="' . $default_check . '" /></td></FORM><td>|<br>|</td>
-		<td><FORM ACTION="index.php?menu=tools&amp;action=repair" METHOD="post" onclick="return confirm(\'Transaction Repair Can Take a Long Time. Continue?\');"><input type="submit" value="Repair"/></td>
-		<td>From Block#<input type="text" size="7" name="repair_from" value="' . $default_check . '" /></td>
-		</FORM></tr></table>';
+	return '<FORM ACTION="index.php?menu=tools&amp;action=walk_history" METHOD="post">
+		<table style="float: left;" cellspacing="10" border="0"><tr><td><input type="submit" value="History Walk"/></td>
+		<td>Block#<input type="text" size="7" name="walk_history" value="' . $default_walk . '" /></td></tr></table></FORM>
+		<FORM ACTION="index.php?menu=tools&amp;action=check_tables" METHOD="post" onclick="return confirm(\'Database Check Can Take a Long Time. Continue?\');">
+		<table style="float: left;" cellspacing="10" border="0"><tr><td><input type="submit" value="Check DB"/></td></tr></table></FORM>
+		<FORM ACTION="index.php?menu=tools&amp;action=optimize_tables" METHOD="post" onclick="return confirm(\'Database Optimize Can Take a Long Time. Continue?\');">
+		<table style="float: left;" cellspacing="10" border="0"><tr><td><input type="submit" value="Optimize DB"/></td></tr></table></FORM>
+		<FORM ACTION="index.php?menu=tools&amp;action=repair_tables" METHOD="post" onclick="return confirm(\'Database Repair Can Take a Long Time. Continue?\');">
+		<table style="float: left;" cellspacing="10" border="0"><tr><td><input type="submit" value="Repair DB"/></td></tr></table></FORM>
+		<br><br><br><hr>
+		<FORM ACTION="index.php?menu=tools&amp;action=schedule_check" METHOD="post">
+		<table style="float: left;" cellspacing="10" border="0"><tr><td><input type="submit" value="Schedule Check"/></td>
+		<td>Block#<input type="text" size="7" name="schedule_check" value="' . $default_check . '" /></td></tr></table></FORM>
+		<FORM ACTION="index.php?menu=tools&amp;action=repair" METHOD="post">
+		<table style="float: left;" cellspacing="10" border="0"><tr><td><input type="submit" value="Repair" onclick="return confirm(\'Transaction Repair Can Take a Long Time. Continue?\');" /></td>
+		<td>From Block#<input type="text" size="7" name="repair_from" value="' . $default_check . '" /></td></tr></table></FORM>
+		<br><br><br>';
 }
 //***********************************************************
 //***********************************************************

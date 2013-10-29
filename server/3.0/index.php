@@ -2072,7 +2072,7 @@ if($_SESSION["valid_login"] == TRUE)
 	if($_GET["menu"] == "history")
 	{
 		$my_public_key = my_public_key();
-		set_time_limit(120);
+		set_time_limit(200);
 
 		if($_GET["trans_browse"] == "open")
 		{
@@ -2167,23 +2167,23 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 				else
 				{
-					$body_string .= 'No Transactions';
+					$body_string .= '<td>No Transactions</td>';
 				}
 
-				$body_string .= '</tr></table></td></tr>';
+				$body_string .= '</tr></table>';
 				$counter--;
 				$show_last_counter--;
 			}
 
-			$body_string .= '<tr><FORM ACTION="index.php?menu=history&amp;trans_browse=open" METHOD="post">
-				<td colspan="2" align="left"><input type="text" size="5" name="show_more" value="' . $show_last .'" /><input type="submit" name="Submit1" value="Show Last" /></FORM></td></tr>';
-
-			$body_string .= '</table></div>';
+			$body_string .= '</td></tr></table>
+				<FORM ACTION="index.php?menu=history&amp;trans_browse=open" METHOD="post">
+				<table border="0"><tr><td><input type="text" size="5" name="show_more" value="' . $show_last .'" /></td>
+				<td><input type="submit" name="Submit1" value="Show Last" /></td></tr></table></FORM></div>';
 
 			$color_key1 = '<td><img src="img/timekoin_green.png" /></td>';
 			$color_key2 = '<td><img src="img/timekoin_blue.png" /></td>';
 
-			$text_bar = '<table border="0" cellspacing="0" cellpadding="0"><tr><td style="width:125px;"><strong>Color Chart:</strong></td>
+			$text_bar = '<table border="0" cellspacing="3" cellpadding="0"><tr><td style="width:125px;"><strong>Color Chart:</strong></td>
 				<td>New Currency</td>' . $color_key1 . '
 				<td style="width:115px;" align="right">Transaction</td>' . $color_key2 . '
 				</tr></table>';
@@ -2615,7 +2615,7 @@ if($_SESSION["valid_login"] == TRUE)
 	{
 		if($_GET["action"] == "walk_history")
 		{
-			$body_string = '<strong>History Walk from Block #<font color="blue">' . $_POST["walk_history"] . '</font> can take some time, please be patient...</font></strong><br><br>
+			$body_string = '<strong>History Walk from Transaction Cycle #</strong><font color="blue"><strong>' . $_POST["walk_history"] . '</strong></font><strong> can take some time, please be patient...</strong><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>History Walk</th></tr>';
 			$block_end = $_POST["walk_history"] + 500;
 
@@ -2629,26 +2629,22 @@ if($_SESSION["valid_login"] == TRUE)
 			
 			if(mysql_query($sql) == TRUE)
 			{
-				$body_string = '<strong>A Block Check has been scheduled for #<font color="blue">' . $_POST["schedule_check"] . '</font></strong>';
-				write_log("A History Check was Scheduled for Block #" . $_POST["schedule_check"], "GU");
-			}
-			else
-			{
-				$body_string = '<strong><font color="red">There was a Database ERROR to schedule Block #<font color="blue">' . $_POST["schedule_check"] . '</font></strong></font>';
+				$body_string = '<strong>An Integrity Check has been scheduled for Transaction Cycle #<font color="blue">' . $_POST["schedule_check"] . '</font></strong>';
+				write_log("A History Check was Scheduled for Transaction Cycle #" . $_POST["schedule_check"], "GU");
 			}
 		}
 
 		if($_GET["action"] == "repair")
 		{
 			set_time_limit(999);
-			$body_string = '<strong>Start Repair from Block #<font color="blue">' . $_POST["repair_from"] . '</font><br>
+			$body_string = '<strong>Start Repair from Transaction Cycle #<font color="blue">' . $_POST["repair_from"] . '</font><br>
 				This can take some time, please be patient...</strong><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Repair History</th></tr>';
 
 			$body_string .= visual_repair($_POST["repair_from"]);
 			$body_string .= '</table></div>';
 
-			write_log("A History Block Repair was started from #" . $_POST["repair_from"], "GU");
+			write_log("A History Block Repair was started from Transaction Cycle #" . $_POST["repair_from"], "GU");
 		}
 
 		if($_GET["action"] == "check_tables")
@@ -2656,7 +2652,7 @@ if($_SESSION["valid_login"] == TRUE)
 			set_time_limit(999);
 			write_log("A CHECK of the Entire Database &amp; Tables Was Started.", "GU");
 
-			$body_string = '<strong>Checking All Database Tables</strong></font><br><br>
+			$body_string = '<strong>Checking All Database Tables</strong><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Check Database Results</th></tr><tr><td>';
 
 			$db_check = mysql_query("CHECK TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
@@ -2687,7 +2683,7 @@ if($_SESSION["valid_login"] == TRUE)
 			set_time_limit(999);
 			write_log("A REPAIR of the Entire Database &amp; Tables Was Started.", "GU");
 
-			$body_string = '<strong>Repair All Database Tables</strong></font><br><br>
+			$body_string = '<strong>Repair All Database Tables</strong><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Repair Database Results</th></tr><tr><td>';
 
 			$db_check = mysql_query("REPAIR TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
@@ -2718,7 +2714,7 @@ if($_SESSION["valid_login"] == TRUE)
 			set_time_limit(999);
 			write_log("An OPTIMIZE of the Entire Database &amp; Tables Was Started.", "GU");
 
-			$body_string = '<strong>Optimize All Database Tables</strong></font><br><br>
+			$body_string = '<strong>Optimize All Database Tables</strong><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Optimize Database Results</th></tr><tr><td>';
 
 			$db_check = mysql_query("OPTIMIZE TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
@@ -2822,11 +2818,13 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 			}
 			
-			$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> Log Events</strong>' . $filter_by . '<table border="0" cellspacing="5"><tr><td>
-				Filter By:</td><td><FORM ACTION="index.php?menu=tools&amp;logs=listmore" METHOD="post"><select name="filter"><option value="all" SELECTED>Show All</option><option value="BA">Balance Indexer</option>
+			$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> Log Events</strong>' . $filter_by . '<FORM ACTION="index.php?menu=tools&amp;logs=listmore" METHOD="post">
+				<table border="0" cellspacing="5"><tr><td>
+				Filter By:</td><td><select name="filter"><option value="all" SELECTED>Show All</option><option value="BA">Balance Indexer</option>
 				<option value="FO">Foundation Manager</option><option value="G">Generation Events</option><option value="GP">Generation Peer Manager</option><option value="GU">GUI - Graphical User Interface</option>
 				<option value="R">Generation Request</option><option value="MA">Main Program</option><option value="PL">Peer Processor</option><option value="TC">Transaction Clerk</option>
-				<option value="T">Transactions</option><option value="TR">Treasurer Processor</option><option value="QC">Queue Clerk</option><option value="WA">Watchdog</option></select></td></tr></table>
+				<option value="T">Transactions</option><option value="TR">Treasurer Processor</option><option value="QC">Queue Clerk</option><option value="WA">Watchdog</option></select></td>
+				<td><input type="text" size="5" name="show_more_logs" value="' . $show_last .'" /><input type="submit" name="show_last" value="Show Last" /></td></tr></table></FORM>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th><th>Log</th><th>Attribute</th></tr>';
 
 			// Find the last X amount of log events
@@ -2852,9 +2850,9 @@ if($_SESSION["valid_login"] == TRUE)
 				<td class="style2">' . $sql_row["attribute"] . '</td></tr>';
 			}
 
-			$body_string .= '<tr><td colspan="3"><hr></td></tr><tr><td><input type="text" size="5" name="show_more_logs" value="' . $show_last .'" /><input type="submit" name="show_last" value="Show Last" /></FORM></td>
-				<td colspan="2"><FORM ACTION="index.php?menu=tools&amp;logs=clear" METHOD="post" onclick="return confirm(\'Clear All Logs?\');"><input type="submit" name="clear_logs" value="Clear All Logs" /></FORM></td></tr>';
-			$body_string .= '</table></div>';
+			$body_string .= '</table>
+				<FORM ACTION="index.php?menu=tools&amp;logs=clear" METHOD="post" onclick="return confirm(\'Clear All Logs?\');">
+				<table border="0"><tr><td style="width:650px" align="right"><input type="submit" name="clear_logs" value="Clear All Logs" /></td></tr></table></FORM></div>';
 		}
 		
 		$text_bar = tools_bar();
@@ -2864,8 +2862,7 @@ if($_SESSION["valid_login"] == TRUE)
 			<strong>Repair</strong> will force Timekoin to recalculate all verification hashes from the specified block to now.<br><br>
 			<strong>Check DB</strong> will check the data integrity of all tables in the database.<br><br>
 			<strong>Optimize DB</strong> will optimize all tables &amp; indexes in the database.<br><br>
-			<strong>Repair DB</strong> will attempt to repair all tables in the database.<br><br>			
-			<i>Note:</i> The database utilities can take a long time to process and complete.';
+			<strong>Repair DB</strong> will attempt to repair all tables in the database.';
 		
 		home_screen('Tools &amp; Utilities', $text_bar, $body_string , $quick_info);
 		exit;
