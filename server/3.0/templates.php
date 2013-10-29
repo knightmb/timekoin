@@ -685,12 +685,18 @@ function generation_body($generate_currency)
 	if($_GET["generate"] == "")
 	{
 		$return_html .= '<br><strong>How Generation Works</strong><br><ol>
-		<li>The server must be accessible from the Internet and be able to accept and respond to HTTP requests on the port designated in the System tab. This allows peer servers to validate the existence of your server. You may test you router/firewall settings using the <a target="_blank" href="https://timekoin.com/utility/firewall.php"><font color="blue"><strong>Firewall Tool</strong></font></a>.  If your server fails this test, you must modify your router or firewall settings to allow inbound TCP connections on your chosen port.</li>
-		<li>A single server key is chosen randomly for generation during an election cycle. Elections are pseudo-randomized. You may use the <a target="_blank" href="http://timekoin.com/test/eclock.php?max_cycles=288"><font color="blue"><strong>Election Calendar</strong></font></a> to see upcoming elections in the next 24 hours.</li>
-		<li>Once elected, your server will create generation transactions during generation cycles. Generation cycles occur at pseudo-random times.  Use the <a target="_blank" href="http://timekoin.com/test/gclock.php?max_cycles=288"><font color="blue"><strong>Generation Calendar</strong></font></a> to see the upcoming generation cycles in the next 24 hours.</li>
-		<li>The server may continue to generate currency as long as it stays online.  If the server does not generate currency for 2 hours, the network assumes it has gone offline and the server key will be removed from the Generating Peer List. Once the server comes back online, it will need to be re-elected before generation can begin again.</li>
+		<li>The server must be accessible from the Internet and be able to accept and respond to HTTP requests on the port designated in the System tab. 
+		This allows peer servers to validate the existence of your server. 
+		You may test you router/firewall settings using the <a href="index.php?menu=generation&amp;firewall=tool"><font color="blue"><strong>Firewall Tool</strong></font></a>. 
+		If your server fails this test, you must modify your router or firewall settings to allow inbound TCP connections on your chosen port.</li>
+		<li>A single server key is chosen randomly for generation during an election cycle. Elections are pseudo-randomized. 
+		You may use the <a href="index.php?menu=generation&amp;elections=show"><font color="blue"><strong>Election Calendar</strong></font></a> to see upcoming elections in the next 48 hours.</li>
+		<li>Once elected, your server will create generation transactions during generation cycles. Generation cycles occur at pseudo-random times. 
+		Use the <a href="index.php?menu=generation&amp;generations=show"><font color="blue"><strong>Generation Calendar</strong></font></a> to see the upcoming generation cycles in the next 24 hours.</li>
+		<li>The server may continue to generate currency as long as it stays online. 
+		If the server does not generate currency for 2 hours, the network assumes it has gone offline and the server key will be removed from the Generating Peer List. 
+		Once the server comes back online, it will need to be re-elected before generation can begin again.</li>
 		</ol>
-
 		<strong>Generation Amount Schedule</strong><br>
 		The amount a server can generate is directly related to the length of time it has been online and generating currency in the Timekoin network.<br>
 		<table border="0" cellpadding="2"><tr><td><I>Time Generating</I></td><td><I>Currency per Generation Cycle</I></td></tr>

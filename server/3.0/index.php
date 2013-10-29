@@ -1914,7 +1914,119 @@ if($_SESSION["valid_login"] == TRUE)
 			You can manually update this field if the IP address detected is incorrect.<br><br>
 			Next Peer Election in<br>' . $time_election . '</strong></font><br><br>
 			Currency Generation in<br>' . $time_generate . '</strong></font>';
-		
+
+		if($_GET["firewall"] == "tool")
+		{
+			$body_string = '<strong>This will use the settings set in the system tab (domain,folder, &amp; port) to attempt a reverse connection attempt.</strong><br><br>
+				<FORM ACTION="index.php?menu=generation&amp;firewall=test" METHOD="post"><input type="submit" value="Check My Firewall"/></FORM>';
+						
+			home_screen('Crypto Currency Generation', $text_bar, $body_string , $quick_info);
+			exit;
+		}
+
+		if($_GET["firewall"] == "test")
+		{
+			ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
+			ini_set('default_socket_timeout', 3); // Timeout for request in seconds
+
+			$domain = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,"field_data");
+			$subfolder = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_subfolder' LIMIT 1"),0,"field_data");
+			$port = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
+
+			// Create map with request parameters
+			$params = array ('domain' => $domain, 
+				'subfolder' => $subfolder, 
+				'port' => $port);
+			 
+			// Build Http query using params
+			$query = http_build_query($params);
+			 
+			// Create Http context details
+			$contextData = array (
+								 'method' => 'POST',
+								 'header' => "Connection: close\r\n".
+												 "Content-Length: ".strlen($query)."\r\n",
+								 'content'=> $query );
+			 
+			// Create context resource for our request
+			$context = stream_context_create (array ( 'http' => $contextData ));
+
+			$firewall_poll = filter_sql(file_get_contents("http://timekoin.com/utility/firewall.php", FALSE, $context, NULL, 256));
+
+			if(empty($firewall_poll) == TRUE)
+			{
+				$firewall_poll = '<font color="red">No Response</font>';
+			}
+
+			$body_string = '<strong>Test Response:</strong><br><br>
+				'. $firewall_poll . '<br><br>
+				<FORM ACTION="index.php?menu=generation&amp;firewall=test" METHOD="post"><input type="submit" value="Check My Firewall Again"/></FORM>';
+						
+			home_screen('Crypto Currency Generation', $text_bar, $body_string , $quick_info);
+			exit;
+		}
+
+		if($_GET["elections"] == "show")
+		{
+			$body_string = NULL;
+			$total_elections = 0;
+			$max_cycles_ahead = 576;
+
+			for ($i = 1; $i < $max_cycles_ahead; $i++)
+			{
+				$current_generation_cycle = transaction_cycle($i);
+				
+				$str = strval($current_generation_cycle);
+				$last3_gen = $str[strlen($str)-3];
+
+				$current_generation_block = transaction_cycle($i, TRUE);
+				TKRandom::seed($current_generation_block);
+				$tk_random_number = TKRandom::num(0, 9);
+
+				if($last3_gen + $tk_random_number > 16)
+				{
+					$body_string.= '<br><font color="blue">Election Event</font> at ' . transaction_cycle($i) . ' - ' . unix_timestamp_to_human(transaction_cycle($i));
+					$total_elections++;
+				}
+			}
+
+			$body_string = '<strong>Total Elections in the Next ' . $max_cycles_ahead . ' Transaction Cycles :</strong> <font color="blue"><strong>' . $total_elections . '</strong></font><br>' . $body_string . '<br><br>';
+						
+			home_screen('Crypto Currency Generation', $text_bar, $body_string , $quick_info);
+			exit;
+		}
+
+		if($_GET["generations"] == "show")
+		{
+			$body_string = NULL;
+			$total_generations = 0;
+			$max_cycles_ahead = 288;
+
+			for ($i = 1; $i < $max_cycles_ahead; $i++)
+			{
+				$current_generation_cycle = transaction_cycle($i);
+				
+				$str = strval($current_generation_cycle);
+				$last3_gen = $str[strlen($str)-3];
+
+				$current_generation_block = transaction_cycle($i, TRUE);
+				TKRandom::seed($current_generation_block);
+				$tk_random_number = TKRandom::num(0, 9);
+
+				if($last3_gen + $tk_random_number < 6)
+				{
+					$body_string.= '<br><font color="blue">Generation Event</font> at ' . transaction_cycle($i) . ' - ' . unix_timestamp_to_human(transaction_cycle($i));
+					$total_generations++;
+				}
+			}
+
+			$body_string = '<strong>Total Generations in the Next ' . $max_cycles_ahead . ' Transaction Cycles :</strong>  <font color="blue"><strong>' . $total_generations . '</strong></font><br>' . $body_string . '<br><br>';
+						
+			home_screen('Crypto Currency Generation', $text_bar, $body_string , $quick_info);
+			exit;
+		}
+
+
 		home_screen('Crypto Currency Generation', $text_bar, $body_string , $quick_info);
 		exit;
 	}	
