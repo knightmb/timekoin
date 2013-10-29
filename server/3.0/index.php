@@ -1157,7 +1157,7 @@ if($_SESSION["valid_login"] == TRUE)
 					
 					if(mysql_query($sql) == TRUE)
 					{
-						$server_code = '<br><font color="red"><strong>Watchdog was already Stopped...</strong></font><br><br>';
+						$server_code = '<font color="red"><strong>Watchdog was already Stopped...</strong></font>';
 					}
 				}
 				else
@@ -1167,13 +1167,13 @@ if($_SESSION["valid_login"] == TRUE)
 					
 					if(mysql_query($sql) == TRUE)
 					{
-						$server_code = '<br><font color="blue"><strong>Watchdog Stopping...</strong></font><br><br>';
+						$server_code = '<font color="blue"><strong>Watchdog Stopping...</strong></font>';
 					}
 				}
 			}
 			else
 			{
-				$server_code = '<br><font color="red"><strong>Watchdog was already Stopped...</strong></font><br><br>';
+				$server_code = '<font color="red"><strong>Watchdog was already Stopped...</strong></font>';
 			}
 		}
 
@@ -1199,7 +1199,7 @@ if($_SESSION["valid_login"] == TRUE)
 					
 					if(mysql_query($sql) == TRUE)
 					{
-						$server_code = '<br><font color="red"><strong>Timekoin Main Processor was already Stopped...</strong></font><br><br>';
+						$server_code = '<font color="red"><strong>Timekoin Main Processor was already Stopped...</strong></font>';
 						// Clear transaction queue to avoid unnecessary peer confusion
 						mysql_query("TRUNCATE TABLE `transaction_queue`");
 
@@ -1224,7 +1224,7 @@ if($_SESSION["valid_login"] == TRUE)
 					
 					if(mysql_query($sql) == TRUE)
 					{
-						$server_code = '<br><font color="blue"><strong>Timekoin Main Processor Stopping...</strong></font><br><br>';
+						$server_code = '<font color="blue"><strong>Timekoin Main Processor Stopping...</strong></font>';
 						// Clear transaction queue to avoid unnecessary peer confusion
 						mysql_query("TRUNCATE TABLE `transaction_queue`");
 
@@ -1244,7 +1244,7 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 			else
 			{
-				$server_code = '<br><font color="red"><strong>Timekoin Main Processor was already Stopped...</strong></font><br><br>';
+				$server_code = '<font color="red"><strong>Timekoin Main Processor was already Stopped...</strong></font>';
 				// Clear transaction queue to avoid unnecessary peer confusion
 				mysql_query("TRUNCATE TABLE `transaction_queue`");
 
@@ -1255,27 +1255,22 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["code"] == "1")
 		{
-			$server_code = '<br><font color="green"><strong>Main Timekoin Processing Started...</strong></font><br><br>';
+			$server_code = '<font color="green"><strong>Main Timekoin Processing Started...</strong></font>';
 		}
 		if($_GET["code"] == "99")
 		{
-			$server_code = '<br><font color="blue"><strong>Timekoin Already Active...</strong></font><br><br>';
+			$server_code = '<font color="blue"><strong>Timekoin Already Active...</strong></font>';
 		}
-		if($_GET["code"] == "98")
-		{
-			$server_code = '<br><font color="red"><strong>PHP File Path Missing...</strong></font><br><br>';
-		}		
 		if($_GET["code"] == "2")
 		{
-			$server_code = '<br><font color="green"><strong>Watchdog Started...</strong></font><br><br>';
+			$server_code = '<font color="green"><strong>Watchdog Started...</strong></font>';
 		}
 		if($_GET["code"] == "89")
 		{
-			$server_code = '<br><font color="blue"><strong>Watchdog Already Active...</strong></font><br><br>';
+			$server_code = '<font color="blue"><strong>Watchdog Already Active...</strong></font>';
 		}
 
 		$body_string = system_screen();
-		$body_string .= $server_code;
 
 		$quick_info = '<strong>Start</strong> will activate all Timekoin Processing.<br><br>
 			<strong>Stop</strong> will halt Timekoin from further processing.<br><br>
@@ -1284,7 +1279,7 @@ if($_SESSION["valid_login"] == TRUE)
 			<strong>Allow Ambient Peer Restarts</strong> controls if other peers can restart Timekoin from unknown failures.<br><br>
 			<strong>Super Peer</strong> will enable peers to download bulk transactions from your server.<br><br>';
 
-		home_screen('System Settings', system_service_bar(), $body_string , $quick_info);
+		home_screen('System Settings', system_service_bar() . $server_code, $body_string , $quick_info);
 		exit;
 	}
 
