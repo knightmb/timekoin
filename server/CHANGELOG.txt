@@ -1,6 +1,6 @@
 Timekoin Server - Change Log
 
-Timekoin Server - 3.0 (Released 2013-10-30)
+Timekoin Server - 3.01 (Released 2013-10-30)
 ============================================
 - New Plugin System
 - New Plugin Service
