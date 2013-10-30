@@ -1,10 +1,23 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 3.0 (Released 2013-10-30)
+============================================
+- New Plugin System
+- New Plugin Service
+- New Tab Management
+- HTML5/CSS cleanup for better display across all web browsers
+- New Built-In Firewall Testing Utility
+- New Built-In Generation & Election Schedule view-able
+- New Timezone support available
+- Overall, many tweaks to increase performance & speed
+- GUI overhaul to be cleaner and more functional
+- More system logging to better understand how the network is behaving
+
+
 Timekoin Server - 2.43 (Released 2013-10-26)
 ============================================
 - 0000053: [Feature Request] Display how long until the next generation cycle
 - 0000069: [General Issue] Server Peers with dynamic IPs on Domain Names can get out of sync IPs with the generation IP
-
 
 Timekoin Server - 2.42 (Released 2013-10-24)
 ============================================
