@@ -158,14 +158,14 @@ if($_GET["action"] == "input_transaction")
 		}
 		else
 		{
-			// A qhash is required to verify the transaction now
+			// A qhash is required to verify the transaction
 			write_log("Queue Hash Data Empty from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
 			$hash_match = "mismatch";
 		}
 
 		$transaction_public_key = filter_sql(base64_decode($transaction_public_key));
 
-		if(empty($hash_match) == TRUE)
+		if(empty($hash_match) == TRUE) // Duplicate Check
 		{
 			// No duplicate found, continue processing
 			// Check to make sure attribute is valid
@@ -316,7 +316,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 	ini_set('user_agent', 'Timekoin Server (Queueclerk) v' . TIMEKOIN_VERSION);
 	ini_set('default_socket_timeout', 2); // Timeout for request in seconds
 
-	$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND()";
+	$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND() LIMIT 10";
 
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
