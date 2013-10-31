@@ -54,8 +54,10 @@ $next_generation_cycle = transaction_cycle(1);
 $current_generation_block = transaction_cycle(0, TRUE);
 //*****************************************************************************************************
 //*****************************************************************************************************
-// Check my transaction queue and copy pending transaction to the main transaction queue
-$sql = "SELECT * FROM `my_transaction_queue` ORDER BY `my_transaction_queue`.`timestamp` ASC LIMIT 100";
+// Check my transaction queue and copy pending transaction to the main transaction queue, giving priority
+// to self created transactions over 3rd party submitted transactions
+$sql = "(SELECT * FROM `my_transaction_queue` WHERE `public_key` = '" . my_public_key() . "' ORDER BY `my_transaction_queue`.`timestamp` ASC) 
+	UNION (SELECT * FROM `my_transaction_queue` ORDER BY `my_transaction_queue`.`timestamp` ASC) LIMIT 100";
 
 $sql_result = mysql_query($sql);
 $sql_num_results = mysql_num_rows($sql_result);
@@ -90,10 +92,10 @@ if($sql_num_results > 0)
 
 			if(empty($found_transaction_history) == FALSE)
 			{
-				// This transaction is in the history now, let's wait about 2 hours before clearing
+				// This transaction is in the history now, let's wait about 15 minutes before clearing
 				// this from the transaction queue in case of network congestion or other factors
 				// that somehow prevented the transaction from making into the network peer swarm
-				if(time() - $found_transaction_history > 7200) // Recycle the variable ;)
+				if(time() - $found_transaction_history > 900) // Recycle the variable ;)
 				{
 					$sql = "DELETE QUICK FROM `my_transaction_queue` WHERE `my_transaction_queue`.`public_key` = '$public_key' AND `my_transaction_queue`.`hash` = '$hash_check' LIMIT 1";
 
@@ -564,6 +566,6 @@ mysql_query("UPDATE `main_loop_status` SET `field_data` = 2 WHERE `main_loop_sta
 mysql_query("UPDATE `main_loop_status` SET `field_data` = " . time() . " WHERE `main_loop_status`.`field_name` = 'treasurer_last_heartbeat' LIMIT 1");
 
 //***********************************************************************************
-sleep(rand(3,6));
+sleep(rand(5,10));
 } // End Infinite Loop
 ?>

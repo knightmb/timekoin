@@ -1928,14 +1928,10 @@ if($_SESSION["valid_login"] == TRUE)
 			ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
 			ini_set('default_socket_timeout', 5); // Timeout for request in seconds
 
-			$domain = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,"field_data");
-			$subfolder = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_subfolder' LIMIT 1"),0,"field_data");
-			$port = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
-
 			// Create map with request parameters
-			$params = array ('domain' => $domain, 
-				'subfolder' => $subfolder, 
-				'port' => $port);
+			$params = array ('domain' => my_domain(), 
+				'subfolder' => my_subfolder(), 
+				'port' => my_port_number());
 			 
 			// Build Http query using params
 			$query = http_build_query($params);
