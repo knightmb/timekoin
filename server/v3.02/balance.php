@@ -60,6 +60,7 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 	$sql = "SELECT public_key FROM `transaction_queue`";
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
+	$created = FALSE;
 
 	if($sql_num_results > 0)
 	{
@@ -70,37 +71,40 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 			$public_key_from = hash('md5', $sql_row["public_key"]);
 
 			// Run a balance index if one does not already exist
-			$balance_index = mysql_result(mysql_query("SELECT public_key_hash FROM `balance_index` WHERE `public_key_hash` = '$public_key_from' LIMIT 1"),0,0);
+			$balance_index = mysql_result(mysql_query("SELECT public_key_hash FROM `balance_index` WHERE `public_key_hash` = '$public_key_from' AND `block` = '" . foundation_cycle(-1, TRUE) . "' LIMIT 1"),0,0);
 
 			if(empty($balance_index) == TRUE)
 			{
 				// No index balance, go ahead and create one
 				write_log("Updating Balance Index From Transaction Queue", "BA");
 				check_crypt_balance($sql_row["public_key"]);
+				$created = TRUE;
 				break;
 			}		
 		}
 	}
 
-	// 2000 Transaction Cycles Back in time to index
-	$time_2000 = time() - 600000;
-
-	$sql = "SELECT public_key_to FROM `transaction_history` WHERE `timestamp` > $time_2000 GROUP BY `public_key_to` ORDER BY RAND() LIMIT 1";
-	$sql_result = mysql_query($sql);
-	$sql_row = mysql_fetch_array($sql_result);
-		
-	$public_key_hash = hash('md5', $sql_row["public_key_to"]);
-
-	// Run a balance index if one does not already exist
-	$balance_index = mysql_result(mysql_query("SELECT public_key_hash FROM `balance_index` WHERE `public_key_hash` = '$public_key_hash' LIMIT 1"),0,0);
-
-	if(empty($balance_index) == TRUE)
+	if($created == FALSE) // Only do one or the other at a time
 	{
-		// No index balance, go ahead and create one
-		write_log("Updating Balance Index From Transaction History", "BA");
-		check_crypt_balance($sql_row["public_key_to"]);
-	}
+		// 2000 Transaction Cycles Back in time to index
+		$time_2000 = time() - 600000;
 
+		$sql = "SELECT public_key_to FROM `transaction_history` WHERE `timestamp` > $time_2000 GROUP BY `public_key_to` ORDER BY RAND() LIMIT 1";
+		$sql_result = mysql_query($sql);
+		$sql_row = mysql_fetch_array($sql_result);
+			
+		$public_key_hash = hash('md5', $sql_row["public_key_to"]);
+
+		// Run a balance index if one does not already exist
+		$balance_index = mysql_result(mysql_query("SELECT public_key_hash FROM `balance_index` WHERE `public_key_hash` = '$public_key_from' AND `block` = '" . foundation_cycle(-1, TRUE) . "' LIMIT 1"),0,0);
+
+		if(empty($balance_index) == TRUE)
+		{
+			// No index balance, go ahead and create one
+			write_log("Updating Balance Index From Transaction History", "BA");
+			check_crypt_balance($sql_row["public_key_to"]);
+		}
+	}
 }
 //***********************************************************************************
 //***********************************************************************************
