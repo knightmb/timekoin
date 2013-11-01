@@ -44,9 +44,18 @@ if($_SESSION["valid_login"] == FALSE && $_GET["action"] != "login")
 				// Set loop at active now
 				mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1");
 
-				call_script("main.php"); // Start main.php process
-
 				activate(TIMEKOINSYSTEM, 1); // In case this was disabled from a stop call in the server GUI
+
+				// Start all system scripts
+				call_script("transclerk.php");
+				call_script("foundation.php", 0);
+				call_script("generation.php");
+				call_script("treasurer.php");
+				call_script("peerlist.php");
+				call_script("queueclerk.php");
+				call_script("balance.php", 0);
+				call_script("genpeer.php");
+				call_script("main.php");
 
 				// Use uPNP to map inbound ports for Windows systems
 				if(getenv("OS") == "Windows_NT" && file_exists("utils\upnpc.exe") == TRUE)
@@ -1154,7 +1163,7 @@ if($_SESSION["valid_login"] == TRUE)
 			if(getenv("OS") == "Windows_NT" && file_exists("utils\upnpc.exe") == TRUE)
 			{
 				$server_port_number = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
-				pclose(popen("start /B utils\upnpc.exe -d $server_port_number TCP", "r"));
+				pclose(popen("start /B utils\upnpc.exe -d " . my_port_number() . " TCP", "r"));
 			}
 
 			if($script_loop_active > 0)
@@ -1167,7 +1176,7 @@ if($_SESSION["valid_login"] == TRUE)
 					
 					if(mysql_query($sql) == TRUE)
 					{
-						$server_code = '<font color="red"><strong>Timekoin Main Processor was already Stopped...</strong></font>';
+						$server_code = '<font color="red"><strong>Timekoin was already Stopped...</strong></font>';
 						// Clear transaction queue to avoid unnecessary peer confusion
 						mysql_query("TRUNCATE TABLE `transaction_queue`");
 
@@ -1192,7 +1201,7 @@ if($_SESSION["valid_login"] == TRUE)
 					
 					if(mysql_query($sql) == TRUE)
 					{
-						$server_code = '<font color="blue"><strong>Timekoin Main Processor Stopping...</strong></font>';
+						$server_code = '<font color="blue"><strong>Timekoin Stopping...</strong></font>';
 						// Clear transaction queue to avoid unnecessary peer confusion
 						mysql_query("TRUNCATE TABLE `transaction_queue`");
 
@@ -1212,7 +1221,7 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 			else
 			{
-				$server_code = '<font color="red"><strong>Timekoin Main Processor was already Stopped...</strong></font>';
+				$server_code = '<font color="red"><strong>Timekoin was already Stopped...</strong></font>';
 				// Clear transaction queue to avoid unnecessary peer confusion
 				mysql_query("TRUNCATE TABLE `transaction_queue`");
 
@@ -1223,7 +1232,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["code"] == "1")
 		{
-			$server_code = '<font color="green"><strong>Main Timekoin Processing Started...</strong></font>';
+			$server_code = '<font color="green"><strong>Timekoin Started...</strong></font>';
 		}
 		if($_GET["code"] == "99")
 		{

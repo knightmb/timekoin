@@ -38,9 +38,18 @@ if($_GET["action"]=="begin_main")
 		// Set loop at active now
 		mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1");
 
-		call_script("main.php");
-
 		activate(TIMEKOINSYSTEM, 1); // In case this was disabled from a emergency stop call in the server GUI
+
+		// Start all system scripts
+		call_script("transclerk.php");
+		call_script("foundation.php", 0);
+		call_script("generation.php");
+		call_script("treasurer.php");
+		call_script("peerlist.php");
+		call_script("queueclerk.php");
+		call_script("balance.php", 0);
+		call_script("genpeer.php");
+		call_script("main.php");
 
 		// Use uPNP to map inbound ports for Windows systems
 		if(getenv("OS") == "Windows_NT" && file_exists("utils\upnpc.exe") == TRUE)
@@ -242,14 +251,13 @@ while(1) // Begin Infinite Loop :)
 		mysql_query("TRUNCATE TABLE `ip_activity`");		
 	//*****************************************************************************************************
 	//*****************************************************************************************************
+		sleep(5);
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,"field_data");
 		// Check if script is already running
 		if($script_loop_active == 0)
 		{
 			call_script("transclerk.php");
 		}
-
-		sleep(1); // 1 second for sanity reasons
 
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,"field_data");
 		// Check if script is already running
@@ -258,16 +266,12 @@ while(1) // Begin Infinite Loop :)
 			call_script("foundation.php", 0);
 		}
 
-		sleep(1); // 1 second for sanity reasons
-
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,"field_data");
 		// Check if script is already running
 		if($script_loop_active == 0)
 		{
 			call_script("generation.php");
 		}
-
-		sleep(1); // 1 second for sanity reasons
 
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,"field_data");
 		// Check if script is already running
@@ -276,16 +280,12 @@ while(1) // Begin Infinite Loop :)
 			call_script("treasurer.php");
 		}
 
-		sleep(1); // 1 seconds for sanity reasons
-
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,"field_data");
 		// Check if script is already running
 		if($script_loop_active == 0)
 		{
 			call_script("peerlist.php");
 		}
-
-		sleep(1); // 1 second for sanity reasons
 
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,"field_data");
 		// Check if script is already running
@@ -294,8 +294,6 @@ while(1) // Begin Infinite Loop :)
 			call_script("queueclerk.php");			
 		}
 
-		sleep(1); // 1 second for sanity reasons
-
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'balance_heartbeat_active' LIMIT 1"),0,"field_data");
 		// Check if script is already running
 		if($script_loop_active == 0)
@@ -303,16 +301,12 @@ while(1) // Begin Infinite Loop :)
 			call_script("balance.php", 0);
 		}		
 
-		sleep(1); // 1 second for sanity reasons
-
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,"field_data");
 		// Check if script is already running
 		if($script_loop_active == 0)
 		{
 			call_script("genpeer.php");
 		}
-
-		sleep(1); // 1 second for sanity reasons
 
 		if(rand(1,3) == 2) // Randomize checking to keep database load down
 		{
@@ -333,7 +327,7 @@ while(1) // Begin Infinite Loop :)
 	//*****************************************************************************************************
 	//*****************************************************************************************************	
 		// (Very Last Thing to do in Script)
-		sleep(2);
+		sleep(5);
 
 		// Time to wake up and start again
 		mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'main_last_heartbeat' LIMIT 1");
