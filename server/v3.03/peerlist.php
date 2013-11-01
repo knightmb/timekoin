@@ -28,7 +28,7 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 	echo hash('crc32', intval($_GET["challenge"]));
 
 	// Check if Ambient Peer Restart is enabled (randomize to avoid DB spamming)
-	if(rand(1,20) == 15)
+	if(rand(1,30) == 15)
 	{
 		$allow_ambient_peer_restart = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'allow_ambient_peer_restart' LIMIT 1"),0,"field_data");
 
@@ -360,7 +360,7 @@ else if($loop_active == 2) // Wake from sleep
 }
 else if($loop_active == 3) // Shutdown
 {
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
+	mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active'");
 	exit;
 }
 else
@@ -726,6 +726,14 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 	$sql = "SELECT * FROM `active_peer_list`";
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
+	// Grab random Transaction Foundation Hash
+	$rand_block = rand(0,foundation_cycle(0, TRUE) - 5); // Range from Start to Last 5 Foundation Hash
+	$random_foundation_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_foundation` WHERE `block` = $rand_block LIMIT 1"),0,0);
+	// Grab random Transaction Hash
+	$rand_block2 = rand(transaction_cycle((0 - transaction_cycle(0, TRUE)), TRUE), transaction_cycle(-1000, TRUE)); // Range from Start to Last 1000 Transaction Hash
+	$rand_block2 = transaction_cycle(0 - $rand_block2);
+	$random_transaction_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` = $rand_block2 LIMIT 1"),0,0);
+	$rand_block2 = ($rand_block2 - TRANSACTION_EPOCH - 300) / 300;
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
@@ -740,23 +748,91 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 			$last_heartbeat = $sql_row["last_heartbeat"];
 			$join_peer_list = $sql_row["join_peer_list"];
 
-			//Send a challenge hash to see if a timekoin server is active
-			$poll_challenge = rand(1, 999999);
-			$hash_solution = hash('crc32', $poll_challenge);
+			// Choose the type polling done
+			$poll_type = rand(1,5); // 1&2&3=CRC32, 4=Foundation Hash, 5=Transaction Hash
 
-			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 10, "peerlist.php?action=poll&challenge=$poll_challenge");
+			if($poll_type == 1 || $poll_type == 2 || $poll_type == 3)
+			{
+				//Send a challenge hash to see if a timekoin server is active
+				$poll_challenge = rand(1, 999999);
+				$hash_solution = hash('crc32', $poll_challenge);
 
-			if($poll_peer == $hash_solution)
-			{
-				//Got a response from an active Timekoin server (-1 to failure score)
-				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -1);
-				mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
-			}		
-			else
-			{
-				//No response, record polling failure for future reference (+1 failure score)
-				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 1);
+				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 10, "peerlist.php?action=poll&challenge=$poll_challenge");
+
+				if($poll_peer == $hash_solution)
+				{
+					//Got a response from an active Timekoin server (-1 to failure score)
+					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -1);
+					//Update Heartbeat Time
+					mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				}		
+				else
+				{
+					//No response, record polling failure for future reference (+1 failure score)
+					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 1);
+				}
 			}
+			else if($poll_type == 4)
+			{
+				if(empty($random_foundation_hash) == FALSE) // Make sure we had one to compare first
+				{
+					$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 65, "foundation.php?action=block_hash&block_number=$rand_block");
+
+					// Is it valid?
+					if(empty($poll_peer) == TRUE)
+					{
+						//No response, record polling failure for future reference (+2 failure score)
+						modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 2);
+					}
+					else
+					{
+						// Is it valid?
+						if($poll_peer == $random_foundation_hash)
+						{
+							//Got a response from an active Timekoin server (-2 to failure score)
+							modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -2);
+							//Update Heartbeat Time
+							mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+						}
+						else
+						{
+							//Wrong Response? (+2 failure score)
+							modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 3);
+						}
+					}
+				}
+			}
+			else if($poll_type == 5)
+			{
+				if(empty($random_transaction_hash) == FALSE) // Make sure we had one to compare first
+				{
+					$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 65, "transclerk.php?action=block_hash&block_number=$rand_block2");
+
+					// Is it valid?
+					if(empty($poll_peer) == TRUE)
+					{
+						//No response, record polling failure for future reference (+2 failure score)
+						modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 2);
+					}
+					else
+					{
+						// Is it valid?
+						if($poll_peer == $random_transaction_hash)
+						{
+							//Got a response from an active Timekoin server (-3 to failure score)
+							modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -3);
+							//Update Heartbeat Time
+							mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+						}
+						else
+						{
+							//Wrong Response? (+3 failure score)
+							modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 4);
+						}
+					}
+				}
+			}
+
 		} // End Randomize Check
 
 	} // End for Loop

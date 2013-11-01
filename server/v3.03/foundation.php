@@ -58,7 +58,7 @@ else if($loop_active == 2) // Wake from sleep
 }
 else if($loop_active == 3) // Shutdown
 {
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
+	mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active'");
 	exit;
 }
 else

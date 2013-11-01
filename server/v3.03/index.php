@@ -8,8 +8,16 @@ session_start();
 
 if($_SESSION["valid_login"] == FALSE && $_GET["action"] != "login")
 {
-	sleep(1); // One second delay to help prevent brute force attack
+	$db_connect = mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD);
+	$db_select = mysql_select_db(MYSQL_DATABASE);
 
+	// Check for banned IP address
+	if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
+	{
+		// Sorry, your IP address has been banned :(
+		exit ("Your IP Has Been Banned");
+	}	
+	
 	$_SESSION["valid_session"] = TRUE;
 
 	if($_SESSION["valid_session"] == TRUE)
@@ -21,7 +29,7 @@ if($_SESSION["valid_login"] == FALSE && $_GET["action"] != "login")
 	if($_GET["autostart"] == "1" && $_SERVER["SERVER_ADDR"] == gethostbyname(trim(`hostname`))) // Only do this if run from the local machine
 	{
 		// Auto start Timekoin process right away, even before login
-		if(mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD) == TRUE && mysql_select_db(MYSQL_DATABASE) == TRUE)
+		if($db_connect == TRUE && $db_select == TRUE)
 		{
 			// Check last heartbeat and make sure it was more than X seconds ago
 			$main_heartbeat_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,"field_data");
@@ -30,50 +38,6 @@ if($_SESSION["valid_login"] == FALSE && $_GET["action"] != "login")
 			{
 				// Database Initialization
 				initialization_database();
-
-				// Check if a custom PHP path is being used
-				$php_location = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'php_location' LIMIT 1"),0,"field_data");
-				
-				if(empty($php_location) == FALSE)
-				{
-					// Check to make sure the binary/exe file exist before starting
-					if(getenv("OS") == "Windows_NT")
-					{
-						if(file_exists($php_location . "php-win.exe") == FALSE)
-						{
-							set_time_limit(99);					
-							// Can't start Timekoin, php-win.exe is missing or the path is wrong.
-							// Try to find the file before starting.
-							$find_php = find_file('C:', 'php-win.exe');
-
-							if(empty($find_php[0]) == TRUE)
-							{
-								// Try D: if not found on C:
-								$find_php = find_file('D:', 'php-win.exe');
-							}
-
-							// Filter strings
-							$symbols = array("/");
-							$find_php[0] = str_replace($symbols, "\\", $find_php[0]);
-
-							// Filter for path setting
-							$symbols = array("php-win.exe");
-							$find_php[0] = str_replace($symbols, "", $find_php[0]);
-
-							if(empty($find_php[0]) == TRUE)
-							{
-								// Could not find it anywhere :(
-							}
-							else
-							{
-								// Found it! Save location and start Timekoin
-								mysql_query("UPDATE `options` SET `field_data` = '" . addslashes($find_php[0]) . "' WHERE `options`.`field_name` = 'php_location' LIMIT 1");
-							}
-						} // Check if php-win.exe exist check
-
-					} // Windows OS Check
-
-				} // End Database Check for custom PHP location
 
 				mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'main_last_heartbeat' LIMIT 1");
 
@@ -87,17 +51,14 @@ if($_SESSION["valid_login"] == FALSE && $_GET["action"] != "login")
 				// Use uPNP to map inbound ports for Windows systems
 				if(getenv("OS") == "Windows_NT" && file_exists("utils\upnpc.exe") == TRUE)
 				{
-					$server_port_number = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
 					$server_IP = gethostbyname(trim(`hostname`));
-					pclose(popen("start /B utils\upnpc.exe -e Timekoin -a $server_IP $server_port_number $server_port_number TCP", "r"));
+					pclose(popen("start /B utils\upnpc.exe -e Timekoin -a $server_IP " . my_port_number() . " " . my_port_number() . " TCP", "r"));
 				}				
-
 			} // End active main.php process check
 
 		}// End DB check
 
 	}// End Autostart check
-
 	exit;
 }
 
@@ -120,6 +81,13 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 			exit;
 		}
 
+		// Check for banned IP address
+		if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
+		{
+			// Sorry, your IP address has been banned :(
+			exit ("Your IP Has Been Banned");
+		}
+
 		$username_hash = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'username' LIMIT 1"),0,"field_data");
 		$password_hash = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,"field_data");
 
@@ -138,7 +106,7 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 
 		// Log invalid attempts
 		write_log("Invalid Login from IP: " . $_SERVER['REMOTE_ADDR'] . " trying Username:[" . filter_sql($http_username) . "] with Password:[" . filter_sql($http_password) . "]", "GU");
-
+		log_ip("GU", 65);
 	}
 
 	sleep(1); // One second delay to help prevent brute force attack

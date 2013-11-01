@@ -140,7 +140,7 @@ if($_GET["action"] == "send_tk")
 		{
 			// No duplicate found, continue processing
 			// Check to make sure attribute is valid
-			if($transaction_attribute == "T" || $transaction_attribute == "G")
+			if($transaction_attribute == "T")
 			{
 				// Decrypt transaction information for regular transaction data
 				// and check to make sure the public key that is being sent to

@@ -16,6 +16,15 @@ if($_GET["action"]=="begin_watchdog")
 		$datbase_error = TRUE;
 	}
 
+	// Check for banned IP address
+	if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
+	{
+		// Sorry, your IP address has been banned :(
+		exit ("Your IP Has Been Banned");
+	}
+
+	log_ip("WA", 100);
+
 	// Check last heartbeat and make sure it was more than X seconds ago
 	$watchdog_heartbeat_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,"field_data");
 
@@ -40,6 +49,15 @@ if($_GET["action"]=="begin_watchdog")
 
 $mysql_link = mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD);
 mysql_select_db(MYSQL_DATABASE);
+
+// Check for banned IP address
+if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
+{
+	// Sorry, your IP address has been banned :(
+	exit ("Your IP Has Been Banned");
+}
+
+log_ip("WA", 100);
 
 while(1)
 {
@@ -142,7 +160,7 @@ while(1)
 		if($loop_active == 3) // Do a final check to make sure we shouldn't stop running instead
 		{
 			// Stop the loop and reset status back to 0
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'watchdog_heartbeat_active' LIMIT 1");
+			mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'watchdog_heartbeat_active'");
 			exit;
 		}
 		//**************************************
@@ -240,7 +258,7 @@ while(1)
 		if($loop_active == 3) // Do a final check to make sure we shouldn't stop running instead
 		{
 			// Stop the loop and reset status back to 0
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'watchdog_heartbeat_active' LIMIT 1");
+			mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'watchdog_heartbeat_active'");
 			exit;
 		}
 		else

@@ -49,12 +49,9 @@ if($_GET["action"] == "block_hash" && $_GET["block_number"] >= 0)
 {
 	$block_number = intval($_GET["block_number"]);
 
-	$current_generation_block = transaction_cycle(0, TRUE);
-	
-	$time1 = transaction_cycle(0 - $current_generation_block + 1 + $block_number);
-	$time2 = transaction_cycle(0 - $current_generation_block + 2 + $block_number);	
+	$block_number = TRANSACTION_EPOCH + ($block_number * 300) + 300;
 
-	echo mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 AND `attribute` = 'H' LIMIT 1"),0,0);
+	echo mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` = $block_number LIMIT 1"),0,0);
 
 	// Log inbound IP activity
 	log_ip("TC");
@@ -121,7 +118,7 @@ else if($loop_active == 2) // Wake from sleep
 }
 else if($loop_active == 3) // Shutdown
 {
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
+	mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active'");
 	exit;
 }
 else

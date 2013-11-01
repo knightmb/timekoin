@@ -16,6 +16,15 @@ if($_GET["action"]=="begin_main")
 		$datbase_error = TRUE;
 	}
 
+	// Check for banned IP address
+	if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
+	{
+		// Sorry, your IP address has been banned :(
+		exit ("Your IP Has Been Banned");
+	}
+
+	log_ip("MA", 100);
+
 	// Check last heartbeat and make sure it was more than X seconds ago
 	$main_heartbeat_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,"field_data");
 
@@ -81,6 +90,15 @@ mysql_select_db(MYSQL_DATABASE);
 $context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
 ini_set('user_agent', 'Timekoin Server (Main) v' . TIMEKOIN_VERSION);
 ini_set('default_socket_timeout', 3); // Timeout for request in seconds
+
+// Check for banned IP address
+if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
+{
+	// Sorry, your IP address has been banned :(
+	exit ("Your IP Has Been Banned");
+}
+
+log_ip("MA", 100);
 
 while(1) // Begin Infinite Loop :)
 {
@@ -159,7 +177,7 @@ while(1) // Begin Infinite Loop :)
 				$sql = "SELECT * FROM `ip_activity` WHERE `ip` = '$select_IP'";
 				$sql_num_results2 = mysql_num_rows(mysql_query($sql));
 
-				if($sql_num_results2 > $request_max)
+				if($sql_num_results2 > $request_max && empty($select_IP) == FALSE)
 				{
 					// More than X request per cycle means something is wrong
 					// so this IP needs to be banned for a while
@@ -326,7 +344,7 @@ while(1) // Begin Infinite Loop :)
 		if($loop_active == 3) // Do a final check to make sure we shouldn't stop running instead
 		{
 			// Stop the loop and reset status back to 0
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1");
+			mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active'");
 			exit;
 		}
 		else

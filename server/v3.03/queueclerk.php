@@ -258,9 +258,21 @@ if($_GET["action"] == "input_transaction")
 
 	} // End time allowed check
 
-	//Direct Input Transaction get a 2x count boost
+	//Direct Input Transaction get a count boost
 	//to help prevent direct Transaction spamming
-	log_ip("QU", 2);
+	if($transaction_attribute == "T")
+	{
+		log_ip("QU", 2);
+	}
+	else if($transaction_attribute == "G")
+	{
+		log_ip("QU", 50);
+	}
+	else
+	{
+		log_ip("QU", 1);
+	}		
+
 	exit;
 }
 //***********************************************************************************
@@ -288,7 +300,7 @@ else if($loop_active == 2) // Wake from sleep
 }
 else if($loop_active == 3) // Shutdown
 {
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
+	mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active'");
 	exit;
 }
 else

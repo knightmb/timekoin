@@ -13,6 +13,15 @@ if(GENERATION_DISABLED == TRUE || TIMEKOIN_DISABLED == TRUE)
 mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD);
 mysql_select_db(MYSQL_DATABASE);
 
+// Check for banned IP address
+if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
+{
+	// Sorry, your IP address has been banned :(
+	exit ("Your IP Has Been Banned");
+}
+
+log_ip("GE", 100);
+
 while(1) // Begin Infinite Loop
 {
 set_time_limit(60);	
@@ -37,7 +46,7 @@ else if($loop_active == 2) // Wake from sleep
 }
 else if($loop_active == 3) // Shutdown
 {
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
+	mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active'");
 	exit;
 }
 else
