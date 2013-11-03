@@ -243,7 +243,7 @@ if(check_standard_tab_settings($standard_settings_number, 128) == TRUE) { $menu_
 function trans_percent_status()
 {
 	// Total number of transaction cycle hashes in database
-	$total_trans_hash = mysql_result(mysql_query("SELECT COUNT(attribute) FROM `transaction_history` WHERE `attribute` = 'H'"),0);
+	$total_trans_hash = mysql_result(mysql_query("SELECT COUNT(attribute) FROM `transaction_history` USE INDEX(attribute) WHERE `attribute` = 'H'"),0);
 
 	$percent_update = $total_trans_hash / transaction_cycle(0, TRUE) * 100;
 
@@ -557,205 +557,202 @@ function options_screen5()
 		<tr><td colspan="6"><hr></td></tr>';
 	}
 
-return '<table border="0" cellpadding="2" cellspacing="10"><tr><td valign="bottom" align="center" colspan="6"><strong>Plugin Information</strong>
-</td></tr>
-<tr><td align="center"><strong>Name</strong></td><td align="center"><strong>Tab</strong></td><td align="center"><strong>File</strong></td>
-<td align="center"><strong>Service</strong></td><td align="center"><strong>Status</strong></td><td></td></tr>
-' . $plugin_output . '
-<tr><td align="right" colspan="6"><FORM ACTION="index.php?menu=options&amp;plugin=new" METHOD="post"><input type="submit" name="SubmitNew" value="Install New Plugin" /></FORM></td></tr>
-</table>
-';
-
+	return '<table border="0" cellpadding="2" cellspacing="10"><tr><td valign="bottom" align="center" colspan="6"><strong>Plugin Information</strong>
+	</td></tr>
+	<tr><td align="center"><strong>Name</strong></td><td align="center"><strong>Tab</strong></td><td align="center"><strong>File</strong></td>
+	<td align="center"><strong>Service</strong></td><td align="center"><strong>Status</strong></td><td></td></tr>
+	' . $plugin_output . '
+	<tr><td align="right" colspan="6"><FORM ACTION="index.php?menu=options&amp;plugin=new" METHOD="post"><input type="submit" name="SubmitNew" value="Install New Plugin" /></FORM></td></tr>
+	</table>
+	';
 } 
 //***********************************************************
 //***********************************************************
 function options_screen6()
 {
-
-return '<strong>Use the Browse Button to Select the Plugin File to Install</strong><br><br>
-<FORM ENCTYPE="multipart/form-data" METHOD="POST" ACTION="index.php?menu=options&amp;plugin=install">
-<INPUT NAME="plugin_file" TYPE="file" SIZE=32><br><br>
-<input type="submit" name="SubmitNew" value="Install New Plugin" onclick="return confirm(\'Always Use Caution When Installing Plugins From Untrusted Sources.\');" /></FORM>';
-
+	return '<strong>Use the Browse Button to Select the Plugin File to Install</strong><br><br>
+	<FORM ENCTYPE="multipart/form-data" METHOD="POST" ACTION="index.php?menu=options&amp;plugin=install">
+	<INPUT NAME="plugin_file" TYPE="file" SIZE=32><br><br>
+	<input type="submit" name="SubmitNew" value="Install New Plugin" onclick="return confirm(\'Always Use Caution When Installing Plugins From Untrusted Sources.\');" /></FORM>';
 } 
 //***********************************************************
 //***********************************************************
 function system_screen()
 {
-$max = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,"field_data");
-$new = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'max_new_peers' LIMIT 1"),0,"field_data");
-$domain = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,"field_data");
-$subfolder = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_subfolder' LIMIT 1"),0,"field_data");
-$port = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
-$gen_hash = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'generating_peers_hash' LIMIT 1"),0,"field_data");
-$trans_history_hash = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'transaction_history_hash' LIMIT 1"),0,"field_data");
-$trans_queue_hash = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'transaction_queue_hash' LIMIT 1"),0,"field_data");
-$block_check_start = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'block_check_start' LIMIT 1"),0,"field_data");
-$uptime = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'timekoin_start_time' LIMIT 1"),0,"field_data");
-$request_max = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_request_max' LIMIT 1"),0,"field_data");
-$allow_lan_peers = intval(mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,"field_data"));
-$allow_ambient_peer_restart = intval(mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'allow_ambient_peer_restart' LIMIT 1"),0,"field_data"));
-$trans_history_check = intval(mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'trans_history_check' LIMIT 1"),0,"field_data"));
-$gen_list_no_sync = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'generation_peer_list_no_sync' LIMIT 1"),0,"field_data");
-$super_peer_mode = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'super_peer' LIMIT 1"),0,"field_data");
-$perm_peer_priority = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'perm_peer_priority' LIMIT 1"),0,"field_data");
-$auto_update_generation_IP = intval(mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,"field_data"));
+	$max = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,"field_data");
+	$new = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'max_new_peers' LIMIT 1"),0,"field_data");
+	$domain = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,"field_data");
+	$subfolder = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_subfolder' LIMIT 1"),0,"field_data");
+	$port = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
+	$gen_hash = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'generating_peers_hash' LIMIT 1"),0,"field_data");
+	$trans_history_hash = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'transaction_history_hash' LIMIT 1"),0,"field_data");
+	$trans_queue_hash = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'transaction_queue_hash' LIMIT 1"),0,"field_data");
+	$block_check_start = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'block_check_start' LIMIT 1"),0,"field_data");
+	$uptime = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'timekoin_start_time' LIMIT 1"),0,"field_data");
+	$request_max = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_request_max' LIMIT 1"),0,"field_data");
+	$allow_lan_peers = intval(mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,"field_data"));
+	$allow_ambient_peer_restart = intval(mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'allow_ambient_peer_restart' LIMIT 1"),0,"field_data"));
+	$trans_history_check = intval(mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'trans_history_check' LIMIT 1"),0,"field_data"));
+	$gen_list_no_sync = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'generation_peer_list_no_sync' LIMIT 1"),0,"field_data");
+	$super_peer_mode = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'super_peer' LIMIT 1"),0,"field_data");
+	$perm_peer_priority = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'perm_peer_priority' LIMIT 1"),0,"field_data");
+	$auto_update_generation_IP = intval(mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,"field_data"));
 
-if($auto_update_generation_IP == 1)
-{
-	$auto_update_generation_IP_1 = "CHECKED";
-}
-else
-{
-	$auto_update_generation_IP_0 = "CHECKED";
-}
+	if($auto_update_generation_IP == 1)
+	{
+		$auto_update_generation_IP_1 = "CHECKED";
+	}
+	else
+	{
+		$auto_update_generation_IP_0 = "CHECKED";
+	}
 
-if($gen_list_no_sync == 0)
-{
-	$gen_hash = '<font color="green">' . $gen_hash . '</font>';
-}
-else
-{
-	$gen_hash = '<font color="red">' . $gen_hash . '</font>';
-}
+	if($gen_list_no_sync == 0)
+	{
+		$gen_hash = '<font color="green">' . $gen_hash . '</font>';
+	}
+	else
+	{
+		$gen_hash = '<font color="red">' . $gen_hash . '</font>';
+	}
 
-if($perm_peer_priority == 1)
-{
-	$perm_peer_priority_1 = "CHECKED";
-}
-else
-{
-	$perm_peer_priority_0 = "CHECKED";
-}
+	if($perm_peer_priority == 1)
+	{
+		$perm_peer_priority_1 = "CHECKED";
+	}
+	else
+	{
+		$perm_peer_priority_0 = "CHECKED";
+	}
 
-if($super_peer_mode >= 1)
-{
-	$super_peer_check_1 = "CHECKED";
-}
-else
-{
-	$super_peer_check_0 = "CHECKED";
-}
+	if($super_peer_mode >= 1)
+	{
+		$super_peer_check_1 = "CHECKED";
+	}
+	else
+	{
+		$super_peer_check_0 = "CHECKED";
+	}
 
-if($allow_lan_peers == 1)
-{
-	$LAN_enable = "CHECKED";
-}
-else
-{
-	$LAN_disable = "CHECKED";
-}
+	if($allow_lan_peers == 1)
+	{
+		$LAN_enable = "CHECKED";
+	}
+	else
+	{
+		$LAN_disable = "CHECKED";
+	}
 
-if($allow_ambient_peer_restart == 1)
-{
-	$ambient_restart_enable = "CHECKED";
-}
-else
-{
-	$ambient_restart_disable = "CHECKED";
-}
+	if($allow_ambient_peer_restart == 1)
+	{
+		$ambient_restart_enable = "CHECKED";
+	}
+	else
+	{
+		$ambient_restart_disable = "CHECKED";
+	}
 
-if($trans_history_check == 2)
-{
-	$trans_history_check_2 = "CHECKED";
-}
-else if($trans_history_check == 1)
-{
-	$trans_history_check_1 = "CHECKED";
-}
-else
-{
-	$trans_history_check_0 = "CHECKED";
-}
+	if($trans_history_check == 2)
+	{
+		$trans_history_check_2 = "CHECKED";
+	}
+	else if($trans_history_check == 1)
+	{
+		$trans_history_check_1 = "CHECKED";
+	}
+	else
+	{
+		$trans_history_check_0 = "CHECKED";
+	}
 
-if($block_check_start == "0")
-{
-	$trans_history_hash_color1 = '<font color="green">';
-	$trans_history_hash_color2 = '</font>';
-}
-else
-{
-	$trans_history_hash_color1 = '<font color="red">';
-	$trans_history_hash_color2 = '</font>';
-}
+	if($block_check_start == "0")
+	{
+		$trans_history_hash_color1 = '<font color="green">';
+		$trans_history_hash_color2 = '</font>';
+	}
+	else
+	{
+		$trans_history_hash_color1 = '<font color="red">';
+		$trans_history_hash_color2 = '</font>';
+	}
 
-// Total number of records
-$total_records = mysql_result(mysql_query("SELECT COUNT(*) FROM `transaction_history`"),0);
+	// Total number of records
+	$total_records = mysql_result(mysql_query("SELECT COUNT(*) FROM `transaction_history`"),0);
 
-// Total number of transaction foundations in database
-$total_foundations = mysql_result(mysql_query("SELECT COUNT(*) FROM `transaction_foundation`"),0);
+	// Total number of transaction foundations in database
+	$total_foundations = mysql_result(mysql_query("SELECT COUNT(*) FROM `transaction_foundation`"),0);
 
-if($total_foundations == foundation_cycle(0, TRUE))
-{
-	$total_foundations = '<font color="green">' . number_format($total_foundations) . '</font>';
-}
-else
-{
-	$total_foundations = '<font color="red">' . number_format($total_foundations) . '</font>';
-}
+	if($total_foundations == foundation_cycle(0, TRUE))
+	{
+		$total_foundations = '<font color="green">' . number_format($total_foundations) . '</font>';
+	}
+	else
+	{
+		$total_foundations = '<font color="red">' . number_format($total_foundations) . '</font>';
+	}
 
-// Total number of transaction cycle hashes in database
-$total_trans_hash = mysql_result(mysql_query("SELECT COUNT(attribute) FROM `transaction_history` WHERE `attribute` = 'H'"),0);
+	// Total number of transaction cycle hashes in database
+	$total_trans_hash = mysql_result(mysql_query("SELECT COUNT(attribute) FROM `transaction_history` USE INDEX(attribute) WHERE `attribute` = 'H'"),0);
 
-if($total_trans_hash == transaction_cycle(0, TRUE))
-{
-	$total_trans_hash = '<font color="green">' . number_format($total_trans_hash) . '</font>';
-}
-else
-{
-	$total_trans_hash = '<font color="red">' . number_format($total_trans_hash) . '</font>';
-}
+	if($total_trans_hash == transaction_cycle(0, TRUE))
+	{
+		$total_trans_hash = '<font color="green">' . number_format($total_trans_hash) . '</font>';
+	}
+	else
+	{
+		$total_trans_hash = '<font color="red">' . number_format($total_trans_hash) . '</font>';
+	}
 
-// Database Size
-$db_size = mysql_result(mysql_query("SELECT CONCAT(SUM(ROUND(((DATA_LENGTH + INDEX_LENGTH - DATA_FREE) / 1024 / 1024),2)),\" MB\") AS Size FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA LIKE '" . MYSQL_DATABASE . "'"),0);
+	// Database Size
+	$db_size = mysql_result(mysql_query("SELECT CONCAT(SUM(ROUND(((DATA_LENGTH + INDEX_LENGTH - DATA_FREE) / 1024 / 1024),2)),\" MB\") AS Size FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA LIKE '" . MYSQL_DATABASE . "'"),0);
 
-return '<FORM ACTION="index.php?menu=system&amp;peer_settings=change" METHOD="post">
-<table border="0"><tr><td align="right">
-Maximum Active Peers: <input type="text" name="max_peers" size="3" value="' . $max . '"/><br>
-Maximum Reserve Peers: <input type="text" name="max_new_peers" size="3" value="' . $new . '"/><br>
-</td><td align="right">
-<input type="submit" name="Submit1" value="Change Peer Settings" />
-</td></tr>
-</table></FORM>
-<hr>
-<FORM ACTION="index.php?menu=system&amp;server_settings=change" METHOD="post">
-<table border="0"><tr><td align="right">
-Server Domain: <input type="text" name="domain" size="25" maxlength="256" value="' . $domain . '"/><br>
-Timekoin Subfolder: <input type="text" name="subfolder" size="25" maxlength="256" value="' . $subfolder . '"/><br>
-Server Port Number: <input type="text" name="port" size="6" maxlength="5" value="' . $port . '"/><br>
-Max Peer Query: <input type="text" name="max_request" size="6" maxlength="4" value="' . $request_max . '"/><br>
-<br>Allow LAN Peers: <input type="radio" name="allow_LAN" value="0" ' . $LAN_disable . '>Disable <input type="radio" name="allow_LAN" value="1" ' . $LAN_enable . '>Enable
-<br><br>Allow Ambient Peer Restarts: <input type="radio" name="allow_ambient" value="0" ' . $ambient_restart_disable . '>Disable <input type="radio" name="allow_ambient" value="1" ' . $ambient_restart_enable . '>Enable
-<br><br>Super Peer: <input type="radio" name="super_peer" value="0" ' . $super_peer_check_0 . '>Disabled <input type="radio" name="super_peer" value="1" ' . $super_peer_check_1 . '> Enable
-<br><br>Permanent Peer Priority: <input type="radio" name="perm_peer_priority" value="0" ' . $perm_peer_priority_0 . '>Disabled <input type="radio" name="perm_peer_priority" value="1" ' . $perm_peer_priority_1 . '> Enable
-<br><br>Auto Generation IP Update: <input type="radio" name="auto_update_IP" value="0" ' . $auto_update_generation_IP_0 . '>Disabled <input type="radio" name="auto_update_IP" value="1" ' . $auto_update_generation_IP_1 . '> Enable
-<br><br>Transaction History Checks: <input type="radio" name="trans_history_check" value="0" ' . $trans_history_check_0 . '>Rare <input type="radio" name="trans_history_check" value="1" ' . $trans_history_check_1 . '> Normal <input type="radio" name="trans_history_check" value="2" ' . $trans_history_check_2 . '>Frequent
-</td><td align="right">
-<input type="submit" name="Submit2" value="Change Server Settings" />
-</td></tr>
-</table></FORM>
-<hr>
-<table border="0"><tr><td align="right">
-<strong>Miscellaneous Server</strong><br><br>
-Generating Peers List Hash:<br>
-Transaction History Hash:<br>
-Transaction Queue Hash:<br>
-Transaction History Records:<br>
-Transaction Cycles:<br>
-Transaction Foundations:<br>
-Uptime:<br>
-Database Size:
-</td><td align="left">
-<strong>Information<br><br>
-' . $gen_hash . '<br>
-' . $trans_history_hash_color1 . $trans_history_hash .  $trans_history_hash_color2 . '<br>
-' . $trans_queue_hash . '<br>
-' . number_format($total_records) . '<br>
-' . $total_trans_hash . ' of ' . number_format(transaction_cycle(0, TRUE)) . '<br>
-' . $total_foundations . ' of ' . number_format(foundation_cycle(0, TRUE)) . '<br>
-' . tk_time_convert(time() - $uptime) . '<br>
-' . $db_size .
-'</strong></td></tr></table><hr>';
+	return '<FORM ACTION="index.php?menu=system&amp;peer_settings=change" METHOD="post">
+	<table border="0"><tr><td align="right">
+	Maximum Active Peers: <input type="text" name="max_peers" size="3" value="' . $max . '"/><br>
+	Maximum Reserve Peers: <input type="text" name="max_new_peers" size="3" value="' . $new . '"/><br>
+	</td><td align="right">
+	<input type="submit" name="Submit1" value="Change Peer Settings" />
+	</td></tr>
+	</table></FORM>
+	<hr>
+	<FORM ACTION="index.php?menu=system&amp;server_settings=change" METHOD="post">
+	<table border="0"><tr><td align="right">
+	Server Domain: <input type="text" name="domain" size="25" maxlength="256" value="' . $domain . '"/><br>
+	Timekoin Subfolder: <input type="text" name="subfolder" size="25" maxlength="256" value="' . $subfolder . '"/><br>
+	Server Port Number: <input type="text" name="port" size="6" maxlength="5" value="' . $port . '"/><br>
+	Max Peer Query: <input type="text" name="max_request" size="6" maxlength="4" value="' . $request_max . '"/><br>
+	<br>Allow LAN Peers: <input type="radio" name="allow_LAN" value="0" ' . $LAN_disable . '>Disable <input type="radio" name="allow_LAN" value="1" ' . $LAN_enable . '>Enable
+	<br><br>Allow Ambient Peer Restarts: <input type="radio" name="allow_ambient" value="0" ' . $ambient_restart_disable . '>Disable <input type="radio" name="allow_ambient" value="1" ' . $ambient_restart_enable . '>Enable
+	<br><br>Super Peer: <input type="radio" name="super_peer" value="0" ' . $super_peer_check_0 . '>Disabled <input type="radio" name="super_peer" value="1" ' . $super_peer_check_1 . '> Enable
+	<br><br>Permanent Peer Priority: <input type="radio" name="perm_peer_priority" value="0" ' . $perm_peer_priority_0 . '>Disabled <input type="radio" name="perm_peer_priority" value="1" ' . $perm_peer_priority_1 . '> Enable
+	<br><br>Auto Generation IP Update: <input type="radio" name="auto_update_IP" value="0" ' . $auto_update_generation_IP_0 . '>Disabled <input type="radio" name="auto_update_IP" value="1" ' . $auto_update_generation_IP_1 . '> Enable
+	<br><br>Transaction History Checks: <input type="radio" name="trans_history_check" value="0" ' . $trans_history_check_0 . '>Rare <input type="radio" name="trans_history_check" value="1" ' . $trans_history_check_1 . '> Normal <input type="radio" name="trans_history_check" value="2" ' . $trans_history_check_2 . '>Frequent
+	</td><td align="right">
+	<input type="submit" name="Submit2" value="Change Server Settings" />
+	</td></tr>
+	</table></FORM>
+	<hr>
+	<table border="0"><tr><td align="right">
+	<strong>Miscellaneous Server</strong><br><br>
+	Generating Peers List Hash:<br>
+	Transaction History Hash:<br>
+	Transaction Queue Hash:<br>
+	Transaction History Records:<br>
+	Transaction Cycles:<br>
+	Transaction Foundations:<br>
+	Uptime:<br>
+	Database Size:
+	</td><td align="left">
+	<strong>Information<br><br>
+	' . $gen_hash . '<br>
+	' . $trans_history_hash_color1 . $trans_history_hash .  $trans_history_hash_color2 . '<br>
+	' . $trans_queue_hash . '<br>
+	' . number_format($total_records) . '<br>
+	' . $total_trans_hash . ' of ' . number_format(transaction_cycle(0, TRUE)) . '<br>
+	' . $total_foundations . ' of ' . number_format(foundation_cycle(0, TRUE)) . '<br>
+	' . tk_time_convert(time() - $uptime) . '<br>
+	' . $db_size .
+	'</strong></td></tr></table><hr>';
 }
 //***********************************************************
 //***********************************************************
