@@ -182,6 +182,7 @@ while(1) // Begin Infinite Loop :)
 			{
 				$sql_row = mysql_fetch_array($sql_result);
 				$select_IP = $sql_row["ip"];
+				$attribute_IP = $sql_row["attribute"];				
 
 				$sql = "SELECT * FROM `ip_activity` WHERE `ip` = '$select_IP'";
 				$sql_num_results2 = mysql_num_rows(mysql_query($sql));
@@ -191,13 +192,13 @@ while(1) // Begin Infinite Loop :)
 					// More than X request per cycle means something is wrong
 					// so this IP needs to be banned for a while
 					mysql_query("INSERT DELAYED INTO `ip_banlist` (`when` ,`ip`) VALUES (" . time() . ", '$select_IP')");
-					write_log("IP Address $select_IP was added to the ban list due to excessive traffic. Default max query is $request_max per cycle, IP was doing $sql_num_results2 query per cycle instead.", "MA");
+					write_log("IP Address $select_IP was added to the ban list due to excessive traffic. Default max query is $request_max per cycle, IP was doing $sql_num_results2 query per cycle instead with [$attribute_IP].", "MA");
 				}
 			}
 		}
 
 		// Clear out ban list of IPs older than 1 day
-		if(rand(1,99) == 30) // Randomize a little to save DB usage
+		if(rand(1,200) == 30) // Randomize a little to save DB usage
 		{
 			mysql_query("DELETE FROM `ip_banlist` WHERE `ip_banlist`.`when` < " . (time() - 86400));
 		}
