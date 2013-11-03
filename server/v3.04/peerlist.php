@@ -32,7 +32,7 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 	{
 		$allow_ambient_peer_restart = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'allow_ambient_peer_restart' LIMIT 1"),0,"field_data");
 
-		if($allow_ambient_peer_restart == 1 && $allow_ambient_peer_restart !== FALSE) // Check against DB failure also
+		if($allow_ambient_peer_restart == 1)
 		{
 			// Check to make sure Timekoin has not be stopped for any unknown reason
 			$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,"field_data");			
@@ -46,6 +46,9 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 					// Main stop was unexpected
 					write_log("Main Timekoin Processor has Stop, going to try an Ambient Peer Restart", "MA");
 
+					// Grab watchdog status before doing restart
+					$watchdog_script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,"field_data");
+
 					// Database Initialization
 					initialization_database();
 
@@ -56,7 +59,22 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 
 					call_script("main.php");
 
-					activate(TIMEKOINSYSTEM, 1); // In case this was disabled from a emergency stop call in the server GUI				
+					activate(TIMEKOINSYSTEM, 1); // In case this was disabled from a emergency stop call in the server GUI
+
+					// Check watchdog script to make sure it is still running
+					$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_last_heartbeat' LIMIT 1"),0,"field_data");
+
+					if($watchdog_script_loop_active > 0)
+					{
+						// Watchdog should still be active
+						if((time() - $script_last_heartbeat) < 30) // Watchdog is still working
+						{
+							mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'watchdog_last_heartbeat' LIMIT 1");
+
+							// Set loop at active now
+							mysql_query("UPDATE `main_loop_status` SET `field_data` = '$watchdog_script_loop_active' WHERE `main_loop_status`.`field_name` = 'watchdog_heartbeat_active' LIMIT 1");
+						}
+					}					
 				}
 			}
 
@@ -67,7 +85,7 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 			if($script_loop_active > 0)
 			{
 				// Watchdog should still be active
-				if((time() - $script_last_heartbeat) > 60) // Greater 60, something is wrong
+				if((time() - $script_last_heartbeat) > 60) // Greater than 60s, something is wrong
 				{
 					// Watchdog stop was unexpected
 					write_log("Watchdog has Stop, going to try an Ambient Peer Restart", "MA");
@@ -811,8 +829,8 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 					// Is it valid?
 					if(empty($poll_peer) == TRUE)
 					{
-						//No response, record polling failure for future reference (+2 failure score)
-						modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 2);
+						//No response, record polling failure for future reference (+3 failure score)
+						modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 3);
 					}
 					else
 					{

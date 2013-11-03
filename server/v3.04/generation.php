@@ -313,6 +313,6 @@ mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_s
 mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'generation_last_heartbeat' LIMIT 1");
 
 //***********************************************************************************
-sleep(10);
+sleep(rand(9,10));
 } // End Infinite Loop
 ?>
