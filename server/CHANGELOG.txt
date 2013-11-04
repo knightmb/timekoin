@@ -13,16 +13,13 @@ Timekoin Server - 3.03 (Released 2013-10-31)
 - GUI overhaul to be cleaner and more functional
 - More system logging to better understand how the network is behaving
 - Self-generated transactions given priority over 3rd party input transactions
-- Crypto-balance checking function much faster than before
+- Crypto-balance checking function 2x faster than before
 - Balance indexer smarter when choosing which public keys to index
 - Removed legacy start code from older versions
 - More Invalid Transaction Filtering for Direct Input Transactions
-- Self-generated transactions are given priority over 3rd party Direct Input Transactions
-- Crypto-balance checking function now twice as fast as before
-- Balance Indexer works smarter when choosing which public keys to index
 - More Network Flood Control security
 - More polling ability for peer grading system
-- Timekoin start-up sequence now twice as fast
+- Timekoin start-up sequence now 2x as fast
 
 Timekoin Server - 2.43 (Released 2013-10-26)
 ============================================
