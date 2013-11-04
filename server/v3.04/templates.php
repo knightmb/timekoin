@@ -243,9 +243,9 @@ if(check_standard_tab_settings($standard_settings_number, 128) == TRUE) { $menu_
 function trans_percent_status()
 {
 	// Total number of transaction cycle hashes in database
-	$total_trans_hash = mysql_result(mysql_query("SELECT COUNT(attribute) FROM `transaction_history` USE INDEX(attribute) WHERE `attribute` = 'H'"),0);
+	$total_trans_hash = count_transaction_hash();
 
-	$percent_update = $total_trans_hash / transaction_cycle(0, TRUE) * 100;
+	$percent_update = count_transaction_hash() / transaction_cycle(0, TRUE) * 100;
 
 	if($percent_update == 100)
 	{
@@ -277,160 +277,160 @@ function options_screen()
 		$form_action = '<FORM ACTION="index.php?menu=options&amp;newkeys=generate" METHOD="post">';
 	}
 	
-return '<FORM ACTION="index.php?menu=options&amp;password=change" METHOD="post">
-<table border="0"><tr><td style="width:325px" valign="bottom" align="right">
-Current Username: <input type="text" name="current_username" /><br>
-New Username: <input type="text" name="new_username" /><br>
-Confirm Username: <input type="text" name="confirm_username" />
-</td></tr>
-<tr><td></td></tr>
-<tr><td align="right">
-Current Password: <input type="password" name="current_password" /><br>
-New Password: <input type="password" name="new_password" /><br>
-Confirm Password: <input type="password" name="confirm_password" /><br><br>
-<input type="submit" name="Submit" value="Change" />
-</td></tr></table></FORM>
-<table border="0"><tr><td style="width:630px" valign="bottom" align="right">' . $confirm_message . $form_action .'
-<input type="submit" name="Submit2" value="Generate New Keys" /></FORM></td></tr>
-</table>';
+	return '<FORM ACTION="index.php?menu=options&amp;password=change" METHOD="post">
+	<table border="0"><tr><td style="width:325px" valign="bottom" align="right">
+	Current Username: <input type="text" name="current_username" /><br>
+	New Username: <input type="text" name="new_username" /><br>
+	Confirm Username: <input type="text" name="confirm_username" />
+	</td></tr>
+	<tr><td></td></tr>
+	<tr><td align="right">
+	Current Password: <input type="password" name="current_password" /><br>
+	New Password: <input type="password" name="new_password" /><br>
+	Confirm Password: <input type="password" name="confirm_password" /><br><br>
+	<input type="submit" name="Submit" value="Change" />
+	</td></tr></table></FORM>
+	<table border="0"><tr><td style="width:630px" valign="bottom" align="right">' . $confirm_message . $form_action .'
+	<input type="submit" name="Submit2" value="Generate New Keys" /></FORM></td></tr>
+	</table>';
 } 
 //***********************************************************
 //***********************************************************
 function options_screen2()
 {
-$home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
-$peerlist_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_peerlist' LIMIT 1"),0,"field_data");
-$queue_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_queue' LIMIT 1"),0,"field_data");
-$super_peer = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'super_peer' LIMIT 1"),0,"field_data");
-$peer_failure_grade = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,"field_data");
-$default_timezone = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,"field_data");
+	$home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
+	$peerlist_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_peerlist' LIMIT 1"),0,"field_data");
+	$queue_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_queue' LIMIT 1"),0,"field_data");
+	$super_peer = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'super_peer' LIMIT 1"),0,"field_data");
+	$peer_failure_grade = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,"field_data");
+	$default_timezone = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,"field_data");
 
-if(empty($default_timezone) == FALSE)
-{
-	$default_timezone = '<option value="' . $default_timezone . '">' . $default_timezone . '</option>';
-}
+	if(empty($default_timezone) == FALSE)
+	{
+		$default_timezone = '<option value="' . $default_timezone . '">' . $default_timezone . '</option>';
+	}
 
-if($super_peer == 1)
-{
-	$super_peer = 500;
-}
+	if($super_peer == 1)
+	{
+		$super_peer = 500;
+	}
 
-return '<FORM ACTION="index.php?menu=options&amp;refresh=change" METHOD="post">
-<table border="0"><tr><td style="width:415px" valign="bottom" align="right"><strong>Refresh Rates (seconds) for Realtime Pages [0 = disable]</strong><br><br>
-</td><td style="width:215px"></td></tr>
-<tr><td valign="bottom" align="right">
-Home: <input type="text" name="home_update" size="2" value="' . $home_update . '" /><br>
-Peerlist: <input type="text" name="peerlist_update" size="2" value="' . $peerlist_update . '" /><br>
-Transaction Queue: <input type="text" name="queue_update" size="2" value="' . $queue_update . '" /></td><td></td></tr>
-<tr><td></td><td></td></tr>
-<tr><td align="right"><strong>Super Peer Limit (10 - 500)</strong><br><input type="text" name="super_peer_limit" size="3" value="' . $super_peer . '" /><br></td>
-<td><input type="submit" name="Submit2" value="Save Options" /></td></tr>
-<tr><td></td><td></td></tr>
-<tr><td align="right"><strong>Peer Failure Limit (1 - 100)</strong><br><input type="text" name="peer_failure_grade" size="3" value="' . $peer_failure_grade . '" /><br></td><td></td>
-<tr><td align="right"><strong>Timezone</strong><br>
-<select name="timezone">
-' . $default_timezone . '
-<option value="">Use System Default</option>
-<option value="Pacific/Midway">(GMT-11:00) Midway Island, Samoa</option>
-<option value="America/Adak">(GMT-10:00) Hawaii-Aleutian</option>
-<option value="Etc/GMT+10">(GMT-10:00) Hawaii</option>
-<option value="Pacific/Marquesas">(GMT-09:30) Marquesas Islands</option>
-<option value="Pacific/Gambier">(GMT-09:00) Gambier Islands</option>
-<option value="America/Anchorage">(GMT-09:00) Alaska</option>
-<option value="America/Ensenada">(GMT-08:00) Tijuana, Baja California</option>
-<option value="Etc/GMT+8">(GMT-08:00) Pitcairn Islands</option>
-<option value="America/Los_Angeles">(GMT-08:00) Pacific Time (US & Canada)</option>
-<option value="America/Denver">(GMT-07:00) Mountain Time (US & Canada)</option>
-<option value="America/Chihuahua">(GMT-07:00) Chihuahua, La Paz, Mazatlan</option>
-<option value="America/Dawson_Creek">(GMT-07:00) Arizona</option>
-<option value="America/Belize">(GMT-06:00) Saskatchewan, Central America</option>
-<option value="America/Cancun">(GMT-06:00) Guadalajara, Mexico City, Monterrey</option>
-<option value="Chile/EasterIsland">(GMT-06:00) Easter Island</option>
-<option value="America/Chicago">(GMT-06:00) Central Time (US & Canada)</option>
-<option value="America/New_York">(GMT-05:00) Eastern Time (US & Canada)</option>
-<option value="America/Havana">(GMT-05:00) Cuba</option>
-<option value="America/Bogota">(GMT-05:00) Bogota, Lima, Quito, Rio Branco</option>
-<option value="America/Caracas">(GMT-04:30) Caracas</option>
-<option value="America/Santiago">(GMT-04:00) Santiago</option>
-<option value="America/La_Paz">(GMT-04:00) La Paz</option>
-<option value="Atlantic/Stanley">(GMT-04:00) Faukland Islands</option>
-<option value="America/Campo_Grande">(GMT-04:00) Brazil</option>
-<option value="America/Goose_Bay">(GMT-04:00) Atlantic Time (Goose Bay)</option>
-<option value="America/Glace_Bay">(GMT-04:00) Atlantic Time (Canada)</option>
-<option value="America/St_Johns">(GMT-03:30) Newfoundland</option>
-<option value="America/Araguaina">(GMT-03:00) UTC-3</option>
-<option value="America/Montevideo">(GMT-03:00) Montevideo</option>
-<option value="America/Miquelon">(GMT-03:00) Miquelon, St. Pierre</option>
-<option value="America/Godthab">(GMT-03:00) Greenland</option>
-<option value="America/Argentina/Buenos_Aires">(GMT-03:00) Buenos Aires</option>
-<option value="America/Sao_Paulo">(GMT-03:00) Brasilia</option>
-<option value="America/Noronha">(GMT-02:00) Mid-Atlantic</option>
-<option value="Atlantic/Cape_Verde">(GMT-01:00) Cape Verde Is.</option>
-<option value="Atlantic/Azores">(GMT-01:00) Azores</option>
-<option value="Europe/Belfast">(GMT) Greenwich Mean Time : Belfast</option>
-<option value="Europe/Dublin">(GMT) Greenwich Mean Time : Dublin</option>
-<option value="Europe/Lisbon">(GMT) Greenwich Mean Time : Lisbon</option>
-<option value="Europe/London">(GMT) Greenwich Mean Time : London</option>
-<option value="Africa/Abidjan">(GMT) Monrovia, Reykjavik</option>
-<option value="Europe/Amsterdam">(GMT+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna</option>
-<option value="Europe/Belgrade">(GMT+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague</option>
-<option value="Europe/Brussels">(GMT+01:00) Brussels, Copenhagen, Madrid, Paris</option>
-<option value="Africa/Algiers">(GMT+01:00) West Central Africa</option>
-<option value="Africa/Windhoek">(GMT+01:00) Windhoek</option>
-<option value="Asia/Beirut">(GMT+02:00) Beirut</option>
-<option value="Africa/Cairo">(GMT+02:00) Cairo</option>
-<option value="Asia/Gaza">(GMT+02:00) Gaza</option>
-<option value="Africa/Blantyre">(GMT+02:00) Harare, Pretoria</option>
-<option value="Asia/Jerusalem">(GMT+02:00) Jerusalem</option>
-<option value="Europe/Minsk">(GMT+02:00) Minsk</option>
-<option value="Asia/Damascus">(GMT+02:00) Syria</option>
-<option value="Europe/Moscow">(GMT+03:00) Moscow, St. Petersburg, Volgograd</option>
-<option value="Africa/Addis_Ababa">(GMT+03:00) Nairobi</option>
-<option value="Asia/Tehran">(GMT+03:30) Tehran</option>
-<option value="Asia/Dubai">(GMT+04:00) Abu Dhabi, Muscat</option>
-<option value="Asia/Yerevan">(GMT+04:00) Yerevan</option>
-<option value="Asia/Kabul">(GMT+04:30) Kabul</option>
-<option value="Asia/Yekaterinburg">(GMT+05:00) Ekaterinburg</option>
-<option value="Asia/Tashkent">(GMT+05:00) Tashkent</option>
-<option value="Asia/Kolkata">(GMT+05:30) Chennai, Kolkata, Mumbai, New Delhi</option>
-<option value="Asia/Katmandu">(GMT+05:45) Kathmandu</option>
-<option value="Asia/Dhaka">(GMT+06:00) Astana, Dhaka</option>
-<option value="Asia/Novosibirsk">(GMT+06:00) Novosibirsk</option>
-<option value="Asia/Rangoon">(GMT+06:30) Yangon (Rangoon)</option>
-<option value="Asia/Bangkok">(GMT+07:00) Bangkok, Hanoi, Jakarta</option>
-<option value="Asia/Krasnoyarsk">(GMT+07:00) Krasnoyarsk</option>
-<option value="Asia/Hong_Kong">(GMT+08:00) Beijing, Chongqing, Hong Kong, Urumqi</option>
-<option value="Asia/Irkutsk">(GMT+08:00) Irkutsk, Ulaan Bataar</option>
-<option value="Australia/Perth">(GMT+08:00) Perth</option>
-<option value="Australia/Eucla">(GMT+08:45) Eucla</option>
-<option value="Asia/Tokyo">(GMT+09:00) Osaka, Sapporo, Tokyo</option>
-<option value="Asia/Seoul">(GMT+09:00) Seoul</option>
-<option value="Asia/Yakutsk">(GMT+09:00) Yakutsk</option>
-<option value="Australia/Adelaide">(GMT+09:30) Adelaide</option>
-<option value="Australia/Darwin">(GMT+09:30) Darwin</option>
-<option value="Australia/Brisbane">(GMT+10:00) Brisbane</option>
-<option value="Australia/Hobart">(GMT+10:00) Hobart</option>
-<option value="Asia/Vladivostok">(GMT+10:00) Vladivostok</option>
-<option value="Australia/Lord_Howe">(GMT+10:30) Lord Howe Island</option>
-<option value="Etc/GMT-11">(GMT+11:00) Solomon Is., New Caledonia</option>
-<option value="Asia/Magadan">(GMT+11:00) Magadan</option>
-<option value="Pacific/Norfolk">(GMT+11:30) Norfolk Island</option>
-<option value="Asia/Anadyr">(GMT+12:00) Anadyr, Kamchatka</option>
-<option value="Pacific/Auckland">(GMT+12:00) Auckland, Wellington</option>
-<option value="Etc/GMT-12">(GMT+12:00) Fiji, Kamchatka, Marshall Is.</option>
-<option value="Pacific/Chatham">(GMT+12:45) Chatham Islands</option>
-<option value="Pacific/Tongatapu">(GMT+13:00) Nuku\'alofa</option>
-<option value="Pacific/Kiritimati">(GMT+14:00) Kiritimati</option>
-</select>
-</td><td></td>
-<tr><td colspan="2"><hr></td></tr></table></FORM>
-<table border="0"><tr><td style="width:415px" align="right"><FORM ACTION="index.php?menu=options&amp;hashcode=manage" METHOD="post"><input type="submit" name="Submit3" value="Manage Hash Code Access" /></FORM></td>
-<td style="width:215px" valign="bottom" align="right"><FORM ACTION="index.php?menu=options&amp;upgrade=check" METHOD="post"><input type="submit" name="Submit3" value="Check for Updates" /></FORM></td></tr>
-<tr><td colspan="2"><hr></td></tr>
-<tr><td align="right"><FORM ACTION="index.php?menu=options&amp;manage=tabs" METHOD="post"><input type="submit" name="Submit4" value="Menu Tabs" /></FORM></td>
-<td align="right"><FORM ACTION="index.php?menu=options&amp;manage=plugins" METHOD="post"><input type="submit" name="Submit5" value="Manage Plugins" /></FORM></td></tr>
-</table>
-';
+	return '<FORM ACTION="index.php?menu=options&amp;refresh=change" METHOD="post">
+	<table border="0"><tr><td style="width:415px" valign="bottom" align="right"><strong>Refresh Rates (seconds) for Realtime Pages [0 = disable]</strong><br><br>
+	</td><td style="width:215px"></td></tr>
+	<tr><td valign="bottom" align="right">
+	Home: <input type="text" name="home_update" size="2" value="' . $home_update . '" /><br>
+	Peerlist: <input type="text" name="peerlist_update" size="2" value="' . $peerlist_update . '" /><br>
+	Transaction Queue: <input type="text" name="queue_update" size="2" value="' . $queue_update . '" /></td><td></td></tr>
+	<tr><td></td><td></td></tr>
+	<tr><td align="right"><strong>Super Peer Limit (10 - 500)</strong><br><input type="text" name="super_peer_limit" size="3" value="' . $super_peer . '" /><br></td>
+	<td><input type="submit" name="Submit2" value="Save Options" /></td></tr>
+	<tr><td></td><td></td></tr>
+	<tr><td align="right"><strong>Peer Failure Limit (1 - 100)</strong><br><input type="text" name="peer_failure_grade" size="3" value="' . $peer_failure_grade . '" /><br></td><td></td>
+	<tr><td align="right"><strong>Timezone</strong><br>
+	<select name="timezone">
+	' . $default_timezone . '
+	<option value="">Use System Default</option>
+	<option value="Pacific/Midway">(GMT-11:00) Midway Island, Samoa</option>
+	<option value="America/Adak">(GMT-10:00) Hawaii-Aleutian</option>
+	<option value="Etc/GMT+10">(GMT-10:00) Hawaii</option>
+	<option value="Pacific/Marquesas">(GMT-09:30) Marquesas Islands</option>
+	<option value="Pacific/Gambier">(GMT-09:00) Gambier Islands</option>
+	<option value="America/Anchorage">(GMT-09:00) Alaska</option>
+	<option value="America/Ensenada">(GMT-08:00) Tijuana, Baja California</option>
+	<option value="Etc/GMT+8">(GMT-08:00) Pitcairn Islands</option>
+	<option value="America/Los_Angeles">(GMT-08:00) Pacific Time (US & Canada)</option>
+	<option value="America/Denver">(GMT-07:00) Mountain Time (US & Canada)</option>
+	<option value="America/Chihuahua">(GMT-07:00) Chihuahua, La Paz, Mazatlan</option>
+	<option value="America/Dawson_Creek">(GMT-07:00) Arizona</option>
+	<option value="America/Belize">(GMT-06:00) Saskatchewan, Central America</option>
+	<option value="America/Cancun">(GMT-06:00) Guadalajara, Mexico City, Monterrey</option>
+	<option value="Chile/EasterIsland">(GMT-06:00) Easter Island</option>
+	<option value="America/Chicago">(GMT-06:00) Central Time (US & Canada)</option>
+	<option value="America/New_York">(GMT-05:00) Eastern Time (US & Canada)</option>
+	<option value="America/Havana">(GMT-05:00) Cuba</option>
+	<option value="America/Bogota">(GMT-05:00) Bogota, Lima, Quito, Rio Branco</option>
+	<option value="America/Caracas">(GMT-04:30) Caracas</option>
+	<option value="America/Santiago">(GMT-04:00) Santiago</option>
+	<option value="America/La_Paz">(GMT-04:00) La Paz</option>
+	<option value="Atlantic/Stanley">(GMT-04:00) Faukland Islands</option>
+	<option value="America/Campo_Grande">(GMT-04:00) Brazil</option>
+	<option value="America/Goose_Bay">(GMT-04:00) Atlantic Time (Goose Bay)</option>
+	<option value="America/Glace_Bay">(GMT-04:00) Atlantic Time (Canada)</option>
+	<option value="America/St_Johns">(GMT-03:30) Newfoundland</option>
+	<option value="America/Araguaina">(GMT-03:00) UTC-3</option>
+	<option value="America/Montevideo">(GMT-03:00) Montevideo</option>
+	<option value="America/Miquelon">(GMT-03:00) Miquelon, St. Pierre</option>
+	<option value="America/Godthab">(GMT-03:00) Greenland</option>
+	<option value="America/Argentina/Buenos_Aires">(GMT-03:00) Buenos Aires</option>
+	<option value="America/Sao_Paulo">(GMT-03:00) Brasilia</option>
+	<option value="America/Noronha">(GMT-02:00) Mid-Atlantic</option>
+	<option value="Atlantic/Cape_Verde">(GMT-01:00) Cape Verde Is.</option>
+	<option value="Atlantic/Azores">(GMT-01:00) Azores</option>
+	<option value="Europe/Belfast">(GMT) Greenwich Mean Time : Belfast</option>
+	<option value="Europe/Dublin">(GMT) Greenwich Mean Time : Dublin</option>
+	<option value="Europe/Lisbon">(GMT) Greenwich Mean Time : Lisbon</option>
+	<option value="Europe/London">(GMT) Greenwich Mean Time : London</option>
+	<option value="Africa/Abidjan">(GMT) Monrovia, Reykjavik</option>
+	<option value="Europe/Amsterdam">(GMT+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna</option>
+	<option value="Europe/Belgrade">(GMT+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague</option>
+	<option value="Europe/Brussels">(GMT+01:00) Brussels, Copenhagen, Madrid, Paris</option>
+	<option value="Africa/Algiers">(GMT+01:00) West Central Africa</option>
+	<option value="Africa/Windhoek">(GMT+01:00) Windhoek</option>
+	<option value="Asia/Beirut">(GMT+02:00) Beirut</option>
+	<option value="Africa/Cairo">(GMT+02:00) Cairo</option>
+	<option value="Asia/Gaza">(GMT+02:00) Gaza</option>
+	<option value="Africa/Blantyre">(GMT+02:00) Harare, Pretoria</option>
+	<option value="Asia/Jerusalem">(GMT+02:00) Jerusalem</option>
+	<option value="Europe/Minsk">(GMT+02:00) Minsk</option>
+	<option value="Asia/Damascus">(GMT+02:00) Syria</option>
+	<option value="Europe/Moscow">(GMT+03:00) Moscow, St. Petersburg, Volgograd</option>
+	<option value="Africa/Addis_Ababa">(GMT+03:00) Nairobi</option>
+	<option value="Asia/Tehran">(GMT+03:30) Tehran</option>
+	<option value="Asia/Dubai">(GMT+04:00) Abu Dhabi, Muscat</option>
+	<option value="Asia/Yerevan">(GMT+04:00) Yerevan</option>
+	<option value="Asia/Kabul">(GMT+04:30) Kabul</option>
+	<option value="Asia/Yekaterinburg">(GMT+05:00) Ekaterinburg</option>
+	<option value="Asia/Tashkent">(GMT+05:00) Tashkent</option>
+	<option value="Asia/Kolkata">(GMT+05:30) Chennai, Kolkata, Mumbai, New Delhi</option>
+	<option value="Asia/Katmandu">(GMT+05:45) Kathmandu</option>
+	<option value="Asia/Dhaka">(GMT+06:00) Astana, Dhaka</option>
+	<option value="Asia/Novosibirsk">(GMT+06:00) Novosibirsk</option>
+	<option value="Asia/Rangoon">(GMT+06:30) Yangon (Rangoon)</option>
+	<option value="Asia/Bangkok">(GMT+07:00) Bangkok, Hanoi, Jakarta</option>
+	<option value="Asia/Krasnoyarsk">(GMT+07:00) Krasnoyarsk</option>
+	<option value="Asia/Hong_Kong">(GMT+08:00) Beijing, Chongqing, Hong Kong, Urumqi</option>
+	<option value="Asia/Irkutsk">(GMT+08:00) Irkutsk, Ulaan Bataar</option>
+	<option value="Australia/Perth">(GMT+08:00) Perth</option>
+	<option value="Australia/Eucla">(GMT+08:45) Eucla</option>
+	<option value="Asia/Tokyo">(GMT+09:00) Osaka, Sapporo, Tokyo</option>
+	<option value="Asia/Seoul">(GMT+09:00) Seoul</option>
+	<option value="Asia/Yakutsk">(GMT+09:00) Yakutsk</option>
+	<option value="Australia/Adelaide">(GMT+09:30) Adelaide</option>
+	<option value="Australia/Darwin">(GMT+09:30) Darwin</option>
+	<option value="Australia/Brisbane">(GMT+10:00) Brisbane</option>
+	<option value="Australia/Hobart">(GMT+10:00) Hobart</option>
+	<option value="Asia/Vladivostok">(GMT+10:00) Vladivostok</option>
+	<option value="Australia/Lord_Howe">(GMT+10:30) Lord Howe Island</option>
+	<option value="Etc/GMT-11">(GMT+11:00) Solomon Is., New Caledonia</option>
+	<option value="Asia/Magadan">(GMT+11:00) Magadan</option>
+	<option value="Pacific/Norfolk">(GMT+11:30) Norfolk Island</option>
+	<option value="Asia/Anadyr">(GMT+12:00) Anadyr, Kamchatka</option>
+	<option value="Pacific/Auckland">(GMT+12:00) Auckland, Wellington</option>
+	<option value="Etc/GMT-12">(GMT+12:00) Fiji, Kamchatka, Marshall Is.</option>
+	<option value="Pacific/Chatham">(GMT+12:45) Chatham Islands</option>
+	<option value="Pacific/Tongatapu">(GMT+13:00) Nuku\'alofa</option>
+	<option value="Pacific/Kiritimati">(GMT+14:00) Kiritimati</option>
+	</select>
+	</td><td></td>
+	<tr><td colspan="2"><hr></td></tr></table></FORM>
+	<table border="0"><tr><td style="width:415px" align="right"><FORM ACTION="index.php?menu=options&amp;hashcode=manage" METHOD="post"><input type="submit" name="Submit3" value="Manage Hash Code Access" /></FORM></td>
+	<td style="width:215px" valign="bottom" align="right"><FORM ACTION="index.php?menu=options&amp;upgrade=check" METHOD="post"><input type="submit" name="Submit3" value="Check for Updates" /></FORM></td></tr>
+	<tr><td colspan="2"><hr></td></tr>
+	<tr><td align="right"><FORM ACTION="index.php?menu=options&amp;manage=tabs" METHOD="post"><input type="submit" name="Submit4" value="Menu Tabs" /></FORM></td>
+	<td align="right"><FORM ACTION="index.php?menu=options&amp;manage=plugins" METHOD="post"><input type="submit" name="Submit5" value="Manage Plugins" /></FORM></td></tr>
+	</table>
+	';
 
 } 
 //***********************************************************
@@ -482,41 +482,41 @@ function options_screen4()
 		if($plugin_show == TRUE)
 		{
 			$plugin_output .= '<tr><td valign="top" align="right">' . $plugin_name . '</td>
-<td valign="top" align="left"><input type="radio" name="plugins_status_' . $i . '" value="0">Hide <input type="radio" name="plugins_status_' . $i . '" value="1" CHECKED>Show</td></tr>
-<input type="hidden" name="plugins_'. $i .'" value="' . $plugin_file . '">';
+	<td valign="top" align="left"><input type="radio" name="plugins_status_' . $i . '" value="0">Hide <input type="radio" name="plugins_status_' . $i . '" value="1" CHECKED>Show</td></tr>
+	<input type="hidden" name="plugins_'. $i .'" value="' . $plugin_file . '">';
 		}
 		else
 		{
 			$plugin_output .= '<tr><td valign="top" align="right">' . $plugin_name . '</td>
-<td valign="top" align="left"><input type="radio" name="plugins_status_' . $i . '" value="0" CHECKED>Hide <input type="radio" name="plugins_status_' . $i . '" value="1">Show</td></tr>
-<input type="hidden" name="plugins_'. $i .'" value="' . $plugin_file . '">';
+	<td valign="top" align="left"><input type="radio" name="plugins_status_' . $i . '" value="0" CHECKED>Hide <input type="radio" name="plugins_status_' . $i . '" value="1">Show</td></tr>
+	<input type="hidden" name="plugins_'. $i .'" value="' . $plugin_file . '">';
 		}
 	}
 
-return '<FORM ACTION="index.php?menu=options&amp;tabs=change" METHOD="post">
-<table border="0" cellpadding="3"><tr><td style="width:200px" valign="bottom" align="center" colspan="2"><strong>Standard Tabs</strong></td></tr>
-<tr><td valign="top" align="right">Peerlist</td>
-<td valign="top" align="left" style="width:200px"><input type="radio" name="tab_peerlist" value="0" ' . $tab_peerlist_disable . '>Hide <input type="radio" name="tab_peerlist" value="1" ' . $tab_peerlist_enable . '>Show</td></tr>
-<tr><td valign="top" align="right">Transaction Queue</td>
-<td valign="top" align="left"><input type="radio" name="tab_trans_queue" value="0" ' . $trans_queue_disable . '>Hide <input type="radio" name="tab_trans_queue" value="1" ' . $trans_queue_enable . '>Show</td></tr>
-<tr><td valign="top" align="right">Send / Receive</td>
-<td valign="top" align="left"><input type="radio" name="tab_send_receive" value="0" ' . $send_receive_disable . '>Hide <input type="radio" name="tab_send_receive" value="1" ' . $send_receive_enable . '>Show</td></tr>
-<tr><td valign="top" align="right">History</td>
-<td valign="top" align="left"><input type="radio" name="tab_history" value="0" ' . $history_disable . '>Hide <input type="radio" name="tab_history" value="1" ' . $history_enable . '>Show</td></tr>
-<tr><td valign="top" align="right">Generation</td>
-<td valign="top" align="left"><input type="radio" name="tab_generation" value="0" ' . $generation_disable . '>Hide <input type="radio" name="tab_generation" value="1" ' . $generation_enable . '>Show</td></tr>
-<tr><td valign="top" align="right">System</td>
-<td valign="top" align="left"><input type="radio" name="tab_system" value="0" ' . $system_disable . '>Hide <input type="radio" name="tab_system" value="1" ' . $system_enable . '>Show</td></tr>
-<tr><td valign="top" align="right">Backup</td>
-<td valign="top" align="left"><input type="radio" name="tab_backup" value="0" ' . $backup_disable . '>Hide <input type="radio" name="tab_backup" value="1" ' . $backup_enable . '>Show</td></tr>
-<tr><td valign="top" align="right">Tools</td>
-<td valign="top" align="left"><input type="radio" name="tab_tools" value="0" ' . $tools_disable . '>Hide <input type="radio" name="tab_tools" value="1" ' . $tools_enable . '>Show</td></tr>
-<tr><td colspan="2"><hr></td></tr>
-<tr><td valign="bottom" align="center" colspan="2"><strong>Plugin Tabs</strong></td></tr>
-' . $plugin_output . '
-<tr><td align="right" colspan="2"><input type="submit" name="Submit1" value="Save Tabs" /></td></tr>
-</table></FORM>
-';
+	return '<FORM ACTION="index.php?menu=options&amp;tabs=change" METHOD="post">
+	<table border="0" cellpadding="3"><tr><td style="width:200px" valign="bottom" align="center" colspan="2"><strong>Standard Tabs</strong></td></tr>
+	<tr><td valign="top" align="right">Peerlist</td>
+	<td valign="top" align="left" style="width:200px"><input type="radio" name="tab_peerlist" value="0" ' . $tab_peerlist_disable . '>Hide <input type="radio" name="tab_peerlist" value="1" ' . $tab_peerlist_enable . '>Show</td></tr>
+	<tr><td valign="top" align="right">Transaction Queue</td>
+	<td valign="top" align="left"><input type="radio" name="tab_trans_queue" value="0" ' . $trans_queue_disable . '>Hide <input type="radio" name="tab_trans_queue" value="1" ' . $trans_queue_enable . '>Show</td></tr>
+	<tr><td valign="top" align="right">Send / Receive</td>
+	<td valign="top" align="left"><input type="radio" name="tab_send_receive" value="0" ' . $send_receive_disable . '>Hide <input type="radio" name="tab_send_receive" value="1" ' . $send_receive_enable . '>Show</td></tr>
+	<tr><td valign="top" align="right">History</td>
+	<td valign="top" align="left"><input type="radio" name="tab_history" value="0" ' . $history_disable . '>Hide <input type="radio" name="tab_history" value="1" ' . $history_enable . '>Show</td></tr>
+	<tr><td valign="top" align="right">Generation</td>
+	<td valign="top" align="left"><input type="radio" name="tab_generation" value="0" ' . $generation_disable . '>Hide <input type="radio" name="tab_generation" value="1" ' . $generation_enable . '>Show</td></tr>
+	<tr><td valign="top" align="right">System</td>
+	<td valign="top" align="left"><input type="radio" name="tab_system" value="0" ' . $system_disable . '>Hide <input type="radio" name="tab_system" value="1" ' . $system_enable . '>Show</td></tr>
+	<tr><td valign="top" align="right">Backup</td>
+	<td valign="top" align="left"><input type="radio" name="tab_backup" value="0" ' . $backup_disable . '>Hide <input type="radio" name="tab_backup" value="1" ' . $backup_enable . '>Show</td></tr>
+	<tr><td valign="top" align="right">Tools</td>
+	<td valign="top" align="left"><input type="radio" name="tab_tools" value="0" ' . $tools_disable . '>Hide <input type="radio" name="tab_tools" value="1" ' . $tools_enable . '>Show</td></tr>
+	<tr><td colspan="2"><hr></td></tr>
+	<tr><td valign="bottom" align="center" colspan="2"><strong>Plugin Tabs</strong></td></tr>
+	' . $plugin_output . '
+	<tr><td align="right" colspan="2"><input type="submit" name="Submit1" value="Save Tabs" /></td></tr>
+	</table></FORM>
+	';
 
 } 
 //***********************************************************
@@ -692,7 +692,7 @@ function system_screen()
 	}
 
 	// Total number of transaction cycle hashes in database
-	$total_trans_hash = mysql_result(mysql_query("SELECT COUNT(attribute) FROM `transaction_history` USE INDEX(attribute) WHERE `attribute` = 'H'"),0);
+	$total_trans_hash = count_transaction_hash();
 
 	if($total_trans_hash == transaction_cycle(0, TRUE))
 	{
@@ -758,7 +758,7 @@ function system_screen()
 //***********************************************************
 function system_service_bar()
 {
-return '<table cellspacing="10" border="0"><tr><td style="width:150px"><FORM ACTION="main.php?action=begin_main" METHOD="post"><input type="submit" value="START Timekoin"/></FORM></td>
+	return '<table cellspacing="10" border="0"><tr><td style="width:150px"><FORM ACTION="main.php?action=begin_main" METHOD="post"><input type="submit" value="START Timekoin"/></FORM></td>
 	<td style="width:150px"><FORM ACTION="index.php?menu=system&amp;stop=main" METHOD="post" onclick="return confirm(\'Are You Sure? This Will Stop Timekoin and All Running Process.\');"><input type="submit" value="STOP Timekoin"/></FORM></td></tr></table><hr>
 	<table cellspacing="10" border="0"><tr><td style="width:150px"><FORM ACTION="watchdog.php?action=begin_watchdog" METHOD="post"><input type="submit" value="Start Watchdog"/></FORM></td>
 	<td style="width:150px"><FORM ACTION="index.php?menu=system&amp;stop=watchdog" METHOD="post" onclick="return confirm(\'Are You Sure? This Will Stop the Watchdog Process.\');"><input type="submit" value="Stop Watchdog"/></FORM></td></tr></table>';
@@ -831,13 +831,13 @@ function send_receive_body($fill_in_key, $amount, $cancel = FALSE, $easy_key, $m
 		$form_action = '<FORM ACTION="index.php?menu=send&amp;check=key" METHOD="post">';
 	}
 
-return '<strong><font color="blue">Public Key</font> to send transaction:</strong><br>' . $form_action . '<table border="0" cellpadding="6"><tr><td colspan="2">
-<textarea name="send_public_key" rows="6" cols="75">' . $fill_in_key . '</textarea></td></tr>
-<tr><td style="width:580px" colspan="2"><strong>Message:</strong><br><input type="text" maxlength="64" size="64" value="' . $message . '" name="send_message" /></td></tr>
-<tr><td valign="top"><strong>Amount:</strong> <input type="text" size="8" value="' . $amount . '" name="send_amount" />
-<input type="submit" name="Submit1" value="Send Timekoins" /></td></tr></table></FORM>
-<table border="0" cellpadding="6"><tr><td style="width:580px" align="right">' . $cancel_button  . '</td></tr>
-<tr><td align="right">Create Your Own Here:<br><a target="_blank" href="http://easy.timekoin.net/">easy.timekoin.net</a></td></tr></table>';
+	return '<strong><font color="blue">Public Key</font> to send transaction:</strong><br>' . $form_action . '<table border="0" cellpadding="6"><tr><td colspan="2">
+	<textarea name="send_public_key" rows="6" cols="75">' . $fill_in_key . '</textarea></td></tr>
+	<tr><td style="width:580px" colspan="2"><strong>Message:</strong><br><input type="text" maxlength="64" size="64" value="' . $message . '" name="send_message" /></td></tr>
+	<tr><td valign="top"><strong>Amount:</strong> <input type="text" size="8" value="' . $amount . '" name="send_amount" />
+	<input type="submit" name="Submit1" value="Send Timekoins" /></td></tr></table></FORM>
+	<table border="0" cellpadding="6"><tr><td style="width:580px" align="right">' . $cancel_button  . '</td></tr>
+	<tr><td align="right">Create Your Own Here:<br><a target="_blank" href="http://easy.timekoin.net/">easy.timekoin.net</a></td></tr></table>';
 }
 //***********************************************************
 //***********************************************************
@@ -891,14 +891,14 @@ function backup_body($private_key, $public_key, $cancel_private = FALSE, $cancel
 		$form_action2 = '<FORM ACTION="index.php?menu=backup&amp;restore=public" METHOD="post">';
 	}
 
-return $form_action . '<table border="0" cellpadding="6"><tr><td colspan="2"><strong><font color="blue">Restore Private Key</font></strong></td></tr>
-			<tr><td colspan="2"><textarea name="restore_private_key" rows="5" cols="75">' . $private_key . '</textarea></td></tr>
-			<tr><td><input type="submit" value="Restore Private Key"/>' . $are_you_sure . '</td></tr>
-			<tr><td colspan="2"><hr></td></tr></table></FORM>
-			' . $form_action2 . '<table border="0" cellpadding="6">
-			<tr><td colspan="2"><strong><font color="green">Restore Public Key</font></strong></td></tr>
-			<tr><td colspan="2"><textarea name="restore_public_key" rows="5" cols="75">' . $public_key . '</textarea></td></tr>
-			<tr><td><input type="submit" value="Restore Public Key"/>' . $are_you_sure2 . '</td></tr></table></FORM>';
+	return $form_action . '<table border="0" cellpadding="6"><tr><td colspan="2"><strong><font color="blue">Restore Private Key</font></strong></td></tr>
+	<tr><td colspan="2"><textarea name="restore_private_key" rows="5" cols="75">' . $private_key . '</textarea></td></tr>
+	<tr><td><input type="submit" value="Restore Private Key"/>' . $are_you_sure . '</td></tr>
+	<tr><td colspan="2"><hr></td></tr></table></FORM>
+	' . $form_action2 . '<table border="0" cellpadding="6">
+	<tr><td colspan="2"><strong><font color="green">Restore Public Key</font></strong></td></tr>
+	<tr><td colspan="2"><textarea name="restore_public_key" rows="5" cols="75">' . $public_key . '</textarea></td></tr>
+	<tr><td><input type="submit" value="Restore Public Key"/>' . $are_you_sure2 . '</td></tr></table></FORM>';
 }
 //***********************************************************
 //***********************************************************

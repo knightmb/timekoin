@@ -812,6 +812,9 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				if($transaction_repair_made == TRUE)
 				{
 					write_log("Automatic History Check From Transaction Cycle #" . ($hash_number - ($hash_check_counter - 1)) . " to #" . $hash_number . " Completed With Repairs", "TC");
+
+					// Reset Transction Hash Count Cache
+					reset_transaction_hash_count();
 				}
 				else
 				{
@@ -853,6 +856,8 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			if($transaction_repair_made == TRUE)
 			{
 				write_log("Manual History Check From Transaction Cycle #$transaction_history_block_check to #" . ($transaction_history_block_check + $hash_check_counter - 1) . " Completed With Repairs", "TC");
+				// Reset Transction Hash Count Cache
+				reset_transaction_hash_count();
 			}
 			else
 			{
@@ -942,7 +947,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 						// Schedule a check in case the peer has an error and not us.
 						mysql_query("UPDATE `main_loop_status` SET `field_data` = '$random_block' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1");
 
-						write_log("This Peer ($ip_address$domain) Reports that My Transaction Block #$random_block is Invalid.</br>Will Double Check with other Peers before making any corrections.", "TC");
+						write_log("This Peer ($ip_address$domain) Reports that My Transaction Block #$random_block is Invalid.<br>Will Double Check with other Peers before making any corrections.", "TC");
 					}
 				} // End empty poll check
 			} // End if/then record count check

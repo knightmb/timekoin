@@ -551,6 +551,9 @@ if(empty($current_hash) == TRUE)
 			// Update Transaction History Hash
 			mysql_query("UPDATE `options` SET `field_data` = '" . transaction_history_hash() . "' WHERE `field_name` = 'transaction_history_hash' LIMIT 1");
 
+			// Reset Transction Hash Count Cache
+			reset_transaction_hash_count();			
+
 		} // End Previous Hash Missing Check
 
 	} // Pass hash check for existance

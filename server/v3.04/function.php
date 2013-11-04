@@ -460,6 +460,47 @@ function walkhistory($block_start = 0, $block_end = 0)
 }
 //***********************************************************************************
 //***********************************************************************************
+function count_transaction_hash()
+{
+	// Check server balance via custom memory index
+	$count_transaction_hash = mysql_result(mysql_query("SELECT * FROM `balance_index` WHERE `public_key_hash` = 'count_transaction_hash' LIMIT 1"),0,"balance");
+	$count_transaction_hash_last = mysql_result(mysql_query("SELECT * FROM `balance_index` WHERE `public_key_hash` = 'count_transaction_hash' LIMIT 1"),0,"block");
+
+	if($count_transaction_hash === FALSE)
+	{
+		// Does not exist, needs to be created
+		mysql_query("INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`) VALUES ('0', 'count_transaction_hash', '0')");
+
+		// Update record with the latest total
+		$total_trans_hash = mysql_result(mysql_query("SELECT COUNT(attribute) FROM `transaction_history` USE INDEX(attribute) WHERE `attribute` = 'H'"),0);
+		mysql_query("UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$total_trans_hash' WHERE `balance_index`.`public_key_hash` = 'count_transaction_hash' LIMIT 1");
+	}
+	else
+	{
+		if(time() - $count_transaction_hash_last > 300) // 300s cache time
+		{
+			// Update new hash count and cache time
+			$total_trans_hash = mysql_result(mysql_query("SELECT COUNT(attribute) FROM `transaction_history` USE INDEX(attribute) WHERE `attribute` = 'H'"),0);
+			mysql_query("UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$total_trans_hash' WHERE `balance_index`.`public_key_hash` = 'count_transaction_hash' LIMIT 1");
+		}
+		else
+		{
+			$total_trans_hash = $count_transaction_hash;
+		}
+	}
+
+	return $total_trans_hash;
+}
+//***********************************************************************************
+//***********************************************************************************
+function reset_transaction_hash_count()
+{
+	// Clear transaction count cache
+	mysql_query("DELETE FROM `balance_index` WHERE `balance_index`.`public_key_hash` = 'count_transaction_hash' LIMIT 1");
+	return;
+}
+//***********************************************************************************
+//***********************************************************************************
 function tk_encrypt($key, $crypt_data)
 {
 	if(function_exists('openssl_private_encrypt') == TRUE)
@@ -542,8 +583,7 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 	if($block_start == 0 && $block_end == 0)
 	{
 		// Find every Time Koin sent to this public Key
-		$sql = "SELECT public_key_from, public_key_to, crypt_data3, attribute FROM `transaction_history` WHERE `public_key_to` = '$public_key' 
-		OR `public_key_from` = '$public_key'";		
+		$sql = "SELECT public_key_from, public_key_to, crypt_data3, attribute FROM `transaction_history` WHERE `public_key_from` = '$public_key' OR `public_key_to` = '$public_key' ";
 	}
 	else
 	{
@@ -552,8 +592,8 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 		$start_time_range = TRANSACTION_EPOCH + ($block_start * 300);
 		$end_time_range = TRANSACTION_EPOCH + ($block_end * 300);
 
-		$sql = "SELECT public_key_from, public_key_to, crypt_data3, attribute FROM `transaction_history` WHERE (`public_key_to` = '$public_key' AND `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range')
-			OR (`public_key_from` = '$public_key' AND `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range')";
+		$sql = "SELECT public_key_from, public_key_to, crypt_data3, attribute FROM `transaction_history` WHERE (`public_key_from` = '$public_key' AND `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range')
+		OR (`public_key_to` = '$public_key' AND `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range')";
 	}
 
 	$sql_result = mysql_query($sql);
