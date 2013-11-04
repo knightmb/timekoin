@@ -198,6 +198,15 @@ if($_GET["action"] == "input_transaction")
 					$valid_amount = FALSE;
 				}
 
+				if($transaction_attribute == "G")
+				{
+					if($transaction_amount_sent_test > 10)
+					{
+						// Filter silly generation amounts :p
+						$valid_amount = FALSE;
+					}
+				}
+
 				$inside_transaction_hash = find_string("HASH=", "", $transaction_info, TRUE);
 
 				// Check if a message is encoded in this data as well
@@ -518,6 +527,15 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 							{
 								// Is NOT a valid integer, fail check
 								$valid_amount = FALSE;
+							}
+
+							if($transaction_attribute == "G")
+							{
+								if($transaction_amount_sent_test > 10)
+								{
+									// Filter silly generation amounts :p
+									$valid_amount = FALSE;
+								}
 							}
 
 							$inside_transaction_hash = find_string("HASH=", "", $transaction_info, TRUE);
