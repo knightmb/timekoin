@@ -269,7 +269,7 @@ if($sql_num_results > 0)
 //*****************************************************************************************************
 //*****************************************************************************************************
 // Find all transactions between the Previous Transaction Cycle and the Current
-$sql = "SELECT * FROM `transaction_queue` WHERE `timestamp` >= $previous_generation_cycle AND `timestamp` < $current_generation_cycle ORDER BY `attribute`, `hash`";
+$sql = "SELECT * FROM `transaction_queue` WHERE `timestamp` >= $previous_generation_cycle AND `timestamp` < $current_generation_cycle ORDER BY `attribute`, `hash` ASC";
 
 $sql_result = mysql_query($sql);
 $sql_num_results = mysql_num_rows($sql_result);

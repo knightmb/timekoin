@@ -1079,6 +1079,73 @@ function unix_timestamp_to_human($timestamp = "", $format = 'D d M Y - H:i:s')
 	return ($timestamp) ? date($format, $timestamp) : date($format, $timestamp);
 }
 //***********************************************************************************
+function gen_simple_poll_test($ip_address, $domain, $subfolder, $port_number)
+{
+	$simple_poll_fail = FALSE; // Reset Variable
+
+	// Grab random Transaction Foundation Hash
+	$rand_block = rand(0,foundation_cycle(0, TRUE) - 5); // Range from Start to Last 5 Foundation Hash
+	$random_foundation_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_foundation` WHERE `block` = $rand_block LIMIT 1"),0,0);
+	// Grab random Transaction Hash
+	$rand_block2 = rand(transaction_cycle((0 - transaction_cycle(0, TRUE)), TRUE), transaction_cycle(-1000, TRUE)); // Range from Start to Last 1000 Transaction Hash
+	$rand_block2 = transaction_cycle(0 - $rand_block2);
+	$random_transaction_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` = $rand_block2 LIMIT 1"),0,0);
+	$rand_block2 = ($rand_block2 - TRANSACTION_EPOCH - 300) / 300;
+
+	if(empty($random_foundation_hash) == FALSE) // Make sure we had one to compare first
+	{
+		$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 65, "foundation.php?action=block_hash&block_number=$rand_block");
+
+		// Is it valid?
+		if(empty($poll_peer) == TRUE)
+		{
+			// No response?
+			$simple_poll_fail = TRUE;
+		}
+		else
+		{
+			// Is it valid?
+			if($poll_peer == $random_foundation_hash)
+			{
+				// Got a good response from an active Timekoin server
+				$simple_poll_fail = FALSE;
+			}
+			else
+			{
+				// Wrong Response?
+				$simple_poll_fail = TRUE;
+			}
+		}
+	}
+
+	if(empty($random_transaction_hash) == FALSE) // Make sure we had one to compare first
+	{
+		$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 65, "transclerk.php?action=block_hash&block_number=$rand_block2");
+
+		// Is it valid?
+		if(empty($poll_peer) == TRUE)
+		{
+			//No response?
+			$simple_poll_fail = TRUE;
+		}
+		else
+		{
+			// Is it valid?
+			if($poll_peer == $random_transaction_hash)
+			{
+				//Got a good response from an active Timekoin server
+				$simple_poll_fail = FALSE;
+			}
+			else
+			{
+				//Wrong Response?
+				$simple_poll_fail = TRUE;
+			}
+		}
+	}
+
+	return $simple_poll_fail;
+}
 //***********************************************************************************
 function visual_walkhistory($block_start = 0, $block_end = 0)
 {

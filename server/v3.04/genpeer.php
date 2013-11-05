@@ -450,6 +450,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							}
 						}
 
+						$simple_poll_fail = gen_simple_poll_test($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number);
+
 						// Does the public key half match what is encrypted in the 3rd crypt field from
 						// the same peer?
 						if($arr1[0] == $gen_key_crypt && 
@@ -457,6 +459,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							empty($IP_exist1) == TRUE && 
 							empty($IP_exist2) == TRUE && 
 							$domain_fail == FALSE && 
+							$simple_poll_fail == FALSE &&
 							is_private_ip($peer_ip) == FALSE) // Filter private IPs
 						{
 							mysql_query("INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
@@ -488,7 +491,11 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							}
 							else if($domain_fail == TRUE)
 							{
-								write_log("Domain ($peer_domain) IP ($dns_ip) & Encoded IP ($peer_ip)- DO NOT MATCH for Public Key: " . base64_encode($public_key), "GP");
+								write_log("Domain ($peer_domain) IP ($dns_ip) & Encoded IP ($peer_ip) DO NOT MATCH for Public Key: " . base64_encode($public_key), "GP");
+							}
+							else if($simple_poll_fail == TRUE)
+							{
+								write_log("Simple Poll Failure for Public Key: " . base64_encode($public_key), "GP");
 							}
 						}
 
@@ -542,13 +549,16 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								$domain_fail = FALSE;
 							}							
 						}
-						
+
+						$simple_poll_fail = gen_simple_poll_test($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number);
+
 						// Does the public key half match what is encrypted in the 3rd crypt field from
 						// the same peer?
 						if($arr1[0] == $gen_key_crypt && 
 							empty($peer_ip) == FALSE && 
 							empty($IP_exist1) == TRUE && 
 							$domain_fail == FALSE && 
+							$simple_poll_fail == FALSE &&
 							is_private_ip($peer_ip) == FALSE) // Filter private IPs
 						{
 							if($delete_request == "DELETE_IP")
@@ -592,8 +602,12 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							}
 							else if($domain_fail == TRUE)
 							{
-								write_log("Domain ($peer_domain) IP ($dns_ip) & Encoded IP ($peer_ip)- DO NOT MATCH for Public Key: " . base64_encode($public_key), "GP");
+								write_log("Domain ($peer_domain) IP ($dns_ip) & Encoded IP ($peer_ip) DO NOT MATCH for Public Key: " . base64_encode($public_key), "GP");
 							}
+							else if($simple_poll_fail == TRUE)
+							{
+								write_log("Simple Poll Failure for Public Key: " . base64_encode($public_key), "GP");
+							}							
 						}						
 
 					} // Valid Crypt2 field check

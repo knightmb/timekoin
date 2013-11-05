@@ -497,6 +497,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 						
 						$final_hash_compare = $transaction_crypt2;
 						$crypt_hash_check = $transaction_hash;
+						$valid_amount = TRUE; // No amount, but needs this to pass amount test
 					}
 					else
 					{
