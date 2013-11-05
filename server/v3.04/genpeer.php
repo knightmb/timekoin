@@ -385,10 +385,10 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
 
-		ini_set('default_socket_timeout', 3); // Increase Polling Timeout
-
 		if($sql_num_results > 0)
 		{
+			ini_set('default_socket_timeout', 3); // Increase Polling Timeout
+
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
 				$sql_row = mysql_fetch_array($sql_result);

@@ -650,7 +650,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["time"] == "poll")
 		{
 			ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
-			ini_set('default_socket_timeout', 2); // Timeout for request in seconds
+			ini_set('default_socket_timeout', 3); // Timeout for request in seconds
 			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
 				<tr><th>Peer</th><th>Time</th><th>Variance</th><th>Ping</th></tr>';
 
@@ -751,7 +751,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["poll_failure"] == "poll")
 		{
 			ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
-			ini_set('default_socket_timeout', 2); // Timeout for request in seconds
+			ini_set('default_socket_timeout', 3); // Timeout for request in seconds
 			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
 				<tr><th>Peer</th><th>My Failure Score</th></tr>';
 
@@ -774,7 +774,7 @@ if($_SESSION["valid_login"] == TRUE)
 				$port_number = $sql_row["port_number"];
 
 				// Poll and give my domain to check against
-				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 3, "peerlist.php?action=poll_failure&amp;domain=$my_domain&amp;subfolder=$my_subfolder&amp;port=$my_port");
+				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 3, "peerlist.php?action=poll_failure&domain=$my_domain&subfolder=$my_subfolder&port=$my_port");
 
 				if($poll_peer == "")
 				{
