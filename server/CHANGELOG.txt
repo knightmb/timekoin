@@ -1,5 +1,16 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 3.04 (Released 2013-11-5)
+============================================
+- Attribute logging for banned IPs
+- Longer random wait when clearing database of banned IPs
+- New cache function for transaction hash numbers to speed up GUI response on slower systems
+- Queue Manager pre-filtering invalid generation amounts
+- Fixed reverse poll score query not working
+- Generation peer polling gives more time for peers to respond properly
+- More security updates to ban IPs that try to abuse or flood server
+
+
 Timekoin Server - 3.03 (Released 2013-10-31)
 ============================================
 - New Plugin System
