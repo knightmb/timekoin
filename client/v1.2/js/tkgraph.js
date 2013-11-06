@@ -214,7 +214,7 @@ var Graph = function(options)
 		}
 		else
 		{
-			this.context.fillStyle = "#4c4c4c";
+			this.context.fillStyle = "#0000ff";
 		}
 		this.context.textAlign = "center";
 		this.context.font = 'bold 10px/2 sans-serif';
