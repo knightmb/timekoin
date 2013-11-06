@@ -774,7 +774,7 @@ if($_SESSION["valid_login"] == TRUE)
 				$port_number = $sql_row["port_number"];
 
 				// Poll and give my domain to check against
-				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 3, "peerlist.php?action=poll_failure&domain=$my_domain&subfolder=$my_subfolder&port=$my_port");
+				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 5, "peerlist.php?action=poll_failure&domain=$my_domain&subfolder=$my_subfolder&port=$my_port");
 
 				if($poll_peer == "")
 				{
