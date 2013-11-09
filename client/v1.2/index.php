@@ -140,13 +140,13 @@ if($_SESSION["valid_login"] == TRUE)
 //****************************************************************************
 	if($_GET["menu"] == "home" || empty($_GET["menu"]) == TRUE)
 	{
-		$body_string = '<strong>Last 20 <font color="green">Received</font> Transaction Amounts to Billfold</strong><br><canvas id="recv_graph" width="620" height="300">Your Web Browser does not support HTML5 Canvas.</canvas>';
+		$body_string = '<strong>Last 20 <font color="green">Received</font> Transaction Amounts to Billfold</strong><br><canvas id="recv_graph" width="690" height="300">Your Web Browser does not support HTML5 Canvas.</canvas>';
 		$body_string .= '<hr>';
-		$body_string .= '<strong>Last 20 <font color="blue">Sent</font> Transaction Amounts from Billfold</strong><br><canvas id="sent_graph" width="620" height="300">Your Web Browser does not support HTML5 Canvas.</canvas>';
+		$body_string .= '<strong>Last 20 <font color="blue">Sent</font> Transaction Amounts from Billfold</strong><br><canvas id="sent_graph" width="690" height="300">Your Web Browser does not support HTML5 Canvas.</canvas>';
 		$body_string .= '<hr>';
-		$body_string .= '<strong>Timekoin Network - Total Transactions per Cycle (Last 25 Cycles)</strong><br><canvas id="trans_total" width="620" height="200">Your Web Browser does not support HTML5 Canvas.</canvas>';
+		$body_string .= '<strong>Timekoin Network - Total Transactions per Cycle (Last 25 Cycles)</strong><br><canvas id="trans_total" width="690" height="200">Your Web Browser does not support HTML5 Canvas.</canvas>';
 		$body_string .= '<hr>';
-		$body_string .= '<strong>Timekoin Network - Total Amounts Sent per Cycle (Last 20 Cycles)</strong><br><canvas id="amount_total" width="620" height="400">Your Web Browser does not support HTML5 Canvas.</canvas>';
+		$body_string .= '<strong>Timekoin Network - Total Amounts Sent per Cycle (Last 20 Cycles)</strong><br><canvas id="amount_total" width="690" height="400">Your Web Browser does not support HTML5 Canvas.</canvas>';
 
 		$display_balance = db_cache_balance(my_public_key());
 
@@ -1179,7 +1179,7 @@ if($_SESSION["valid_login"] == TRUE)
 									$display_balance = db_cache_balance($my_public_key);
 									$body_string = send_receive_body($public_key_64, $send_amount, NULL, NULL, NULL, $_POST["name"]);
 									$body_string .= '<hr><font color="green"><strong>You just sent ' . $send_amount . ' timekoins to the above public key.</strong></font><br>
-									<strong>Your balance will not reflect this until the transation is recorded across the entire network.</strong><br><br>';
+									<strong>Your balance will not reflect this until the transaction is recorded across the entire network.</strong><br><br>';
 								}
 								else
 								{
@@ -1187,6 +1187,9 @@ if($_SESSION["valid_login"] == TRUE)
 									$body_string = send_receive_body($public_key_64, $send_amount, NULL, NULL, NULL, $_POST["name"]);
 									$body_string .= '<hr><font color="red"><strong>Send failed...</strong></font><br><br>';
 								}
+
+								// Clear Variable from From RAM
+								unset($my_private_key);
 							}
 						}
 						else
@@ -1196,7 +1199,7 @@ if($_SESSION["valid_login"] == TRUE)
 								$display_balance = db_cache_balance($my_public_key);
 								$body_string = send_receive_body($public_key_64, $send_amount, NULL, NULL, NULL, $_POST["name"]);
 								$body_string .= '<hr><font color="green"><strong>You just sent ' . $send_amount . ' timekoins to the above public key.</strong></font><br>
-								<strong>Your balance will not reflect this until the transation is recorded across the entire network.</strong><br><br>';
+								<strong>Your balance will not reflect this until the transaction is recorded across the entire network.</strong><br><br>';
 							}
 							else
 							{
@@ -1844,16 +1847,13 @@ if($_SESSION["valid_login"] == TRUE)
 		}
 
 		$my_public_key = base64_encode(my_public_key());
+		$my_private_key = base64_encode(my_private_key());
 
 		$private_key_crypt = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'private_key_crypt' LIMIT 1"),0,1);
 
 		if($private_key_crypt == TRUE)
 		{
-			$my_private_key = '*** PRIVATE KEY IS ENCRYPTED ***';
-		}
-		else
-		{
-			$my_private_key = base64_encode(my_private_key());
+			$key_encrypted = '<font color="red"><strong>WARNING:</strong></font> <font color="blue"><strong><i>Private Key Is Encrypted</i></strong></font>';
 		}
 
 		if($_GET["restore"] == "private" && empty($_POST["restore_private_key"]) == FALSE)
@@ -1871,7 +1871,8 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$body_string .= $server_message;
 
-		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong><font color="blue">Private Key</font> to send transactions:</strong></td></tr>
+		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong><font color="blue">Private Key</font> to send transactions:</strong><br>
+			' . $key_encrypted . '</td></tr>
 			<tr><td><textarea readonly="readonly" rows="8" cols="75">' . $my_private_key . '</textarea></td></tr></table>
 			<table border="0" cellpadding="6"><tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
 			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . $my_public_key . '</textarea></td></tr></table>';
