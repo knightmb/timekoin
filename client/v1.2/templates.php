@@ -504,6 +504,13 @@ g_graph = new Graph(
 //***********************************************************
 function options_screen()
 {
+	$private_key_crypt = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'private_key_crypt' LIMIT 1"),0,1);
+
+	if($private_key_crypt == TRUE)
+	{
+		$disable_crypt_checkbox = '<input type="checkbox" name="disable_crypt" value="1">Remove Encryption<br><i>*Requires Current Password</i>';
+	}
+	
 	if($_GET["newkeys"] == "generate")
 	{
 		// Offer Confirmation Screen
@@ -516,18 +523,23 @@ function options_screen()
 	}
 	
 return '<FORM ACTION="index.php?menu=options&amp;password=change" METHOD="post">
-<table border="0"><tr><td style="width:350px" valign="bottom" align="right">
+<table border="0"><tr><td style="width:330px" valign="bottom" align="right">
 Current Username: <input type="text" name="current_username" /><br>
 New Username: <input type="text" name="new_username" /><br>
 Confirm Username: <input type="text" name="confirm_username" />
-</td><td style="width:325px"></td></tr>
-<tr><td></td></tr>
+</td>
+<td style="width:345px" valign="bottom" align="right"><strong>Encrypt Private Key</strong><br>
+Current PK Password: <input type="password" name="current_private_key_password" /><br>
+New PK Password: <input type="password" name="new_private_key_password" /><br>
+Confirm PK Password: <input type="password" name="confirm_private_key_password" />
+</td></tr>
+<tr><td></td><td></td></tr>
 <tr><td align="right">
 Current Password: <input type="password" name="current_password" /><br>
 New Password: <input type="password" name="new_password" /><br>
 Confirm Password: <input type="password" name="confirm_password" /><br><br>
 <input type="submit" onclick="showWait()" name="Submit" value="Change" />
-</td></tr></table></FORM>
+</td><td align="right" valign="top">' . $disable_crypt_checkbox . '</td></tr></table></FORM>
 <table border="0"><tr><td style="width:350px"></td>
 <td valign="bottom" align="right" style="width:325px">' . $confirm_message . $form_action .'
 <input type="submit" onclick="showWait()" name="Submit2" value="Generate New Keys" /></FORM></td></tr>
@@ -813,8 +825,15 @@ function send_receive_body($fill_in_key, $amount, $cancel = FALSE, $easy_key, $m
 	if($cancel == TRUE)
 	{
 		// Redo menu to show cancel or complete send buttons
+		$private_key_crypt = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'private_key_crypt' LIMIT 1"),0,1);
+
+		if($private_key_crypt == TRUE)
+		{
+			$request_password = '<strong>Password Required:</strong> <input type="password" name="crypt_password" />';
+		}
+
 		$cancel_button = '<FORM ACTION="index.php?menu=send" METHOD="post"><input type="submit" name="Submit2" value="Cancel" /></FORM>';
-		$form_action = '<FORM ACTION="index.php?menu=send&amp;complete=send" METHOD="post">';
+		$form_action = '<FORM ACTION="index.php?menu=send&amp;complete=send" METHOD="post">';		
 	}
 	else
 	{
@@ -825,10 +844,11 @@ function send_receive_body($fill_in_key, $amount, $cancel = FALSE, $easy_key, $m
 
 	return '<strong><font color="blue">Public Key</font> to send transaction' . $name . ':</strong><br>' . $form_action . '<table border="0" cellpadding="6"><tr><td colspan="2">
 	<textarea name="send_public_key" rows="6" cols="75">' . $fill_in_key . '</textarea></td></tr>
-	<tr><td style="width:580px" colspan="2"><strong>Message:</strong><br><input type="text" maxlength="64" size="64" value="' . $message . '" name="send_message" /></td></tr>
-	<tr><td valign="top"><strong>Amount:</strong> <input type="text" size="8" value="' . $amount . '" name="send_amount" />
+	<tr><td style="width:640px" colspan="2"><strong>Message:</strong><br><input type="text" maxlength="64" size="64" value="' . $message . '" name="send_message" /></td></tr>
+	<tr><td valign="top" align="left"><strong>Amount:</strong> <input type="text" size="8" value="' . $amount . '" name="send_amount" />
 	<input type="hidden" name="name" value="' . $hidden_name . '">
-	<input type="submit" onclick="showWait()" name="Submit1" value="Send Timekoins" /></td></tr></table></FORM>
+	<input type="submit" onclick="showWait()" name="Submit1" value="Send Timekoins" /></td><td valign="top" align="right">' . $request_password . '
+	</td></tr></table></FORM>
 	<table border="0" cellpadding="6"><tr><td style="width:580px" align="right">' . $cancel_button  . '</td></tr>
 	<tr><td align="right">Create Your Own Here:<br><a target="_blank" href="http://easy.timekoin.net/">easy.timekoin.net</a></td></tr></table>';
 }

@@ -635,6 +635,69 @@ if($_SESSION["valid_login"] == TRUE)
 	{
 		if($_GET["password"] == "change")
 		{
+			if(empty($_POST["current_private_key_password"]) == FALSE && empty($_POST["new_private_key_password"]) == FALSE && empty($_POST["confirm_private_key_password"]) == FALSE)
+			{
+				// Encrypt Private Key for first time
+				$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'private_key_crypt' LIMIT 1"),0,0);
+				if($new_record_check === FALSE && $_POST["new_private_key_password"] == $_POST["confirm_private_key_password"])
+				{
+					// Encrypted Private Key Marker does not exist, create it
+					if(mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('private_key_crypt', '1')") == TRUE)
+					{
+						// First Time Encryption
+						// Grab Currency Private Key, encrypt, then update database
+						$my_new_crypt_private_key = AesCtr::encrypt(my_private_key(), $_POST["new_private_key_password"], 256);
+						
+						$sql = "UPDATE `my_keys` SET `field_data` = '$my_new_crypt_private_key' WHERE `my_keys`.`field_name` = 'server_private_key' LIMIT 1";
+
+						if(mysql_query($sql) == TRUE)
+						{
+							$encrypt_private_key = TRUE;
+						}
+					}
+				}
+				else
+				{
+					// Decrypt Existing Private Key, Re-encrypt with new Password
+					if($_POST["new_private_key_password"] == $_POST["confirm_private_key_password"])
+					{
+						// Decrypt Private Key
+						$decrypt_private_key = AesCtr::decrypt(my_private_key(), $_POST["current_private_key_password"], 256);
+						$valid_key = find_string("-----BEGIN", "KEY-----", $decrypt_private_key); // Valid Decrypt?
+
+						if(empty($valid_key) == FALSE) // If Empty means decrypt password was wrong
+						{
+							$my_new_crypt_private_key = AesCtr::encrypt($decrypt_private_key, $_POST["new_private_key_password"], 256);
+							
+							$sql = "UPDATE `my_keys` SET `field_data` = '$my_new_crypt_private_key' WHERE `my_keys`.`field_name` = 'server_private_key' LIMIT 1";
+							if(mysql_query($sql) == TRUE)
+							{
+								$encrypt_private_key = TRUE;
+							}
+						}
+					}
+				}
+			}
+
+			if(empty($_POST["current_private_key_password"]) == FALSE && $_POST["disable_crypt"] == TRUE)
+			{
+				// Remove Encryption
+				$decrypt_private_key = AesCtr::decrypt(my_private_key(), $_POST["current_private_key_password"], 256);
+				$valid_key = find_string("-----BEGIN", "KEY-----", $decrypt_private_key); // Valid Decrypt?
+
+				if(empty($valid_key) == FALSE) // If Empty means decrypt password was wrong
+				{
+					$sql = "UPDATE `my_keys` SET `field_data` = '$decrypt_private_key' WHERE `my_keys`.`field_name` = 'server_private_key' LIMIT 1";
+					if(mysql_query($sql) == TRUE)
+					{
+						if(mysql_query("DELETE FROM `options` WHERE `options`.`field_name` = 'private_key_crypt'") == TRUE)
+						{
+							$encrypt_private_key = 2;							
+						}
+					}
+				}
+			}
+
 			if(empty($_POST["current_username"]) == FALSE && empty($_POST["new_username"]) == FALSE && empty($_POST["confirm_username"]) == FALSE)
 			{
 				// Attemping to change username
@@ -685,21 +748,35 @@ if($_SESSION["valid_login"] == TRUE)
 
 			if($username_change == TRUE)
 			{
-				$body_text = $body_text . '<font color="blue"><strong>Username Change Complete!</strong></font><br>';
+				$body_text.= '<font color="blue"><strong>Username Change Complete!</strong></font><br>';
 			}
 			else
 			{
-				$body_text = $body_text . '<strong>Username Has Not Been Changed</strong><br>';
+				$body_text.= '<strong>Username Has Not Been Changed</strong><br>';
 			}
 
 			if($password_change == TRUE)
 			{
-				$body_text = $body_text . '<font color="blue"><strong>Password Change Complete!</strong></font>';
+				$body_text.= '<font color="blue"><strong>Password Change Complete!</strong></font><br>';
 			}
 			else
 			{
-				$body_text = $body_text . '<strong>Password Has Not Been Changed</strong>';
+				$body_text.= '<strong>Password Has Not Been Changed</strong><br>';
 			}
+
+			if($encrypt_private_key === TRUE)
+			{
+				$body_text.= '<font color="blue"><strong>Private Key Encryption Complete!</strong></font>';
+			}
+			else if($encrypt_private_key === 2)
+			{
+				$body_text.= '<font color="red"><strong>Private Key Encryption Has Been Removed</strong></font>';
+			}
+			else
+			{
+				$body_text.= '<strong>Private Key Encryption Has Not Been Changed</strong>';
+			}
+
 		} // End username/password change check
 
 		if($_GET["refresh"] == "change")
@@ -974,9 +1051,12 @@ if($_SESSION["valid_login"] == TRUE)
 		}
 
 		$quick_info = 'You may change the username and password individually or at the same time.
-			<br><br>Remember that usernames and passwords are Case Sensitive.
-			<br><br><strong>Generate New Keys</strong> will create a new random key pair and save it in the database.
-			<br><br><strong>Check for Updates</strong> will check for any program updates that can be downloaded directly into Timekoin.';
+		<br><br>Remember that usernames and passwords are Case Sensitive.
+		<br><br><strong>Private Key</strong> password will use AES-256 bit encryption to save your private key in the database.
+		<br>You will be required to enter a password anytime you send currency to another public key.
+		<br><i><strong>Note:</strong> First time creating password, use the same password in all three fields.</i>
+		<br><br><strong>Generate New Keys</strong> will create a new random key pair and save it in the database.
+		<br><br><strong>Check for Updates</strong> will check for any program updates that can be downloaded directly into Timekoin.';
 
 		if($_GET["upgrade"] == "check" || $_GET["upgrade"] == "doupgrade")
 		{
@@ -1077,19 +1157,53 @@ if($_SESSION["valid_login"] == TRUE)
 					{
 						// Now it's time to send the transaction
 						$my_private_key = my_private_key();
+						$private_key_crypt = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'private_key_crypt' LIMIT 1"),0,1);
 
-						if(send_timekoins($my_private_key, $my_public_key, $public_key_to, $send_amount, $message) == TRUE)
+						if($private_key_crypt == TRUE)
 						{
-							$display_balance = db_cache_balance($my_public_key);
-							$body_string = send_receive_body($public_key_64, $send_amount, NULL, NULL, NULL, $_POST["name"]);
-							$body_string .= '<hr><font color="green"><strong>You just sent ' . $send_amount . ' timekoins to the above public key.</strong></font><br>
-							<strong>Your balance will not reflect this until the transation is recorded across the entire network.</strong><br><br>';
+							// Decrypt Private Key First
+							$my_private_key = AesCtr::decrypt($my_private_key, $_POST["crypt_password"], 256);
+							$valid_key = find_string("-----BEGIN", "KEY-----", $my_private_key); // Valid Decrypt?
+
+							if(empty($valid_key) == TRUE)
+							{
+								// Decrypt Failed
+								$display_balance = db_cache_balance($my_public_key);
+								$body_string = send_receive_body($public_key_64, $send_amount, NULL, NULL, NULL, $_POST["name"]);
+								$body_string .= '<hr><font color="red"><strong>Send Failed. Wrong Password.</strong></font><br><br>';
+							}
+							else
+							{
+								if(send_timekoins($my_private_key, $my_public_key, $public_key_to, $send_amount, $message) == TRUE)
+								{
+									$display_balance = db_cache_balance($my_public_key);
+									$body_string = send_receive_body($public_key_64, $send_amount, NULL, NULL, NULL, $_POST["name"]);
+									$body_string .= '<hr><font color="green"><strong>You just sent ' . $send_amount . ' timekoins to the above public key.</strong></font><br>
+									<strong>Your balance will not reflect this until the transation is recorded across the entire network.</strong><br><br>';
+								}
+								else
+								{
+									$display_balance = db_cache_balance($my_public_key);
+									$body_string = send_receive_body($public_key_64, $send_amount, NULL, NULL, NULL, $_POST["name"]);
+									$body_string .= '<hr><font color="red"><strong>Send failed...</strong></font><br><br>';
+								}
+							}
 						}
 						else
 						{
-							$display_balance = db_cache_balance($my_public_key);
-							$body_string = send_receive_body($public_key_64, $send_amount, NULL, NULL, NULL, $_POST["name"]);
-							$body_string .= '<hr><font color="red"><strong>Send failed...</strong></font><br><br>';
+							if(send_timekoins($my_private_key, $my_public_key, $public_key_to, $send_amount, $message) == TRUE)
+							{
+								$display_balance = db_cache_balance($my_public_key);
+								$body_string = send_receive_body($public_key_64, $send_amount, NULL, NULL, NULL, $_POST["name"]);
+								$body_string .= '<hr><font color="green"><strong>You just sent ' . $send_amount . ' timekoins to the above public key.</strong></font><br>
+								<strong>Your balance will not reflect this until the transation is recorded across the entire network.</strong><br><br>';
+							}
+							else
+							{
+								$display_balance = db_cache_balance($my_public_key);
+								$body_string = send_receive_body($public_key_64, $send_amount, NULL, NULL, NULL, $_POST["name"]);
+								$body_string .= '<hr><font color="red"><strong>Send failed...</strong></font><br><br>';
+							}
 						}
 					} // End duplicate self check
 				} // End Balance Check
@@ -1118,8 +1232,6 @@ if($_SESSION["valid_login"] == TRUE)
 						$server_message = '<font color="blue"><strong>Easy Key Found</strong></font>';
 					}
 				}
-
-
 
 				if(empty($_GET["name_id"]) == TRUE)
 				{
@@ -1731,8 +1843,18 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 		}
 
-		$my_private_key = my_private_key();
-		$my_public_key = my_public_key();
+		$my_public_key = base64_encode(my_public_key());
+
+		$private_key_crypt = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'private_key_crypt' LIMIT 1"),0,1);
+
+		if($private_key_crypt == TRUE)
+		{
+			$my_private_key = '*** PRIVATE KEY IS ENCRYPTED ***';
+		}
+		else
+		{
+			$my_private_key = base64_encode(my_private_key());
+		}
 
 		if($_GET["restore"] == "private" && empty($_POST["restore_private_key"]) == FALSE)
 		{
@@ -1750,9 +1872,9 @@ if($_SESSION["valid_login"] == TRUE)
 		$body_string .= $server_message;
 
 		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong><font color="blue">Private Key</font> to send transactions:</strong></td></tr>
-			<tr><td><textarea readonly="readonly" rows="8" cols="75">' . base64_encode($my_private_key) . '</textarea></td></tr></table>
+			<tr><td><textarea readonly="readonly" rows="8" cols="75">' . $my_private_key . '</textarea></td></tr></table>
 			<table border="0" cellpadding="6"><tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
-			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
+			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . $my_public_key . '</textarea></td></tr></table>';
 
 		$quick_info = '<strong>Do Not</strong> share your Private Key with anyone for any reason.<br><br>
 			The Private Key encrypts all your transactions.<br><br>
