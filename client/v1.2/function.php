@@ -1165,15 +1165,13 @@ function read_plugin($filename)
 }
 //***********************************************************************************
 //***********************************************************************************
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
-/*  AES implementation in PHP                                                                     */
-/*    (c) Chris Veness 2005-2011 www.movable-type.co.uk/scripts                                   */
-/*    Right of free use is granted for all commercial or non-commercial use providing this        */
-/*    copyright notice is retainded. No warranty of any form is offered.                          */
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
-  
 class Aes {
-  
+	/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
+	/*  AES implementation in PHP                                                                     */
+	/*    (c) Chris Veness 2005-2011 www.movable-type.co.uk/scripts                                   */
+	/*    Right of free use is granted for all commercial or non-commercial use providing this        */
+	/*    copyright notice is retainded. No warranty of any form is offered.                          */
+	/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */  
   /**
    * AES Cipher function: encrypt 'input' with Rijndael algorithm
    *
@@ -1206,7 +1204,6 @@ class Aes {
     for ($i=0; $i<4*$Nb; $i++) $output[$i] = $state[$i%4][floor($i/4)];
     return $output;
   }
-  
   
   private static function addRoundKey($state, $w, $rnd, $Nb) {  // xor Round Key into state S [§5.1.4]
     for ($r=0; $r<4; $r++) {
@@ -1329,16 +1326,15 @@ class Aes {
 
 } 
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
-/*  AES counter (CTR) mode implementation in PHP                                                  */
-/*    (c) Chris Veness 2005-2011 www.movable-type.co.uk/scripts                                   */
-/*    Right of free use is granted for all commercial or non-commercial use providing this        */
-/*    copyright notice is retainded. No warranty of any form is offered.                          */
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
-  
 class AesCtr extends Aes {
-  
-  /** 
+	/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
+	/*  AES counter (CTR) mode implementation in PHP                                                  */
+	/*    (c) Chris Veness 2005-2011 www.movable-type.co.uk/scripts                                   */
+	/*    Right of free use is granted for all commercial or non-commercial use providing this        */
+	/*    copyright notice is retainded. No warranty of any form is offered.                          */
+	/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
+
+	/** 
    * Encrypt a text using AES encryption in Counter mode of operation
    *  - see http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf
    *
@@ -1410,7 +1406,6 @@ class AesCtr extends Aes {
     return $ciphertext;
   }
   
-  
   /** 
    * Decrypt a text encrypted by AES in counter mode of operation
    *
@@ -1471,7 +1466,6 @@ class AesCtr extends Aes {
     return $plaintext;
   }
   
-  
   /*
    * Unsigned right shift function, since PHP has neither >>> operator nor unsigned ints
    *
@@ -1489,7 +1483,6 @@ class AesCtr extends Aes {
     } 
     return $a; 
   }
-
 }  
 //***********************************************************************************
 //***********************************************************************************
