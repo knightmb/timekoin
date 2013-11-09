@@ -349,7 +349,7 @@ function tk_trans_total($last = 1)
 	}
 
 	// No peers would respond
-	write_log("No Peers Answered the Transaction Totals & Amounts Query", "GU");
+	write_log("No Peers Answered the Transaction Totals &amp; Amounts Query", "GU");
 	return;
 }
 //***********************************************************************************
@@ -649,8 +649,15 @@ function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $a
 //***********************************************************************************
 function unix_timestamp_to_human($timestamp = "", $format = 'D d M Y - H:i:s')
 {
-	 if (empty($timestamp) || ! is_numeric($timestamp)) $timestamp = time();
-	 return ($timestamp) ? date($format, $timestamp) : date($format, $timestamp);
+	$default_timezone = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,"field_data");
+
+	if(empty($default_timezone) == FALSE)
+	{	
+		date_default_timezone_set($default_timezone);
+	}
+	
+	if (empty($timestamp) || ! is_numeric($timestamp)) $timestamp = time();
+	return ($timestamp) ? date($format, $timestamp) : date($format, $timestamp);
 }
 //***********************************************************************************
 //***********************************************************************************
@@ -674,6 +681,49 @@ function is_private_ip($ip, $ignore = FALSE)
 	}
 	
 	return $result;
+}
+//***********************************************************************************
+//***********************************************************************************
+function call_script($script, $priority = 1, $plugin = FALSE)
+{
+	if($priority == 1)
+	{
+		// Normal Priority
+		if(getenv("OS") == "Windows_NT")
+		{
+			pclose(popen("start php-win $script", "r"));// This will execute without waiting for it to finish
+		}
+		else
+		{
+			exec("php $script &> /dev/null &"); // This will execute without waiting for it to finish
+		}
+	}
+	else if($plugin == TRUE)
+	{
+		// All Plugins Below Normal Priority
+		if(getenv("OS") == "Windows_NT")
+		{
+			pclose(popen("start /BELOWNORMAL php-win plugins/$script", "r"));// This will execute without waiting for it to finish
+		}
+		else
+		{
+			exec("nice php plugins/$script &> /dev/null &"); // This will execute without waiting for it to finish
+		}
+	}
+	else
+	{
+		// Below Normal Priority
+		if(getenv("OS") == "Windows_NT")
+		{
+			pclose(popen("start /BELOWNORMAL php-win $script", "r"));// This will execute without waiting for it to finish
+		}
+		else
+		{
+			exec("nice php $script &> /dev/null &"); // This will execute without waiting for it to finish
+		}
+	}
+
+	return;
 }
 //***********************************************************************************
 //***********************************************************************************	
@@ -724,7 +774,7 @@ function check_for_updates($code_feedback = FALSE)
 	ini_set('user_agent', 'Timekoin Client (GUI) v' . TIMEKOIN_VERSION);
 	ini_set('default_socket_timeout', 15); // Timeout for request in seconds
 
-	$update_check1 = 'Checking for Updates....</br></br>';
+	$update_check1 = 'Checking for Updates....<br><br>';
 
 	$poll_version = file_get_contents("https://timekoin.com/tkcliupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
 
@@ -732,13 +782,13 @@ function check_for_updates($code_feedback = FALSE)
 	{
 		if($code_feedback == TRUE) { return 1; } // Code feedback only that update is available
 		
-		$update_check1 .= '<strong>New Version Available <font color="blue">' . $poll_version . '</font></strong></br></br>
-		<FORM ACTION="index.php?menu=options&upgrade=doupgrade" METHOD="post"><input type="submit" name="Submit3" value="Perform Software Update" /></FORM>';
+		$update_check1 .= '<strong>New Version Available <font color="blue">' . $poll_version . '</font></strong><br><br>
+		<FORM ACTION="index.php?menu=options&amp;upgrade=doupgrade" METHOD="post"><input type="submit" name="Submit3" value="Perform Software Update" /></FORM>';
 	}
 	else if($poll_version <= TIMEKOIN_VERSION && empty($poll_version) == FALSE)
 	{
 		// No update available
-		$update_check1 .= 'Current Version: <strong>' . TIMEKOIN_VERSION . '</strong></br></br><font color="blue">No Update Necessary.</font>';	
+		$update_check1 .= 'Current Version: <strong>' . TIMEKOIN_VERSION . '</strong><br><br><font color="blue">No Update Necessary.</font>';	
 		// Reset available update alert
 		mysql_query("UPDATE `options` SET `field_data` = '0' WHERE `options`.`field_name` = 'update_available' LIMIT 1");
 	}
@@ -762,17 +812,17 @@ function install_update_script($script_name, $script_file)
 			if(fclose($fh) == TRUE)
 			{
 				// Update Complete
-				return '<strong><font color="green">Update Complete...</strong></font></br></br>';
+				return '<strong><font color="green">Update Complete...</strong></font><br><br>';
 			}
 			else
 			{
-				return '<strong><font color="red">ERROR: Update FAILED with a file Close Error.</strong></font></br></br>';
+				return '<strong><font color="red">ERROR: Update FAILED with a file Close Error.</strong></font><br><br>';
 			}
 		}
 	}
 	else
 	{
-		return '<strong><font color="red">ERROR: Update FAILED with unable to Open File Error.</strong></font></br></br>';
+		return '<strong><font color="red">ERROR: Update FAILED with unable to Open File Error.</strong></font><br><br>';
 	}
 }
 //***********************************************************************************
@@ -794,8 +844,8 @@ function check_update_script($script_name, $script, $php_script_file, $poll_vers
 		}
 		else
 		{
-			$update_status_return .= 'Server SHA: <strong>' . $poll_sha . '</strong></br>Download SHA: <strong>' . $download_sha . '</strong></br>';
-			$update_status_return .= '<strong>' . $script_name . '</strong> SHA Match...</br>';
+			$update_status_return .= 'Server SHA: <strong>' . $poll_sha . '</strong><br>Download SHA: <strong>' . $download_sha . '</strong><br>';
+			$update_status_return .= '<strong>' . $script_name . '</strong> SHA Match...<br>';
 			return $update_status_return;
 		}
 	}
@@ -816,7 +866,7 @@ function run_script_update($script_name, $script_php, $poll_version, $context, $
 	
 	if(empty($php_file) == TRUE)
 	{
-		return ' - <strong>No Update Available</strong>...</br></br>';
+		return ' - <strong>No Update Available</strong>...<br><br>';
 	}
 	else
 	{
@@ -825,7 +875,7 @@ function run_script_update($script_name, $script_php, $poll_version, $context, $
 
 		if($sha_check == FALSE)
 		{
-			return ' - <strong>ERROR: Unable to Download File Properly</strong>...</br></br>';
+			return ' - <strong>ERROR: Unable to Download File Properly</strong>...<br><br>';
 		}
 		else
 		{
@@ -863,37 +913,37 @@ function do_updates()
 
 	$poll_version = file_get_contents("https://timekoin.com/tkcliupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
 
-	$update_status = 'Starting Update Process...</br></br>';
+	$update_status = 'Starting Update Process...<br><br>';
 
 	if(empty($poll_version) == FALSE)
 	{
 		//****************************************************
 		//Check for CSS updates
-		$update_status .= 'Checking for <strong>CSS Template</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>CSS Template</strong> Update...<br>';
 		$update_status .= run_script_update("CSS Template (admin.css)", "admin.css", $poll_version, $context, 0, "css");
 		//****************************************************
 		//****************************************************
 		//Check for javascript updates
-		$update_status .= 'Checking for <strong>Javascript Template</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>Javascript Template</strong> Update...<br>';
 		$update_status .= run_script_update("Javascript Template (tkgraph.js)", "tkgraph.js", $poll_version, $context, 0, "js");
 		//****************************************************
 		//****************************************************
-		$update_status .= 'Checking for <strong>RSA Code</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>RSA Code</strong> Update...<br>';
 		$update_status .= run_script_update("RSA Code (RSA.php)", "RSA", $poll_version, $context);
 		//****************************************************
-		$update_status .= 'Checking for <strong>Openssl Template</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>Openssl Template</strong> Update...<br>';
 		$update_status .= run_script_update("Openssl Template (openssl.cnf)", "openssl.cnf", $poll_version, $context, 0);
 		//****************************************************
 		//****************************************************
-		$update_status .= 'Checking for <strong>Timekoin Web Interface</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>Timekoin Web Interface</strong> Update...<br>';
 		$update_status .= run_script_update("Timekoin Web Interface (index.php)", "index", $poll_version, $context);
 		//****************************************************
 		//****************************************************
-		$update_status .= 'Checking for <strong>Timekoin Background Task</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>Timekoin Background Task</strong> Update...<br>';
 		$update_status .= run_script_update("Timekoin Background Task (task.php)", "task", $poll_version, $context);
 		//****************************************************
 		//****************************************************
-		$update_status .= 'Checking for <strong>Web Interface Template</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>Web Interface Template</strong> Update...<br>';
 		$update_status .= run_script_update("Web Interface Template (templates.php)", "templates", $poll_version, $context);
 		//****************************************************
 		//****************************************************
@@ -901,11 +951,11 @@ function do_updates()
 		// That way if some unknown error prevents updating the files above, this
 		// will allow the user to try again for an update without being stuck in
 		// a new version that is half-updated.
-		$update_status .= 'Checking for <strong>Function Storage</strong> Update...</br>';
+		$update_status .= 'Checking for <strong>Function Storage</strong> Update...<br>';
 		$update_status .= run_script_update("Function Storage (function.php)", "function", $poll_version, $context);
 		//****************************************************
 		$finish_message = file_get_contents("https://timekoin.com/tkcliupdates/v$poll_version/ZZZfinish.txt", FALSE, $context, NULL);
-		$update_status .= '</br>' . $finish_message;
+		$update_status .= '<br>' . $finish_message;
 
 		// Reset available update alert
 		mysql_query("UPDATE `options` SET `field_data` = '0' WHERE `options`.`field_name` = 'update_available' LIMIT 1");
@@ -920,6 +970,17 @@ function do_updates()
 //***********************************************************************************
 function initialization_database()
 {
+	if(is_dir('plugins') == FALSE) // Create /plugins directory if it does not exist
+	{
+		write_log("/plugins Directory Does Not Exist", "GU");
+		
+		// Create plugins directory if it does not exist
+		if(mkdir('plugins') == TRUE)
+		{
+			write_log("/plugins Directory CREATED!", "GU");
+		}
+	}
+
 	// Automatic Update Check Record
 	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'update_available' LIMIT 1"),0,0);
 	if($new_record_check === FALSE)
@@ -927,6 +988,180 @@ function initialization_database()
 		// Does not exist, create it
 		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('update_available', '0')");
 	}
+
+	// Timezone Settings
+	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,0);
+	if($new_record_check === FALSE)
+	{
+		// Does not exist, create it
+		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('default_timezone', '')");
+	}
+
+	// Tab Management Settings
+	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'standard_tabs_settings' LIMIT 1"),0,0);
+	if($new_record_check === FALSE)
+	{
+		// Does not exist, create it
+		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('standard_tabs_settings', '223')");
+	}	
+}
+//***********************************************************************************
+function standard_tab_settings($peerlist, $trans_queue, $send_receive, $history, $address, $system, $backup, $tools)
+{
+	$permissions_number = 0;
+
+	if($peerlist == 1) { $permissions_number += 1; }
+	if($trans_queue == 1) { $permissions_number += 2; }
+	if($send_receive == 1) { $permissions_number += 4; }
+	if($history == 1) { $permissions_number += 8; }
+	if($address == 1) { $permissions_number += 16; }
+	if($system == 1) { $permissions_number += 32; }
+	if($backup == 1) { $permissions_number += 64; }
+	if($tools == 1) { $permissions_number += 128; }
+
+	return $permissions_number;
+}
+//***********************************************************************************
+function check_standard_tab_settings($permissions_number, $standard_tab)
+{
+// Tools Tab
+	if($permissions_number - 256 >= 0) { $permissions_number -= 256; } // Subtract Active Permission
+	if($standard_tab == 128)
+	{ 
+		if($permissions_number >= 128) // Show Tab
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+
+// Backup Tab
+	if($permissions_number - 128 >= 0) { $permissions_number -= 128; } // Subtract Active Permission
+	if($standard_tab == 64)
+	{ 
+		if($permissions_number >= 64) // Show Tab
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+
+// System Tab
+	if($permissions_number - 64 >= 0) { $permissions_number -= 64; } // Subtract Active Permission
+	if($standard_tab == 32)
+	{ 
+		if($permissions_number >= 32) // Show Tab
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}	
+	
+// Address Tab
+	if($permissions_number - 32 >= 0) { $permissions_number -= 32; } // Subtract Active Permission
+	if($standard_tab == 16)
+	{ 
+		if($permissions_number >= 16) // Show Tab
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	
+// History Tab
+	if($permissions_number - 16 >= 0) { $permissions_number -= 16; } // Subtract Active Permission
+	if($standard_tab == 8)
+	{ 
+		if($permissions_number >= 8) // Show Tab
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	
+// Send / Receive Queue Tab
+	if($permissions_number - 8 >= 0) { $permissions_number -= 8; } // Subtract Active Permission
+	if($standard_tab == 4)
+	{ 
+		if($permissions_number >= 4) // Show Tab
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	
+// Transaction Queue Tab
+	if($permissions_number - 4 >= 0) { $permissions_number -= 4; } // Subtract Active Permission
+	if($standard_tab == 2)
+	{ 
+		if($permissions_number >= 2) // Show Tab
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	
+// Peerlist Tab
+	if($permissions_number - 2 >= 0) { $permissions_number -= 2; } // Subtract Active Permission
+	if($standard_tab == 1)
+	{ 
+		if($permissions_number >= 1) // Show Tab
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+
+	// Some other error
+	return FALSE;
+}
+//***********************************************************************************
+function file_upload($http_file_name)
+{
+	$user_file_upload = strtolower(basename($_FILES[$http_file_name]['name']));
+
+	if(move_uploaded_file($_FILES[$http_file_name]['tmp_name'], "plugins/" . $user_file_upload) == TRUE)
+	{
+		// Upload successful
+		return $user_file_upload;
+	}
+	else
+	{
+		// Error during upload
+		return FALSE;
+	}	
+}
+//***********************************************************************************
+function read_plugin($filename)
+{
+	$handle = fopen($filename, "r");
+	$contents = stream_get_contents($handle);
+	fclose($handle);
+	return $contents;
 }
 //***********************************************************************************
 ?>

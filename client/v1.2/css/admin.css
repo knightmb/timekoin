@@ -56,7 +56,7 @@ a.logo {
 #top-navigation {
 	position:absolute;
 	top:10px;
-	left:20px;
+	left:6px;
 	margin:0;
 	padding:0;
 	list-style:none;
@@ -73,7 +73,7 @@ a.logo {
 	line-height:19px;
 	margin-top:9px;
 	color:#606060;
-	padding:4px 10px 0 10px;
+	padding:3px 5px 0 5px;
 	border-top-left-radius: 4px;
 	border-top-right-radius: 4px;
 	-moz-border-radius-topleft: 4px;
@@ -114,8 +114,8 @@ a.logo {
 /* left column */
 #left-column {
 	float:left;
-	padding:1px 14px 0 12px;
-	width:120px;
+	padding:1px 8px 0 2px;
+	width:80px;
 	}
 /* right column */
 #right-column {
@@ -126,8 +126,12 @@ a.logo {
 /* center column */
 #center-column {
 	float:left;
-	width:650px;
+	width:695px;
 	background:url(../img/bg-center-column.jpg) top left no-repeat;
+	-webkit-background-size: cover;
+	-moz-background-size: cover;
+	-o-background-size: cover;
+	background-size: cover;
 	background:-webkit-gradient(
 		linear,
 		left top,
@@ -145,7 +149,7 @@ a.logo {
 	-webkit-border-radius: 15px;
 	min-height:584px;
 	padding:12px 16px 0 13px;
-	}	
+	}
 * html #center-column {height:584px;}
 
 /* footer */
@@ -287,13 +291,13 @@ ul.nav li:last-child {border:none;}
 div.table {
 	float:left;
 	position:relative;
-	width:649px;
+	width:695px;
 	margin:0 0 37px 0;
 	}
 table.listing {
 	border-bottom:1px solid #9097A9;
 	background:#9097A9;
-	width:648px;
+	width:694px;
 	padding:0;
 	margin:0;
 	border:1px solid #9097A9;

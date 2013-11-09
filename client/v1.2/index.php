@@ -54,6 +54,30 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 
 				initialization_database(); // Do any required data upgrades
 
+				// Start any plugins
+				$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' ORDER BY `options`.`field_name` ASC";
+				$sql_result = mysql_query($sql);
+				$sql_num_results = mysql_num_rows($sql_result);
+
+				for ($i = 0; $i < $sql_num_results; $i++)
+				{
+					$sql_row = mysql_fetch_array($sql_result);
+
+					$plugin_file = find_string("---file=", "---enable", $sql_row["field_data"]);		
+					$plugin_enable = intval(find_string("---enable=", "---show", $sql_row["field_data"]));
+					$plugin_service = find_string("---service=", "---end", $sql_row["field_data"]);
+
+					if($plugin_enable == TRUE && empty($plugin_service) == FALSE)
+					{
+						// Start Plugin Service
+						call_script($plugin_file, 0, TRUE);
+
+						// Log Service Start
+						write_log("Started Plugin Service: $plugin_service", "GU");
+					}
+				}
+				// Finish Starting Plugin Services
+
 				header("Location: index.php");
 				exit;
 			}
@@ -88,6 +112,7 @@ if($_SESSION["valid_login"] == TRUE)
 	{
 		// Build frame box with the bottom self-refreshing frame for task
 		?>
+		<!DOCTYPE html>		
 		<html>
 		  <head>
 			<title>Timekoin Client Billfold</title>			
@@ -115,13 +140,13 @@ if($_SESSION["valid_login"] == TRUE)
 //****************************************************************************
 	if($_GET["menu"] == "home" || empty($_GET["menu"]) == TRUE)
 	{
-		$body_string = '<strong>Last 20 <font color="green">Received</font> Transaction Amounts to Billfold</strong></br><canvas id="recv_graph" width="620" height="300">Your Web Browser does not support HTML5 Canvas.</canvas>';
-		$body_string .= '<hr></hr>';
-		$body_string .= '<strong>Last 20 <font color="blue">Sent</font> Transaction Amounts from Billfold</strong></br><canvas id="sent_graph" width="620" height="300">Your Web Browser does not support HTML5 Canvas.</canvas>';
-		$body_string .= '<hr></hr>';
-		$body_string .= '<strong>Timekoin Network - Total Transactions per Cycle (Last 25 Cycles)</strong></br><canvas id="trans_total" width="620" height="200">Your Web Browser does not support HTML5 Canvas.</canvas>';
-		$body_string .= '<hr></hr>';
-		$body_string .= '<strong>Timekoin Network - Total Amounts Sent per Cycle (Last 20 Cycles)</strong></br><canvas id="amount_total" width="620" height="400">Your Web Browser does not support HTML5 Canvas.</canvas>';
+		$body_string = '<strong>Last 20 <font color="green">Received</font> Transaction Amounts to Billfold</strong><br><canvas id="recv_graph" width="620" height="300">Your Web Browser does not support HTML5 Canvas.</canvas>';
+		$body_string .= '<hr>';
+		$body_string .= '<strong>Last 20 <font color="blue">Sent</font> Transaction Amounts from Billfold</strong><br><canvas id="sent_graph" width="620" height="300">Your Web Browser does not support HTML5 Canvas.</canvas>';
+		$body_string .= '<hr>';
+		$body_string .= '<strong>Timekoin Network - Total Transactions per Cycle (Last 25 Cycles)</strong><br><canvas id="trans_total" width="620" height="200">Your Web Browser does not support HTML5 Canvas.</canvas>';
+		$body_string .= '<hr>';
+		$body_string .= '<strong>Timekoin Network - Total Amounts Sent per Cycle (Last 20 Cycles)</strong><br><canvas id="amount_total" width="620" height="400">Your Web Browser does not support HTML5 Canvas.</canvas>';
 
 		$display_balance = db_cache_balance(my_public_key());
 
@@ -223,18 +248,14 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 			
 			// New Address Form
-			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
-				<tr><th>Address Name</th><th>Easy Key</th><th>Full Public Key</th><th></th><th></th></tr>';
-
-			$body_string .= '<FORM ACTION="index.php?menu=address&task=save_new" METHOD="post"><tr>
-			 <td class="style2" valign="top"><input type="text" name="name" size="16" value="'.$_POST["name"].'" /></td>
-			 <td class="style2" valign="top"><input type="text" name="easy_key" size="16" value="'.$easy_key.'" /></br>'.$easy_messasge.'</td>
-			 <td class="style2"><textarea name="full_key" rows="6" cols="30"></textarea></td>			 
-			 <td valign="top"><input type="image" src="img/save-icon.gif" title="Save New Address" name="submit1" border="0"></FORM></td>
-			 <td valign="top"><FORM ACTION="index.php?menu=address" METHOD="post"><input type="image" src="img/hr.gif" title="Cancel" name="submit2" border="0"></FORM>
-			 </td></tr>';
-
-			$body_string .= '</table></div>';
+			$body_string = '<FORM ACTION="index.php?menu=address&amp;task=save_new" METHOD="post">
+			<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
+			<tr><th>Address Name</th><th>Easy Key</th><th>Full Public Key</th><th></th><th></th></tr>
+			<tr><td class="style2" valign="top"><input type="text" name="name" size="16" value="'.$_POST["name"].'" /></td>
+			<td class="style2" valign="top"><input type="text" name="easy_key" size="16" value="'.$easy_key.'" /><br>'.$easy_messasge.'</td>
+			<td class="style2"><textarea name="full_key" rows="6" cols="30"></textarea></td>			 
+			<td valign="top"><input type="image" src="img/save-icon.gif" title="Save New Address" name="submit1" border="0"></td>
+			<td valign="top"></td></tr></table></div></FORM>';
 		}
 
 		if($_GET["task"] == "edit_save")
@@ -282,18 +303,14 @@ if($_SESSION["valid_login"] == TRUE)
 				$full_key = mysql_result(mysql_query("SELECT full_key FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
 			}
 
-			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
-				<tr><th>Address Name</th><th>Easy Key</th><th>Full Public Key</th><th></th><th></th></tr>';
-
-			$body_string .= '<FORM ACTION="index.php?menu=address&task=edit_save&name_id=' . $_GET["name_id"] . '" METHOD="post"><tr>
-			 <td class="style2" valign="top"><input type="text" name="name" size="16" value="' . $name . '"/></td>
-			 <td class="style2" valign="top"><input type="text" name="easy_key" size="16" value="' . $easy_key . '" /></br>'.$easy_edit_messasge.'</td>
-			 <td class="style2"><textarea name="full_key" rows="6" cols="30">' . $full_key . '</textarea></td>			 
-			 <td valign="top"><input type="image" src="img/edit-icon.gif" title="Edit Address" name="submit1" border="0"></FORM></td>
-			 <td valign="top"><FORM ACTION="index.php?menu=address" METHOD="post"><input type="image" src="img/hr.gif" title="Cancel" name="submit2" border="0"></FORM>
-			 </td></tr>';
-
-			$body_string .= '</table></div>';
+			$body_string = '<FORM ACTION="index.php?menu=address&amp;task=edit_save&amp;name_id=' . $_GET["name_id"] . '" METHOD="post">
+			<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
+			<tr><th>Address Name</th><th>Easy Key</th><th>Full Public Key</th><th></th><th></th></tr><tr>
+			<td class="style2" valign="top"><input type="text" name="name" size="16" value="' . $name . '"/></td>
+			<td class="style2" valign="top"><input type="text" name="easy_key" size="16" value="' . $easy_key . '" /><br>'.$easy_edit_messasge.'</td>
+			<td class="style2"><textarea name="full_key" rows="6" cols="30">' . $full_key . '</textarea></td>			 
+			<td valign="top"><input type="image" src="img/edit-icon.gif" title="Edit Address" name="submit1" border="0"></td>
+			<td valign="top"></td></tr></table></div></FORM>';
 		}
 
 		if($_GET["task"] != "new" && $_GET["task"] != "edit" && $easy_key_fail == FALSE && $easy_key_edit_fail == FALSE) // Default View
@@ -310,32 +327,32 @@ if($_SESSION["valid_login"] == TRUE)
 				$sql_row = mysql_fetch_array($sql_result);
 				$body_string .= '<tr><td class="style2"><p style="word-wrap:break-word; width:175px; font-size:12px;">' . 	
 					$sql_row["name"] . 
-					' <a href="index.php?menu=history&name_id=' . $sql_row["id"] . '" title="' . $sql_row["name"] . ' History"><img src="img/timekoin_history.png" style="float: right;"></a></p>
+					' <a href="index.php?menu=history&amp;name_id=' . $sql_row["id"] . '" title="' . $sql_row["name"] . ' History"><img src="img/timekoin_history.png" style="float: right;"></a></p>
 					</td><td class="style1"><p style="word-wrap:break-word; width:175px; font-size:12px;">' . $sql_row["easy_key"] . 
 					'</p></td><td class="style1"><p style="word-wrap:break-word; width:175px; font-size:' . $default_public_key_font . 'px;">' . $sql_row["full_key"] . '</p></td>
-					<td><a href="index.php?menu=address&task=delete&name_id=' . $sql_row["id"] . '" title="Delete ' . $sql_row["name"] . '" onclick="return confirm(\'Delete ' . $sql_row["name"] . '?\');"><img src="img/hr.gif"></a></td>
-					<td><a href="index.php?menu=address&task=edit&name_id=' . $sql_row["id"] . '" title="Edit ' . $sql_row["name"] . '"><img src="img/edit-icon.gif"></a></td>
-					<td><a href="index.php?menu=send&name_id=' . $sql_row["id"] . '" title="Send Koins to ' . $sql_row["name"] . '"><img src="img/timekoin_send.png"></a></td></tr>';
+					<td><a href="index.php?menu=address&amp;task=delete&amp;name_id=' . $sql_row["id"] . '" title="Delete ' . $sql_row["name"] . '" onclick="return confirm(\'Delete ' . $sql_row["name"] . '?\');"><img src="img/hr.gif"></a></td>
+					<td><a href="index.php?menu=address&amp;task=edit&amp;name_id=' . $sql_row["id"] . '" title="Edit ' . $sql_row["name"] . '"><img src="img/edit-icon.gif"></a></td>
+					<td><a href="index.php?menu=send&amp;name_id=' . $sql_row["id"] . '" title="Send Koins to ' . $sql_row["name"] . '"><img src="img/timekoin_send.png"></a></td></tr>';
 			}
 
-			$body_string .= '<tr><td colspan="6"><hr></hr></td></tr><tr>
-				<td colspan="6"><FORM ACTION="index.php?menu=address&task=new" METHOD="post"><input type="submit" value="Add New Address"/></FORM></td></tr></table></div>';
+			$body_string .= '<tr><td colspan="6"><hr></td></tr><tr>
+				<td colspan="6"><FORM ACTION="index.php?menu=address&amp;task=new" METHOD="post"><input type="submit" value="Add New Address"/></FORM></td></tr></table></div>';
 		}
 
 		if($_GET["task"] != "new" && $easy_key_fail == FALSE && $easy_key_edit_fail == FALSE) // Default View
 		{		
-			$quick_info = "The <strong>Address Book</strong> allows long, obscure public keys to be translated to friendly names.</br></br>
-	Transactions can also quickly be created from here.</br></br>
+			$quick_info = "The <strong>Address Book</strong> allows long, obscure public keys to be translated to friendly names.<br><br>
+	Transactions can also quickly be created from here.<br><br>
 	The scribe next to the name can be clicked to bring up a custom history of all transactions to and from the name selected.";
 		}
 		else
 		{
-			$quick_info = "<strong>Address Name</strong> is friendly name to associate with the Public Key.</br></br>
-				You can enter an <strong>Easy Key</strong> address and Timekoin will attempt to lookup the full key when saving.</br></br>
+			$quick_info = "<strong>Address Name</strong> is friendly name to associate with the Public Key.<br><br>
+				You can enter an <strong>Easy Key</strong> address and Timekoin will attempt to lookup the full key when saving.<br><br>
 				If no Easy Key is known or needed, just enter the full Public Key instead.";
 		}
 
-		$text_bar = '<FORM ACTION="index.php?menu=address&font=public_key" METHOD="post">
+		$text_bar = '<FORM ACTION="index.php?menu=address&amp;font=public_key" METHOD="post">
 			<table border="0" cellspacing="4"><tr><td><strong>Default Public Key Font Size</strong></td><td><input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" /><input type="submit" name="Submit3" value="Save" /></td></tr></table></FORM>';
 
 		home_screen("Address Book", $text_bar, $body_string, $quick_info);
@@ -407,24 +424,19 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["edit"] == "peer")
 		{
-			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
-				<th>Domain</th><th>Subfolder</th><th>Port Number</th><th>Code</th><th></th><th></th></tr>';
-
 			if($_GET["type"] == "new")
 			{
 				// Manually add a peer
-				$body_string .= '<FORM ACTION="index.php?menu=peerlist&save=newpeer" METHOD="post"><tr>
-				 <td class="style2"><input type="text" name="edit_ip" size="13" /></td>
-				 <td class="style2"><input type="text" name="edit_domain" size="14" /></td>
-				 <td class="style2"><input type="text" name="edit_subfolder" size="10" /></td>
-				 <td class="style2"><input type="text" name="edit_port" size="5" /></td>
-				 <td class="style2"><input type="text" name="edit_code" size="5" value="guest"/></td>				 
-				 <td><input type="image" src="img/save-icon.gif" title="Save New Peer" name="submit1" border="0"></FORM></td><td>
-				 <FORM ACTION="index.php?menu=peerlist" METHOD="post">
-				 <input type="image" src="img/hr.gif" title="Cancel" name="submit2" border="0"></FORM>
-				 </td></tr>';
-
-				$body_string .= '</table></div>';				
+				$body_string = '<FORM ACTION="index.php?menu=peerlist&amp;save=newpeer" METHOD="post">
+				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
+				<th>Domain</th><th>Subfolder</th><th>Port Number</th><th>Code</th><th></th><th></th></tr><tr>
+				<td class="style2"><input type="text" name="edit_ip" size="13" /></td>
+				<td class="style2"><input type="text" name="edit_domain" size="14" /></td>
+				<td class="style2"><input type="text" name="edit_subfolder" size="10" /></td>
+				<td class="style2"><input type="text" name="edit_port" size="5" /></td>
+				<td class="style2"><input type="text" name="edit_code" size="5" value="guest"/></td>				 
+				<td><input type="image" src="img/save-icon.gif" title="Save New Peer" name="submit1" border="0"></td><td>
+				 </td></tr></table></div></FORM>';
 			}
 			else if($_GET["type"] == "firstcontact")
 			{
@@ -432,9 +444,9 @@ if($_SESSION["valid_login"] == TRUE)
 				$sql_result = mysql_query($sql);
 				$sql_num_results = mysql_num_rows($sql_result) + 2;
 				$counter = 1;
-				$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
+				$body_string = '<FORM ACTION="index.php?menu=peerlist&amp;save=firstcontact" METHOD="post">
+				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
 				<th>Domain</th><th>Subfolder</th><th>Port Number</th><th>Code</th><th></th></tr>';				
-				$body_string .= '<FORM ACTION="index.php?menu=peerlist&save=firstcontact" METHOD="post">';
 
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
@@ -446,19 +458,19 @@ if($_SESSION["valid_login"] == TRUE)
 					$peer_port_number = find_string("---port=", "---code", $sql_row["field_data"]);
 					$peer_port_code = find_string("---code=", "---end", $sql_row["field_data"]);
 				
-					$body_string .= '<tr><td class="style2"><input type="text" name="first_contact_ip' . $counter . '" size="13" value="' . $peer_ip . '" /></br></br></td>
+					$body_string .= '<tr><td class="style2"><input type="text" name="first_contact_ip' . $counter . '" size="13" value="' . $peer_ip . '" /><br><br></td>
 					<td class="style2" valign="top"><input type="text" name="first_contact_domain' . $counter . '" size="20" value="' . $peer_domain . '" /></td>
 					<td class="style2" valign="top"><input type="text" name="first_contact_subfolder' . $counter . '" size="10" value="' . $peer_subfolder . '" /></td>
 					<td class="style2" valign="top"><input type="text" name="first_contact_port' . $counter . '" size="5" value="' . $peer_port_number . '" /></td>
 					<td class="style2" valign="top"><input type="text" name="first_contact_code' . $counter . '" size="10" value="' . $peer_port_code . '" /></td>
-					</td></tr>';
+					</tr>';
 
 					$counter++;
 				}
 
 				$body_string .= '<input type="hidden" name="field_numbers" value="' . ($counter - 1) . '">
-					<tr><td colspan="2"><input type="submit" value="Save First Contact Servers"/></FORM></td></tr>';
-				$body_string .= '</table></div>';
+					<tr><td colspan="2"><input type="submit" value="Save First Contact Servers"/></td></tr>';
+				$body_string .= '</table></div></FORM>';
 			}
 			else
 			{
@@ -476,8 +488,10 @@ if($_SESSION["valid_login"] == TRUE)
 					$perm_peer2 = "SELECTED";
 				}
 
-				$body_string .= '<FORM ACTION="index.php?menu=peerlist&save=peer" METHOD="post"><tr>
-				<td class="style2"><input type="text" name="edit_ip" size="13" value="' . $sql_row["IP_Address"] . '" /></br></br>
+				$body_string = '<FORM ACTION="index.php?menu=peerlist&amp;save=peer" METHOD="post">
+				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
+				<th>Domain</th><th>Subfolder</th><th>Port Number</th><th>Code</th><th></th><th></th></tr><tr>
+				<td class="style2"><input type="text" name="edit_ip" size="13" value="' . $sql_row["IP_Address"] . '" /><br><br>
 				<select name="perm_peer"><option value="expires" ' . $perm_peer2 . '>Purge When Inactive</option><option value="perm" ' . $perm_peer1 . '>Permanent Peer</select></td>
 				<td class="style2" valign="top"><input type="text" name="edit_domain" size="14" value="' . $sql_row["domain"] . '" /></td>
 				<td class="style2" valign="top"><input type="text" name="edit_subfolder" size="10" value="' . $sql_row["subfolder"] . '" /></td>
@@ -485,12 +499,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<td class="style2" valign="top"><input type="text" name="edit_code" size="5" value="' . $sql_row["code"] . '" /></td>
 				<td valign="top"><input type="hidden" name="update_ip" value="' . $sql_row["IP_Address"] . '">
 				<input type="hidden" name="update_domain" value="' . $sql_row["domain"] . '">
-				<input type="image" src="img/save-icon.gif" title="Save Settings" name="submit1" border="0"></FORM></td>
-				<td valign="top"><FORM ACTION="index.php?menu=peerlist" METHOD="post">
-				<input type="image" src="img/hr.gif" title="Cancel Changes" name="submit2" border="0"></FORM>
-				</td></tr>';
-
-				$body_string .= '</table></div>';
+				<input type="image" src="img/save-icon.gif" title="Save Settings" name="submit1" border="0">
+				</td></tr></table></div></FORM>';
 			}
 
 			$sql = "SELECT * FROM `active_peer_list`";
@@ -501,8 +511,8 @@ if($_SESSION["valid_login"] == TRUE)
 
 			$peer_number_bar = '<strong>Active Peers: <font color="green">' . $active_peers . '</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Peers in Reserve: <font color="blue">' . $new_peers . '</font></strong>';
 
-			$quick_info = 'Shows all Active Peers.</br></br>
-				You can manually delete or edit peers in this section.</br></br>
+			$quick_info = 'Shows all Active Peers.<br><br>
+				You can manually delete or edit peers in this section.<br><br>
 				<font color="blue">First Contact Servers</font> can be changed, deleted, or new ones added to the bottom of the list.';
 
 			home_screen('Realtime Network Peer List', $peer_number_bar, $body_string , $quick_info);
@@ -572,11 +582,11 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 				else
 				{
-					$body_string .= '<td><FORM ACTION="index.php?menu=peerlist&remove=peer" METHOD="post"><input type="image" src="img/hr.gif" title="Delete Peer" name="remove' . $i . '" border="0">
+					$body_string .= '<td><FORM ACTION="index.php?menu=peerlist&amp;remove=peer" METHOD="post"><input type="image" src="img/hr.gif" title="Delete Peer" name="remove' . $i . '" border="0">
 					 <input type="hidden" name="ip" value="' . $sql_row["IP_Address"] . '">
 					 <input type="hidden" name="domain" value="' . $sql_row["domain"] . '">
 					 </FORM></td><td>
-					 <FORM ACTION="index.php?menu=peerlist&edit=peer" METHOD="post"><input type="image" src="img/edit-icon.gif" title="Edit Peer" name="edit' . $i . '" border="0">
+					 <FORM ACTION="index.php?menu=peerlist&amp;edit=peer" METHOD="post"><input type="image" src="img/edit-icon.gif" title="Edit Peer" name="edit' . $i . '" border="0">
 					 <input type="hidden" name="ip" value="' . $sql_row["IP_Address"] . '">
 					 <input type="hidden" name="domain" value="' . $sql_row["domain"] . '">
 					 </FORM>
@@ -584,9 +594,9 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 			}
 
-			$body_string .= '<tr><td colspan="8"><hr></hr></td></tr><tr><td colspan="2"><FORM ACTION="index.php?menu=peerlist&show=reserve" METHOD="post"><input type="submit" value="Show Reserve Peers"/></FORM></td>
-				<td colspan="3"><FORM ACTION="index.php?menu=peerlist&edit=peer&type=new" METHOD="post"><input type="submit" value="Add New Peer"/></FORM></td>
-				<td colspan="4"><FORM ACTION="index.php?menu=peerlist&edit=peer&type=firstcontact" METHOD="post"><input type="submit" value="First Contact Servers"/></FORM></td></tr></table></div>';
+			$body_string .= '<tr><td colspan="8"><hr></td></tr><tr><td colspan="2"><FORM ACTION="index.php?menu=peerlist&amp;show=reserve" METHOD="post"><input type="submit" value="Show Reserve Peers"/></FORM></td>
+				<td colspan="3"><FORM ACTION="index.php?menu=peerlist&amp;edit=peer&amp;type=new" METHOD="post"><input type="submit" value="Add New Peer"/></FORM></td>
+				<td colspan="4"><FORM ACTION="index.php?menu=peerlist&amp;edit=peer&amp;type=firstcontact" METHOD="post"><input type="submit" value="First Contact Servers"/></FORM></td></tr></table></div>';
 
 			$sql = "SELECT * FROM `new_peers_list`";
 			$new_peers = mysql_num_rows(mysql_query($sql));		
@@ -603,8 +613,8 @@ if($_SESSION["valid_login"] == TRUE)
 			$peer_number_bar = '<table border="0" cellspacing="0" cellpadding="0"><tr><td style="width:125px"><strong>Active Peers: <font color="green">' . $sql_num_results . '</font></strong></td>
 				<td style="width:175px"><strong>Peers in Reserve: <font color="blue">' . $new_peers . '</font></strong></td></tr></table>';
 
-			$quick_info = 'Shows all Active Peers.</br></br>You can manually delete or edit peers in this section.
-				</br></br>Peers in <font color="blue">Blue</font> will not expire after 5 minutes of inactivity.';
+			$quick_info = 'Shows all Active Peers.<br><br>You can manually delete or edit peers in this section.
+				<br><br>Peers in <font color="blue">Blue</font> will not expire after 5 minutes of inactivity.';
 
 			$home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
 
@@ -675,11 +685,11 @@ if($_SESSION["valid_login"] == TRUE)
 
 			if($username_change == TRUE)
 			{
-				$body_text = $body_text . '<font color="blue"><strong>Username Change Complete!</strong></font></br>';
+				$body_text = $body_text . '<font color="blue"><strong>Username Change Complete!</strong></font><br>';
 			}
 			else
 			{
-				$body_text = $body_text . '<strong>Username Has Not Been Changed</strong></br>';
+				$body_text = $body_text . '<strong>Username Has Not Been Changed</strong><br>';
 			}
 
 			if($password_change == TRUE)
@@ -703,7 +713,11 @@ if($_SESSION["valid_login"] == TRUE)
 					$sql = "UPDATE `options` SET `field_data` = '" . $_POST["max_new_peers"] . "' WHERE `options`.`field_name` = 'max_new_peers' LIMIT 1";
 					if(mysql_query($sql) == TRUE)
 					{
-						$refresh_change = TRUE;
+						$sql = "UPDATE `options` SET `field_data` = '" . $_POST["timezone"] . "' WHERE `options`.`field_name` = 'default_timezone' LIMIT 1";
+						if(mysql_query($sql) == TRUE)
+						{
+							$refresh_change = TRUE;
+						}
 					}
 				}
 			}
@@ -712,11 +726,11 @@ if($_SESSION["valid_login"] == TRUE)
 
 			if($refresh_change == TRUE)
 			{
-				$body_text .= '<font color="blue"><strong>Settings Saved!</strong></font></br>';
+				$body_text .= '<font color="blue"><strong>Settings Saved!</strong></font><br>';
 			}
 			else
 			{
-				$body_text .= '<strong>Update ERROR...</strong></br>';
+				$body_text .= '<strong>Update ERROR...</strong><br>';
 			}
 		} // End refresh update save
 		else if(empty($_GET["password"]) == TRUE && empty($_GET["refresh"]) == TRUE)
@@ -728,26 +742,249 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			if(generate_new_keys() == TRUE)
 			{
-				$body_text .= '<font color="green"><strong>New Private & Public Key Pair Generated!</strong></font></br>';
+				$body_text .= '<font color="green"><strong>New Private &amp; Public Key Pair Generated!</strong></font><br>';
 			}
 			else
 			{
-				$body_text .= '<font color="red"><strong>New Key Creation Failed!</strong></font></br>';
+				$body_text .= '<font color="red"><strong>New Key Creation Failed!</strong></font><br>';
+			}
+		}
+
+		if($_GET["plugin"] == "install")
+		{
+			// Install New Plugin
+			$plugin_install = file_upload("plugin_file");
+			
+			if($plugin_install == FALSE)
+			{
+				$plugin_install_output .= '<font color="red">Plugin File (' . $plugin_install . ') Install FAILED!</font><br>';
+			}
+			else
+			{
+				$plugin_install_output .= '<font color="blue">Plugin File (' . $plugin_install . ') Install Complete</font><br>';
+			}
+
+			// Scan file to find variables to create database variables
+			$new_plugin_contents = read_plugin("plugins/" . $plugin_install);
+
+			$plugin_name = find_string("PLUGIN_NAME=", "---END", $new_plugin_contents);
+			$plugin_tab = find_string("PLUGIN_TAB=", "---END", $new_plugin_contents);
+			$plugin_service = find_string("PLUGIN_SERVICE=", "---END", $new_plugin_contents);
+
+			// Find Empty Record Location
+			$record_number = 1;
+			$record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'installed_plugins_1' LIMIT 1"),0,0);
+			
+			while(empty($record_check) == FALSE)
+			{
+				$record_number++;
+				$record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'installed_plugins_$record_number' LIMIT 1"),0,0);
+			}
+
+			if(empty($plugin_service) == TRUE)
+			{
+				$sql = "INSERT INTO `options` (`field_name` ,`field_data`)VALUES 
+					('installed_plugins_$record_number', '---file=$plugin_install---enable=0---show=1---name=$plugin_name---tab=$plugin_tab---service=$plugin_service---end')";
+			}
+			else
+			{
+				$sql = "INSERT INTO `options` (`field_name` ,`field_data`)VALUES 
+					('installed_plugins_$record_number', '---file=$plugin_install---enable=0---show=0---name=$plugin_name---tab=$plugin_tab---service=$plugin_service---end')";
+			}
+
+			if(mysql_query($sql) == TRUE)
+			{
+				$plugin_install_output .= '<font color="blue">Plugin (' . $plugin_name . ') Install Into Database Complete</font><br>';
+			}
+			else
+			{
+				$plugin_install_output .= '<font color="red">Plugin (' . $plugin_name . ') Install Into Database FAILED?</font><br>';
+			}
+
+			$quick_info = 'You can enable or disable plugins.<br><br>
+			<strong>Plugin Services</strong> are started when you login. To shutdown plugin services, log out.<br><br>
+			When installing a new plugin service, you must log out first. Log back in and the plugin service will be started.';
+
+			home_screen("Plugin Manager", $plugin_install_output, options_screen5() , $quick_info);
+			exit;
+		}
+
+		if($_GET["plugin"] == "new")
+		{
+			// New Plugin Install Screen
+			home_screen("Plugin Manager", NULL, options_screen6() , "This will allow a new plugin to be installed.");
+			exit;
+		}
+
+		if($_GET["manage"] == "plugins")
+		{
+			$quick_info = 'You can enable or disable plugins.<br><br>
+			<strong>Plugin Services</strong> are started when you login. To shutdown plugin services, log out.<br><br>
+			When installing a new plugin service, you must log out first. Log back in and the plugin service will be started.';
+			
+			home_screen("Plugin Manager", NULL, options_screen5() , $quick_info);
+			exit;
+		}
+
+		if($_GET["plugin"] == "disable")
+		{
+			// Disable selected plugin, search for script file name in database
+			$plugin_filename = $_POST["pluginfile"];
+			$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+
+			// Rewrite String to Disable plugin
+			$new_disable_string = str_replace("enable=1", "enable=0", $installed_plugins);
+		
+			// Update String in Database
+			mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
+
+			home_screen("Plugin Manager", NULL, options_screen5() , "You can enable or disable plugins.");
+			exit;
+		}
+
+		if($_GET["plugin"] == "enable")
+		{
+			// Enable selected plugin, search for script file name in database
+			$plugin_filename = $_POST["pluginfile"];
+			$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+
+			// Rewrite String to Enable plugin
+			$new_disable_string = str_replace("enable=0", "enable=1", $installed_plugins);
+		
+			// Update String in Database
+			mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
+
+			$quick_info = 'You can enable or disable plugins.<br><br>
+			<strong>Plugin Services</strong> are started when you login. To shutdown plugin services, log out.<br><br>
+			When installing a new plugin service, you must log out first. Log back in and the plugin service will be started.';
+
+			home_screen("Plugin Manager", NULL, options_screen5() , $quick_info);
+			exit;
+		}
+
+		if($_GET["remove"] == "plugin")
+		{
+			// Enable selected plugin, search for script file name in database
+			$plugin_filename = $_POST["pluginfile"];
+			$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+
+			// Find the file name for the plugin
+			$plugin_file = find_string("---file=", "---enable", $installed_plugins);
+
+			$plugin_remove_output;
+
+			// Check if the file exist
+			if(file_exists("plugins/" . $plugin_file) == TRUE)
+			{
+				if(unlink("plugins/" . $plugin_file) == TRUE)
+				{
+					$plugin_remove_output .= '<font color="blue">Plugin File (' . $plugin_file . ') Deleted</font><br>';
+				}
+				else
+				{
+					$plugin_remove_output .= '<font color="red"><strong>Plugin File (' . $plugin_file . ') Could NOT Be Deleted?</strong></font><br>';
+				}
+			}
+			else
+			{
+				$plugin_remove_output .= '<font color="red">Plugin File (' . $plugin_file . ') Did Not Exist to Delete?</font><br>';
+			}
+
+			// Delete Database Entry
+			$sql = "DELETE FROM `options` WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1";
+			
+			if(mysql_query($sql) == TRUE)
+			{
+				$plugin_remove_output .= '<font color="blue">Plugin Database Entry Deleted</font><br>';
+			}
+			else
+			{
+				$plugin_remove_output .= '<font color="red"><strong>Plugin Database Entry Could NOT Be Deleted?</strong></font><br>';
+			}
+
+			$quick_info = 'You can enable or disable plugins.<br><br>
+			<strong>Plugin Services</strong> are started when you login. To shutdown plugin services, log out.<br><br>
+			When installing a new plugin service, you must log out first. Log back in and the plugin service will be started.';
+
+			home_screen("Plugin Manager", $plugin_remove_output, options_screen5() , $quick_info);
+			exit;
+		}
+
+
+		if($_GET["manage"] == "tabs")
+		{
+			home_screen("Show/Hide Tabs", NULL, options_screen4() , "You can hide or show certain tabs at the top.");
+			exit;
+		}
+
+		if($_GET["tabs"] == "change")
+		{
+			$standard_tabs_settings = standard_tab_settings($_POST["tab_peerlist"], $_POST["tab_trans_queue"], $_POST["tab_send_receive"], 
+				$_POST["tab_history"], $_POST["tab_address"], $_POST["tab_system"], $_POST["tab_backup"], $_POST["tab_tools"]);
+
+			$sql = "UPDATE `options` SET `field_data` = '$standard_tabs_settings' WHERE `options`.`field_name` = 'standard_tabs_settings' LIMIT 1";
+
+			if(mysql_query($sql) == TRUE)
+			{
+				$text_bar = '<font color="blue"><strong>Standard Tab Settings Updated</strong></font><br>';
+
+				if($_POST["plugins_installed"] == "1")
+				{
+					// Cycle through all plugins and set hide/show status for tabs
+					$cycle_counter = 0;
+					while(empty($_POST["plugins_$cycle_counter"]) == FALSE)
+					{
+						$plugin_filename = $_POST["plugins_$cycle_counter"];
+
+						$show_status = $_POST["plugins_status_$cycle_counter"];
+
+						if($show_status == TRUE)
+						{
+							// Show Plugin Tab
+							$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+
+							// Rewrite String to Show Plugin Tab
+							$new_disable_string = str_replace("show=0", "show=1", $installed_plugins);
+						
+							// Update String in Database
+							mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
+						}
+						else
+						{
+							// Hide Plugin Tab
+							$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+
+							// Rewrite String to Show Plugin Tab
+							$new_disable_string = str_replace("show=1", "show=0", $installed_plugins);
+						
+							// Update String in Database
+							mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
+						}
+
+						$cycle_counter++; // Next Plugin
+					}
+
+					$text_bar .= '<font color="blue"><strong>Plugin Tab Settings Updated</strong></font><br>';
+
+				}
+				
+				home_screen("Show/Hide Tabs", $text_bar, options_screen4() , "You can hide or show certain tabs at the top.");
+				exit;
 			}
 		}
 
 		$quick_info = 'You may change the username and password individually or at the same time.
-			</br></br>Remember that usernames and passwords are Case Sensitive.
-			</br></br><strong>Generate New Keys</strong> will create a new random key pair and save it in the database.
-			</br></br><strong>Check for Updates</strong> will check for any program updates that can be downloaded directly into Timekoin.';
+			<br><br>Remember that usernames and passwords are Case Sensitive.
+			<br><br><strong>Generate New Keys</strong> will create a new random key pair and save it in the database.
+			<br><br><strong>Check for Updates</strong> will check for any program updates that can be downloaded directly into Timekoin.';
 
 		if($_GET["upgrade"] == "check" || $_GET["upgrade"] == "doupgrade")
 		{
-			home_screen("Options & Personal Settings", options_screen3(), "" , $quick_info);
+			home_screen("Options &amp; Personal Settings", options_screen3(), "" , $quick_info);
 		}
 		else
 		{		
-			home_screen("Options & Personal Settings", options_screen(), $body_text , $quick_info);
+			home_screen("Options &amp; Personal Settings", options_screen(), $body_text , $quick_info);
 		}
 		exit;
 	}	
@@ -769,7 +1006,7 @@ if($_SESSION["valid_login"] == TRUE)
 				// Can't send this much silly
 				$display_balance = db_cache_balance($my_public_key);
 				$body_string = send_receive_body($public_key_64);
-				$body_string .= '<hr></hr><font color="red"><strong>This exceeds your current balance, send failed...</strong></font></br></br>';
+				$body_string .= '<hr><font color="red"><strong>This exceeds your current balance, send failed...</strong></font><br><br>';
 			}
 			else
 			{
@@ -778,7 +1015,7 @@ if($_SESSION["valid_login"] == TRUE)
 					// Can't send to yourself
 					$display_balance = db_cache_balance($my_public_key);
 					$body_string = send_receive_body();
-					$body_string .= '<hr></hr><font color="red"><strong>Can not send to yourself, send failed...</strong></font></br></br>';
+					$body_string .= '<hr><font color="red"><strong>Can not send to yourself, send failed...</strong></font><br><br>';
 				}
 				else
 				{
@@ -792,9 +1029,9 @@ if($_SESSION["valid_login"] == TRUE)
 						$message = $_POST["send_message"];
 						$display_balance = db_cache_balance($my_public_key);
 						$body_string = send_receive_body($public_key_64, $send_amount, TRUE, NULL, $message, $_POST["name"]);
-						$body_string .= '<hr></hr><font color="green"><strong>This public key is valid.</font></br>
-							There is no way to recover Timekoins sent to the wrong public key.</br>
-							<font color="blue">Click "Send Timekoins" to send now.</strong></font></br></br>';
+						$body_string .= '<hr><font color="green"><strong>This public key is valid.</strong></font><br>
+						<strong>There is no way to recover Timekoins sent to the wrong public key.</strong><br>
+						<font color="blue"><strong>Click "Send Timekoins" to send now.</strong></font><br><br>';
 					}
 					else
 					{
@@ -802,9 +1039,9 @@ if($_SESSION["valid_login"] == TRUE)
 						$message = $_POST["send_message"];
 						$display_balance = db_cache_balance($my_public_key);
 						$body_string = send_receive_body($public_key_64, $send_amount, TRUE, NULL, $message, $_POST["name"]);
-						$body_string .= '<hr></hr><font color="red"><strong>This public key has no existing history of transactions.</br>
-							There is no way to recover Timekoins sent to the wrong public key.</font></br>
-							Click "Send Timekoins" to send now.</strong></br></br>';
+						$body_string .= '<hr><font color="red"><strong>This public key has no existing history of transactions.<br>
+						There is no way to recover Timekoins sent to the wrong public key.</strong></font><br>
+						<strong>Click "Send Timekoins" to send now.</strong><br><br>';
 					}
 				} // End self check
 			} // End balance check
@@ -825,7 +1062,7 @@ if($_SESSION["valid_login"] == TRUE)
 					// Can't send this much silly
 					$display_balance = db_cache_balance($my_public_key);
 					$body_string = send_receive_body($public_key_64);
-					$body_string .= '<hr></hr><font color="red"><strong>This exceeds your current balance, send failed...</strong></font></br></br>';
+					$body_string .= '<hr><font color="red"><strong>This exceeds your current balance, send failed...</strong></font><br><br>';
 				}
 				else
 				{
@@ -834,7 +1071,7 @@ if($_SESSION["valid_login"] == TRUE)
 						// Can't send to yourself
 						$display_balance = db_cache_balance($my_public_key);
 						$body_string = send_receive_body();
-						$body_string .= '<hr></hr><font color="red"><strong>Can not send to yourself, send failed...</strong></font></br></br>';
+						$body_string .= '<hr><font color="red"><strong>Can not send to yourself, send failed...</strong></font><br><br>';
 					}
 					else
 					{
@@ -845,14 +1082,14 @@ if($_SESSION["valid_login"] == TRUE)
 						{
 							$display_balance = db_cache_balance($my_public_key);
 							$body_string = send_receive_body($public_key_64, $send_amount, NULL, NULL, NULL, $_POST["name"]);
-							$body_string .= '<hr></hr><font color="green"><strong>You just sent ' . $send_amount . ' timekoins to the above public key.</font></br>
-								Your balance will not reflect this until the transation is recorded across the entire network.</strong></br></br>';
+							$body_string .= '<hr><font color="green"><strong>You just sent ' . $send_amount . ' timekoins to the above public key.</strong></font><br>
+							<strong>Your balance will not reflect this until the transation is recorded across the entire network.</strong><br><br>';
 						}
 						else
 						{
 							$display_balance = db_cache_balance($my_public_key);
 							$body_string = send_receive_body($public_key_64, $send_amount, NULL, NULL, NULL, $_POST["name"]);
-							$body_string .= '<hr></hr><font color="red"><strong>Send failed...</strong></font></br></br>';
+							$body_string .= '<hr><font color="red"><strong>Send failed...</strong></font><br><br>';
 						}
 					} // End duplicate self check
 				} // End Balance Check
@@ -917,11 +1154,11 @@ if($_SESSION["valid_login"] == TRUE)
 			<tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
 			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
 
-		$quick_info = 'Send your own Timekoins to someone else.</br></br>
-			Your client will attempt to verify if the public key is valid by examing the transaction history before sending.</br></br>
-			New public keys with no history could appear invalid for this reason, so always double check.</br></br>
-			You can enter an <strong>Easy Key</strong> and Timekoin will fill in the Public Key field for you.</br></br>
-			Messages encoded into your transaction are limited to <strong>64</strong> characters. Messages are visible to anyone that examines your specific transaction details.</br></br>No <strong>| ? = \' ` * %</strong> characters allowed.';
+		$quick_info = 'Send your own Timekoins to someone else.<br><br>
+			Your client will attempt to verify if the public key is valid by examing the transaction history before sending.<br><br>
+			New public keys with no history could appear invalid for this reason, so always double check.<br><br>
+			You can enter an <strong>Easy Key</strong> and Timekoin will fill in the Public Key field for you.<br><br>
+			Messages encoded into your transaction are limited to <strong>64</strong> characters. Messages are visible to anyone that examines your specific transaction details.<br><br>No <strong>| ? = \' ` * %</strong> characters allowed.';
 
 		home_screen('Send / Receive Timekoins', $text_bar, $body_string , $quick_info);
 		exit;
@@ -978,9 +1215,9 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($hide_receive == FALSE)
 		{
-			$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transactions <font color="green">Sent To</font> this Billfold' . $name_from . '</strong></br>
-				<FORM ACTION="index.php?menu=history&receive=listmore" METHOD="post">
-				</br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
+			$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transactions <font color="green">Sent To</font> this Billfold' . $name_from . '</strong><br>
+				<FORM ACTION="index.php?menu=history&amp;receive=listmore" METHOD="post">
+				<br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
 				<th>Sent From</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
 
 			$history_data_to = transaction_history_query(1, $show_last);
@@ -1047,14 +1284,15 @@ if($_SESSION["valid_login"] == TRUE)
 				$counter++;
 			}
 			
-			$body_string .= '<tr><td colspan="5"><hr></hr></td></tr><tr><td colspan="5"><input type="text" size="5" name="show_more_receive" value="' . $show_last .'" /><input type="submit" name="Submit1" value="Show Last" /></FORM></td></tr>';
-			$body_string .= '</table></div>';
+			$body_string .= '<tr><td colspan="5"><hr></td></tr>
+			<tr><td colspan="5"><input type="text" size="5" name="show_more_receive" value="' . $show_last .'" />
+			<input type="submit" name="Submit1" value="Show Last" /></td></tr></table></div></FORM>';
 
 		} // End hide check for receive
 
 		if($hide_send == FALSE)
 		{
-			$body_string .= '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transactions <font color="blue">Sent From</font> this Billfold' . $name_to . '</strong></br></br>
+			$body_string .= '<strong>Showing Last <font color="blue">' . $show_last . '</font> Transactions <font color="blue">Sent From</font> this Billfold' . $name_to . '</strong><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
 				<th>Sent To</th><th>Amount</th><th>Verification Level</th><th>Message</th></tr>';
 
@@ -1115,17 +1353,17 @@ if($_SESSION["valid_login"] == TRUE)
 				$counter++;
 			}
 
-			$body_string .= '<tr><td colspan="5"><hr></hr></td></tr><tr><td colspan="5"><FORM ACTION="index.php?menu=history&send=listmore" METHOD="post"><input type="text" size="5" name="show_more_send" value="' . $show_last .'" /><input type="submit" name="Submit2" value="Show Last" /></FORM></td></tr>';
+			$body_string .= '<tr><td colspan="5"><hr></td></tr><tr><td colspan="5"><FORM ACTION="index.php?menu=history&amp;send=listmore" METHOD="post"><input type="text" size="5" name="show_more_send" value="' . $show_last .'" /><input type="submit" name="Submit2" value="Show Last" /></FORM></td></tr>';
 			$body_string .= '</table></div>';
 
 		} // End hide check for send
 
-		$text_bar = '<FORM ACTION="index.php?menu=history&font=public_key" METHOD="post">
+		$text_bar = '<FORM ACTION="index.php?menu=history&amp;font=public_key" METHOD="post">
 			<table border="0" cellspacing="4"><tr><td><strong>Default Public Key Font Size</strong></td>
-			<td style="width:250px"><input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" /><input type="submit" name="Submit3" value="Save" /></FORM></td></tr></table>';
+			<td style="width:250px"><input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" /><input type="submit" name="Submit3" value="Save" /></td></tr></table></FORM>';
 
-		$quick_info = 'Verification Level represents how deep in the transaction history the transaction exist.</br></br>
-			The larger the number, the more time that all the peers have examined it and agree that it is a valid transaction.</br></br>
+		$quick_info = 'Verification Level represents how deep in the transaction history the transaction exist.<br><br>
+			The larger the number, the more time that all the peers have examined it and agree that it is a valid transaction.<br><br>
 			You can view up to 100 past transactions that have been <u>sent from</u> or <u>sent to</u> your Billfold.';
 
 		home_screen('Transaction History', $text_bar, $body_string , $quick_info);
@@ -1159,7 +1397,7 @@ if($_SESSION["valid_login"] == TRUE)
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
 
-		$body_string = '<strong><font color="blue">( ' . number_format($sql_num_results) . ' )</font> Network Transactions Waiting for Processing</strong></br></br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
+		$body_string = '<strong><font color="blue">( ' . number_format($sql_num_results) . ' )</font> Network Transactions Waiting for Processing</strong><br><br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
 			<th>Send From</th><th>Send To</th><th>Amount</th></tr>';
 
 		for ($i = 0; $i < $sql_num_results; $i++)
@@ -1264,7 +1502,7 @@ if($_SESSION["valid_login"] == TRUE)
 		
 		$body_string .= '</table></div>';
 
-		$text_bar = '<FORM ACTION="index.php?menu=queue&font=public_key" METHOD="post">
+		$text_bar = '<FORM ACTION="index.php?menu=queue&amp;font=public_key" METHOD="post">
 			<table border="0" cellspacing="4"><tr><td><strong>Default Public Key Font Size</strong></td><td><input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" /><input type="submit" name="Submit3" value="Save" /></td></tr></table></FORM>';
 
 		$quick_info = 'This section contains all the network transactions that are queued to be stored in the transaction history.';
@@ -1280,9 +1518,9 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["action"] == "check_tables")
 		{
 			set_time_limit(300);
-			write_log("A CHECK of the Entire Database & Tables Was Started.", "GU");
+			write_log("A CHECK of the Entire Database &amp; Tables Was Started.", "GU");
 
-			$body_string = '<strong>Checking All Database Tables</strong></font></br></br>
+			$body_string = '<strong>Checking All Database Tables</strong><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Check Database Results</th></tr><tr><td>';
 
 			$db_check = mysql_query("CHECK TABLE `activity_logs`,`address_book`,`data_cache`,`my_keys`,`options`,`transaction_queue`");
@@ -1305,15 +1543,15 @@ if($_SESSION["valid_login"] == TRUE)
 
 			$body_string .= '<strong>CHECK COMPLETE</strong></td></tr></table></div>';
 
-			write_log("A CHECK of the Entire Database & Tables Was Finished.", "GU");			
+			write_log("A CHECK of the Entire Database &amp; Tables Was Finished.", "GU");			
 		}
 
 		if($_GET["action"] == "repair_tables")
 		{
 			set_time_limit(500);
-			write_log("A REPAIR of the Entire Database & Tables Was Started.", "GU");
+			write_log("A REPAIR of the Entire Database &amp; Tables Was Started.", "GU");
 
-			$body_string = '<strong>Repair All Database Tables</strong></font></br></br>
+			$body_string = '<strong>Repair All Database Tables</strong><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Repair Database Results</th></tr><tr><td>';
 
 			$db_check = mysql_query("REPAIR TABLE `activity_logs`,`address_book`,`data_cache`,`my_keys`,`options`,`transaction_queue`");
@@ -1336,15 +1574,15 @@ if($_SESSION["valid_login"] == TRUE)
 
 			$body_string .= '<strong>REPAIR FINISHED</strong></td></tr></table></div>';
 
-			write_log("A REPAIR of the Entire Database & Tables Was Finished.", "GU");			
+			write_log("A REPAIR of the Entire Database &amp; Tables Was Finished.", "GU");			
 		}
 
 		if($_GET["action"] == "optimize_tables")
 		{
 			set_time_limit(500);
-			write_log("An OPTIMIZE of the Entire Database & Tables Was Started.", "GU");
+			write_log("An OPTIMIZE of the Entire Database &amp; Tables Was Started.", "GU");
 
-			$body_string = '<strong>Optimize All Database Tables</strong></font></br></br>
+			$body_string = '<strong>Optimize All Database Tables</strong><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Optimize Database Results</th></tr><tr><td>';
 
 			$db_check = mysql_query("OPTIMIZE TABLE `activity_logs`,`address_book`,`data_cache`,`my_keys`,`options`,`transaction_queue`");
@@ -1367,7 +1605,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			$body_string .= '<strong>OPTIMIZE FINISHED</strong></td></tr></table></div>';
 
-			write_log("An OPTIMIZE of the Entire Database & Tables Was Finished.", "GU");			
+			write_log("An OPTIMIZE of the Entire Database &amp; Tables Was Finished.", "GU");
 		}
 
 		if($_GET["logs"] == "listmore")
@@ -1382,6 +1620,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["logs"] == "clear")
 		{
 			mysql_query("TRUNCATE TABLE `activity_logs`");
+			write_log("All Logs Cleared.", "GU");			
 		}
 
 		if(empty($_GET["action"]) == TRUE)
@@ -1406,8 +1645,9 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 			}
 			
-			$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> Log Events</strong>' . $filter_by . '<table border="0" cellspacing="5">
-				<tr><td>Filter By:</td><td><FORM ACTION="index.php?menu=tools&logs=listmore" METHOD="post"><select name="filter"><option value="all" SELECTED>Show All</option>
+			$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> Log Events</strong>' . $filter_by . '<FORM ACTION="index.php?menu=tools&amp;logs=listmore" METHOD="post">
+				<table border="0" cellspacing="5">
+				<tr><td>Filter By:</td><td><select name="filter"><option value="all" SELECTED>Show All</option>
 				<option value="GU">GUI - Graphical User Interface</option>
 				<option value="PL">Peer Processor</option>
 				<option value="T">Transactions</option>
@@ -1437,19 +1677,21 @@ if($_SESSION["valid_login"] == TRUE)
 				<td class="style2">' . $sql_row["attribute"] . '</td></tr>';
 			}
 
-			$body_string .= '<tr><td colspan="3"><hr></hr></td></tr><tr><td><input type="text" size="5" name="show_more_logs" value="' . $show_last .'" /><input type="submit" name="show_last" value="Show Last" /></FORM></td>
-				<td colspan="2"><FORM ACTION="index.php?menu=tools&logs=clear" METHOD="post"><input type="submit" name="clear_logs" value="Clear All Logs" /></FORM></td></tr>';
-			$body_string .= '</table></div>';
+			$body_string .= '<tr><td colspan="3"><hr></td></tr><tr><td><input type="text" size="5" name="show_more_logs" value="' . $show_last .'" /><input type="submit" name="show_last" value="Show Last" /></td>
+			<td colspan="2"></td></tr>';
+			
+			$body_string .= '</table></div></FORM>
+			<table border="0" align="right" ><tr><td>
+			<FORM ACTION="index.php?menu=tools&amp;logs=clear" METHOD="post"><input type="submit" name="clear_logs" value="Clear All Logs" onclick="return confirm(\'Clear All Logs?\');" /></FORM></td></tr></table>';
 		}
 		
 		$text_bar = tools_bar();
 
-		$quick_info = '<strong>Check DB</strong> will check the data integrity of all tables in the database.</br></br>
-			<strong>Optimize DB</strong> will optimize all tables & indexes in the database.</br></br>
-			<strong>Repair DB</strong> will attempt to repair all tables in the database.</br></br>			
-			<i>Note:</i> The database utilities can take a long time to process and complete.';
+		$quick_info = '<strong>Check DB</strong> will check the data integrity of all tables in the database.<br><br>
+			<strong>Optimize DB</strong> will optimize all tables &amp; indexes in the database.<br><br>
+			<strong>Repair DB</strong> will attempt to repair all tables in the database.';
 		
-		home_screen('Tools & Utilities', $text_bar, $body_string , $quick_info);
+		home_screen('Tools &amp; Utilities', $text_bar, $body_string , $quick_info);
 		exit;
 	}
 //****************************************************************************
@@ -1464,11 +1706,11 @@ if($_SESSION["valid_login"] == TRUE)
 				// Blank reverse crypto data field
 				mysql_query("UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");				
 				
-				$server_message = '</br><font color="blue"><strong>Private Key Restore Complete!</strong></font></br></br>';
+				$server_message = '<br><font color="blue"><strong>Private Key Restore Complete!</strong></font><br><br>';
 			}
 			else
 			{
-				$server_message = '</br><font color="red"><strong>Private Key Restore FAILED!</strong></font></br></br>';
+				$server_message = '<br><font color="red"><strong>Private Key Restore FAILED!</strong></font><br><br>';
 			}
 		}
 
@@ -1481,11 +1723,11 @@ if($_SESSION["valid_login"] == TRUE)
 				// Blank reverse crypto data field
 				mysql_query("UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
 
-				$server_message = '</br><font color="blue"><strong>Public Key Restore Complete!</strong></font></br></br>';
+				$server_message = '<br><font color="blue"><strong>Public Key Restore Complete!</strong></font><br><br>';
 			}
 			else
 			{
-				$server_message = '</br><font color="red"><strong>Public Key Restore FAILED!</strong></font></br></br>';
+				$server_message = '<br><font color="red"><strong>Public Key Restore FAILED!</strong></font><br><br>';
 			}
 		}
 
@@ -1512,12 +1754,12 @@ if($_SESSION["valid_login"] == TRUE)
 			<table border="0" cellpadding="6"><tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
 			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
 
-		$quick_info = '<strong>Do Not</strong> share your Private Key with anyone for any reason.</br></br>
-			The Private Key encrypts all your transactions.</br></br>
-			You should make a backup of both keys in case you want to transfer your balance to a new billfold or restore from a software failure.</br></br>
+		$quick_info = '<strong>Do Not</strong> share your Private Key with anyone for any reason.<br><br>
+			The Private Key encrypts all your transactions.<br><br>
+			You should make a backup of both keys in case you want to transfer your balance to a new billfold or restore from a software failure.<br><br>
 			Save both keys in a password protected text file or external device that you can secure (CD, Flash Drive, Printed Paper, etc.)';
 
-		home_screen('Backup & Restore Keys', $text_bar, $body_string , $quick_info);
+		home_screen('Backup &amp; Restore Keys', $text_bar, $body_string , $quick_info);
 		exit;		
 	}
 //****************************************************************************
@@ -1526,6 +1768,9 @@ if($_SESSION["valid_login"] == TRUE)
 		unset($_SESSION["valid_login"]);
 		unset($_SESSION["login_username"]);
 		header("Location: index.php");
+		
+		// Stop all plugin services
+		mysql_query("DELETE FROM `data_cache` WHERE `data_cache`.`field_name` LIKE 'TKCS_%'");
 		exit;		
 	}
 //****************************************************************************

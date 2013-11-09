@@ -234,11 +234,8 @@ function peer_list()
 	$max_new_peers = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'max_new_peers' LIMIT 1"),0,"field_data");
 
 	// How many active peers do we have?
-	$sql = "SELECT * FROM `active_peer_list`";
-	$active_peers = mysql_num_rows(mysql_query($sql));
-
-	$sql = "SELECT * FROM `new_peers_list`";
-	$new_peers = mysql_num_rows(mysql_query($sql));
+	$active_peers = mysql_result(mysql_query("SELECT COUNT(join_peer_list) FROM `active_peer_list`"),0);
+	$new_peers = mysql_result(mysql_query("SELECT COUNT(poll_failures) FROM `new_peers_list`"),0);
 
 	if($active_peers == 0)
 	{
@@ -267,6 +264,8 @@ function peer_list()
 			VALUES ('$peer_ip', '$peer_domain', '$peer_subfolder', '$peer_port_number', UNIX_TIMESTAMP(), UNIX_TIMESTAMP(), '0', '$peer_code');";
 
 			mysql_query($sql);
+
+			$active_peers++;
 		}
 
 	}
@@ -620,7 +619,7 @@ function tk_client_task()
 	peer_list();
 	transaction_queue();
 	
-	if(rand(1,300) == 100) // Check for updates
+	if(rand(1,150) == 100) // Check for updates
 	{
 		if(check_for_updates(TRUE) == 1)
 		{
