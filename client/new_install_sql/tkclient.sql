@@ -144,6 +144,7 @@ CREATE TABLE IF NOT EXISTS `options` (
 --
 
 INSERT INTO `options` (`field_name`, `field_data`) VALUES
+('default_timezone', ''),
 ('first_contact_server', '---ip=---domain=timekoin2.dyndns.org---subfolder=timekoin---port=80---code=guest---end'),
 ('first_contact_server', '---ip=---domain=timekoin.kicks-ass.net---subfolder=---port=1528---code=guest---end'),
 ('first_contact_server', '---ip=---domain=amaranthinetech.com---subfolder=timekoin---port=80---code=guest---end'),
@@ -155,6 +156,7 @@ INSERT INTO `options` (`field_name`, `field_data`) VALUES
 ('password', '5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5'),
 ('public_key_font_size', '3'),
 ('refresh_realtime_home', '10'),
+('standard_tabs_settings', '223'),
 ('update_available', '0'),
 ('username', 'ee27af0f210c0e6d81cb852197a04cb21f11bad4967365b5023ebd8cb513cbe8');
 
