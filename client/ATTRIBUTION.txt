@@ -2,6 +2,14 @@ This file contains all attributions to work(s) obtained from others and used in
 Timekoin.
 
 -==========================================================================-
+AES implementation in PHP
+ (c) Chris Veness 2005-2011 www.movable-type.co.uk/scripts
+ Right of free use is granted for all commercial or non-commercial use providing this
+ copyright notice is retainded. No warranty of any form is offered.
+
+Please consider donating to the code author as he has been a big help for the
+Timekoin Team.
+-==========================================================================-
 Server2Go
 ------------------------------
 Server2Go is a CD-ROm Webserver. That means it is a webserver that can run
@@ -79,7 +87,7 @@ Your fair use and other rights are in no way affected by the above.
 View the full license here:
 http://creativecommons.org/licenses/by-nc-sa/2.5/
 -============================================================================-
-Admin Interface CSS Template
+Client Interface CSS Template
 
 Developed by http://twitter.com/umutm (Umut Muhaddisoglu) 2008. 
 Updated for HTML5/CSS3 by http://mediagearhead.com (Giles Wells) 2010.

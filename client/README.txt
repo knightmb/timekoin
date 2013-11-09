@@ -24,7 +24,7 @@ The software requires these components before installing.
 1. Web Server (Apache, IIS, etc.)
 2. PHP (v5 or higher) for the Web Server, including the mySQL, GMP, and
 *OpenSSL* module if possible
-3. mySQL Database Server (v5 or higher, free community version works just fine)
+3. mySQL or MariaDB Database Server (v5 or higher, free community version works just fine)
 
 -=================== QUICK INSTALL =====================-
 

@@ -1,11 +1,18 @@
 Timekoin Client - Change Log
 
+Timekoin Client - 1.2 (Released 2013-11-09)
+===========================================
+- Added AES-256 Private Key Encryption Code
+- Merge plugin code into Client
+- Update CSS to match Server theme
+- HTML5 Code Cleanup
+
+
 Timekoin Client - 1.1 (Released 2013-10-22)
 ===========================================
 - 0000067: [General Issue] Balance cache can sometimes expire before it is updated from other peers
 - Added new automatic update and notify user check that will run about once a day
 - Address book updated to work smarter with Easy Keys that are not valid during new record creation or editing
-
 
 Timekoin Client - 1.0 (Released 2012-05-09)
 ===========================================
