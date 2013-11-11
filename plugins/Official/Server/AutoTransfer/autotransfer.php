@@ -34,6 +34,8 @@ if($_SESSION["valid_login"] == FALSE)
 
 	while(1) // Begin Infinite Loop :)
 	{
+		set_time_limit(99); // Reset Timeout
+
 		// Are we to remain active?
 		$timekoin_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,"field_data");
 
@@ -661,7 +663,7 @@ return '<table border="0" cellpadding="2" cellspacing="10"><tr><td valign="botto
 		<strong>One Time Delay</strong> transfers countdown and self-disable after doing one transaction.<br><br>
 		<strong>Repeating Delay</strong> transfers will reset after doing one transaction and begin another countdown.<br><br>
 		<strong>One Time Amount Match</strong> transfers will do one transaction after the key balance is equal to or greater than the target balance.<br><br>
-		<strong>Repeating Amount Match</strong> transfer will do one transaction every transaction cycle when the key balance remains equal to or greater than the target balance';
+		<strong>Repeating Amount Match</strong> transfer will do one transaction every transaction cycle when the key balance remains equal to or greater than the target balance.';
 
 	home_screen("Auto Currency Transfer", $text_bar, $body_string, $quick_info , 0, TRUE);
 	exit; // All done processing
