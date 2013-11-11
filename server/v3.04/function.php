@@ -347,7 +347,7 @@ function call_script($script, $priority = 1, $plugin = FALSE)
 		// Below Normal Priority
 		if(getenv("OS") == "Windows_NT")
 		{
-			pclose(popen("start /B /BELOWNORMAL php-win $script", "r"));// This will execute without waiting for it to finish
+			pclose(popen("start /BELOWNORMAL /B php-win $script", "r"));// This will execute without waiting for it to finish
 		}
 		else
 		{
