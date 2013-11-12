@@ -323,7 +323,7 @@ function call_script($script, $priority = 1, $plugin = FALSE)
 		// Normal Priority
 		if(getenv("OS") == "Windows_NT")
 		{
-			pclose(popen("start php-win $script", "r"));// This will execute without waiting for it to finish
+			pclose(popen("start /B php-win $script", "r"));// This will execute without waiting for it to finish
 		}
 		else
 		{
@@ -335,7 +335,7 @@ function call_script($script, $priority = 1, $plugin = FALSE)
 		// Normal Priority
 		if(getenv("OS") == "Windows_NT")
 		{
-			pclose(popen("start php-win plugins/$script", "r"));// This will execute without waiting for it to finish
+			pclose(popen("start /B php-win plugins/$script", "r"));// This will execute without waiting for it to finish
 		}
 		else
 		{
@@ -347,7 +347,7 @@ function call_script($script, $priority = 1, $plugin = FALSE)
 		// Below Normal Priority
 		if(getenv("OS") == "Windows_NT")
 		{
-			pclose(popen("start /BELOWNORMAL php-win $script", "r"));// This will execute without waiting for it to finish
+			pclose(popen("start /BELOWNORMAL /B php-win $script", "r"));// This will execute without waiting for it to finish
 		}
 		else
 		{
