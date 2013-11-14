@@ -58,7 +58,7 @@ function log_ip($attribute, $multiple = 1)
 	}
 	
 	// Log IP Address Access
-	$sql = "INSERT DELAYED INTO `ip_activity` (`timestamp` ,`ip`, `attribute`) VALUES ";
+	$sql = "INSERT INTO `ip_activity` (`timestamp` ,`ip`, `attribute`) VALUES ";
 	while($multiple >= 1)
 	{
 		if($multiple == 1)
@@ -103,7 +103,7 @@ function find_string($start_tag, $end_tag, $full_string, $end_match = FALSE)
 function write_log($message, $type)
 {
 	// Write Log Entry
-	mysql_query("INSERT DELAYED INTO `activity_logs` (`timestamp` ,`log` ,`attribute`)	
+	mysql_query("INSERT INTO `activity_logs` (`timestamp` ,`log` ,`attribute`)	
 		VALUES ('" . time() . "', '" . substr($message, 0, 256) . "', '$type')");
 	return;
 }

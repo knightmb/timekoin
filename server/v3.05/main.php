@@ -191,7 +191,7 @@ while(1) // Begin Infinite Loop :)
 				{
 					// More than X request per cycle means something is wrong
 					// so this IP needs to be banned for a while
-					mysql_query("INSERT DELAYED INTO `ip_banlist` (`when` ,`ip`) VALUES (" . time() . ", '$select_IP')");
+					mysql_query("INSERT INTO `ip_banlist` (`when` ,`ip`) VALUES (" . time() . ", '$select_IP')");
 					write_log("IP Address $select_IP was added to the ban list due to excessive traffic. Default max query is $request_max per cycle, IP was doing $sql_num_results2 query per cycle instead with [$attribute_IP].", "MA");
 				}
 			}
