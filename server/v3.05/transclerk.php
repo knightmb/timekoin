@@ -132,11 +132,12 @@ $current_generation_cycle = transaction_cycle(0);
 $next_generation_cycle = transaction_cycle(1);
 $current_generation_block = transaction_cycle(0, TRUE);
 
-$foundation_active = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,"field_data"));
+$foundation_active = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,0));
+$treasurer_status = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,0));
 
 // Can we work on the transactions in the database?
 // Not allowed 30 seconds before and 30 seconds after transaction cycle.
-if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle) > 30 && $foundation_active != 1)
+if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle) > 30 && $foundation_active == 2 && $treasurer_status == 2)
 {
 	// Check if the transaction history is blank or not (either from reset or new setup)
 	$sql = "SELECT timestamp FROM `transaction_history` LIMIT 5";

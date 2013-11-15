@@ -564,7 +564,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 						&& $valid_amount == TRUE)
 					{
 						// Check for 100 public key limit in the transaction queue
-						$sql = "SELECT * FROM `transaction_queue` WHERE `public_key` = '$transaction_public_key'";
+						$sql = "SELECT timestamp FROM `transaction_queue` WHERE `public_key` = '$transaction_public_key'";
 						$sql_result = mysql_query($sql);
 						$sql_num_results = mysql_num_rows($sql_result);
 
@@ -623,6 +623,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 }
 else
 {
+	set_time_limit(99);	// Reset Timer to avoid sleep timeout
 	sleep(10);
 }
 } // End Infinite Loop

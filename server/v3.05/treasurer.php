@@ -229,7 +229,7 @@ if($sql_num_results > 0)
 				} // Firewall Mode & Broadcast Session Check
 
 				// Check to make sure there is not a duplicate transaction already
-				$found_public_key_queue = mysql_result(mysql_query("SELECT * FROM `transaction_queue` WHERE `public_key` = '$public_key' AND `hash` = '$hash_check' LIMIT 1"),0,"timestamp");
+				$found_public_key_queue = mysql_result(mysql_query("SELECT timestamp FROM `transaction_queue` WHERE `public_key` = '$public_key' AND `hash` = '$hash_check' LIMIT 1"),0,0);
 
 				if(empty($found_public_key_queue) == TRUE) // Not in transaction queue
 				{					
@@ -269,13 +269,18 @@ if($sql_num_results > 0)
 //*****************************************************************************************************
 //*****************************************************************************************************
 // Find all transactions between the Previous Transaction Cycle and the Current
-$sql = "SELECT * FROM `transaction_queue` WHERE `timestamp` >= $previous_generation_cycle AND `timestamp` < $current_generation_cycle ORDER BY `attribute`, `hash` ASC";
+$sql = "SELECT * FROM `transaction_queue` WHERE `timestamp` >= $previous_generation_cycle AND `timestamp` < $current_generation_cycle GROUP BY `hash` ORDER BY `attribute`, `hash` ASC";
 
 $sql_result = mysql_query($sql);
 $sql_num_results = mysql_num_rows($sql_result);
 
 if($sql_num_results > 0)
 {
+	// Record how long transaction processing took in the logs
+	$time_start = time();
+	$record_insert_counter = 0;
+	set_time_limit(300); // Increaes processing time
+
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
 		$sql_row = mysql_fetch_array($sql_result);
@@ -300,7 +305,7 @@ if($sql_num_results > 0)
 				else
 				{
 					// Check to make sure there is not a duplicate generation transaction already
-					$found_public_key_queue = mysql_result(mysql_query("SELECT timestamp, public_key_from, attribute FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `attribute` = 'G' AND `timestamp` >= $previous_generation_cycle AND `timestamp` < $current_generation_cycle LIMIT 1"),0,"timestamp");
+					$found_public_key_queue = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `attribute` = 'G' AND `timestamp` >= $previous_generation_cycle AND `timestamp` < $current_generation_cycle LIMIT 1"),0,0);
 
 					if(empty($found_public_key_queue) == TRUE)
 					{
@@ -347,12 +352,16 @@ if($sql_num_results > 0)
 							{
 								// Public key not found, insert into final transaction history
 								$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from`, `public_key_to` ,`crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
-									VALUES ($time_created, '$public_key', '$public_key', '$crypt1', '$crypt2', '$crypt3', '$hash_check', 'G');";
+									VALUES ($time_created, '$public_key', '$public_key', '$crypt1', '$crypt2', '$crypt3', '$hash_check', 'G')";
 
 								if(mysql_query($sql) == FALSE)
 								{
 									//Something didn't work
 									write_log("Generation Insert Failed for this Key:" . base64_encode($public_key), "G");
+								}
+								else
+								{
+									$record_insert_counter++;
 								}
 
 								// Update the last generation timestamp
@@ -391,7 +400,7 @@ if($sql_num_results > 0)
 		if($sql_row["attribute"] == "T") // Regular Transaction
 		{
 			// Check to make sure there is not a duplicate transaction already
-			$found_public_key_queue = mysql_result(mysql_query("SELECT timestamp, public_key_from, hash FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `hash` = '$hash_check' LIMIT 1"),0,"timestamp");
+			$found_public_key_queue = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `hash` = '$hash_check' LIMIT 1"),0,0);
 
 			if(empty($found_public_key_queue) == TRUE)
 			{
@@ -444,6 +453,10 @@ if($sql_num_results > 0)
 								//Something didn't work
 								write_log("Transaction Database Insert Failed for this Key:" . base64_encode($public_key), "T");
 							}
+							else
+							{
+								$record_insert_counter++;
+							}
 						}
 						else
 						{
@@ -488,7 +501,7 @@ if($sql_num_results > 0)
 			}
 		}		
 
-	} // End for Loop
+	} // End for Loop Record Type Search
 
 	// Wipe transaction queue of all old transaction from current to previous cycle
 	$sql = "DELETE QUICK FROM `transaction_queue` WHERE `transaction_queue`.`timestamp` < $current_generation_cycle";
@@ -504,6 +517,9 @@ if($sql_num_results > 0)
 		//Something didn't work
 		write_log("Could NOT Delete Old Generation Join Request or Currency Generation from the MyQueue", "TR");
 	}
+
+	// Log transaction processing info
+	write_log("Treasurer Processed $record_insert_counter Transactions in " . (time() - $time_start) . " seconds", "TR");
 }
 else
 {

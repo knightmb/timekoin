@@ -75,6 +75,7 @@ $current_generation_block = transaction_cycle(0, TRUE);
 $next_generation_cycle = transaction_cycle(1);
 
 $record_count = mysql_result(mysql_query("SELECT COUNT(*) FROM `transaction_history`"),0);
+$treasurer_status = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,0));
 
 if($record_count < 500)
 {
@@ -89,7 +90,8 @@ else
 // Can we work on the transactions in the database?
 // Not allowed 60 seconds before and 45 seconds after transaction cycle.
 // Don't build anything if a foundation check is already going on.
-if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle) > 45 && $foundation_task == 0)
+// Don't build anything is the Treasurer is still processing transactions (status = 1)
+if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle) > 45 && $foundation_task == 0 && $treasurer_status == 2)
 {
 //***********************************************************************************
 	// Does my current history hash match all my peers?
