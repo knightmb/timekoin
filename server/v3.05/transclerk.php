@@ -645,15 +645,43 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 											{
 												if(empty($found_duplicate) == TRUE)
 												{
-													$super_peer_record_count++;
-
-													if($super_peer_record_count == 1)
+													// Limit Max Query String to 1MB (1,024,000 bytes)
+													// Many DB have this limit by default and most users may not know how to set it higher :(
+													if(strlen($super_peer_insert . ",('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')") <= 1024000)
 													{
-														$super_peer_insert.= "('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
+														// Query still under 1MB in size
+														$super_peer_record_count++;
+
+														if($super_peer_record_count == 1)
+														{
+															$super_peer_insert.= "('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
+														}
+														else
+														{
+															$super_peer_insert.= ",('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
+														}
 													}
 													else
 													{
-														$super_peer_insert.= ",('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
+														// Max query size reached, write to database
+														// Do mass record insert
+														if(mysql_query("INSERT INTO `transaction_history` (`timestamp`,`public_key_from`,`public_key_to`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`) VALUES " . $super_peer_insert) == TRUE)
+														{
+															write_log("Wrote $super_peer_record_count Records From SUPER Peer: $ip_address$domain:$port_number/$subfolder", "TC");
+														}
+														else
+														{
+															write_log("Database Insert FAILED From SUPER Peer: $ip_address$domain:$port_number/$subfolder", "TC");
+														}
+
+														// Clear variable from RAM
+														unset($super_peer_insert);
+
+														// Reset Record Counter
+														$super_peer_record_count = 1;
+
+														// Start New INSERT Query
+														$super_peer_insert.= "('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
 													}
 												}
 											}
@@ -669,20 +697,24 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 									} // Transaction Cycles Ahead Loop
 
-									write_log("Detach SUPER Peer: $ip_address$domain:$port_number/$subfolder", "TC");
+									// Do mass record insert if query is finished
+									if(empty($super_peer_insert) == FALSE)
+									{
+										if(mysql_query("INSERT INTO `transaction_history` (`timestamp`,`public_key_from`,`public_key_to`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`) VALUES " . $super_peer_insert) == TRUE)
+										{
+											write_log("Wrote $super_peer_record_count Records From SUPER Peer: $ip_address$domain:$port_number/$subfolder", "TC");
+										}
+										else
+										{
+											write_log("Database Insert FAILED From SUPER Peer: $ip_address$domain:$port_number/$subfolder", "TC");
+										}
+									}
 
-									// Do mass record insert
-									if(mysql_query("INSERT INTO `transaction_history` (`timestamp`,`public_key_from`,`public_key_to`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`) VALUES " . $super_peer_insert) == TRUE)
-									{
-										write_log("Wrote $super_peer_record_count Records From SUPER Peer: $ip_address$domain:$port_number/$subfolder", "TC");
-									}
-									else
-									{
-										write_log("Database Insert FAILED From SUPER Peer: $ip_address$domain:$port_number/$subfolder", "TC");
-									}
+									write_log("Detach SUPER Peer: $ip_address$domain:$port_number/$subfolder", "TC");
 
 									// Clear variable from RAM
 									unset($super_peer_insert);
+
 								} // End first valid range check
 
 							} // End second valid range check
