@@ -117,7 +117,7 @@ if($sql_num_results > 0)
 			}
 			else
 			{
-				$timestamp = $current_generation_cycle + 1; // Format timestamp for a few seconds after transaction cycle
+				$timestamp = $current_generation_cycle + 2; // Format timestamp for a few seconds after transaction cycle
 
 				if($firewall_blocked == "1" || ($next_generation_cycle - time()) > 230)// Mix outbound transaction broadcasting and regular polling
 				{
