@@ -1,6 +1,6 @@
 Timekoin Server - Change Log
 
-Timekoin Server - 3.05 (Released 2013-11-15)
+Timekoin Server - 3.05 (Released 2013-11-16)
 ============================================
 - Merge pull request #6 from 2072 (Remove command windows)
 - Remove depreciated DELAYED insert commands for database
@@ -8,6 +8,7 @@ Timekoin Server - 3.05 (Released 2013-11-15)
 - Add more logging info for Super Peer activity
 - Treasurer Transaction Processing time now logged
 - Treasurer given priority CPU & Database resources when processing large batches of transactions
+- Limit max query size for super peer insert to 1MB
 
 
 Timekoin Server - 3.04 (Released 2013-11-5)
