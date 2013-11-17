@@ -1,7 +1,7 @@
 <?PHP
 define("TRANSACTION_EPOCH","1338576300"); // Epoch timestamp: 1338576300
-define("TIMEKOIN_VERSION","1.2"); // This Timekoin Software Version
-define("NEXT_VERSION","tk_client_current_version2.txt"); // What file to check for future versions
+define("TIMEKOIN_VERSION","1.0"); // This Timekoin Software Version
+define("NEXT_VERSION","tk_android_current_version0.txt"); // What file to check for future versions
 
 error_reporting(E_ERROR | E_CORE_ERROR | E_COMPILE_ERROR); // Disable most error reporting except for fatal errors
 ini_set('display_errors', FALSE);

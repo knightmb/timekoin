@@ -17,7 +17,7 @@ function login_screen($error_message)
     document.body.style.cursor = "wait";
     }
 	 </script>
-<title>Timekoin Client Billfold</title>
+<title>Timekoin Android Billfold</title>
 <link rel="icon" type="image/x-icon" href="img/favicon.ico" />
 <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
 <link  href="css/admin.css" rel="stylesheet" type="text/css" />
@@ -47,7 +47,7 @@ function breakout_of_frame()
 </div>
 <div id="center-column">
 <div class="top-bar">
-<h1>Timekoin Client Billfold Login</h1>
+<h1>Timekoin Android Billfold Login</h1>
 </div>
 <div class="select-bar">
 <FORM ACTION="index.php?action=login" METHOD="post">
@@ -429,7 +429,7 @@ g_graph = new Graph(
     document.body.style.cursor = "wait";
     }
 </script>
-<title>Timekoin Client Billfold</title>
+<title>Timekoin Android Billfold</title>
 
 <?PHP 
 
@@ -493,7 +493,7 @@ g_graph = new Graph(
 <div class="box"><?PHP echo $quick_info; ?></div>
 </div>
 </div>
-<div id="footer"><p>Timekoin Crypto Currency Client v<?PHP echo TIMEKOIN_VERSION; ?> - <a href="http://timekoin.org">http://timekoin.org</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?> - ( You are logged in as <strong><?PHP echo $_SESSION["login_username"]; ?></strong> )</p>
+<div id="footer"><p>Timekoin Crypto Currency Android v<?PHP echo TIMEKOIN_VERSION; ?> - <a href="http://timekoin.org">http://timekoin.org</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?> - ( You are logged in as <strong><?PHP echo $_SESSION["login_username"]; ?></strong> )</p>
  </div>
 </div>
 </body>
