@@ -14,7 +14,7 @@ as that peer and create a transaction that is fake or changed. Any attempts to
 alter the transaction data will fail because the key provided with it will no
 longer work.
 
-Timekoin uses 1,536 bit encryption (not a typo) to create the transactions and
+Timekoin uses 1,536 bit encryption to create the transactions and
 SHA256 hashing both inside and outside the transaction to provide multiple
 layers of anti-tampering protection wrapped in each other. Trying to tamper with
 any of the 3 points results in the collapse of the entire transaction data.
