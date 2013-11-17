@@ -1,0 +1,29 @@
+This file contains all attributions to work(s) obtained from others and used in
+Timekoin Android.
+
+-==========================================================================-
+AES implementation in PHP
+ (c) Chris Veness 2005-2011 www.movable-type.co.uk/scripts
+ Right of free use is granted for all commercial or non-commercial use providing this
+ copyright notice is retainded. No warranty of any form is offered.
+
+Please consider donating to the code author as he has been a big help for the
+Timekoin Team.
+-==========================================================================-
+PHPSecLib
+
+RSA code for key pair creation, encrypt and decrypt functions used from this
+Pure PHP implementation.
+
+http://phpseclib.sourceforge.net/
+phpseclib is licensed with the MIT-license. By virtue of not being copyleft it's
+less restrictive than the GPL, which in turn, means that it's fully GPL
+compatible.
+
+Please consider donating to the code author as he has been a big help for the
+Timekoin Team.
+-==========================================================================- 
+Client Interface CSS Template
+
+Developed by http://twitter.com/umutm (Umut Muhaddisoglu) 2008. 
+Updated for HTML5/CSS3 by http://mediagearhead.com (Giles Wells) 2010.
