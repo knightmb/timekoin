@@ -34,7 +34,7 @@ if($_SESSION["valid_login"] == FALSE)
 
 	while(1) // Begin Infinite Loop :)
 	{
-		set_time_limit(99); // Reset Timeout
+		set_time_limit(300); // Reset Timeout
 
 		// Are we to remain active?
 		$timekoin_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,"field_data");
