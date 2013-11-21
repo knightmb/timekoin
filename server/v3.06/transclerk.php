@@ -304,7 +304,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			if(empty($poll_peer) == TRUE)
 			{
 				// Add failure points to the peer in case further issues
-				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 4);
+				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 1);
 			}
 
 			if($current_history_hash === $poll_peer)
