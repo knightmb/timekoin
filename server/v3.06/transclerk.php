@@ -96,7 +96,7 @@ if($_GET["action"] == "transaction_data" && $_GET["block_number"] >= 0)
 //***********************************************************************************
 while(1) // Begin Infinite Loop
 {
-set_time_limit(120);
+set_time_limit(300);
 //***********************************************************************************
 $loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,"field_data");
 
@@ -304,6 +304,11 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			if(empty($poll_peer) == TRUE)
 			{
 				// Add failure points to the peer in case further issues
+				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 4);
+			}
+			else if($poll_peer == "PROC")
+			{
+				// Add *less* failure points to the peer for slower transaction processing
 				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 1);
 			}
 
@@ -313,7 +318,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			}
 			else
 			{
-				if(empty($poll_peer) == FALSE && strlen($poll_peer) > 30 && $poll_peer != "ERROR_CHECK")
+				if(empty($poll_peer) == FALSE && strlen($poll_peer) > 30 && $poll_peer != "ERROR_CHECK" && $poll_peer != "PROC")
 				{
 					$trans_list_hash_different++;
 

@@ -24,7 +24,7 @@ log_ip("GE", 100);
 
 while(1) // Begin Infinite Loop
 {
-set_time_limit(60);	
+set_time_limit(300);	
 //***********************************************************************************
 $loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,"field_data");
 

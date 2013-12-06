@@ -72,7 +72,7 @@ if($_GET["action"] == "gen_peer_list")
 //***********************************************************************************
 while(1) // Begin Infinite Loop
 {
-set_time_limit(99);	
+set_time_limit(300);	
 //***********************************************************************************
 $loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,"field_data");
 

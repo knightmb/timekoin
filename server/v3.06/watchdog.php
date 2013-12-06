@@ -61,6 +61,9 @@ log_ip("WA", 100);
 
 while(1)
 {
+	// Set timeout
+	set_time_limit(60);
+	
 	// Are we to remain active?
 	$loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,"field_data");
 
@@ -98,7 +101,7 @@ while(1)
 			if((time() - $script_last_heartbeat) > 30) // Greater than triple the loop time, something is wrong
 			{
 				// Main stop was unexpected
-				write_log("Main Timekoin Processor is Inactive or Failed, will need a manual restart...", "WA");
+				write_log("Main Timekoin Processor is Inactive or Failed, will need a restart...", "WA");
 			}
 		}
 
@@ -235,7 +238,7 @@ while(1)
 		if($script_loop_active > 0)
 		{
 			// Balance Indexer should still be active
-			if((time() - $script_last_heartbeat) > 500)
+			if((time() - $script_last_heartbeat) > 600)
 			{
 				write_log("Balance Indexer has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
