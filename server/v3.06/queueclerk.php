@@ -395,7 +395,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 			$subfolder = $hash_different["subfolder$i"];
 			$port_number = $hash_different["port_number$i"];
 
-			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 8200, "queueclerk.php?action=queue");
+			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 8300, "queueclerk.php?action=queue");
 
 			// Bring up first match (if any) to compare agaist our database
 			$match_number = 1;

@@ -583,7 +583,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 								// Far enough behind to use a boost, how close to the end?
 								if($block_number + 500 < transaction_cycle(0, TRUE))
 								{
-									if($poll_peer == 1) // Sanity check on cycles allowed to donwload
+									if($poll_peer == 1) // Sanity check on cycles allowed to download
 									{
 										$super_peer_cycles = 500;
 									}
@@ -607,7 +607,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 									while($super_transaction_cycle < $block_number + $super_peer_cycles)
 									{
-										$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 2000000, "transclerk.php?action=transaction_data&block_number=$super_transaction_cycle");
+										$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 5000000, "transclerk.php?action=transaction_data&block_number=$super_transaction_cycle");
 
 										if(empty($poll_peer) == TRUE)
 										{
@@ -729,7 +729,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 					} // End blank data ahead check
 //************************************************************
 
-					$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 2000000, "transclerk.php?action=transaction_data&block_number=$block_number");
+					$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 5000000, "transclerk.php?action=transaction_data&block_number=$block_number");
 					$tc = 1;
 
 					if(empty($poll_peer) == TRUE)
