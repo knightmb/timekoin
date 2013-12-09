@@ -28,8 +28,13 @@ if($_GET["action"]=="begin_watchdog")
 	// Check last heartbeat and make sure it was more than X seconds ago
 	$watchdog_heartbeat_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,"field_data");
 
-	if($watchdog_heartbeat_active == FALSE && $datbase_error == FALSE)
+	if($watchdog_heartbeat_active == FALSE && $datbase_error == FALSE) // Not running currently
 	{
+		if($watchdog_heartbeat_active === FALSE) // No record exist yet, need to create one
+		{
+			mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('watchdog_heartbeat_active', '0')");
+		}
+		
 		mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'watchdog_last_heartbeat' LIMIT 1");
 
 		// Set loop at active now
