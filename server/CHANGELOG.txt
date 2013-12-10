@@ -1,5 +1,18 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 3.06 (Released 2013-12-10)
+============================================
+- Reduce balance index time window by half to reduce database load for slower peers
+- Use proper sorting for sql calls to do ascending order instead of using database default
+- Group transaction queue to create a more accurate hash to cut down on unnecessary CPU/database/bandwidth usage with other peers
+- Watchdog starting bug fix for when it must be restarted after an unexpected timeout on slower peers
+- Increase transaction clerk history data block size from 2MB to 5MB
+- Fix queue clerk max transaction input size for 100 transactions; was set a few characters too short causing the last 100th queue item to fail qhash testing
+- New PROC status for slower peers still processing transactions. This will avoid any confusion for faster peers that complete transaction processing before others have started or finished.
+- Create timeouts for the main and watchdog scripts in case of settings override that causes timeouts regardless
+- Increase timeouts for slower Microsoft windows systems
+
+
 Timekoin Server - 3.05 (Released 2013-11-16)
 ============================================
 - Merge pull request #6 from 2072 (Remove command windows)
@@ -9,7 +22,6 @@ Timekoin Server - 3.05 (Released 2013-11-16)
 - Treasurer Transaction Processing time now logged
 - Treasurer given priority CPU & Database resources when processing large batches of transactions
 - Limit max query size for super peer insert to 1MB
-
 
 Timekoin Server - 3.04 (Released 2013-11-5)
 ============================================
