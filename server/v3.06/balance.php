@@ -95,10 +95,10 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 
 	if($created == FALSE) // Only do one or the other at a time
 	{
-		// 2000 Transaction Cycles Back in time to index
-		$time_2000 = time() - 600000;
+		// 1000 Transaction Cycles Back in time to index
+		$time_back = time() - 300000;
 
-		$sql = "SELECT public_key_to FROM `transaction_history` WHERE `timestamp` > $time_2000 GROUP BY `public_key_to` ORDER BY RAND() LIMIT 1";
+		$sql = "SELECT public_key_to FROM `transaction_history` WHERE `timestamp` > $time_back GROUP BY `public_key_to` ORDER BY RAND() LIMIT 1";
 		$sql_result = mysql_query($sql);
 		$sql_row = mysql_fetch_array($sql_result);
 			

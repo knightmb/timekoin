@@ -111,7 +111,7 @@ function write_log($message, $type)
 //***********************************************************************************
 function generation_peer_hash()
 {
-	$sql = "SELECT * FROM `generating_peer_list` ORDER BY `join_peer_list`";
+	$sql = "SELECT * FROM `generating_peer_list` ORDER BY `join_peer_list` ASC";
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 
@@ -183,7 +183,7 @@ function transaction_history_hash()
 		$hash .= $current_history_foundation;
 	}
 
-	$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $current_foundation_cycle AND `timestamp` < $next_foundation_cycle AND `attribute` = 'H' ORDER BY `timestamp`";
+	$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $current_foundation_cycle AND `timestamp` < $next_foundation_cycle AND `attribute` = 'H' ORDER BY `timestamp` ASC";
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 
@@ -199,7 +199,7 @@ function transaction_history_hash()
 //***********************************************************************************
 function queue_hash()
 {
-	$sql = "SELECT public_key, crypt_data1, crypt_data2, crypt_data3, hash, attribute FROM `transaction_queue` ORDER BY `hash`";
+	$sql = "SELECT public_key, crypt_data1, crypt_data2, crypt_data3, hash, attribute FROM `transaction_queue` GROUP BY `hash` ORDER BY `hash` ASC";
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 
@@ -396,7 +396,7 @@ function walkhistory($block_start = 0, $block_end = 0)
 		$time4 = transaction_cycle(0 - $current_generation_block + 2 + $i);
 		$next_hash = mysql_result(mysql_query("SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time3 AND `timestamp` < $time4 AND `attribute` = 'H' LIMIT 1"),0,"hash");
 
-		$sql = "SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash`";
+		$sql = "SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
 
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
@@ -1181,7 +1181,7 @@ function visual_walkhistory($block_start = 0, $block_end = 0)
 		
 		$next_hash = mysql_result(mysql_query("SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time3 AND `timestamp` < $time4 AND `attribute` = 'H' LIMIT 1"),0,"hash");
 
-		$sql = "SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash`";
+		$sql = "SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
 
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
@@ -1277,7 +1277,7 @@ function visual_repair($block_start = 0)
 		$time1 = transaction_cycle(0 - $current_generation_block - 1 + $t);
 		$time2 = transaction_cycle(0 - $current_generation_block + $t);
 
-		$sql = "SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash`";
+		$sql = "SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
 
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
