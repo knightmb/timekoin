@@ -534,7 +534,6 @@ if($active_peers < $max_active_peers)
 						// reserve peer list so fresh reserve peers can take its place
 						$poll_failures+= 10;
 						mysql_query("UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
-						write_log("Peer is Full: $ip_address$domain:$port_number/$subfolder","PL");
 					}
 				}
 				else if($poll_peer == "FULL")
@@ -543,7 +542,6 @@ if($active_peers < $max_active_peers)
 					// reserve peer list so fresh reserve peers can take its place
 					$poll_failures+= 10;
 					mysql_query("UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
-					write_log("Peer is Full: $ip_address$domain:$port_number/$subfolder","PL");
 				}
 				else
 				{
@@ -770,9 +768,13 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 			$join_peer_list = $sql_row["join_peer_list"];
 
 			// Choose the type polling done
-			$poll_type = rand(1,5); // 1&2&3=CRC32, 4=Foundation Hash, 5=Transaction Hash
+			$poll_type = rand(1,6);
+			// 1&2=CRC32
+			// 3&4=Server Full Check
+			// 5=Foundation Hash Poll
+			// 6=Transaction Hash Poll
 
-			if($poll_type == 1 || $poll_type == 2 || $poll_type == 3)
+			if($poll_type == 1 || $poll_type == 2)
 			{
 				//Send a challenge hash to see if a timekoin server is active
 				$poll_challenge = rand(1, 999999);
@@ -793,7 +795,45 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 1);
 				}
 			}
-			else if($poll_type == 4)
+			else if($poll_type == 3 || $poll_type == 4)
+			{
+				// Is the server full to capacity with peers?
+				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 10, "peerlist.php?action=join");
+
+				if($poll_peer == "FULL")
+				{
+					if($join_peer_list > 1000000000 && $join_peer_list != 0)
+					{
+						// Modify join_peer_list field to be the join time - 1000000000
+						// so that it easy to keep the correct join time and also
+						// tag this peer as full for the peerlist
+						$join_peer_list-= 1000000000;
+						mysql_query("UPDATE `active_peer_list` SET `join_peer_list` = '$join_peer_list' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+					}
+
+					//Got a response from an active Timekoin server (-1 to failure score)
+					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -1);
+					//Update Heartbeat Time
+					mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				}
+				else if($poll_peer == "OK")
+				{
+					if($join_peer_list < 1000000000 && $join_peer_list != 0)
+					{
+						// Modify join_peer_list field to be the join time + 1000000000
+						// so that it easy to keep the correct join time and also
+						// tag this peer as full for the peerlist
+						$join_peer_list+= 1000000000;
+						mysql_query("UPDATE `active_peer_list` SET `join_peer_list` = '$join_peer_list' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+					}					
+
+					//Got a response from an active Timekoin server (-1 to failure score)
+					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -1);
+					//Update Heartbeat Time
+					mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				}
+			}			
+			else if($poll_type == 5)
 			{
 				if(empty($random_foundation_hash) == FALSE) // Make sure we had one to compare first
 				{
@@ -823,7 +863,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 					}
 				}
 			}
-			else if($poll_type == 5)
+			else if($poll_type == 6)
 			{
 				if(empty($random_transaction_hash) == FALSE) // Make sure we had one to compare first
 				{

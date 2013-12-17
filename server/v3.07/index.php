@@ -927,10 +927,25 @@ if($_SESSION["valid_login"] == TRUE)
 					}
 					else
 					{
-						$joined = time() - $sql_row["join_peer_list"];
-						$joined = tk_time_convert($joined);
-						$permanent1 = NULL;
-						$permanent2 = NULL;
+						if($sql_row["join_peer_list"] < 1000000000)
+						{
+							// Modify join_peer_list field to be the join time + 1000000000
+							// so that it easy to keep the correct join time and also
+							// tag this peer as full for the peerlist
+							$joined = time() - ($sql_row["join_peer_list"] + 1000000000);
+							$joined = tk_time_convert($joined);
+
+							$permanent1 = '<font color="green">';
+							$permanent2 = '</font>';
+						}						
+						else
+						{
+							$joined = time() - $sql_row["join_peer_list"];
+							$joined = tk_time_convert($joined);
+
+							$permanent1 = NULL;
+							$permanent2 = NULL;
+						}
 					}
 
 					$failed_column_name = 'failed_sent_heartbeat';					
@@ -939,7 +954,6 @@ if($_SESSION["valid_login"] == TRUE)
 				{
 					$failed_column_name = 'poll_failures';
 				}
-
 
 				$body_string .= '<tr>
 				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["IP_Address"] . $permanent2 . '</p></td>
@@ -998,6 +1012,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			$quick_info = 'Shows all Active Peers.<br><br>You can manually delete or edit peers in this section.
 				<br><br>Peers in <font color="blue">Blue</font> will not expire after 5 minutes of inactivity or high failure scores.
+				<br><br>Peers in <font color="green">Green</font> are at maximum capacity set by the server operator.
 				<br><br><strong>Failure Score</strong> is a total of failed polling or data exchange events. Peers that score over the failure limit are kicked from the peer list.
 				<br><br><strong>Peer Speed</strong> is combined peer performance measured over a 10 second interval.
 				<br>Ten is the average baseline.
