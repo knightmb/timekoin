@@ -238,9 +238,9 @@ if($_GET["action"] == "exchange")
 	else
 	{
 		// Server has room for another peer
-		$my_server_domain = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,"field_data");
-		$my_server_subfolder = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_subfolder' LIMIT 1"),0,"field_data");
-		$my_server_port_number = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
+		$my_server_domain = my_domain();
+		$my_server_subfolder = my_subfolder();
+		$my_server_port_number = my_port_number();
 
 		if(empty($my_server_domain) == TRUE)
 		{
@@ -260,8 +260,8 @@ if($_GET["action"] == "exchange")
 		}
 
 		// Check to make sure that this peer is not already in our active peer list
-		$duplicate_check1 = mysql_result(mysql_query("SELECT * FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' LIMIT 1"),0,"join_peer_list");
-		$duplicate_check2 = mysql_result(mysql_query("SELECT * FROM `active_peer_list` WHERE `domain` LIKE '$domain' LIMIT 1"),0,"join_peer_list");
+		$duplicate_check1 = mysql_result(mysql_query("SELECT * FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' LIMIT 1"),0,"last_heartbeat");
+		$duplicate_check2 = mysql_result(mysql_query("SELECT * FROM `active_peer_list` WHERE `domain` LIKE '$domain' LIMIT 1"),0,"last_heartbeat");
 
 		if(empty($ip_address) == TRUE)
 		{
@@ -328,7 +328,7 @@ if($_GET["action"] == "exchange")
 				// Exchange was saved, now output our peer information
 				echo "-----status=OK-----domain=$my_server_domain-----subfolder=$my_server_subfolder-----port_number=$my_server_port_number-----";
 			
-				write_log("Peer Joined My Server $ip_address:$domain:$port_number/$subfolder", "PL");
+				write_log("Peer Joined My Server $ip_address$domain:$port_number/$subfolder", "PL");
 			}
 			else
 			{
@@ -430,9 +430,9 @@ if($active_peers < $max_active_peers)
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 
-	$my_server_domain = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,"field_data");
-	$my_server_subfolder = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_subfolder' LIMIT 1"),0,"field_data");
-	$my_server_port_number = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
+	$my_server_domain = my_domain();
+	$my_server_subfolder = my_subfolder();
+	$my_server_port_number = my_port_number();
 
 	// Peer difference
 	$peer_difference_count = $max_active_peers - $active_peers;
@@ -447,8 +447,8 @@ if($active_peers < $max_active_peers)
 		$poll_failures = $sql_row["poll_failures"];
 
 		// Check to make sure that this peer is not already in our active peer list
-		$duplicate_check1 = mysql_result(mysql_query("SELECT * FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' LIMIT 1"),0,0);
-		$duplicate_check2 = mysql_result(mysql_query("SELECT * FROM `active_peer_list` WHERE `domain` LIKE '$domain' LIMIT 1"),0,1);
+		$duplicate_check1 = mysql_result(mysql_query("SELECT last_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' LIMIT 1"),0,0);
+		$duplicate_check2 = mysql_result(mysql_query("SELECT last_heartbeat FROM `active_peer_list` WHERE `domain` LIKE '$domain' LIMIT 1"),0,0);
 
 		if(empty($ip_address) == TRUE)
 		{
@@ -496,7 +496,6 @@ if($active_peers < $max_active_peers)
 			if($poll_peer == $hash_solution)
 			{
 				//Got a response from an active Timekoin server
-
 				// Ask to be added to the other server's peerlist
 				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 10, "peerlist.php?action=join");
 
@@ -526,19 +525,30 @@ if($active_peers < $max_active_peers)
 							// Subtract 1 from the peer difference count
 							$peer_difference_count--;
 
-							write_log("Joined with Peer $ip_address:$domain:$port_number/$subfolder", "PL");
+							write_log("Joined with Peer $ip_address$domain:$port_number/$subfolder", "PL");
 						}
 					}
 					else if($exchange_status == "FULL")
 					{
-						// Server is full already
+						// Server is full already, add more failure points that will get it eventually removed from the
+						// reserve peer list so fresh reserve peers can take its place
+						$poll_failures+= 10;
+						mysql_query("UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+						write_log("Peer is Full: $ip_address$domain:$port_number/$subfolder","PL");
 					}
+				}
+				else if($poll_peer == "FULL")
+				{
+					// Server is full already, add more failure points that will get it eventually removed from the
+					// reserve peer list so fresh reserve peers can take its place
+					$poll_failures+= 10;
+					mysql_query("UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+					write_log("Peer is Full: $ip_address$domain:$port_number/$subfolder","PL");
 				}
 				else
 				{
-					// Server is either full or not responding, record polling failure
+					// Server is either is not responding, record polling failure
 					$poll_failures++;
-
 					mysql_query("UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 				}
 			}
@@ -546,7 +556,6 @@ if($active_peers < $max_active_peers)
 			{
 				//No response, record polling failure for future reference
 				$poll_failures++;
-
 				mysql_query("UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 			}
 
