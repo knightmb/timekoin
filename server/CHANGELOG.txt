@@ -1,5 +1,15 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 3.07 (Released 2013-12-17)
+============================================
+- Tweaks to reserve peer handling when seeking out new peers to connect with
+- Tweak duplicate peer check to better filter duplicate peers trying to connect
+- Increase polling wait time by 1000 ms to help with long geographic distance delays between peers
+- Server operator set failure limits for active peers now applies to reserve peers also
+- First contact server selection randomized for new peers joining the network
+- Peerlist updated to display full capacity peers in green
+
+
 Timekoin Server - 3.06 (Released 2013-12-10)
 ============================================
 - Reduce balance index time window by half to reduce database load for slower peers
@@ -11,7 +21,6 @@ Timekoin Server - 3.06 (Released 2013-12-10)
 - New PROC status for slower peers still processing transactions. This will avoid any confusion for faster peers that complete transaction processing before others have started or finished.
 - Create timeouts for the main and watchdog scripts in case of settings override that causes timeouts regardless
 - Increase timeouts for slower Microsoft windows systems
-
 
 Timekoin Server - 3.05 (Released 2013-11-16)
 ============================================
