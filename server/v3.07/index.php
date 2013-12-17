@@ -650,7 +650,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["time"] == "poll")
 		{
 			ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
-			ini_set('default_socket_timeout', 3); // Timeout for request in seconds
+			ini_set('default_socket_timeout', 4); // Timeout for request in seconds
 			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
 				<tr><th>Peer</th><th>Time</th><th>Variance</th><th>Ping</th></tr>';
 

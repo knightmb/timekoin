@@ -383,16 +383,16 @@ else
 //***********************************************************************************
 //***********************************************************************************
 ini_set('user_agent', 'Timekoin Server (Peerlist) v' . TIMEKOIN_VERSION);
-ini_set('default_socket_timeout', 2); // Timeout for request in seconds
+ini_set('default_socket_timeout', 3); // Timeout for request in seconds
 $max_active_peers = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,"field_data");
 $max_new_peers = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'max_new_peers' LIMIT 1"),0,"field_data");
 $allow_lan_peers = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,"field_data"));
 
 // How many active peers do we have?
-$sql = "SELECT * FROM `active_peer_list`";
+$sql = "SELECT join_peer_list FROM `active_peer_list`";
 $active_peers = mysql_num_rows(mysql_query($sql));
 
-$sql = "SELECT * FROM `new_peers_list`";
+$sql = "SELECT join_peer_list FROM `new_peers_list`";
 $new_peers = mysql_num_rows(mysql_query($sql));
 
 if($active_peers == 0 && $new_peers == 0)
@@ -584,7 +584,7 @@ $new_peers_numbers = mysql_num_rows(mysql_query($sql));
 
 if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to avoid spamming for new peers
 {
-	$my_server_domain = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,"field_data");
+	$my_server_domain = my_domain();
 
 	if(empty($my_server_domain) == TRUE)
 	{
@@ -644,8 +644,8 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 			else
 			{
 				// Check to make sure that this peer is not already in our new peer list
-				$duplicate_check1 = mysql_result(mysql_query("SELECT * FROM `new_peers_list` WHERE `IP_Address` = '$peer_IP' LIMIT 1"),0,0);
-				$duplicate_check2 = mysql_result(mysql_query("SELECT * FROM `new_peers_list` WHERE `domain` LIKE '$peer_domain' LIMIT 1"),0,1);
+				$duplicate_check1 = mysql_result(mysql_query("SELECT IP_Address FROM `new_peers_list` WHERE `IP_Address` = '$peer_IP' LIMIT 1"),0,0);
+				$duplicate_check2 = mysql_result(mysql_query("SELECT domain FROM `new_peers_list` WHERE `domain` LIKE '$peer_domain' LIMIT 1"),0,0);
 
 				if(empty($peer_IP) == TRUE)
 				{
@@ -745,9 +745,11 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 	$sql = "SELECT * FROM `active_peer_list`";
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
+	
 	// Grab random Transaction Foundation Hash
 	$rand_block = rand(0,foundation_cycle(0, TRUE) - 5); // Range from Start to Last 5 Foundation Hash
 	$random_foundation_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_foundation` WHERE `block` = $rand_block LIMIT 1"),0,0);
+	
 	// Grab random Transaction Hash
 	$rand_block2 = rand(transaction_cycle((0 - transaction_cycle(0, TRUE)), TRUE), transaction_cycle(-1000, TRUE)); // Range from Start to Last 1000 Transaction Hash
 	$rand_block2 = transaction_cycle(0 - $rand_block2);
