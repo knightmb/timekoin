@@ -399,8 +399,7 @@ if($active_peers == 0 && $new_peers == 0)
 {
 	// No active or new peers to poll from, start with the first contact servers
 	// and copy them to the new peer list
-	$sql = "SELECT * FROM `options` WHERE `field_name` = 'first_contact_server'";
-
+	$sql = "SELECT * FROM `options` WHERE `field_name` = 'first_contact_server' ORDER BY RAND() LIMIT 5";
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 
@@ -561,7 +560,8 @@ if($active_peers < $max_active_peers)
 		else
 		{
 			// Active response will remove poll failures
-			mysql_query("UPDATE `new_peers_list` SET `poll_failures` = 0 WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+			$poll_failures--;
+			mysql_query("UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 		}
 
 		// Check to see if enough peers have been added
@@ -900,11 +900,11 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 
 	} // End for Loop
 
-	// Remove all active peers that are offline for more than 5 minutes or have a high failure score
-	$peer_failure_grade = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,0);
-	
 	if(rand(1,2) == 2)// Randomize to avoid spamming DB
 	{
+		// Remove all active peers that are offline for more than 5 minutes or have a high failure score
+		$peer_failure_grade = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,0);
+
 		mysql_query("DELETE QUICK FROM `active_peer_list` WHERE `last_heartbeat` < " . (time() - 300) . " AND `join_peer_list` != 0");
 		mysql_query("DELETE QUICK FROM `active_peer_list` WHERE `failed_sent_heartbeat` >= $peer_failure_grade AND `join_peer_list` != 0");
 	}
@@ -926,32 +926,59 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 			$subfolder = $sql_row["subfolder"];
 			$port_number = $sql_row["port_number"];
 			$poll_failures = $sql_row["poll_failures"];
+			
+			$poll_type = rand(1,2);
 
-			//Send a challenge hash to see if a timekoin server is active
-			$poll_challenge = rand(1, 999999);
-			$hash_solution = hash('crc32', $poll_challenge);
-
-			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 10, "peerlist.php?action=poll&challenge=$poll_challenge");
-
-			if($poll_peer == $hash_solution)
+			// 1=CRC32
+			// 2=Server Full Check
+			if($poll_type == 1)
 			{
-				//Got a response from an active Timekoin server
-				$poll_failures--;
-				mysql_query("UPDATE `new_peers_list` SET `poll_failures` = $poll_failures WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
-			}		
+				//Send a challenge hash to see if a timekoin server is active
+				$poll_challenge = rand(1, 999999);
+				$hash_solution = hash('crc32', $poll_challenge);
+
+				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 10, "peerlist.php?action=poll&challenge=$poll_challenge");
+
+				if($poll_peer == $hash_solution)
+				{
+					//Got a response from an active Timekoin server
+					$poll_failures--;
+					mysql_query("UPDATE `new_peers_list` SET `poll_failures` = $poll_failures WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				}		
+				else
+				{
+					//No response, record polling failure for future reference
+					$poll_failures++;
+					mysql_query("UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				}
+			}
 			else
 			{
-				//No response, record polling failure for future reference
-				$poll_failures++;
-				mysql_query("UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				// Is the server full to capacity with peers?
+				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 10, "peerlist.php?action=join");
+
+				if($poll_peer == "FULL")
+				{
+					//Server is full, ramp up failure points to get it purged quicker
+					$poll_failures+= 10;
+					mysql_query("UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				}
+				else if($poll_peer == "OK")
+				{
+					//Got a response from an active Timekoin server that is not full to capacity yet
+					$poll_failures-= 5;
+					mysql_query("UPDATE `new_peers_list` SET `poll_failures` = $poll_failures WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				}
 			}
 		} // End Randomize Check
 	} // End for Loop
 
-	// Clean up reserve peer list by removing those that have no responded for over 30 poll attempts
 	if(rand(1,2) == 2)// Randomize to avoid spamming DB
 	{	
-		mysql_query("DELETE QUICK FROM `new_peers_list` WHERE `poll_failures` > 30");
+		// Clean up reserve peer list by removing those that have passed the server set failure score limit
+		$peer_failure_grade = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,0);
+
+		mysql_query("DELETE QUICK FROM `new_peers_list` WHERE `poll_failures` > $peer_failure_grade");
 	}
 //***********************************************************************************	
 //***********************************************************************************
