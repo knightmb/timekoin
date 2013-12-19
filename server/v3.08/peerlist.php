@@ -260,8 +260,8 @@ if($_GET["action"] == "exchange")
 		}
 
 		// Check to make sure that this peer is not already in our active peer list
-		$duplicate_check1 = mysql_result(mysql_query("SELECT * FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' LIMIT 1"),0,"last_heartbeat");
-		$duplicate_check2 = mysql_result(mysql_query("SELECT * FROM `active_peer_list` WHERE `domain` LIKE '$domain' LIMIT 1"),0,"last_heartbeat");
+		$duplicate_check1 = mysql_result(mysql_query("SELECT last_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' LIMIT 1"),0,0);
+		$duplicate_check2 = mysql_result(mysql_query("SELECT domain FROM `active_peer_list` WHERE `domain` LIKE '$domain' LIMIT 1"),0,0);
 
 		if(empty($ip_address) == TRUE)
 		{
@@ -321,13 +321,12 @@ if($_GET["action"] == "exchange")
 			}
 			
 			$sql = "INSERT INTO `active_peer_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`last_heartbeat` ,`join_peer_list` ,`failed_sent_heartbeat`)
-	VALUES ('$ip_address', '$domain', '$subfolder', '$port_number', '" . time() . "', '" . time() . "', '0');";		
+	VALUES ('$ip_address', '$domain', '$subfolder', '$port_number', '" . time() . "', '" . time() . "', '0')";
 
 			if(mysql_query($sql) == TRUE)
 			{
 				// Exchange was saved, now output our peer information
 				echo "-----status=OK-----domain=$my_server_domain-----subfolder=$my_server_subfolder-----port_number=$my_server_port_number-----";
-			
 				write_log("Peer Joined My Server $ip_address$domain:$port_number/$subfolder", "PL");
 			}
 			else
@@ -447,7 +446,7 @@ if($active_peers < $max_active_peers)
 
 		// Check to make sure that this peer is not already in our active peer list
 		$duplicate_check1 = mysql_result(mysql_query("SELECT last_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' LIMIT 1"),0,0);
-		$duplicate_check2 = mysql_result(mysql_query("SELECT last_heartbeat FROM `active_peer_list` WHERE `domain` LIKE '$domain' LIMIT 1"),0,0);
+		$duplicate_check2 = mysql_result(mysql_query("SELECT domain FROM `active_peer_list` WHERE `domain` LIKE '$domain' LIMIT 1"),0,0);
 
 		if(empty($ip_address) == TRUE)
 		{

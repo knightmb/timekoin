@@ -751,13 +751,13 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["poll_failure"] == "poll")
 		{
 			ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
-			ini_set('default_socket_timeout', 3); // Timeout for request in seconds
+			ini_set('default_socket_timeout', 4); // Timeout for request in seconds
 			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
 				<tr><th>Peer</th><th>My Failure Score</th></tr>';
 
-			$my_domain = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,"field_data");
-			$my_subfolder = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_subfolder' LIMIT 1"),0,"field_data");
-			$my_port = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
+			$my_domain = my_domain();
+			$my_subfolder = my_subfolder();
+			$my_port = my_port_number();
 
 			// Polling what the active peers have
 			$sql = "SELECT * FROM `active_peer_list`";
