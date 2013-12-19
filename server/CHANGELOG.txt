@@ -3,6 +3,7 @@ Timekoin Server - Change Log
 Timekoin Server - 3.08 (Released 2013-12-19)
 ============================================
 - Fix IP filtering issue for peers running straight IP that would cause them to not join domain named peers properly
+- Tweak security threshold for logins and process starts to be less aggressive so user does not lock them-self out by accident
 
 
 Timekoin Server - 3.07 (Released 2013-12-17)
