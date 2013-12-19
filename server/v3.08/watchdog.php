@@ -62,7 +62,7 @@ if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 	exit ("Your IP Has Been Banned");
 }
 
-log_ip("WA", 100);
+log_ip("WA", 50);
 
 while(1)
 {

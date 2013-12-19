@@ -23,7 +23,7 @@ if($_GET["action"]=="begin_main")
 		exit ("Your IP Has Been Banned");
 	}
 
-	log_ip("MA", 100);
+	log_ip("MA", 50);
 
 	// Check last heartbeat and make sure it was more than X seconds ago
 	$main_heartbeat_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,"field_data");

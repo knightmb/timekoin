@@ -17,7 +17,9 @@ if($_SESSION["valid_login"] == FALSE && $_GET["action"] != "login")
 		// Sorry, your IP address has been banned :(
 		exit ("Your IP Has Been Banned");
 	}	
-	
+
+	log_ip("GU", 50);
+
 	$_SESSION["valid_session"] = TRUE;
 
 	if($_SESSION["valid_session"] == TRUE)
@@ -115,7 +117,7 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 
 		// Log invalid attempts
 		write_log("Invalid Login from IP: " . $_SERVER['REMOTE_ADDR'] . " trying Username:[" . filter_sql($http_username) . "] with Password:[" . filter_sql($http_password) . "]", "GU");
-		log_ip("GU", 65);
+		log_ip("GU", 50);
 	}
 
 	sleep(1); // One second delay to help prevent brute force attack
