@@ -1,5 +1,10 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 3.08 (Released 2013-12-19)
+============================================
+- Fix IP filtering issue for peers running straight IP that would cause them to not join domain named peers properly
+
+
 Timekoin Server - 3.07 (Released 2013-12-17)
 ============================================
 - Tweaks to reserve peer handling when seeking out new peers to connect with
@@ -8,7 +13,6 @@ Timekoin Server - 3.07 (Released 2013-12-17)
 - Server operator set failure limits for active peers now applies to reserve peers also
 - First contact server selection randomized for new peers joining the network
 - Peerlist updated to display full capacity peers in green
-
 
 Timekoin Server - 3.06 (Released 2013-12-10)
 ============================================
