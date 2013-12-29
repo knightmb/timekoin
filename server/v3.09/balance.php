@@ -66,7 +66,7 @@ $foundation_active = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_s
 if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cycle) > 40 && $foundation_active != 1)
 {
 	// Build Balance Index for Transactions about to be Processed in the Queue
-	$sql = "SELECT public_key  FROM `transaction_queue` WHERE `attribute` = 'T'";
+	$sql = "SELECT public_key FROM `transaction_queue` WHERE `attribute` = 'T'";
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 	$queue_index_created = FALSE;
