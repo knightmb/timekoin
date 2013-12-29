@@ -66,10 +66,10 @@ $foundation_active = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_s
 if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cycle) > 40 && $foundation_active != 1)
 {
 	// Build Balance Index for Transactions about to be Processed in the Queue
-	$sql = "SELECT public_key FROM `transaction_queue`";
+	$sql = "SELECT public_key  FROM `transaction_queue` WHERE `attribute` = 'T'";
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
-	$created = FALSE;
+	$queue_index_created = FALSE;
 
 	if($sql_num_results > 0)
 	{
@@ -82,18 +82,18 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 			// Run a balance index if one does not already exist
 			$balance_index = mysql_result(mysql_query("SELECT public_key_hash FROM `balance_index` WHERE `public_key_hash` = '$public_key_from' AND `block` = '" . foundation_cycle(-1, TRUE) . "' LIMIT 1"),0,0);
 
-			if(empty($balance_index) == TRUE)
+			if($balance_index === FALSE)
 			{
 				// No index balance, go ahead and create one
 				write_log("Updating Balance Index From Transaction Queue", "BA");
 				check_crypt_balance($sql_row["public_key"]);
-				$created = TRUE;
+				$queue_index_created = TRUE;
 				break;
 			}		
 		}
 	}
 
-	if($created == FALSE) // Only do one or the other at a time
+	if($queue_index_created == FALSE) // Only do one or the other at a time
 	{
 		// 1000 Transaction Cycles Back in time to index
 		$time_back = time() - 300000;
@@ -107,7 +107,7 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 		// Run a balance index if one does not already exist
 		$balance_index = mysql_result(mysql_query("SELECT public_key_hash FROM `balance_index` WHERE `public_key_hash` = '$public_key_from' AND `block` = '" . foundation_cycle(-1, TRUE) . "' LIMIT 1"),0,0);
 
-		if(empty($balance_index) == TRUE)
+		if($balance_index === FALSE)
 		{
 			// No index balance, go ahead and create one
 			write_log("Updating Balance Index From Transaction History", "BA");

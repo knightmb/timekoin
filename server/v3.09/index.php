@@ -2745,7 +2745,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string .= visual_repair($_POST["repair_from"]);
 			$body_string .= '</table></div>';
 
-			write_log("A History Block Repair was started from Transaction Cycle #" . $_POST["repair_from"], "GU");
+			write_log("A History Data Repair was started from Transaction Cycle #" . $_POST["repair_from"], "GU");
 		}
 
 		if($_GET["action"] == "check_tables")
@@ -2958,9 +2958,9 @@ if($_SESSION["valid_login"] == TRUE)
 		
 		$text_bar = tools_bar();
 
-		$quick_info = '<strong>History Walk</strong> will manually test all transactions starting at the specified block and give a status for each block.<br><br>
-			<strong>Schedule Check</strong> will schedule Timekoin to check and repair the specified block.<br><br>
-			<strong>Repair</strong> will force Timekoin to recalculate all verification hashes from the specified block to now.<br><br>
+		$quick_info = '<strong>History Walk</strong> will manually test all transactions starting at the specified cycle and give a status for each cycle.<br><br>
+			<strong>Schedule Check</strong> will schedule Timekoin to check and repair the specified cycle.<br><br>
+			<strong>Repair</strong> will force Timekoin to recalculate all verification hashes from the specified cycle to now.<br><br>
 			<strong>Check DB</strong> will check the data integrity of all tables in the database.<br><br>
 			<strong>Optimize DB</strong> will optimize all tables &amp; indexes in the database.<br><br>
 			<strong>Repair DB</strong> will attempt to repair all tables in the database.';

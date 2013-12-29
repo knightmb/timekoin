@@ -111,7 +111,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 	if($sql_num_results > 0)
 	{
 		// Choose random transaction foundation
-		if(rand(1,5) == 5)
+		if(rand(1,4) == 4)
 		{
 			// Check the most recent foundations more frequently than older foundations
 			$rand_block = rand($previous_foundation_block - 4,$previous_foundation_block);
