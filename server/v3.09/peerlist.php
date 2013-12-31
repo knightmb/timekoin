@@ -397,8 +397,12 @@ $new_peers = mysql_num_rows(mysql_query($sql));
 if($active_peers == 0 && $new_peers == 0)
 {
 	// No active or new peers to poll from, start with the first contact servers
-	// and copy them to the new peer list
-	$sql = "SELECT * FROM `options` WHERE `field_name` = 'first_contact_server' ORDER BY RAND() LIMIT 5";
+	// and copy them to the new peer list.
+
+	// Use a 75% ratio of active peers set by the user
+	$first_contact_limit = intval($max_active_peers * 0.75);
+	
+	$sql = "SELECT field_data FROM `options` WHERE `field_name` = 'first_contact_server' ORDER BY RAND() LIMIT $first_contact_limit";
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 
@@ -503,27 +507,43 @@ if($active_peers < $max_active_peers)
 					$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 512, "peerlist.php?action=exchange&domain=$my_server_domain&subfolder=$my_server_subfolder&port_number=$my_server_port_number");
 
 					$exchange_status = find_string("-----status=", "-----domain", $poll_peer);
+					$exchange_domain = find_string("-----domain=", "-----subfolder", $poll_peer);
 
 					if($exchange_status == "OK")
 					{
 						// Insert this peer into our active peer table
+						$domain_spoof = FALSE;
 
 						// Save only domain name if both IP and Domain exist
 						if(empty($domain) == FALSE)
 						{
 							$ip_address = NULL;
+
+							// Check for domain redirect spoofing
+							if($domain != $exchange_domain)
+							{
+								// The domain I am joining claims to be another?
+								$domain_spoof = TRUE;
+							}
 						}
 
-						// Store new peer in active list
-						$sql = "INSERT INTO `active_peer_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`last_heartbeat` ,`join_peer_list` ,`failed_sent_heartbeat`)
-				VALUES ('$ip_address', '$domain', '$subfolder', '$port_number', '" . time() . "', '" . time() . "', '0');";		
-
-						if(mysql_query($sql) == TRUE)
+						if($domain_spoof == FALSE)
 						{
-							// Subtract 1 from the peer difference count
-							$peer_difference_count--;
+							// Store new peer in active list
+							$sql = "INSERT INTO `active_peer_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`last_heartbeat` ,`join_peer_list` ,`failed_sent_heartbeat`)
+					VALUES ('$ip_address', '$domain', '$subfolder', '$port_number', '" . time() . "', '" . time() . "', '0');";		
 
-							write_log("Joined with Peer $ip_address$domain:$port_number/$subfolder", "PL");
+							if(mysql_query($sql) == TRUE)
+							{
+								// Subtract 1 from the peer difference count
+								$peer_difference_count--;
+
+								write_log("Joined with Peer $ip_address$domain:$port_number/$subfolder", "PL");
+							}
+						}
+						else
+						{
+							write_log("Someone is Spoofing Peer $exchange_domain with Domain [$domain]", "PL");
 						}
 					}
 					else if($exchange_status == "FULL")

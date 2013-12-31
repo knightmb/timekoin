@@ -26,7 +26,7 @@ while(1) // Begin Infinite Loop
 {
 set_time_limit(300);	
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'balance_heartbeat_active' LIMIT 1"),0,"field_data");
+$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'balance_heartbeat_active' LIMIT 1"),0,0);
 
 // Check script status
 if($loop_active === FALSE)
@@ -59,7 +59,7 @@ else
 $current_transaction_cycle = transaction_cycle(0);
 $next_transaction_cycle = transaction_cycle(1);
 
-$foundation_active = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,"field_data"));
+$foundation_active = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,0));
 
 // Can we work on the key balances in the database?
 // Not allowed 120 seconds before and 40 seconds after transaction cycle.
@@ -98,7 +98,7 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 		// 1000 Transaction Cycles Back in time to index
 		$time_back = time() - 300000;
 
-		$sql = "SELECT public_key_to FROM `transaction_history` WHERE `timestamp` > $time_back GROUP BY `public_key_to` ORDER BY RAND() LIMIT 1";
+		$sql = "SELECT public_key_to FROM `transaction_history` WHERE `timestamp` > $time_back AND `attribute` = 'T' GROUP BY `public_key_to` ORDER BY RAND() LIMIT 1";
 		$sql_result = mysql_query($sql);
 		$sql_row = mysql_fetch_array($sql_result);
 			
@@ -117,7 +117,7 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 }
 //***********************************************************************************
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'balance_heartbeat_active' LIMIT 1"),0,"field_data");
+$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'balance_heartbeat_active' LIMIT 1"),0,0);
 
 // Check script status
 if($loop_active == 3)
