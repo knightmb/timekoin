@@ -23,10 +23,10 @@ if($_GET["action"]=="begin_watchdog")
 		exit ("Your IP Has Been Banned");
 	}
 
-	log_ip("WA", 100);
+	log_ip("WA", 50);// Avoid flood loading system process
 
 	// Check last heartbeat and make sure it was more than X seconds ago
-	$watchdog_heartbeat_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,"field_data");
+	$watchdog_heartbeat_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,0);
 
 	if($watchdog_heartbeat_active == FALSE && $datbase_error == FALSE) // Not running currently
 	{
@@ -62,7 +62,7 @@ if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 	exit ("Your IP Has Been Banned");
 }
 
-log_ip("WA", 50);
+log_ip("WA", 25);// Avoid flood loading system process
 
 while(1)
 {
@@ -70,7 +70,7 @@ while(1)
 	set_time_limit(300);
 	
 	// Are we to remain active?
-	$loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,"field_data");
+	$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,0);
 
 	if($loop_active === FALSE) // Databaes Error
 	{
@@ -97,8 +97,8 @@ while(1)
 		mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'watchdog_heartbeat_active' LIMIT 1");
 //*****************************************************************************************************
 //*****************************************************************************************************	
-		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
+		$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,0);
 
 		if($script_loop_active > 0)
 		{
@@ -114,13 +114,13 @@ while(1)
 //*****************************************************************************************************
 //*****************************************************************************************************	
 
-		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'generation_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,0);
+		$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_last_heartbeat' LIMIT 1"),0,0);
 
 		if($script_loop_active > 0)
 		{
 			// Generation should still be active
-			if((time() - $script_last_heartbeat) > 300)
+			if((time() - $script_last_heartbeat) > 999)
 			{
 				write_log("Generation Clerk has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
@@ -130,13 +130,13 @@ while(1)
 
 		sleep(3);
 
-		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'treasurer_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,0);
+		$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_last_heartbeat' LIMIT 1"),0,0);
 
 		if($script_loop_active > 0)
 		{
 			// Treasurer should still be active
-			if((time() - $script_last_heartbeat) > 300)
+			if((time() - $script_last_heartbeat) > 999)
 			{
 				write_log("Treasurer has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
@@ -146,13 +146,13 @@ while(1)
 
 		sleep(4);
 
-		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peerlist_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,0);
+		$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_last_heartbeat' LIMIT 1"),0,0);
 
 		if($script_loop_active > 0)
 		{
 			// Peerlist should still be active
-			if((time() - $script_last_heartbeat) > 300)
+			if((time() - $script_last_heartbeat) > 999)
 			{
 				write_log("Peer List Clerk has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
@@ -163,7 +163,7 @@ while(1)
 		sleep(4);
 		//**************************************
 		//Mid-way check point to speed up watchdog shutdown
-		$loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,"field_data");
+		$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,0);
 
 		if($loop_active == 3) // Do a final check to make sure we shouldn't stop running instead
 		{
@@ -173,13 +173,13 @@ while(1)
 		}
 		//**************************************
 		//**************************************
-		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'queueclerk_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,0);
+		$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_last_heartbeat' LIMIT 1"),0,0);
 
 		if($script_loop_active > 0)
 		{
 			// Queueclerk should still be active
-			if((time() - $script_last_heartbeat) > 300)
+			if((time() - $script_last_heartbeat) > 999)
 			{
 				write_log("Transaction Queue Clerk has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
@@ -189,13 +189,13 @@ while(1)
 
 		sleep(4);
 
-		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'genpeer_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,0);
+		$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'genpeer_last_heartbeat' LIMIT 1"),0,0);
 
 		if($script_loop_active > 0)
 		{
 			// Genpeer should still be active
-			if((time() - $script_last_heartbeat) > 300)
+			if((time() - $script_last_heartbeat) > 999)
 			{
 				write_log("Generation Peer Clerk has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
@@ -205,13 +205,13 @@ while(1)
 
 		sleep(3);		
 
-		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'transclerk_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,0);
+		$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_last_heartbeat' LIMIT 1"),0,0);
 
 		if($script_loop_active > 0)
 		{
 			// Transclerk should still be active
-			if((time() - $script_last_heartbeat) > 300)
+			if((time() - $script_last_heartbeat) > 999)
 			{
 				write_log("Transaction Clerk has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
@@ -221,13 +221,13 @@ while(1)
 
 		sleep(3);
 
-		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,0);
+		$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_last_heartbeat' LIMIT 1"),0,0);
 
 		if($script_loop_active > 0)
 		{
 			// Foundation should still be active
-			if((time() - $script_last_heartbeat) > 300)
+			if((time() - $script_last_heartbeat) > 999)
 			{
 				write_log("Foundation Clerk has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
@@ -237,13 +237,13 @@ while(1)
 
 		sleep(3);
 
-		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'balance_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'balance_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'balance_heartbeat_active' LIMIT 1"),0,0);
+		$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'balance_last_heartbeat' LIMIT 1"),0,0);
 
 		if($script_loop_active > 0)
 		{
 			// Balance Indexer should still be active
-			if((time() - $script_last_heartbeat) > 600)
+			if((time() - $script_last_heartbeat) > 999)
 			{
 				write_log("Balance Indexer has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
@@ -261,7 +261,7 @@ while(1)
 		mysql_query($sql);
 
 		// Mark this loop finished...
-		$loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,"field_data");
+		$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,0);
 
 		if($loop_active == 3) // Do a final check to make sure we shouldn't stop running instead
 		{

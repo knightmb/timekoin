@@ -18,7 +18,7 @@ if($_SESSION["valid_login"] == FALSE && $_GET["action"] != "login")
 		exit ("Your IP Has Been Banned");
 	}	
 
-	log_ip("GU", 50);
+	log_ip("GU", 50); // Avoid flood loading loging screen
 
 	$_SESSION["valid_session"] = TRUE;
 
@@ -27,49 +27,6 @@ if($_SESSION["valid_login"] == FALSE && $_GET["action"] != "login")
 		// Not logged in, display login page
 		login_screen();
 	}
-
-	if($_GET["autostart"] == "1" && $_SERVER["SERVER_ADDR"] == gethostbyname(trim(`hostname`))) // Only do this if run from the local machine
-	{
-		// Auto start Timekoin process right away, even before login
-		if($db_connect == TRUE && $db_select == TRUE)
-		{
-			// Check last heartbeat and make sure it was more than X seconds ago
-			$main_heartbeat_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,"field_data");
-
-			if($main_heartbeat_active == FALSE)
-			{
-				// Database Initialization
-				initialization_database();
-
-				mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'main_last_heartbeat' LIMIT 1");
-
-				// Set loop at active now
-				mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1");
-
-				activate(TIMEKOINSYSTEM, 1); // In case this was disabled from a stop call in the server GUI
-
-				// Start all system scripts
-				call_script("transclerk.php");
-				call_script("foundation.php", 0);
-				call_script("generation.php");
-				call_script("treasurer.php");
-				call_script("peerlist.php");
-				call_script("queueclerk.php");
-				call_script("balance.php", 0);
-				call_script("genpeer.php");
-				call_script("main.php");
-
-				// Use uPNP to map inbound ports for Windows systems
-				if(getenv("OS") == "Windows_NT" && file_exists("utils\upnpc.exe") == TRUE)
-				{
-					$server_IP = gethostbyname(trim(`hostname`));
-					pclose(popen("start /B utils\upnpc.exe -e Timekoin -a $server_IP " . my_port_number() . " " . my_port_number() . " TCP", "r"));
-				}				
-			} // End active main.php process check
-
-		}// End DB check
-
-	}// End Autostart check
 	exit;
 }
 
@@ -99,8 +56,8 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 			exit ("Your IP Has Been Banned");
 		}
 
-		$username_hash = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'username' LIMIT 1"),0,"field_data");
-		$password_hash = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,"field_data");
+		$username_hash = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'username' LIMIT 1"),0,0);
+		$password_hash = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,0);
 
 		if(hash('sha256', $http_username) == $username_hash)
 		{
@@ -117,9 +74,9 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 
 		// Log invalid attempts
 		write_log("Invalid Login from IP: " . $_SERVER['REMOTE_ADDR'] . " trying Username:[" . filter_sql($http_username) . "] with Password:[" . filter_sql($http_password) . "]", "GU");
-		log_ip("GU", 50);
 	}
 
+	log_ip("GU", 100); // Avoid flood-brute password guessing
 	sleep(1); // One second delay to help prevent brute force attack
 	login_screen("Login Failed");
 	exit;
@@ -1249,19 +1206,19 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["code"] == "1")
 		{
-			$server_code = '<font color="green"><strong>Timekoin Started...</strong></font>';
+			$server_code = '<font color="green"><strong>Timekoin Process Started...</strong></font>';
 		}
 		if($_GET["code"] == "99")
 		{
-			$server_code = '<font color="blue"><strong>Timekoin Already Active...</strong></font>';
+			$server_code = '<font color="blue"><strong>Timekoin Process Already Active...</strong></font>';
 		}
 		if($_GET["code"] == "2")
 		{
-			$server_code = '<font color="green"><strong>Watchdog Started...</strong></font>';
+			$server_code = '<font color="green"><strong>Watchdog Process Started...</strong></font>';
 		}
 		if($_GET["code"] == "89")
 		{
-			$server_code = '<font color="blue"><strong>Watchdog Already Active...</strong></font>';
+			$server_code = '<font color="blue"><strong>Watchdog Process Already Active...</strong></font>';
 		}
 
 		$body_string = system_screen();
