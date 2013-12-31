@@ -236,27 +236,27 @@ function perm_peer_mode()
 //***********************************************************************************
 function my_public_key()
 {
-	return mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,1);
+	return mysql_result(mysql_query("SELECT field_data FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,0);
 }
 //***********************************************************************************
 function my_private_key()
 {
-	return mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_private_key' LIMIT 1"),0,1);
+	return mysql_result(mysql_query("SELECT field_data FROM `my_keys` WHERE `field_name` = 'server_private_key' LIMIT 1"),0,0);
 }
 //***********************************************************************************
 function my_subfolder()
 {
-	return mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_subfolder' LIMIT 1"),0,1);
+	return mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'server_subfolder' LIMIT 1"),0,0);
 }
 //***********************************************************************************
 function my_port_number()
 {
-	return mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,1);
+	return mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,0);
 }
 //***********************************************************************************
 function my_domain()
 {
-	return mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,1);
+	return mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,0);
 }
 //***********************************************************************************
 function modify_peer_grade($ip_address, $domain, $subfolder, $port_number, $grade)
@@ -394,7 +394,7 @@ function walkhistory($block_start = 0, $block_end = 0)
 
 		$time3 = transaction_cycle(0 - $current_generation_block + 1 + $i);
 		$time4 = transaction_cycle(0 - $current_generation_block + 2 + $i);
-		$next_hash = mysql_result(mysql_query("SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time3 AND `timestamp` < $time4 AND `attribute` = 'H' LIMIT 1"),0,"hash");
+		$next_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time3 AND `timestamp` < $time4 AND `attribute` = 'H' LIMIT 1"),0,0);
 
 		$sql = "SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
 
@@ -419,11 +419,8 @@ function walkhistory($block_start = 0, $block_end = 0)
 		if($next_timestamp != $timestamp)
 		{
 			$wrong_timestamp++;
-
-			if($first_wrong_block == 0)
-			{
-				$first_wrong_block = $i;
-			}
+			$first_wrong_block = $i;
+			break;
 		}
 		
 		$next_timestamp = $next_timestamp + 300;
@@ -438,11 +435,8 @@ function walkhistory($block_start = 0, $block_end = 0)
 		{
 			// Wrong match for hash
 			$wrong_hash++;
-
-			if($first_wrong_block == 0)
-			{
-				$first_wrong_block = $i;
-			}			
+			$first_wrong_block = $i;
+			break;
 		}
 	}
 
@@ -681,12 +675,12 @@ function check_crypt_balance($public_key)
 
 	// Do we already have an index to reference for faster access?
 	$public_key_hash = hash('md5', $public_key);
-	$current_generation_block = transaction_cycle(0, TRUE);
+	$current_transaction_block = transaction_cycle(0, TRUE);
 	$current_foundation_block = foundation_cycle(0, TRUE);
 
 	// Check to make sure enough lead time exist in advance to building
-	// another balance index. (60 blocks) or 5 hours
-	if($current_generation_block - ($current_foundation_block * 500) > 60)
+	// another balance index. (60 cycles) or 5 hours
+	if($current_transaction_block - ($current_foundation_block * 500) > 60)
 	{
 		// -1 Foundation Blocks (Standard)
 		$previous_foundation_block = foundation_cycle(-1, TRUE);
@@ -697,7 +691,7 @@ function check_crypt_balance($public_key)
 		$previous_foundation_block = foundation_cycle(-2, TRUE);
 	}
 
-	$sql = "SELECT * FROM `balance_index` WHERE `block` = $previous_foundation_block AND `public_key_hash` = '$public_key_hash' LIMIT 1";
+	$sql = "SELECT block, balance FROM `balance_index` WHERE `block` = $previous_foundation_block AND `public_key_hash` = '$public_key_hash' LIMIT 1";
 	$sql_result = mysql_query($sql);
 	$sql_row = mysql_fetch_array($sql_result);
 
@@ -995,8 +989,8 @@ function generation_cycle($when = 0)
 function db_cache_balance($my_public_key)
 {
 	// Check server balance via custom memory index
-	$my_server_balance = mysql_result(mysql_query("SELECT * FROM `balance_index` WHERE `public_key_hash` = 'server_timekoin_balance' LIMIT 1"),0,"balance");
-	$my_server_balance_last = mysql_result(mysql_query("SELECT * FROM `balance_index` WHERE `public_key_hash` = 'server_timekoin_balance' LIMIT 1"),0,"block");
+	$my_server_balance = mysql_result(mysql_query("SELECT balance FROM `balance_index` WHERE `public_key_hash` = 'server_timekoin_balance' LIMIT 1"),0,0);
+	$my_server_balance_last = mysql_result(mysql_query("SELECT block FROM `balance_index` WHERE `public_key_hash` = 'server_timekoin_balance' LIMIT 1"),0,0);
 
 	if($my_server_balance === FALSE)
 	{
@@ -1179,7 +1173,7 @@ function visual_walkhistory($block_start = 0, $block_end = 0)
 		$time3 = transaction_cycle(0 - $current_generation_block + 1 + $i);
 		$time4 = transaction_cycle(0 - $current_generation_block + 2 + $i);
 		
-		$next_hash = mysql_result(mysql_query("SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time3 AND `timestamp` < $time4 AND `attribute` = 'H' LIMIT 1"),0,"hash");
+		$next_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time3 AND `timestamp` < $time4 AND `attribute` = 'H' LIMIT 1"),0,0);
 
 		$sql = "SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
 

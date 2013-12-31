@@ -175,6 +175,11 @@ if($_GET["action"] == "input_transaction")
 				// and check to make sure the public key that is being sent to
 				// has not been tampered with.
 				$transaction_info = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt3));
+				
+				// Find destination public key
+				$public_key_to_1 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt1));
+				$public_key_to_2 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt2));
+				$public_key_to = $public_key_to_1 . $public_key_to_2;
 
 				$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 
@@ -226,6 +231,7 @@ if($_GET["action"] == "input_transaction")
 			if($transaction_hash == $crypt_hash_check 
 				&& $inside_transaction_hash == $final_hash_compare 
 				&& strlen($transaction_public_key) > 300 
+				&& strlen($public_key_to) > 300 
 				&& $transaction_timestamp >= $current_transaction_cycle 
 				&& $transaction_timestamp < $next_transaction_cycle
 				&& $valid_amount == TRUE)
@@ -508,6 +514,11 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 							// has not been tampered with.
 							$transaction_info = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt3));
 
+							// Find destination public key
+							$public_key_to_1 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt1));
+							$public_key_to_2 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt2));
+							$public_key_to = $public_key_to_1 . $public_key_to_2;
+
 							$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 
 							$transaction_amount_sent_test = intval($transaction_amount_sent);
@@ -559,6 +570,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 					if($transaction_hash == $crypt_hash_check 
 						&& $inside_transaction_hash == $final_hash_compare 
 						&& strlen($transaction_public_key) > 300 
+						&& strlen($public_key_to) > 300 
 						&& $transaction_timestamp >= $current_transaction_cycle 
 						&& $transaction_timestamp < $next_transaction_cycle
 						&& $valid_amount == TRUE)

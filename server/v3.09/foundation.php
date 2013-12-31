@@ -38,7 +38,7 @@ while(1) // Begin Infinite Loop
 {
 set_time_limit(300);	
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,"field_data");
+$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,0);
 
 // Check script status
 if($loop_active === FALSE)
@@ -84,13 +84,13 @@ if($record_count < 500)
 }
 else
 {
-	$foundation_task = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_block_check' LIMIT 1"),0,"field_data");
+	$foundation_task = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_block_check' LIMIT 1"),0,0);
 }
 
 // Can we work on the transactions in the database?
 // Not allowed 60 seconds before and 45 seconds after transaction cycle.
 // Don't build anything if a foundation check is already going on.
-// Don't build anything is the Treasurer is still processing transactions (status = 1)
+// Don't build anything is the Treasurer is still processing transactions (idle = 2)
 if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle) > 45 && $foundation_task == 0 && $treasurer_status == 2)
 {
 //***********************************************************************************
@@ -170,7 +170,19 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 					for ($f = 0; $f < $sql_num_results2; $f++)
 					{
 						$sql_row2 = mysql_fetch_array($sql_result2);
-						$hash .= $sql_row2["timestamp"] . $sql_row2["public_key_from"] . $sql_row2["public_key_to"] . $sql_row2["hash"] . $sql_row2["attribute"];
+
+						// Valid key lenth check?
+						if($sql_row2["attribute"] == "T" || $sql_row2["attribute"] == "G")
+						{
+							if(strlen($sql_row2["public_key_from"]) > 300 && strlen($sql_row2["public_key_to"]) > 300)
+							{
+								$hash .= $sql_row2["timestamp"] . $sql_row2["public_key_from"] . $sql_row2["public_key_to"] . $sql_row2["hash"] . $sql_row2["attribute"];
+							}
+						}
+						else
+						{
+							$hash .= $sql_row2["timestamp"] . $sql_row2["public_key_from"] . $sql_row2["public_key_to"] . $sql_row2["hash"] . $sql_row2["attribute"];
+						}
 					}	
 
 					$hash = hash('sha256', $hash);
@@ -459,6 +471,6 @@ mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_s
 mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'foundation_last_heartbeat' LIMIT 1");
 
 //***********************************************************************************
-sleep(10);
+sleep(rand(10,11));
 } // End Infinite Loop
 ?>

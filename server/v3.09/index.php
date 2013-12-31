@@ -100,7 +100,7 @@ if($_SESSION["valid_login"] == TRUE)
 //****************************************************************************
 	if($_GET["menu"] == "home" || empty($_GET["menu"]) == TRUE)
 	{
-		$my_public_key = mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,"field_data");
+		$my_public_key = my_public_key();
 
 		$body_string = '<table border="0" cellspacing="10" cellpadding="2" bgcolor="#FFFFFF"><tr><td></td>
 			<td align="center"><strong>Process</strong></td><td align="left"><strong>Status</strong></td></tr>';
@@ -1721,7 +1721,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($generate_currency_enabled == "1")
 		{
-			$my_public_key = mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,"field_data");
+			$my_public_key = my_public_key();
 			$join_peer_list = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$my_public_key' LIMIT 1"),0,"join_peer_list");
 			$last_generation = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$my_public_key' LIMIT 1"),0,"last_generation");
 			$my_generation_IP = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,"field_data");
@@ -1764,7 +1764,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["generate"] == "showlist")
 		{
 			$default_public_key_font = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
-			$my_public_key = mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,"field_data");
+			$my_public_key = my_public_key();
 
 			$body_string = $body_string . '<hr><strong>Current Generation List</strong>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Public Key</th><th>Joined</th><th>Last Generated</th></tr>';
@@ -1798,7 +1798,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["generate"] == "showqueue")
 		{
 			$default_public_key_font = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
-			$my_public_key = mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,"field_data");
+			$my_public_key = my_public_key();
 
 			$body_string .= '<hr><strong>Election Queue List</strong>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Public Key</th><th>Join Queue</th></tr>';
@@ -1979,7 +1979,7 @@ if($_SESSION["valid_login"] == TRUE)
 //****************************************************************************	
 	if($_GET["menu"] == "send")
 	{
-		$my_public_key = mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,"field_data");
+		$my_public_key = my_public_key();
 
 		if($_GET["check"] == "key")
 		{
@@ -2962,8 +2962,8 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 		}
 
-		$my_private_key = mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_private_key' LIMIT 1"),0,"field_data");
-		$my_public_key = mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,"field_data");
+		$my_private_key = my_private_key();
+		$my_public_key = my_public_key();
 
 		if($_GET["restore"] == "private" && empty($_POST["restore_private_key"]) == FALSE)
 		{
