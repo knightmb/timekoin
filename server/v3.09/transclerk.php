@@ -1030,7 +1030,7 @@ $loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE 
 if($loop_active == 3)
 {
 	// Time to exit
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
+	mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active'");
 	exit;
 }
 

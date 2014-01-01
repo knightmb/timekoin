@@ -183,11 +183,11 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 //***********************************************************************************
 //***********************************************************************************
 // Generation IP Auto Update Detection
-	$auto_update_generation_IP = intval(mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,"field_data"));
+	$auto_update_generation_IP = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,0));
 	
 	if(rand(1,100) == 100 && $auto_update_generation_IP == 1) // Randomize to avoid spamming
 	{
-		$generation_IP = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,"field_data");
+		$generation_IP = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,0);
 		$poll_IP = filter_sql(poll_peer(NULL, 'timekoin.net', NULL, 80, 46, "ipv4.php"));
 
 		if(empty($generation_IP) == TRUE) // IP Field Empty
@@ -630,7 +630,7 @@ $loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE 
 if($loop_active == 3)
 {
 	// Time to exit
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
+	mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active'");
 	exit;
 }
 

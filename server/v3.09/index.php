@@ -996,107 +996,60 @@ if($_SESSION["valid_login"] == TRUE)
 	{
 		if($_GET["peer_settings"] == "change")
 		{
-			$sql = "UPDATE `options` SET `field_data` = '" . $_POST["max_peers"] . "' WHERE `options`.`field_name` = 'max_active_peers' LIMIT 1";
-			$sql2 = "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["max_peers"] . "' WHERE `main_loop_status`.`field_name` = 'max_active_peers' LIMIT 1";
-			mysql_query($sql2);
-
-			if(mysql_query($sql) == TRUE)
-			{
-				$sql = "UPDATE `options` SET `field_data` = '" . $_POST["max_new_peers"] . "' WHERE `options`.`field_name` = 'max_new_peers' LIMIT 1";
-				$sql2 = "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["max_new_peers"] . "' WHERE `main_loop_status`.`field_name` = 'max_new_peers' LIMIT 1";
-				mysql_query($sql2);
-
-				if(mysql_query($sql) == TRUE)
-				{
-					$server_code = '<br><font color="green"><strong>Peer Settings Updated...</strong></font><br><br>';
-				}
-			}
+			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["max_peers"] . "' WHERE `options`.`field_name` = 'max_active_peers' LIMIT 1");
+			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["max_peers"] . "' WHERE `main_loop_status`.`field_name` = 'max_active_peers' LIMIT 1");
+			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["max_new_peers"] . "' WHERE `options`.`field_name` = 'max_new_peers' LIMIT 1");
+			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["max_new_peers"] . "' WHERE `main_loop_status`.`field_name` = 'max_new_peers' LIMIT 1");
+			$server_code = '<br><font color="green"><strong>Peer Settings Updated...</strong></font><br><br>';
 		}
 
 		if($_GET["server_settings"] == "change")
 		{
-			$server_code;
-			
-			$sql = "UPDATE `options` SET `field_data` = '" . $_POST["domain"] . "' WHERE `options`.`field_name` = 'server_domain' LIMIT 1";
-			if(mysql_query($sql) == TRUE)
+			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["domain"] . "' WHERE `options`.`field_name` = 'server_domain' LIMIT 1");
+			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["subfolder"] . "' WHERE `options`.`field_name` = 'server_subfolder' LIMIT 1");
+			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["max_request"] . "' WHERE `options`.`field_name` = 'server_request_max' LIMIT 1");
+			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["max_request"] . "' WHERE `main_loop_status`.`field_name` = 'server_request_max' LIMIT 1");
+			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["allow_LAN"] . "' WHERE `options`.`field_name` = 'allow_LAN_peers' LIMIT 1");
+			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["allow_LAN"] . "' WHERE `main_loop_status`.`field_name` = 'allow_LAN_peers' LIMIT 1");
+			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["allow_ambient"] . "' WHERE `options`.`field_name` = 'allow_ambient_peer_restart' LIMIT 1");
+			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["allow_ambient"] . "' WHERE `main_loop_status`.`field_name` = 'allow_ambient_peer_restart' LIMIT 1");
+			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["trans_history_check"] . "' WHERE `options`.`field_name` = 'trans_history_check' LIMIT 1");
+			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["trans_history_check"] . "' WHERE `main_loop_status`.`field_name` = 'trans_history_check' LIMIT 1");
+			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["super_peer"] . "' WHERE `options`.`field_name` = 'super_peer' LIMIT 1");
+			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["super_peer"] . "' WHERE `main_loop_status`.`field_name` = 'super_peer' LIMIT 1");
+			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["perm_peer_priority"] . "' WHERE `options`.`field_name` = 'perm_peer_priority' LIMIT 1");
+			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["perm_peer_priority"] . "' WHERE `main_loop_status`.`field_name` = 'perm_peer_priority' LIMIT 1");			
+			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["auto_update_IP"] . "' WHERE `options`.`field_name` = 'auto_update_generation_IP' LIMIT 1");
+			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["auto_update_IP"] . "' WHERE `main_loop_status`.`field_name` = 'auto_update_generation_IP' LIMIT 1");			
+
+			if($_POST["port"] < 1 || $_POST["port"] > 65535)
 			{
-				$sql = "UPDATE `options` SET `field_data` = '" . $_POST["subfolder"] . "' WHERE `options`.`field_name` = 'server_subfolder' LIMIT 1";
-				if(mysql_query($sql) == TRUE)
-				{
-					if($_POST["port"] < 1 || $_POST["port"] > 65535)
-					{
-						// Keep port within range
-						$port = 1528;
-					}
-					else
-					{
-						$port = $_POST["port"];
-					}
-
-					// Update Windows Config File if used
-					if(getenv("OS") == "Windows_NT")
-					{
-						if(update_windows_port($port) == TRUE)
-						{
-							// Update sucessful, notify user that a full shutdown/restart will be necessary for this change to take affect
-							$server_code .= '<font color="green"><strong>Port Changes will Require a Full Shutdown &amp; Restart of the Timekoin Server to Work Properly.</strong></font>';
-						}
-					}
-					
-					$sql = "UPDATE `options` SET `field_data` = '$port' WHERE `options`.`field_name` = 'server_port_number' LIMIT 1";
-					if(mysql_query($sql) == TRUE)
-					{
-						$sql = "UPDATE `options` SET `field_data` = '" . $_POST["max_request"] . "' WHERE `options`.`field_name` = 'server_request_max' LIMIT 1";
-						$sql2 = "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["max_request"] . "' WHERE `main_loop_status`.`field_name` = 'server_request_max' LIMIT 1";
-						mysql_query($sql2);
-
-						if(mysql_query($sql) == TRUE)
-						{
-							$sql = "UPDATE `options` SET `field_data` = '" . $_POST["allow_LAN"] . "' WHERE `options`.`field_name` = 'allow_LAN_peers' LIMIT 1";
-							$sql2 = "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["allow_LAN"] . "' WHERE `main_loop_status`.`field_name` = 'allow_LAN_peers' LIMIT 1";
-							mysql_query($sql2);
-
-							if(mysql_query($sql) == TRUE)
-							{
-								$sql = "UPDATE `options` SET `field_data` = '" . $_POST["allow_ambient"] . "' WHERE `options`.`field_name` = 'allow_ambient_peer_restart' LIMIT 1";
-								$sql2 = "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["allow_ambient"] . "' WHERE `main_loop_status`.`field_name` = 'allow_ambient_peer_restart' LIMIT 1";
-								mysql_query($sql2);
-
-								if(mysql_query($sql) == TRUE)
-								{
-									$sql = "UPDATE `options` SET `field_data` = '" . $_POST["trans_history_check"] . "' WHERE `options`.`field_name` = 'trans_history_check' LIMIT 1";
-									$sql2 = "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["trans_history_check"] . "' WHERE `main_loop_status`.`field_name` = 'trans_history_check' LIMIT 1";
-									mysql_query($sql2);
-									if(mysql_query($sql) == TRUE)
-									{
-										$sql = "UPDATE `options` SET `field_data` = '" . $_POST["super_peer"] . "' WHERE `options`.`field_name` = 'super_peer' LIMIT 1";
-										$sql2 = "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["super_peer"] . "' WHERE `main_loop_status`.`field_name` = 'super_peer' LIMIT 1";
-										mysql_query($sql2);										
-										if(mysql_query($sql) == TRUE)
-										{
-											$sql = "UPDATE `options` SET `field_data` = '" . $_POST["perm_peer_priority"] . "' WHERE `options`.`field_name` = 'perm_peer_priority' LIMIT 1";
-											if(mysql_query($sql) == TRUE)
-											{											
-												$sql = "UPDATE `options` SET `field_data` = '" . $_POST["auto_update_IP"] . "' WHERE `options`.`field_name` = 'auto_update_generation_IP' LIMIT 1";
-												if(mysql_query($sql) == TRUE)
-												{
-													$server_code .= '<br><font color="blue"><strong>Server Settings Updated...</strong></font><br><br>';
-												}
-											}										
-										}
-									}							
-								}
-							}
-						}
-					}
-				}
+				// Keep port within range
+				$port = 1528;
 			}
+			else
+			{
+				$port = $_POST["port"];
+			}
+
+			// Update Windows Config File if used
+			if(getenv("OS") == "Windows_NT")
+			{
+				if(update_windows_port($port) == TRUE)
+				{
+					// Update sucessful, notify user that a full shutdown/restart will be necessary for this change to take affect
+					$server_code .= '<font color="green"><strong>Port Changes will Require a Full Shutdown &amp; Restart of the Timekoin Server to Work Properly.</strong></font>';
+				}
+			}			
+
+			mysql_query("UPDATE `options` SET `field_data` = '$port' WHERE `options`.`field_name` = 'server_port_number' LIMIT 1");
+			$server_code .= '<br><font color="blue"><strong>Server Settings Updated...</strong></font><br><br>';
 		}
 
 		if($_GET["stop"] == "watchdog")
 		{
-			$watchdog_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,"field_data");			
-			$watchdog_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_last_heartbeat' LIMIT 1"),0,"field_data");
+			$watchdog_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,0);
+			$watchdog_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_last_heartbeat' LIMIT 1"),0,0);
 
 			if($watchdog_loop_active > 0)
 			{
@@ -1130,8 +1083,8 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["stop"] == "main")
 		{
-			$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,"field_data");
-			$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,"field_data");
+			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,0);
 
 			// Use uPNP to delete inbound ports for Windows systems
 			if(getenv("OS") == "Windows_NT" && file_exists("utils\upnpc.exe") == TRUE)
@@ -1233,7 +1186,6 @@ if($_SESSION["valid_login"] == TRUE)
 		home_screen('System Settings', system_service_bar() . $server_code, $body_string , $quick_info);
 		exit;
 	}
-
 //****************************************************************************
 	if($_GET["menu"] == "options")
 	{
@@ -1310,52 +1262,26 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["refresh"] == "change")
 		{
-			$sql = "UPDATE `options` SET `field_data` = '" . $_POST["home_update"] . "' WHERE `options`.`field_name` = 'refresh_realtime_home' LIMIT 1";
-			if(mysql_query($sql) == TRUE)
-			{
-				$sql = "UPDATE `options` SET `field_data` = '" . $_POST["peerlist_update"] . "' WHERE `options`.`field_name` = 'refresh_realtime_peerlist' LIMIT 1";
-				if(mysql_query($sql) == TRUE)
-				{
-					$sql = "UPDATE `options` SET `field_data` = '" . $_POST["queue_update"] . "' WHERE `options`.`field_name` = 'refresh_realtime_queue' LIMIT 1";
-					if(mysql_query($sql) == TRUE)
-					{
-						$super_peer_limit = intval($_POST["super_peer_limit"]);
+			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["home_update"] . "' WHERE `options`.`field_name` = 'refresh_realtime_home' LIMIT 1");
+			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["peerlist_update"] . "' WHERE `options`.`field_name` = 'refresh_realtime_peerlist' LIMIT 1");
+			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["queue_update"] . "' WHERE `options`.`field_name` = 'refresh_realtime_queue' LIMIT 1");
+			
+			$super_peer_limit = intval($_POST["super_peer_limit"]);
+			if($super_peer_limit > 0 && $super_peer_limit < 10) { $super_peer_limit = 10; } // Limit range
+			if($super_peer_limit > 500) { $super_peer_limit = 500; } // Limit range
+			mysql_query("UPDATE `options` SET `field_data` = '$super_peer_limit' WHERE `options`.`field_name` = 'super_peer' LIMIT 1");
+			mysql_query("UPDATE `main_loop_status` SET `field_data` = '$super_peer_limit' WHERE `main_loop_status`.`field_name` = 'super_peer' LIMIT 1");
 
-						if($super_peer_limit > 0 && $super_peer_limit < 10) { $super_peer_limit = 10; }
-						if($super_peer_limit > 500) { $super_peer_limit = 500; }
+			$peer_failure_grade = intval($_POST["peer_failure_grade"]);
+			if($peer_failure_grade < 1 || $peer_failure_grade > 100) { $peer_failure_grade = 30; }
+			mysql_query("UPDATE `options` SET `field_data` = '$peer_failure_grade' WHERE `options`.`field_name` = 'peer_failure_grade' LIMIT 1");
+			mysql_query("UPDATE `main_loop_status` SET `field_data` = '$peer_failure_grade' WHERE `main_loop_status`.`field_name` = 'peer_failure_grade' LIMIT 1");
 
-						$sql = "UPDATE `options` SET `field_data` = '$super_peer_limit' WHERE `options`.`field_name` = 'super_peer' LIMIT 1";
-						if(mysql_query($sql) == TRUE)
-						{
-							mysql_query("UPDATE `main_loop_status` SET `field_data` = '$super_peer_limit' WHERE `main_loop_status`.`field_name` = 'super_peer' LIMIT 1");
-
-							$peer_failure_grade = intval($_POST["peer_failure_grade"]);
-							if($peer_failure_grade < 1 || $peer_failure_grade > 100) { $peer_failure_grade = 30; }
-
-							$sql = "UPDATE `options` SET `field_data` = '$peer_failure_grade' WHERE `options`.`field_name` = 'peer_failure_grade' LIMIT 1";
-							if(mysql_query($sql) == TRUE)
-							{
-								$sql = "UPDATE `options` SET `field_data` = '" . $_POST["timezone"] . "' WHERE `options`.`field_name` = 'default_timezone' LIMIT 1";
-								if(mysql_query($sql) == TRUE)
-								{
-									$refresh_change = TRUE;
-								}
-							}
-						}
-					}
-				}
-			}
+			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["timezone"] . "' WHERE `options`.`field_name` = 'default_timezone' LIMIT 1");
 
 			$body_text = options_screen2();
+			$body_text .= '<font color="blue"><strong>Refresh Settings, Super Peer Limit, &amp; Peer Failure Limit Saved!</strong></font><br>';
 
-			if($refresh_change == TRUE)
-			{
-				$body_text .= '<font color="blue"><strong>Refresh Settings, Super Peer Limit, &amp; Peer Failure Limit Saved!</strong></font><br>';
-			}
-			else
-			{
-				$body_text .= '<strong>Refresh / Hash Code Update ERROR...</strong><br>';
-			}
 		} // End refresh update save
 		else if(empty($_GET["password"]) == TRUE && empty($_GET["refresh"]) == TRUE)
 		{
