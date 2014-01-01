@@ -30,7 +30,6 @@ if($_GET["action"] == "begin_main")
 
 	if($main_heartbeat_active == FALSE && $datbase_error == FALSE)
 	{
-		sleep(1); // One second delay to allow any delayed DB action
 		// Database Initialization
 		initialization_database();
 
@@ -40,7 +39,6 @@ if($_GET["action"] == "begin_main")
 		mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1");
 
 		activate(TIMEKOINSYSTEM, 1); // In case this was disabled from a emergency stop call in the server GUI
-		sleep(1); // One second delay to allow any delayed action to complete
 
 		// Start main system script
 		call_script("main.php");
