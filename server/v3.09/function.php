@@ -1959,7 +1959,7 @@ function update_windows_port($new_port)
 }
 //***********************************************************************************
 //***********************************************************************************
-function generate_hashcode_permissions($pk_balance, $pk_gen_amt, $pk_recv, $send_tk, $pk_history, $pk_valid, $tk_trans_total, $pk_sent, $pk_gen_total)
+function generate_hashcode_permissions($pk_balance, $pk_gen_amt, $pk_recv, $send_tk, $pk_history, $pk_valid, $tk_trans_total, $pk_sent, $pk_gen_total, $tk_process_status)
 {
 	$permissions_number = 0;
 
@@ -1972,12 +1972,34 @@ function generate_hashcode_permissions($pk_balance, $pk_gen_amt, $pk_recv, $send
 	if($tk_trans_total == 1) { $permissions_number += 64; }
 	if($pk_sent == 1) { $permissions_number += 128; }
 	if($pk_gen_total == 1) { $permissions_number += 256; }
+	if($tk_process_status == 1) { $permissions_number += 512; }
 
 	return $permissions_number;
 }
 //***********************************************************************************
 function check_hashcode_permissions($permissions_number, $pk_api_check, $checkbox = FALSE)
 {
+	// tk_process_status
+	if($pk_api_check == "tk_process_status")
+	{ 
+		if($permissions_number >= 512) // Permission Granted
+		{
+			if($checkbox == TRUE)
+			{
+				return "CHECKED";
+			}
+			else
+			{
+				return TRUE;
+			}
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	if($permissions_number - 512 >= 0) { $permissions_number -= 512; } // Subtract Active Permission
+
 	// pk_gen_total
 	if($pk_api_check == "pk_gen_total")
 	{ 

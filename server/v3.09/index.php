@@ -1089,7 +1089,6 @@ if($_SESSION["valid_login"] == TRUE)
 			// Use uPNP to delete inbound ports for Windows systems
 			if(getenv("OS") == "Windows_NT" && file_exists("utils\upnpc.exe") == TRUE)
 			{
-				$server_port_number = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
 				pclose(popen("start /B utils\upnpc.exe -d " . my_port_number() . " TCP", "r"));
 			}
 
@@ -1128,7 +1127,6 @@ if($_SESSION["valid_login"] == TRUE)
 					
 					if(mysql_query($sql) == TRUE)
 					{
-						$server_code = '<font color="blue"><strong>Timekoin Stopping...</strong></font>';
 						// Clear transaction queue to avoid unnecessary peer confusion
 						mysql_query("TRUNCATE TABLE `transaction_queue`");
 
@@ -1142,7 +1140,10 @@ if($_SESSION["valid_login"] == TRUE)
 						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
 						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active' LIMIT 1");
 						// Stop all other script activity
-						activate(TIMEKOINSYSTEM, 0);						
+						activate(TIMEKOINSYSTEM, 0);
+
+						header("Location: index.php?menu=home");
+						exit;
 					}
 				}
 			}
@@ -1334,7 +1335,8 @@ if($_SESSION["valid_login"] == TRUE)
 						$_POST["pk_valid$counter"],
 						$_POST["tk_trans_total$counter"],
 						$_POST["pk_sent$counter"],
-						$_POST["pk_gen_total$counter"]) . "')");
+						$_POST["pk_gen_total$counter"],
+						$_POST["tk_process_status$counter"]) . "')");
 				}
 
 				$counter++;
@@ -1369,6 +1371,7 @@ if($_SESSION["valid_login"] == TRUE)
 				<input type="checkbox" name="pk_valid'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_valid", TRUE) . '>pk_valid
 				<input type="checkbox" name="send_tk'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "send_tk", TRUE) . '>send_tk<br>
 				<input type="checkbox" name="tk_trans_total'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "tk_trans_total", TRUE) . '>tk_trans_total
+				<input type="checkbox" name="tk_process_status'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "tk_process_status", TRUE) . '>tk_process_status
 				</td></tr><tr><td colspan="2"><hr></td></tr>';
 
 				$counter++;
@@ -2544,7 +2547,7 @@ if($_SESSION["valid_login"] == TRUE)
 				{
 					// Self Generated to someone else
 					$public_key_from = '<td class="style2"><font color="blue">Self Generated Transaction</font>';
-					$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:175px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
+					$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:215px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
 				}
 			}
 			else
@@ -2562,11 +2565,11 @@ if($_SESSION["valid_login"] == TRUE)
 					}
 					else
 					{
-						$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:195px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
+						$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:215px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
 					}
 				}
 				
-				$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:195px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans) . '</p>';
+				$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:215px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans) . '</p>';
 			}
 
 			if($sql_row["attribute"] == "R")
@@ -2745,70 +2748,109 @@ if($_SESSION["valid_login"] == TRUE)
 			if(empty($_POST["filter"]) == FALSE)
 			{
 				$filter_by;
+				$select_ap;
+				$select_ba;
+				$select_fo;
+				$select_g;
+				$select_gp;
+				$select_r;
+				$select_gu;
+				$select_ma;
+				$select_pl;
+				$select_qc;
+				$select_tc;
+				$select_t;
+				$select_tr;
+				$select_wa;
+
 				switch($_POST["filter"])
 				{
+					case "AP":
+						$filter_by = ' (Filtered by <strong>API</strong>)';
+						$select_ap = 'SELECTED';
+						break;
+
 					case "BA":
 						$filter_by = ' (Filtered by <strong>Balance Indexer</strong>)';
+						$select_ba = 'SELECTED';
 						break;
 
 					case "FO":
 						$filter_by = ' (Filtered by <strong>Foundation Manager</strong>)';
+						$select_fo = 'SELECTED';
 						break;
 
 					case "G":
 						$filter_by = ' (Filtered by <strong>Generation Events</strong>)';
+						$select_g = 'SELECTED';
 						break;
 
 					case "GP":
 						$filter_by = ' (Filtered by <strong>Generation Peer Manager</strong>)';
+						$select_gp = 'SELECTED';
 						break;
 
 					case "R":
 						$filter_by = ' (Filtered by <strong>Generation Request</strong>)';
+						$select_r = 'SELECTED';
 						break;
 
 					case "GU":
 						$filter_by = ' (Filtered by <strong>Graphical User Interface</strong>)';
+						$select_gu = 'SELECTED';
 						break;
 
 					case "MA":
 						$filter_by = ' (Filtered by <strong>Main Program</strong>)';
+						$select_ma = 'SELECTED';
 						break;
 
 					case "PL":
 						$filter_by = ' (Filtered by <strong>Peer Processor</strong>)';
+						$select_pl = 'SELECTED';
 						break;
 
 					case "QC":
 						$filter_by = ' (Filtered by <strong>Queue Clerk</strong>)';
+						$select_qc = 'SELECTED';
 						break;
 
 					case "TC":
 						$filter_by = ' (Filtered by <strong>Transaction Clerk</strong>)';
+						$select_tc = 'SELECTED';
 						break;
 
 					case "T":
 						$filter_by = ' (Filtered by <strong>Transactions</strong>)';
+						$select_t = 'SELECTED';
 						break;
 
 					case "TR":
 						$filter_by = ' (Filtered by <strong>Treasurer Processor</strong>)';
+						$select_tr = 'SELECTED';
 						break;
 
 					case "WA":
 						$filter_by = ' (Filtered by <strong>Watchdog</strong>)';
+						$select_wa = 'SELECTED';
 						break;
-
 				}
 			}
-			
+
+			if(empty($_POST["text_search"]) == FALSE)
+			{
+				// Text Search all activity logs
+				$filter_by = ' (Full Text Search for <strong>' . $_POST["text_search"] . '</strong>)';
+			}
+
 			$body_string = '<strong>Showing Last <font color="blue">' . $show_last . '</font> Log Events</strong>' . $filter_by . '<FORM ACTION="index.php?menu=tools&amp;logs=listmore" METHOD="post">
 				<table border="0" cellspacing="5"><tr><td>
-				Filter By:</td><td><select name="filter"><option value="all" SELECTED>Show All</option><option value="BA">Balance Indexer</option>
-				<option value="FO">Foundation Manager</option><option value="G">Generation Events</option><option value="GP">Generation Peer Manager</option><option value="GU">GUI - Graphical User Interface</option>
-				<option value="R">Generation Request</option><option value="MA">Main Program</option><option value="PL">Peer Processor</option><option value="TC">Transaction Clerk</option>
-				<option value="T">Transactions</option><option value="TR">Treasurer Processor</option><option value="QC">Queue Clerk</option><option value="WA">Watchdog</option></select></td>
+				Filter By:</td><td><select name="filter"><option value="all">Show All</option><option value="AP" '.$select_ap.'>API</option><option value="BA" '.$select_ba.'>Balance Indexer</option>
+				<option value="FO" '.$select_fo.'>Foundation Manager</option><option value="G" '.$select_g.'>Generation Events</option><option value="GP" '.$select_gp.'>Generation Peer Manager</option><option value="GU" '.$select_gu.'>GUI - Graphical User Interface</option>
+				<option value="R" '.$select_r.'>Generation Request</option><option value="MA" '.$select_ma.'>Main Program</option><option value="PL" '.$select_pl.'>Peer Processor</option><option value="TC" '.$select_tc.'>Transaction Clerk</option>
+				<option value="T" '.$select_t.'>Transactions</option><option value="TR" '.$select_tr.'>Treasurer Processor</option><option value="QC" '.$select_qc.'>Queue Clerk</option><option value="WA" '.$select_wa.'>Watchdog</option></select></td>
 				<td><input type="text" size="5" name="show_more_logs" value="' . $show_last .'" /><input type="submit" name="show_last" value="Show Last" /></td></tr></table></FORM>
+				<FORM ACTION="index.php?menu=tools&amp;logs=listmore" METHOD="post"><input type="text" size="10" name="text_search" value="" /><input type="submit" name="search_all" value="Text Search" /></FORM>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th><th>Log</th><th>Attribute</th></tr>';
 
 			// Find the last X amount of log events
@@ -2820,7 +2862,13 @@ if($_SESSION["valid_login"] == TRUE)
 			{
 				$sql = "SELECT * FROM `activity_logs` WHERE `attribute` = '" . $_POST["filter"] . "' ORDER BY `activity_logs`.`timestamp` DESC LIMIT $show_last";
 			}
-			
+
+			if(empty($_POST["text_search"]) == FALSE)
+			{
+				// Text Search all activity logs
+				$sql = "SELECT *  FROM `activity_logs` WHERE `log` LIKE '%" . $_POST["text_search"] . "%' ORDER BY `activity_logs`.`timestamp` DESC";
+			}
+		
 			$sql_result = mysql_query($sql);
 			$sql_num_results = mysql_num_rows($sql_result);
 
@@ -2830,7 +2878,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 				$body_string .= '<tr>
 				<td class="style2"><p style="width:162px;">[ ' . $sql_row["timestamp"] . ' ]<br>' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>
-				<td class="style2"><p style="word-wrap:break-word; width:360px;">' . $sql_row["log"] . '</p></td>
+				<td class="style2"><p style="word-wrap:break-word; width:425px;">' . $sql_row["log"] . '</p></td>
 				<td class="style2">' . $sql_row["attribute"] . '</td></tr>';
 			}
 

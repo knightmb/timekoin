@@ -28,7 +28,7 @@ $hash_code = mysql_result(mysql_query("SELECT field_name FROM `options` WHERE `f
 if(empty($hash_code) == TRUE)
 {
 	// Invalid Hashcode
-	// Log inbound IP activity x50 to Prevent Brute-Force Attacking
+	// Log inbound IP activity x50 to Prevent Brute-Force Attacking/Guessing
 	log_ip("AP", 50);
 	exit;
 }
@@ -42,6 +42,270 @@ if($_GET["action"] == "tk_hash_status")
 {
 	echo TRUE;
 
+	log_ip("AP");
+	exit;
+}
+//***********************************************************************************
+//***********************************************************************************
+if($_GET["action"] == "tk_process_status")
+{
+	if(check_hashcode_permissions($hash_permissions, "tk_process_status") == TRUE)
+	{
+		$process = intval($_GET["process"]); // Should only be a number
+
+		if($process == 1)
+		{
+			// Main Program Process
+			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,0);
+			write_log("Main Process Status Check from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
+
+			if($script_loop_active > 0)
+			{
+				// Should be active
+				if((time() - $script_last_heartbeat) > 20) // Double normal processing time
+				{
+					echo 0;
+				}
+				else
+				{
+					echo 1;
+				}
+			}
+			else
+			{
+				echo 0;
+			}
+		}
+
+		if($process == 2)
+		{
+			// Treasurer Processor
+			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_last_heartbeat' LIMIT 1"),0,0);
+			write_log("Treasurer Processor Status Check from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
+
+			if($script_loop_active > 0)
+			{
+				// Should be active
+				if((time() - $script_last_heartbeat) > 99) // Normal Timeout
+				{
+					echo 0;
+				}
+				else
+				{
+					echo 1;
+				}
+			}
+			else
+			{
+				echo 0;
+			}
+		}
+
+		if($process == 3)
+		{
+			// Peer Processor
+			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_last_heartbeat' LIMIT 1"),0,0);
+			write_log("Peer Processor Status Check from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
+
+			if($script_loop_active > 0)
+			{
+				// Should be active
+				if((time() - $script_last_heartbeat) > 99) // Normal Timeout
+				{
+					echo 0;
+				}
+				else
+				{
+					echo 1;
+				}
+			}
+			else
+			{
+				echo 0;
+			}
+		}
+
+		if($process == 4)
+		{
+			// Transaction Queue Clerk
+			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_last_heartbeat' LIMIT 1"),0,0);
+			write_log("Transaction Queue Clerk Status Check from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
+
+			if($script_loop_active > 0)
+			{
+				// Should be active
+				if((time() - $script_last_heartbeat) > 200) // Normal Timeout
+				{
+					echo 0;
+				}
+				else
+				{
+					echo 1;
+				}
+			}
+			else
+			{
+				echo 0;
+			}
+		}
+
+		if($process == 5)
+		{
+			// Generation Peer Manager
+			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'genpeer_last_heartbeat' LIMIT 1"),0,0);
+			write_log("Generation Peer Manager Status Check from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
+
+			if($script_loop_active > 0)
+			{
+				// Should be active
+				if((time() - $script_last_heartbeat) > 99) // Normal Timeout
+				{
+					echo 0;
+				}
+				else
+				{
+					echo 1;
+				}
+			}
+			else
+			{
+				echo 0;
+			}
+		}
+
+		if($process == 6)
+		{
+			// Generation Processor
+			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_last_heartbeat' LIMIT 1"),0,0);
+			write_log("Generation Processor Status Check from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
+
+			if($script_loop_active > 0)
+			{
+				// Should be active
+				if((time() - $script_last_heartbeat) > 99) // Normal Timeout
+				{
+					echo 0;
+				}
+				else
+				{
+					echo 1;
+				}
+			}
+			else
+			{
+				echo 0;
+			}
+		}
+
+		if($process == 7)
+		{
+			// Transaction Clerk
+			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_last_heartbeat' LIMIT 1"),0,0);
+			write_log("Transaction Clerk Status Check from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
+
+			if($script_loop_active > 0)
+			{
+				// Should be active
+				if((time() - $script_last_heartbeat) > 200) // Normal Timeout
+				{
+					echo 0;
+				}
+				else
+				{
+					echo 1;
+				}
+			}
+			else
+			{
+				echo 0;
+			}
+		}
+
+		if($process == 8)
+		{
+			// Foundation Manager
+			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_last_heartbeat' LIMIT 1"),0,0);
+			write_log("Foundation Manager Status Check from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
+
+			if($script_loop_active > 0)
+			{
+				// Should be active
+				if((time() - $script_last_heartbeat) > 200) // Normal Timeout
+				{
+					echo 0;
+				}
+				else
+				{
+					echo 1;
+				}
+			}
+			else
+			{
+				echo 0;
+			}
+		}
+
+		if($process == 9)
+		{
+			// Balance Indexer
+			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'balance_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'balance_last_heartbeat' LIMIT 1"),0,0);
+			write_log("Balance Indexer Status Check from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
+
+			if($script_loop_active > 0)
+			{
+				// Should be active
+				if((time() - $script_last_heartbeat) > 300) // Normal Timeout
+				{
+					echo 0;
+				}
+				else
+				{
+					echo 1;
+				}
+			}
+			else
+			{
+				echo 0;
+			}
+		}
+
+		if($process == 10)
+		{
+			// Watchdog
+			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_last_heartbeat' LIMIT 1"),0,0);
+			write_log("Watchdog Status Check from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
+
+			if($script_loop_active > 0)
+			{
+				// Should be active
+				if((time() - $script_last_heartbeat) > 60) // Normal Timeout
+				{
+					echo 0;
+				}
+				else
+				{
+					echo 1;
+				}
+			}
+			else
+			{
+				echo 0;
+			}
+		}
+
+	}// Valid Permissions Check
+
+	// Log inbound IP activity
 	log_ip("AP");
 	exit;
 }
@@ -147,6 +411,11 @@ if($_GET["action"] == "send_tk")
 				// has not been tampered with.
 				$transaction_info = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt3));
 
+				// Find destination public key
+				$public_key_to_1 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt1));
+				$public_key_to_2 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt2));
+				$public_key_to = $public_key_to_1 . $public_key_to_2;
+
 				$inside_transaction_hash = find_string("HASH=", "", $transaction_info, TRUE);
 
 				// Check if a message is encoded in this data as well
@@ -166,6 +435,7 @@ if($_GET["action"] == "send_tk")
 			if($transaction_hash == $crypt_hash_check 
 				&& $inside_transaction_hash == $final_hash_compare 
 				&& strlen($transaction_public_key) > 300 
+				&& strlen($public_key_to) > 300 
 				&& $transaction_timestamp >= $current_transaction_cycle 
 				&& $transaction_timestamp < $next_transaction_cycle)
 			{
