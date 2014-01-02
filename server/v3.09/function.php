@@ -1078,10 +1078,10 @@ function gen_simple_poll_test($ip_address, $domain, $subfolder, $port_number)
 	$simple_poll_fail = FALSE; // Reset Variable
 
 	// Grab random Transaction Foundation Hash
-	$rand_block = rand(0,foundation_cycle(0, TRUE) - 5); // Range from Start to Last 5 Foundation Hash
+	$rand_block = rand(0,foundation_cycle(0, TRUE) - 50); // Range from Start to Last 50 Foundation Hash
 	$random_foundation_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_foundation` WHERE `block` = $rand_block LIMIT 1"),0,0);
 	// Grab random Transaction Hash
-	$rand_block2 = rand(transaction_cycle((0 - transaction_cycle(0, TRUE)), TRUE), transaction_cycle(-1000, TRUE)); // Range from Start to Last 1000 Transaction Hash
+	$rand_block2 = rand(transaction_cycle((0 - transaction_cycle(0, TRUE)), TRUE), transaction_cycle(-10000, TRUE)); // Range from Start to Last 10000 Transaction Hash
 	$rand_block2 = transaction_cycle(0 - $rand_block2);
 	$random_transaction_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` = $rand_block2 LIMIT 1"),0,0);
 	$rand_block2 = ($rand_block2 - TRANSACTION_EPOCH - 300) / 300;
