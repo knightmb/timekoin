@@ -64,6 +64,16 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 			//Username match, check password
 			if(hash('sha256', $http_password) == $password_hash)
 			{
+				// Check for new system startup
+				$fresh_system = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` LIMIT 1"),0,0);
+
+				if($fresh_system === FALSE)
+				{
+					// Stop all other script activity until the user actually starts the system.
+					// This is useful when recoving from an unknown error or crash.
+					activate(TIMEKOINSYSTEM, 0);
+				}
+				
 				// All match, set login variable and store username in cookie
 				$_SESSION["login_username"] = $http_username;
 				$_SESSION["valid_login"] = TRUE;
