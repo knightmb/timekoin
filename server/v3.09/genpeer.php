@@ -136,7 +136,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 				// More than 1 peer request, start a scoring of all public keys,
 				// the public key with the most points win
 				$highest_score = 0;
-				$public_key_winner = "";
+				$public_key_winner = NULL;
 				write_log("Peer Election Score Key: " . scorePublicKey(NULL, TRUE), "GP");
 
 				for ($i = 0; $i < $sql_num_results; $i++)
@@ -387,7 +387,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 		if($sql_num_results > 0)
 		{
-			ini_set('default_socket_timeout', 3); // Increase Polling Timeout
+			ini_set('default_socket_timeout', 4); // Increase Polling Timeout +1000ms
 
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
@@ -641,6 +641,6 @@ mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_s
 mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'genpeer_last_heartbeat' LIMIT 1");
 
 //***********************************************************************************
-sleep(10);
+sleep(rand(10,11));
 } // End Infinite Loop
 ?>

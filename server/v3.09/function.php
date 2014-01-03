@@ -809,7 +809,7 @@ class TKRandom
 		self::num();
 	}
 	// generate random number
-	public static function num($min = 0, $max = 9999999)
+	public static function num($min = 0, $max = 2147483647)
   	{
 		if (self::$RSeed == 0) self::seed(mt_rand());
 		self::$RSeed = (self::$RSeed * 125) % 2796203;
@@ -1077,11 +1077,14 @@ function gen_simple_poll_test($ip_address, $domain, $subfolder, $port_number)
 {
 	$simple_poll_fail = FALSE; // Reset Variable
 
+	TKRandom::seed(transaction_cycle(0, TRUE));
+
 	// Grab random Transaction Foundation Hash
-	$rand_block = rand(0,foundation_cycle(0, TRUE) - 50); // Range from Start to Last 50 Foundation Hash
+	$rand_block = TKRandom::num(0,foundation_cycle(0, TRUE) - 5); // Range from Start to Last 5 Foundation Hash
 	$random_foundation_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_foundation` WHERE `block` = $rand_block LIMIT 1"),0,0);
+
 	// Grab random Transaction Hash
-	$rand_block2 = rand(transaction_cycle((0 - transaction_cycle(0, TRUE)), TRUE), transaction_cycle(-10000, TRUE)); // Range from Start to Last 10000 Transaction Hash
+	$rand_block2 = TKRandom::num(transaction_cycle((0 - transaction_cycle(0, TRUE)), TRUE), transaction_cycle(-1000, TRUE)); // Range from Start to Last 1000 Transaction Hash
 	$rand_block2 = transaction_cycle(0 - $rand_block2);
 	$random_transaction_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` = $rand_block2 LIMIT 1"),0,0);
 	$rand_block2 = ($rand_block2 - TRANSACTION_EPOCH - 300) / 300;
