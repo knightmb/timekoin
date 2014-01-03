@@ -40,7 +40,21 @@ if($_GET["action"]=="begin_watchdog")
 		// Set loop at active now
 		mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'watchdog_heartbeat_active' LIMIT 1");
 
-		call_script("watchdog.php", 0);
+		// CLI Mode selection
+		$cli_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
+
+		// Start main system script
+		if($cli_mode == TRUE)
+		{
+			call_script("watchdog.php", 0);
+		}
+		else
+		{
+			session_name("tkwatchcli");
+			session_start();
+			ini_set('default_socket_timeout', 1);
+			call_script("watchdog.php", NULL, NULL, TRUE);			
+		}
 
 		header("Location: index.php?menu=system&code=2");
 		exit;
@@ -125,6 +139,7 @@ while(1)
 				write_log("Generation Clerk has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
 				mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
+				mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'generation_last_heartbeat' LIMIT 1");
 			}
 		}
 
@@ -141,6 +156,7 @@ while(1)
 				write_log("Treasurer has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
 				mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active' LIMIT 1");
+				mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'treasurer_last_heartbeat' LIMIT 1");
 			}
 		}
 
@@ -157,6 +173,7 @@ while(1)
 				write_log("Peer List Clerk has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
 				mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
+				mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'peerlist_last_heartbeat' LIMIT 1");
 			}
 		}
 
@@ -184,6 +201,7 @@ while(1)
 				write_log("Transaction Queue Clerk has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
 				mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
+				mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'queueclerk_last_heartbeat' LIMIT 1");
 			}
 		}
 
@@ -200,6 +218,7 @@ while(1)
 				write_log("Generation Peer Clerk has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
 				mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
+				mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'genpeer_last_heartbeat' LIMIT 1");
 			}
 		}
 
@@ -216,6 +235,7 @@ while(1)
 				write_log("Transaction Clerk has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
 				mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
+				mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'transclerk_last_heartbeat' LIMIT 1");
 			}
 		}
 
@@ -232,6 +252,7 @@ while(1)
 				write_log("Foundation Clerk has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
 				mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
+				mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'foundation_last_heartbeat' LIMIT 1");
 			}
 		}
 
@@ -248,6 +269,7 @@ while(1)
 				write_log("Balance Indexer has become Stuck, going to Reset...", "WA");
 				// Possible script failure, try reset the database to let it continue in the next loop
 				mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
+				mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'balance_last_heartbeat' LIMIT 1");
 			}
 		}
 

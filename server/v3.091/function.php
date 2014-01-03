@@ -316,9 +316,14 @@ function poll_peer($ip_address, $domain, $subfolder, $port_number, $max_length, 
 }
 //***********************************************************************************
 //***********************************************************************************
-function call_script($script, $priority = 1, $plugin = FALSE)
+function call_script($script, $priority = 1, $plugin = FALSE, $web_server_call = FALSE)
 {
-	if($priority == 1)
+	if($web_server_call == TRUE)
+	{
+		// No Properly working PHP CLI Extensions for some odd reason, call from web server instead
+		poll_peer(NULL, "localhost", my_subfolder(), my_port_number(), 1, $script);
+	}
+	else if($priority == 1)
 	{
 		// Normal Priority
 		if(getenv("OS") == "Windows_NT")
@@ -1379,38 +1384,21 @@ function initialization_database()
 	// Record when started
 	mysql_query("UPDATE `options` SET `field_data` = '" . time() . "' WHERE `options`.`field_name` = 'timekoin_start_time' LIMIT 1");
 //**************************************
-// Upgrade Database from v2.x
+// Upgrade Database from v3.x earlier versions
 
 	// Standard Tabs Settings
-	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'standard_tabs_settings' LIMIT 1"),0,0);
+	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0);
 	if($new_record_check === FALSE)
 	{
 		// Does not exist, create it
-		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('standard_tabs_settings', '255')");
+		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('cli_mode', '1')");
 	}
-
-	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,0);
-	if($new_record_check === FALSE)
-	{
-		// Does not exist, create it
-		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('default_timezone', '')");
-	}
-
-	if(is_dir('plugins') == FALSE) // Create /plugins directory if it does not exist
-	{
-		write_log("/plugins Directory Does Not Exist", "MA");
-		
-		// Create plugins directory if it does not exist
-		if(mkdir('plugins') == TRUE)
-		{
-			write_log("/plugins Directory CREATED!", "MA");
-		}
-	}
+	
 //**************************************
 	// Check for an empty generation IP address,
 	// if none exist, attempt to auto-detect one
 	// and fill in the field.
-	$poll_IP = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,"field_data");
+	$poll_IP = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,0);
 	
 	if(empty($poll_IP) == TRUE)
 	{

@@ -34,6 +34,9 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 
 		if($allow_ambient_peer_restart == 1)
 		{
+			// CLI Mode selection
+			$cli_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
+
 			// Check to make sure Timekoin has not be stopped for any unknown reason
 			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
 			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,0);
@@ -51,7 +54,15 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 					// Set loop at active now
 					mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1");
 
-					call_script("main.php");
+					if($cli_mode == TRUE)
+					{
+						call_script("main.php");
+					}
+					else
+					{
+						ini_set('default_socket_timeout', 1);
+						call_script("main.php", NULL, NULL, TRUE);			
+					}
 				}
 			}
 
@@ -72,7 +83,16 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 					// Set loop at active now
 					mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'watchdog_heartbeat_active' LIMIT 1");
 
-					call_script("watchdog.php", 0);
+
+					if($cli_mode == TRUE)
+					{
+						call_script("watchdog.php", 0);
+					}
+					else
+					{
+						ini_set('default_socket_timeout', 1);
+						call_script("watchdog.php", NULL, NULL, TRUE);			
+					}					
 				}
 			}
 		} // End Ambient Peer Restart Active Check

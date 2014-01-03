@@ -40,8 +40,21 @@ if($_GET["action"] == "begin_main")
 
 		activate(TIMEKOINSYSTEM, 1); // In case this was disabled from a emergency stop call in the server GUI
 
+		// CLI Mode selection
+		$cli_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
+
 		// Start main system script
-		call_script("main.php");
+		if($cli_mode == TRUE)
+		{
+			call_script("main.php");
+		}
+		else
+		{
+			session_name("tkmaincli");
+			session_start();
+			ini_set('default_socket_timeout', 1);
+			call_script("main.php", NULL, NULL, TRUE);			
+		}
 
 		// Use uPNP to map inbound ports for Windows systems
 		if(getenv("OS") == "Windows_NT" && file_exists("utils\upnpc.exe") == TRUE)
@@ -66,11 +79,18 @@ if($_GET["action"] == "begin_main")
 
 			if($plugin_enable == TRUE && empty($plugin_service) == FALSE)
 			{
-				// Start Plugin Service
-				call_script($plugin_file, 0, TRUE);
+				if($cli_mode == TRUE)
+				{
+					// Start Plugin Service
+					call_script($plugin_file, 0, TRUE);
 
-				// Log Service Start
-				write_log("Started Plugin Service: $plugin_service", "MA");
+					// Log Service Start
+					write_log("Started Plugin Service: $plugin_service", "MA");
+				}
+				else
+				{
+					write_log("Can NOT Start Plugin Service in Non-CLI Mode [$plugin_service]", "MA");
+				}
 			}
 		}
 		// Finish Starting Plugin Services
@@ -91,6 +111,9 @@ mysql_select_db(MYSQL_DATABASE);
 $context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
 ini_set('user_agent', 'Timekoin Server (Main) v' . TIMEKOIN_VERSION);
 ini_set('default_socket_timeout', 3); // Timeout for request in seconds
+
+// CLI Mode selection
+$cli_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
 
 // Check for banned IP address
 if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
@@ -182,7 +205,7 @@ while(1) // Begin Infinite Loop :)
 				$sql = "SELECT timestamp FROM `ip_activity` WHERE `ip` = '$select_IP'";
 				$sql_num_results2 = mysql_num_rows(mysql_query($sql));
 
-				if($sql_num_results2 > $request_max && empty($select_IP) == FALSE)
+				if($sql_num_results2 > $request_max && empty($select_IP) == FALSE && $select_IP != "127.0.0.1")
 				{
 					// More than X request per cycle means something is wrong
 					// so this IP needs to be banned for a while
@@ -253,56 +276,112 @@ while(1) // Begin Infinite Loop :)
 		// Check if script is already running
 		if($script_loop_active == 0)
 		{
-			call_script("transclerk.php");
+			if($cli_mode == TRUE)
+			{
+				call_script("transclerk.php");
+			}
+			else
+			{
+				call_script("transclerk.php", NULL, NULL, TRUE);			
+			}
 		}
 
 		$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,0);
 		// Check if script is already running
 		if($script_loop_active == 0)
 		{
-			call_script("foundation.php", 0);
+			if($cli_mode == TRUE)
+			{
+				call_script("foundation.php", 0);
+			}
+			else
+			{
+				call_script("foundation.php", NULL, NULL, TRUE);			
+			}
 		}
 
 		$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,0);
 		// Check if script is already running
 		if($script_loop_active == 0)
 		{
-			call_script("generation.php");
+			if($cli_mode == TRUE)
+			{
+				call_script("generation.php");
+			}
+			else
+			{
+				call_script("generation.php", NULL, NULL, TRUE);			
+			}
 		}
 
 		$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,0);
 		// Check if script is already running
 		if($script_loop_active == 0)
 		{
-			call_script("treasurer.php");
+			if($cli_mode == TRUE)
+			{
+				call_script("treasurer.php");
+			}
+			else
+			{
+				call_script("treasurer.php", NULL, NULL, TRUE);			
+			}
 		}
 
 		$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,0);
 		// Check if script is already running
 		if($script_loop_active == 0)
 		{
-			call_script("peerlist.php");
+			if($cli_mode == TRUE)
+			{
+				call_script("peerlist.php");
+			}
+			else
+			{
+				call_script("peerlist.php", NULL, NULL, TRUE);			
+			}
 		}
 
 		$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,0);
 		// Check if script is already running
 		if($script_loop_active == 0)
 		{
-			call_script("queueclerk.php");			
+			if($cli_mode == TRUE)
+			{
+				call_script("queueclerk.php");
+			}
+			else
+			{
+				call_script("queueclerk.php", NULL, NULL, TRUE);			
+			}
 		}
 
 		$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'balance_heartbeat_active' LIMIT 1"),0,0);
 		// Check if script is already running
 		if($script_loop_active == 0)
 		{
-			call_script("balance.php", 0);
+			if($cli_mode == TRUE)
+			{
+				call_script("balance.php", 0);
+			}
+			else
+			{
+				call_script("balance.php", NULL, NULL, TRUE);			
+			}
 		}		
 
 		$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,0);
 		// Check if script is already running
 		if($script_loop_active == 0)
 		{
-			call_script("genpeer.php");
+			if($cli_mode == TRUE)
+			{
+				call_script("genpeer.php");
+			}
+			else
+			{
+				call_script("genpeer.php", NULL, NULL, TRUE);			
+			}
 		}
 
 		if(rand(1,4) == 3) // Randomize checking to keep database load down

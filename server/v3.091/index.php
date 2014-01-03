@@ -118,10 +118,21 @@ if($_SESSION["valid_login"] == TRUE)
 		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,"field_data");
 		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,"field_data");
 
+		$cli_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
+
+		if($cli_mode == 1)
+		{
+			$main_timeout_delay = 30;
+		}
+		else
+		{
+			$main_timeout_delay = 60;
+		}
+
 		if($script_loop_active > 0)
 		{
 			// Main should still be active
-			if((time() - $script_last_heartbeat) > 30) // Greater than triple the loop time, something is wrong
+			if((time() - $script_last_heartbeat) > $main_timeout_delay) // Greater than timeout, something is wrong
 			{
 				// Main has stop was unexpected
 				$body_string .= '<tr><td align="center"><img src="img/hr.gif" alt="" /></td><td><font color="red"><strong>Main Program Processor</strong></font></td>
@@ -1015,6 +1026,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["server_settings"] == "change")
 		{
+			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["cli_mode"] . "' WHERE `options`.`field_name` = 'cli_mode' LIMIT 1");
 			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["domain"] . "' WHERE `options`.`field_name` = 'server_domain' LIMIT 1");
 			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["subfolder"] . "' WHERE `options`.`field_name` = 'server_subfolder' LIMIT 1");
 			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["max_request"] . "' WHERE `options`.`field_name` = 'server_request_max' LIMIT 1");
@@ -1190,6 +1202,7 @@ if($_SESSION["valid_login"] == TRUE)
 		$quick_info = '<strong>Start</strong> will activate all Timekoin Processing.<br><br>
 			<strong>Stop</strong> will halt Timekoin from further processing.<br><br>
 			<strong>Max Peer Query</strong> is the per 10 seconds limit imposed on each individual peer before being banned for 24 hours.<br><br>
+			<strong>CLI Mode</strong> controls if the Timekoin processing is run within the web server or independent via the command line interface.<br><br>
 			<strong>Allow LAN Peers</strong> controls if LAN peers will be allowed to populate the peer list.<br><br>
 			<strong>Allow Ambient Peer Restarts</strong> controls if other peers can restart Timekoin from unknown failures.<br><br>
 			<strong>Super Peer</strong> will enable peers to download bulk transactions from your server.<br><br>';
