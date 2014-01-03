@@ -1,10 +1,37 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 3.09 (Released 2014-1-3)
+============================================
+- TKRandom class now used for simple poll checking during generation peer verification for election
+- TKRandom class max integer raised from 9999999 to 2147483647 (32 bit limit) to allow larger range of number generation
+- Additional +1000ms added to reverse peer verification timeout for peer elections
+- Disable outside peer activity when logging into a fresh system for new users or from some type of system recovery until the user actually starts the Timekoin server process.    
+- Less DB usage for clearing gen list sync issues
+- Added tk_process_status to API documentation and system permissions
+- Added API to filter list for logs
+- Added full text search to logs
+- Expand fields for logs and queue to use the extra available space on screen
+- send_tk API has key length checking for encrypted destination public key
+- More variables from database moved into RAM to reduce I/O access to disk when polling user set options & settings
+- Balance index tweaked to better target balance cache values used by the Treasurer processor
+- Key length checking for destination keys encrypted inside transaction data
+- GUI related settings being saved bug(s) cleanup
+- Tweak ambient peer restart to be less aggressive in checking status
+- Purge reserve peers that are spoofing active peers
+- Smarter balance index process working
+- Domain spoof logging and protection for peer list manager
+- More tweaking to keep flood protection from locking out the system admin
+- Watchdog waits longer before trying to restart a failed process in case of multi-processor systems where timeouts vary from process to process
+- Removed auto-start for Windows users when loading the timekoin.exe for the first time
+- Tweaks to running process to better optimize database calls for slower systems
+- Better Balance index checking for queued transactions
+- More checking of recent transaction foundations when triggered
+
+
 Timekoin Server - 3.08 (Released 2013-12-19)
 ============================================
 - Fix IP filtering issue for peers running straight IP that would cause them to not join domain named peers properly
 - Tweak security threshold for logins and process starts to be less aggressive so user does not lock them-self out by accident
-
 
 Timekoin Server - 3.07 (Released 2013-12-17)
 ============================================
