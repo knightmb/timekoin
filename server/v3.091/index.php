@@ -1202,7 +1202,7 @@ if($_SESSION["valid_login"] == TRUE)
 		$quick_info = '<strong>Start</strong> will activate all Timekoin Processing.<br><br>
 			<strong>Stop</strong> will halt Timekoin from further processing.<br><br>
 			<strong>Max Peer Query</strong> is the per 10 seconds limit imposed on each individual peer before being banned for 24 hours.<br><br>
-			<strong>CLI Mode</strong> controls if the Timekoin processing is run within the web server or independent via the command line interface.<br><br>
+			<strong>CLI Mode</strong> controls if the Timekoin processing is run within the web server (disable) or independently via the command line interface (enable).<br><br>
 			<strong>Allow LAN Peers</strong> controls if LAN peers will be allowed to populate the peer list.<br><br>
 			<strong>Allow Ambient Peer Restarts</strong> controls if other peers can restart Timekoin from unknown failures.<br><br>
 			<strong>Super Peer</strong> will enable peers to download bulk transactions from your server.<br><br>';
