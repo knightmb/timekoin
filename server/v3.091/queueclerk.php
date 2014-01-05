@@ -24,7 +24,7 @@ if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 // Answer transaction hash poll
 if($_GET["action"] == "trans_hash")
 {
-	echo mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'transaction_queue_hash' LIMIT 1"),0,"field_data");
+	echo mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'transaction_queue_hash' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
 	if($_GET["client"] == "api")
@@ -43,7 +43,7 @@ if($_GET["action"] == "trans_hash")
 // Answer transaction queue poll
 if($_GET["action"] == "queue")
 {
-	$sql = "SELECT * FROM `transaction_queue` ORDER BY RAND() LIMIT 100";
+	$sql = "SELECT hash FROM `transaction_queue` ORDER BY RAND() LIMIT 100";
 
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
@@ -335,9 +335,6 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 	// Create a hash of my own transaction queue
 	$transaction_queue_hash = queue_hash();
 
-	// Store in database for quick reference from database
-	mysql_query("UPDATE `options` SET `field_data` = '$transaction_queue_hash' WHERE `options`.`field_name` = 'transaction_queue_hash' LIMIT 1");
-
 	// How does my transaction queue compare to others?
 	// Ask all of my active peers
 	ini_set('user_agent', 'Timekoin Server (Queueclerk) v' . TIMEKOIN_VERSION);
@@ -504,6 +501,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 						$final_hash_compare = $transaction_crypt2;
 						$crypt_hash_check = $transaction_hash;
 						$valid_amount = TRUE; // No amount, but needs this to pass amount test
+						$public_key_to = $transaction_public_key; // None is used, but needs this to pass the key length test
 					}
 					else
 					{

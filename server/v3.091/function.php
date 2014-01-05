@@ -321,7 +321,20 @@ function call_script($script, $priority = 1, $plugin = FALSE, $web_server_call =
 	if($web_server_call == TRUE)
 	{
 		// No Properly working PHP CLI Extensions for some odd reason, call from web server instead
-		poll_peer(NULL, "localhost", my_subfolder(), my_port_number(), 1, $script);
+		$cli_port = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_port' LIMIT 1"),0,0);		
+		
+		if(empty($cli_port) == TRUE)
+		{
+			// Use the same server port that is reported to other peers
+			poll_peer(NULL, "localhost", my_subfolder(), my_port_number(), 1, $script);
+		}
+		else
+		{
+			// Use a different port number than what is reported to other peers.
+			// Useful for port forwarding where the External Internet port is different than
+			// the Internal web server port being forwarded through the router.
+			poll_peer(NULL, "localhost", my_subfolder(), $cli_port, 1, $script);
+		}
 	}
 	else if($priority == 1)
 	{
@@ -1393,7 +1406,14 @@ function initialization_database()
 		// Does not exist, create it
 		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('cli_mode', '1')");
 	}
-	
+
+	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'cli_port' LIMIT 1"),0,0);
+	if($new_record_check === FALSE)
+	{
+		// Does not exist, create it
+		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('cli_port', '')");
+	}
+
 //**************************************
 	// Check for an empty generation IP address,
 	// if none exist, attempt to auto-detect one

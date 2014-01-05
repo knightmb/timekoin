@@ -598,6 +598,7 @@ function system_screen()
 	$perm_peer_priority = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'perm_peer_priority' LIMIT 1"),0,0);
 	$auto_update_generation_IP = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,0));
 	$cli_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
+	$cli_port = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_port' LIMIT 1"),0,0);
 
 	if($cli_mode == 1)
 	{
@@ -730,7 +731,8 @@ function system_screen()
 	Server Domain: <input type="text" name="domain" size="25" maxlength="256" value="' . $domain . '"/><br>
 	Timekoin Subfolder: <input type="text" name="subfolder" size="25" maxlength="256" value="' . $subfolder . '"/><br>
 	Server Port Number: <input type="text" name="port" size="6" maxlength="5" value="' . $port . '"/><br>
-	Max Peer Query: <input type="text" name="max_request" size="6" maxlength="4" value="' . $request_max . '"/><br>
+	Max Peer Query: <input type="text" name="max_request" size="6" maxlength="6" value="' . $request_max . '"/><br>
+	CLI Port: <input type="text" name="cli_port" size="6" maxlength="5" value="' . $cli_port . '"/><br>
 	<br>CLI Mode: <input type="radio" name="cli_mode" value="0" ' . $cli_mode_0 . '>Disable <input type="radio" name="cli_mode" value="1" ' . $cli_mode_1 . '>Enable
 	<br><br>Allow LAN Peers: <input type="radio" name="allow_LAN" value="0" ' . $LAN_disable . '>Disable <input type="radio" name="allow_LAN" value="1" ' . $LAN_enable . '>Enable
 	<br><br>Allow Ambient Peer Restarts: <input type="radio" name="allow_ambient" value="0" ' . $ambient_restart_disable . '>Disable <input type="radio" name="allow_ambient" value="1" ' . $ambient_restart_enable . '>Enable

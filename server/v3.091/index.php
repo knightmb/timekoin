@@ -1026,6 +1026,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["server_settings"] == "change")
 		{
+			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["cli_port"] . "' WHERE `options`.`field_name` = 'cli_port' LIMIT 1");
 			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["cli_mode"] . "' WHERE `options`.`field_name` = 'cli_mode' LIMIT 1");
 			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["domain"] . "' WHERE `options`.`field_name` = 'server_domain' LIMIT 1");
 			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["subfolder"] . "' WHERE `options`.`field_name` = 'server_subfolder' LIMIT 1");
