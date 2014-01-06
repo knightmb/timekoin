@@ -40,6 +40,9 @@ else
 	exit;
 }
 
+ini_set('user_agent', 'Timekoin Server (Treasurer) v' . TIMEKOIN_VERSION);
+ini_set('default_socket_timeout', 3); // Timeout for request in seconds
+
 while(1) // Begin Infinite Loop
 {
 set_time_limit(300);
@@ -145,9 +148,6 @@ if($sql_num_results > 0)
 						// The best we can do is try to submit our transaction out to a peer
 						// that is accepting inbound connections and hopefully they will replicate
 						// out to the peer network.
-						ini_set('user_agent', 'Timekoin Server (Treasurer) v' . TIMEKOIN_VERSION);
-						ini_set('default_socket_timeout', 3); // Timeout for request in seconds
-						
 						$sql_result2 = mysql_query("SELECT * FROM `active_peer_list` ORDER BY RAND()");
 						$sql_num_results2 = mysql_num_rows($sql_result2);							
 						$peer_failure;

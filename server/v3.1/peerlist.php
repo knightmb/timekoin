@@ -368,6 +368,9 @@ else
 	exit;
 }
 
+ini_set('user_agent', 'Timekoin Server (Peerlist) v' . TIMEKOIN_VERSION);
+ini_set('default_socket_timeout', 3); // Timeout for request in seconds
+
 while(1) // Begin Infinite Loop
 {
 set_time_limit(300);
@@ -402,8 +405,6 @@ else
 }
 //***********************************************************************************
 //***********************************************************************************
-ini_set('user_agent', 'Timekoin Server (Peerlist) v' . TIMEKOIN_VERSION);
-ini_set('default_socket_timeout', 3); // Timeout for request in seconds
 $max_active_peers = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,"field_data");
 $max_new_peers = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'max_new_peers' LIMIT 1"),0,"field_data");
 $allow_lan_peers = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,"field_data"));

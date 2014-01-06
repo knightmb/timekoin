@@ -112,6 +112,9 @@ else
 	exit;
 }
 
+ini_set('default_socket_timeout', 3); // Timeout for request in seconds
+ini_set('user_agent', 'Timekoin Server (Transclerk) v' . TIMEKOIN_VERSION);
+
 while(1) // Begin Infinite Loop
 {
 set_time_limit(300);
@@ -290,9 +293,6 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 //***********************************************************************************
 	// Does my current history hash match all my peers?
 	// Ask all of my active peers
-	ini_set('default_socket_timeout', 3); // Timeout for request in seconds
-	ini_set('user_agent', 'Timekoin Server (Transclerk) v' . TIMEKOIN_VERSION);
-
 	$sql = perm_peer_mode();
 
 	$sql_result = mysql_query($sql);

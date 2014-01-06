@@ -88,6 +88,9 @@ else
 	exit;
 }
 
+ini_set('user_agent', 'Timekoin Server (Genpeer) v' . TIMEKOIN_VERSION);	
+ini_set('default_socket_timeout', 3); // Timeout for request in seconds
+
 while(1) // Begin Infinite Loop
 {
 set_time_limit(300);	
@@ -237,9 +240,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 //***********************************************************************************
 	// How does my generation peer list compare to others?
 	// Ask all of my active peers
-	ini_set('user_agent', 'Timekoin Server (Genpeer) v' . TIMEKOIN_VERSION);	
-	ini_set('default_socket_timeout', 3); // Timeout for request in seconds
-
 	$sql = perm_peer_mode();
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
@@ -385,7 +385,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 	else
 	{
 		// Clear out any out of sync counts once the list is in sync
-		if(rand(1,10) == 4) // Randomize to avoid spamming the DB
+		if(rand(1,5) == 4) // Randomize to avoid spamming the DB
 		{
 			// Reset out of sync counter
 			mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'generation_peer_list_no_sync' LIMIT 1");

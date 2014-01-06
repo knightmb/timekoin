@@ -309,6 +309,9 @@ else
 	exit;
 }
 
+ini_set('user_agent', 'Timekoin Server (Queueclerk) v' . TIMEKOIN_VERSION);
+ini_set('default_socket_timeout', 3); // Timeout for request in seconds
+
 while(1) // Begin Infinite Loop
 {
 set_time_limit(300);
@@ -355,9 +358,6 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 
 	// How does my transaction queue compare to others?
 	// Ask all of my active peers
-	ini_set('user_agent', 'Timekoin Server (Queueclerk) v' . TIMEKOIN_VERSION);
-	ini_set('default_socket_timeout', 3); // Timeout for request in seconds
-
 	$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND() LIMIT 10";
 
 	$sql_result = mysql_query($sql);
