@@ -28,7 +28,7 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 	echo hash('crc32', intval($_GET["challenge"]));
 
 	// Check if Ambient Peer Restart is enabled (randomize to avoid DB spamming)
-	if(rand(1,30) == 15)
+	if(rand(1,50) == 50)
 	{
 		$allow_ambient_peer_restart = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'allow_ambient_peer_restart' LIMIT 1"),0,0);
 
@@ -53,6 +53,13 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 
 					// Set loop at active now
 					mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1");
+					
+					// Clear IP Activity and Banlist for next start
+					mysql_query("TRUNCATE TABLE `ip_activity`");
+					mysql_query("TRUNCATE TABLE `ip_banlist`");
+
+					// Record when started
+					mysql_query("UPDATE `options` SET `field_data` = '" . time() . "' WHERE `options`.`field_name` = 'timekoin_start_time' LIMIT 1");
 
 					if($cli_mode == TRUE)
 					{
@@ -73,7 +80,7 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 			if($script_loop_active > 0)
 			{
 				// Watchdog should still be active
-				if((time() - $script_last_heartbeat) > 500) // Greater than 500s, something is wrong
+				if((time() - $script_last_heartbeat) > 300) // Greater than 300s, something is wrong
 				{
 					// Watchdog stop was unexpected
 					write_log("Watchdog has Stop, going to try an Ambient Peer Restart", "MA");
