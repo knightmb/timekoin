@@ -806,11 +806,29 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 	// Current Generation Hash
 	$generating_hash = generation_peer_hash();
 
+	// Scale how often peers are polled based on how many active peers exist
+	if($active_peers >= 25)
+	{
+		$rand_scale = 1;
+	}
+	else if($active_peers < 25 && $active_peers >= 15)
+	{
+		$rand_scale = 2;
+	}
+	else if($active_peers < 15 && $active_peers > 8)
+	{
+		$rand_scale = 3;
+	}
+	else
+	{
+		$rand_scale = 4;
+	}
+
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
 		$sql_row = mysql_fetch_array($sql_result);
 
-		if(rand(1,3) == 3)// Randomize to avoid spamming
+		if(rand(1,$rand_scale) == 1)// Randomize to avoid spamming
 		{
 			$ip_address = $sql_row["IP_Address"];
 			$domain = $sql_row["domain"];
