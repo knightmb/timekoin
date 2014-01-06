@@ -22,9 +22,27 @@ if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 
 log_ip("TR", 100);
 
+// First time run check
+$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,0);
+$last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_last_heartbeat' LIMIT 1"),0,0);
+
+if($loop_active === FALSE && $last_heartbeat == 1)
+{
+	// Create record to begin loop
+	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('treasurer_heartbeat_active', '0')");
+	// Update timestamp for starting
+	mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'treasurer_last_heartbeat' LIMIT 1");
+}
+else
+{
+	// Record already exist, called while another process of this script
+	// was already running.
+	exit;
+}
+
 while(1) // Begin Infinite Loop
 {
-set_time_limit(99);
+set_time_limit(300);
 //***********************************************************************************
 $loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,"field_data");
 
@@ -264,7 +282,6 @@ if($sql_num_results > 0)
 		} // End for loop
 
 	} // End timing allowed check
-
 }
 //*****************************************************************************************************
 //*****************************************************************************************************
@@ -279,7 +296,6 @@ if($sql_num_results > 0)
 	// Record how long transaction processing took in the logs
 	$time_start = time();
 	$record_insert_counter = 0;
-	set_time_limit(300); // Increaes processing time
 
 	// Special set the Transaction History Hash so that slower peers don't confuse faster peers that poll
 	// this hash if they complete before this peer does. This saves bandwidth and CPU overall since

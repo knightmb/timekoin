@@ -25,7 +25,7 @@ if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 // Answer generation hash poll
 if($_GET["action"] == "gen_hash")
 {
-	echo mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'generating_peers_hash' LIMIT 1"),0,"field_data");
+	echo mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generating_peers_hash' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
 	log_ip("GP");
@@ -36,7 +36,7 @@ if($_GET["action"] == "gen_hash")
 // Answer generation hash poll
 if($_GET["action"] == "gen_key_crypt")
 {
-	echo mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'generation_key_crypt' LIMIT 1"),0,1);
+	echo mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_key_crypt' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
 	log_ip("GP");
@@ -70,6 +70,24 @@ if($_GET["action"] == "gen_peer_list")
 	exit;
 }
 //***********************************************************************************
+// First time run check
+$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,0);
+$last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'genpeer_last_heartbeat' LIMIT 1"),0,0);
+
+if($loop_active === FALSE && $last_heartbeat == 1)
+{
+	// Create record to begin loop
+	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('genpeer_heartbeat_active', '0')");
+	// Update timestamp for starting
+	mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'genpeer_last_heartbeat' LIMIT 1");
+}
+else
+{
+	// Record already exist, called while another process of this script
+	// was already running.
+	exit;
+}
+
 while(1) // Begin Infinite Loop
 {
 set_time_limit(300);	
@@ -173,13 +191,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 // Store a hash of the current list of generating peers
 	$generating_hash = generation_peer_hash();
 
-	$generation_peer_hash = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'generating_peers_hash' LIMIT 1"),0,"field_data");
-
-	if($generating_hash != $generation_peer_hash)
-	{
-		// Store in database for quick reference from database
-		mysql_query("UPDATE `options` SET `field_data` = '$generating_hash' WHERE `options`.`field_name` = 'generating_peers_hash' LIMIT 1");
-	}
 //***********************************************************************************
 //***********************************************************************************
 // Generation IP Auto Update Detection
@@ -641,6 +652,6 @@ mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_s
 mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'genpeer_last_heartbeat' LIMIT 1");
 
 //***********************************************************************************
-sleep(rand(10,11));
+sleep(10);
 } // End Infinite Loop
 ?>

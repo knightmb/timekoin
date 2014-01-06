@@ -94,6 +94,24 @@ if($_GET["action"] == "transaction_data" && $_GET["block_number"] >= 0)
 	exit;
 }
 //***********************************************************************************
+// First time run check
+$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,0);
+$last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_last_heartbeat' LIMIT 1"),0,0);
+
+if($loop_active === FALSE && $last_heartbeat == 1)
+{
+	// Create record to begin loop
+	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('transclerk_heartbeat_active', '0')");
+	// Update timestamp for starting
+	mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'transclerk_last_heartbeat' LIMIT 1");
+}
+else
+{
+	// Record already exist, called while another process of this script
+	// was already running.
+	exit;
+}
+
 while(1) // Begin Infinite Loop
 {
 set_time_limit(300);
@@ -229,9 +247,9 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 	{	
 //***********************************************************************************		
 // Update transaction history hash
-		$current_history_hash = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'transaction_history_hash' LIMIT 1"),0,"field_data");
-		$transaction_history_block_check = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'transaction_history_block_check' LIMIT 1"),0,"field_data"));
-		$foundation_block_check = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_block_check' LIMIT 1"),0,"field_data"));
+		$current_history_hash = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'transaction_history_hash' LIMIT 1"),0,0);
+		$transaction_history_block_check = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transaction_history_block_check' LIMIT 1"),0,0));
+		$foundation_block_check = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_block_check' LIMIT 1"),0,0));
 
 		if($transaction_history_block_check != 0 || $foundation_block_check == 1)
 		{
@@ -1049,6 +1067,7 @@ if($transaction_multi == TRUE)
 }
 else
 {
+	set_time_limit(300); // Reset timeout so timeout does not occur during sleep
 	sleep(10);
 }
 

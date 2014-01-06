@@ -935,14 +935,39 @@ if($_SESSION["valid_login"] == TRUE)
 					$failed_column_name = 'poll_failures';
 				}
 
+				// Check if peer is one of the generating currency peers
+				if(empty($sql_row["domain"]) == FALSE)
+				{
+					// Convert domain to IP
+					$peer_domain_to_IP = gethostbyname($sql_row["domain"]);
+				}
+				else
+				{
+					$peer_domain_to_IP = $sql_row["IP_Address"];
+				}
+				
+				$gen_peer_exist = mysql_result(mysql_query("SELECT IP_Address FROM `generating_peer_list` WHERE `IP_Address` = '$peer_domain_to_IP' LIMIT 1"),0,0);				
+
+				if(empty($gen_peer_exist) == FALSE)
+				{
+					// This peer is one of the generating peers
+					$gen_peer = ' style="background-color:lightgreen"';
+				}
+				else
+				{
+					// This peer is NOT a generating peer
+					$gen_peer = NULL;
+				}
+
+
 				$body_string .= '<tr>
-				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["IP_Address"] . $permanent2 . '</p></td>
-				 <td class="style2"><p style="word-wrap:break-word; width:160px; font-size:11px;">' . $permanent1 . $sql_row["domain"] . $permanent2 . '</p></td>
-				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["subfolder"] . $permanent2 . '</p></td>
-				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["port_number"] . $permanent2 . '</p></td>
-				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $last_heartbeat . $permanent2 . '</p></td>
-				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $joined . $permanent2 . '</p></td>
-				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row[$failed_column_name] . $permanent2 . '</p></td>';
+				 <td class="style2"' . $gen_peer . '><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["IP_Address"] . $permanent2 . '</p></td>
+				 <td class="style2"' . $gen_peer . '><p style="word-wrap:break-word; width:160px; font-size:11px;">' . $permanent1 . $sql_row["domain"] . $permanent2 . '</p></td>
+				 <td class="style2"' . $gen_peer . '><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["subfolder"] . $permanent2 . '</p></td>
+				 <td class="style2"' . $gen_peer . '><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["port_number"] . $permanent2 . '</p></td>
+				 <td class="style2"' . $gen_peer . '><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $last_heartbeat . $permanent2 . '</p></td>
+				 <td class="style2"' . $gen_peer . '><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $joined . $permanent2 . '</p></td>
+				 <td class="style2"' . $gen_peer . '><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row[$failed_column_name] . $permanent2 . '</p></td>';
 
 				if($_GET["show"] == "reserve")
 				{
@@ -950,10 +975,10 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 				else
 				{
-					$body_string .= '<td><FORM ACTION="index.php?menu=peerlist&amp;remove=peer" METHOD="post"><input type="image" src="img/hr.gif" title="Delete Peer" name="remove' . $i . '" border="0">
+					$body_string .= '<td' . $gen_peer . '><FORM ACTION="index.php?menu=peerlist&amp;remove=peer" METHOD="post"><input type="image" src="img/hr.gif" title="Delete Peer" name="remove' . $i . '" border="0">
 					 <input type="hidden" name="ip" value="' . $sql_row["IP_Address"] . '">
 					 <input type="hidden" name="domain" value="' . $sql_row["domain"] . '">
-					 </FORM></td><td>
+					 </FORM></td><td' . $gen_peer . '>
 					 <FORM ACTION="index.php?menu=peerlist&amp;edit=peer" METHOD="post"><input type="image" src="img/edit-icon.gif" title="Edit Peer" name="edit' . $i . '" border="0">
 					 <input type="hidden" name="ip" value="' . $sql_row["IP_Address"] . '">
 					 <input type="hidden" name="domain" value="' . $sql_row["domain"] . '">
@@ -984,20 +1009,21 @@ if($_SESSION["valid_login"] == TRUE)
 			$peer_transaction_performance = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_performance' LIMIT 1"),0,"field_data");
 
 			$peer_number_bar = '<table border="0" cellspacing="0" cellpadding="0"><tr><td style="width:125px"><strong>Active Peers: <font color="green">' . $sql_num_results . '</font></strong></td>
-				<td style="width:175px"><strong>Peers in Reserve: <font color="blue">' . $new_peers . '</font></strong></td>
-				<td style="width:125px"><strong>Peer Speed: <font color="blue">' . $peer_transaction_start_blocks . '</font></strong></td>
-				<td style="width:190px"><strong>Group Response: <font color="blue">' . $peer_transaction_performance . ' sec</font></strong></td></tr><tr><td colspan="4"><hr></td></tr>
-				<tr><td align="left" colspan="4"><strong>Transaction History:</strong>&nbsp;' . trans_percent_status() . '</td></tr>
-				</table>';
+			<td style="width:175px"><strong>Peers in Reserve: <font color="blue">' . $new_peers . '</font></strong></td>
+			<td style="width:125px"><strong>Peer Speed: <font color="blue">' . $peer_transaction_start_blocks . '</font></strong></td>
+			<td style="width:190px"><strong>Group Response: <font color="blue">' . $peer_transaction_performance . ' sec</font></strong></td></tr><tr><td colspan="4"><hr></td></tr>
+			<tr><td align="left" colspan="4"><strong>Transaction History:</strong>&nbsp;' . trans_percent_status() . '</td></tr>
+			</table>';
 
 			$quick_info = 'Shows all Active Peers.<br><br>You can manually delete or edit peers in this section.
-				<br><br>Peers in <font color="blue">Blue</font> will not expire after 5 minutes of inactivity or high failure scores.
-				<br><br>Peers in <font color="green">Green</font> are at maximum capacity set by the server operator.
-				<br><br><strong>Failure Score</strong> is a total of failed polling or data exchange events. Peers that score over the failure limit are kicked from the peer list.
-				<br><br><strong>Peer Speed</strong> is combined peer performance measured over a 10 second interval.
-				<br>Ten is the average baseline.
-				<br><br><strong>Group Response</strong> is a sample average of all peers and how long it took the group to respond to a 10 second task.
-				<br>Less than 10 seconds increases peer speed by +1 and longer than 10 seconds decreases peer speed by -1.';
+			<br><br>Peers in <font color="blue">Blue</font> will not expire after 5 minutes of inactivity or high failure scores.
+			<br><br>Peers in <font color="green">Green</font> are at maximum capacity set by the server operator.
+			<br><br>Peers in <font color="green">Light Green</font> background are generating currency.
+			<br><br><strong>Failure Score</strong> is a total of failed polling or data exchange events. Peers that score over the failure limit are kicked from the peer list.
+			<br><br><strong>Peer Speed</strong> is combined peer performance measured over a 10 second interval.
+			<br>Ten is the average baseline.
+			<br><br><strong>Group Response</strong> is a sample average of all peers and how long it took the group to respond to a 10 second task.
+			<br>Less than 10 seconds increases peer speed by +1 and longer than 10 seconds decreases peer speed by -1.';
 
 			$peerlist_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_peerlist' LIMIT 1"),0,"field_data");
 
@@ -1203,7 +1229,7 @@ if($_SESSION["valid_login"] == TRUE)
 		$quick_info = '<strong>Start</strong> will activate all Timekoin Processing.<br><br>
 		<strong>Stop</strong> will halt Timekoin from further processing.<br><br>
 		<strong>Max Peer Query</strong> is the per 10 seconds limit imposed on each individual peer before being banned for 24 hours.<br><br>
-		<strong>CLI Port</strong> is the real port used by the web server when running CLI mode disabled. This should be blank unless the server port is different from the real port.<br><br>
+		<strong>Local Server Port</strong> is the real port used by the web server when running CLI mode disabled. This should be blank unless the local server port is different from the public server port.<br><br>
 		<strong>CLI Mode</strong> controls if the Timekoin processing is run within the web server (disable) or independently via the command line interface (enable).<br><br>
 		<strong>Allow LAN Peers</strong> controls if LAN peers will be allowed to populate the peer list.<br><br>
 		<strong>Allow Ambient Peer Restarts</strong> controls if other peers can restart Timekoin from unknown failures.<br><br>

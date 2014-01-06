@@ -291,6 +291,24 @@ if($_GET["action"] == "input_transaction")
 	exit;
 }
 //***********************************************************************************
+// First time run check
+$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,0);
+$last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_last_heartbeat' LIMIT 1"),0,0);
+
+if($loop_active === FALSE && $last_heartbeat == 1)
+{
+	// Create record to begin loop
+	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('queueclerk_heartbeat_active', '0')");
+	// Update timestamp for starting
+	mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'queueclerk_last_heartbeat' LIMIT 1");
+}
+else
+{
+	// Record already exist, called while another process of this script
+	// was already running.
+	exit;
+}
+
 while(1) // Begin Infinite Loop
 {
 set_time_limit(300);
@@ -633,7 +651,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 }
 else
 {
-	set_time_limit(99);	// Reset Timer to avoid sleep timeout
+	set_time_limit(300);	// Reset Timer to avoid sleep timeout
 	sleep(10);
 }
 } // End Infinite Loop

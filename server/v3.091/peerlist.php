@@ -350,11 +350,29 @@ if($_GET["action"] == "exchange")
 	exit;
 }
 //***********************************************************************************
+// First time run check
+$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,0);
+$last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_last_heartbeat' LIMIT 1"),0,0);
+
+if($loop_active === FALSE && $last_heartbeat == 1)
+{
+	// Create record to begin loop
+	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('peerlist_heartbeat_active', '0')");
+	// Update timestamp for starting
+	mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'peerlist_last_heartbeat' LIMIT 1");
+}
+else
+{
+	// Record already exist, called while another process of this script
+	// was already running.
+	exit;
+}
+
 while(1) // Begin Infinite Loop
 {
 set_time_limit(300);
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,"field_data");
+$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,0);
 
 // Check script status
 if($loop_active === FALSE)
@@ -785,11 +803,14 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 	$random_transaction_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` = $rand_block2 LIMIT 1"),0,0);
 	$rand_block2 = ($rand_block2 - TRANSACTION_EPOCH - 300) / 300;
 
+	// Current Generation Hash
+	$generating_hash = generation_peer_hash();
+
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
 		$sql_row = mysql_fetch_array($sql_result);
 
-		if(rand(1,2) == 2)// Randomize to avoid spamming
+		if(rand(1,3) == 3)// Randomize to avoid spamming
 		{
 			$ip_address = $sql_row["IP_Address"];
 			$domain = $sql_row["domain"];
@@ -817,6 +838,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 				{
 					//Got a response from an active Timekoin server (-1 to failure score)
 					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -1);
+					
 					//Update Heartbeat Time
 					mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 				}		
@@ -844,6 +866,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 
 					//Got a response from an active Timekoin server (-1 to failure score)
 					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -1);
+					
 					//Update Heartbeat Time
 					mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 				}
@@ -860,10 +883,11 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 
 					//Got a response from an active Timekoin server (-1 to failure score)
 					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -1);
+					
 					//Update Heartbeat Time
 					mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 				}
-			}			
+			}
 			else if($poll_type == 5)
 			{
 				if(empty($random_foundation_hash) == FALSE) // Make sure we had one to compare first
@@ -888,7 +912,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 						}
 						else
 						{
-							//Wrong Response? (+2 failure score)
+							//Wrong Response? (+3 failure score)
 							modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 3);
 						}
 					}
@@ -918,7 +942,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 						}
 						else
 						{
-							//Wrong Response? (+3 failure score)
+							//Wrong Response? (+4 failure score)
 							modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 4);
 						}
 					}
@@ -1011,7 +1035,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 	}
 //***********************************************************************************	
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,"field_data");
+$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,0);
 
 // Check script status
 if($loop_active == 3)

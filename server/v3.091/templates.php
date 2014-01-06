@@ -730,9 +730,9 @@ function system_screen()
 	<table border="0"><tr><td align="right">
 	Server Domain: <input type="text" name="domain" size="25" maxlength="256" value="' . $domain . '"/><br>
 	Timekoin Subfolder: <input type="text" name="subfolder" size="25" maxlength="256" value="' . $subfolder . '"/><br>
-	Server Port Number: <input type="text" name="port" size="6" maxlength="5" value="' . $port . '"/><br>
+	Public Server Port: <input type="text" name="port" size="6" maxlength="5" value="' . $port . '"/><br>
 	Max Peer Query: <input type="text" name="max_request" size="6" maxlength="6" value="' . $request_max . '"/><br>
-	CLI Port: <input type="text" name="cli_port" size="6" maxlength="5" value="' . $cli_port . '"/><br>
+	Local Server Port: <input type="text" name="cli_port" size="6" maxlength="5" value="' . $cli_port . '"/><br>
 	<br>CLI Mode: <input type="radio" name="cli_mode" value="0" ' . $cli_mode_0 . '>Disable <input type="radio" name="cli_mode" value="1" ' . $cli_mode_1 . '>Enable
 	<br><br>Allow LAN Peers: <input type="radio" name="allow_LAN" value="0" ' . $LAN_disable . '>Disable <input type="radio" name="allow_LAN" value="1" ' . $LAN_enable . '>Enable
 	<br><br>Allow Ambient Peer Restarts: <input type="radio" name="allow_ambient" value="0" ' . $ambient_restart_disable . '>Disable <input type="radio" name="allow_ambient" value="1" ' . $ambient_restart_enable . '>Enable
