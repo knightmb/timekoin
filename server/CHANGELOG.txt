@@ -1,5 +1,13 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 3.10 (Released 2014-1-6)
+============================================
+- User can choose between running Timekoin in the web server process pool (non-CLI mode) and regular stand alone command line interface (CLI mode) as before
+- Public and Local ports can be separately configured in the System tab when running non-CLI mode
+- Tweak database calls by removing extra usage that was not necessary
+- Peer list underlines peers that are creating currency
+- Peer status polling more linear and consistent, helps users running a very high number of active peers keep connections alive
+
 Timekoin Server - 3.09 (Released 2014-1-3)
 ============================================
 - TKRandom class now used for simple poll checking during generation peer verification for election
@@ -26,7 +34,6 @@ Timekoin Server - 3.09 (Released 2014-1-3)
 - Tweaks to running process to better optimize database calls for slower systems
 - Better Balance index checking for queued transactions
 - More checking of recent transaction foundations when triggered
-
 
 Timekoin Server - 3.08 (Released 2013-12-19)
 ============================================
