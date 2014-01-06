@@ -111,7 +111,7 @@ function write_log($message, $type)
 //***********************************************************************************
 function generation_peer_hash()
 {
-	$sql = "SELECT * FROM `generating_peer_list` ORDER BY `join_peer_list` ASC";
+	$sql = "SELECT public_key, join_peer_list FROM `generating_peer_list` ORDER BY `join_peer_list` ASC";
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 

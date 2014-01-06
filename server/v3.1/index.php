@@ -951,7 +951,7 @@ if($_SESSION["valid_login"] == TRUE)
 				if(empty($gen_peer_exist) == FALSE)
 				{
 					// This peer is one of the generating peers
-					$gen_peer = ' style="background-color:lightgreen"';
+					$gen_peer = 'text-decoration: underline; ';
 				}
 				else
 				{
@@ -961,13 +961,13 @@ if($_SESSION["valid_login"] == TRUE)
 
 
 				$body_string .= '<tr>
-				 <td class="style2"' . $gen_peer . '><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["IP_Address"] . $permanent2 . '</p></td>
-				 <td class="style2"' . $gen_peer . '><p style="word-wrap:break-word; width:160px; font-size:11px;">' . $permanent1 . $sql_row["domain"] . $permanent2 . '</p></td>
-				 <td class="style2"' . $gen_peer . '><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["subfolder"] . $permanent2 . '</p></td>
-				 <td class="style2"' . $gen_peer . '><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["port_number"] . $permanent2 . '</p></td>
-				 <td class="style2"' . $gen_peer . '><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $last_heartbeat . $permanent2 . '</p></td>
-				 <td class="style2"' . $gen_peer . '><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $joined . $permanent2 . '</p></td>
-				 <td class="style2"' . $gen_peer . '><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row[$failed_column_name] . $permanent2 . '</p></td>';
+				 <td class="style2"><p style="word-wrap:break-word; ' . $gen_peer . 'font-size:11px;">' . $permanent1 . $sql_row["IP_Address"] . $permanent2 . '</p></td>
+				 <td class="style2"><p style="word-wrap:break-word; ' . $gen_peer . 'width:160px; font-size:11px;">' . $permanent1 . $sql_row["domain"] . $permanent2 . '</p></td>
+				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["subfolder"] . $permanent2 . '</p></td>
+				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["port_number"] . $permanent2 . '</p></td>
+				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $last_heartbeat . $permanent2 . '</p></td>
+				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $joined . $permanent2 . '</p></td>
+				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row[$failed_column_name] . $permanent2 . '</p></td>';
 
 				if($_GET["show"] == "reserve")
 				{
@@ -975,10 +975,10 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 				else
 				{
-					$body_string .= '<td' . $gen_peer . '><FORM ACTION="index.php?menu=peerlist&amp;remove=peer" METHOD="post"><input type="image" src="img/hr.gif" title="Delete Peer" name="remove' . $i . '" border="0">
+					$body_string .= '<td><FORM ACTION="index.php?menu=peerlist&amp;remove=peer" METHOD="post"><input type="image" src="img/hr.gif" title="Delete Peer" name="remove' . $i . '" border="0">
 					 <input type="hidden" name="ip" value="' . $sql_row["IP_Address"] . '">
 					 <input type="hidden" name="domain" value="' . $sql_row["domain"] . '">
-					 </FORM></td><td' . $gen_peer . '>
+					 </FORM></td><td>
 					 <FORM ACTION="index.php?menu=peerlist&amp;edit=peer" METHOD="post"><input type="image" src="img/edit-icon.gif" title="Edit Peer" name="edit' . $i . '" border="0">
 					 <input type="hidden" name="ip" value="' . $sql_row["IP_Address"] . '">
 					 <input type="hidden" name="domain" value="' . $sql_row["domain"] . '">
@@ -1018,7 +1018,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$quick_info = 'Shows all Active Peers.<br><br>You can manually delete or edit peers in this section.
 			<br><br>Peers in <font color="blue">Blue</font> will not expire after 5 minutes of inactivity or high failure scores.
 			<br><br>Peers in <font color="green">Green</font> are at maximum capacity set by the server operator.
-			<br><br>Peers in <font color="green">Light Green</font> background are generating currency.
+			<br><br><u>Underline</u> Peers are generating currency.
 			<br><br><strong>Failure Score</strong> is a total of failed polling or data exchange events. Peers that score over the failure limit are kicked from the peer list.
 			<br><br><strong>Peer Speed</strong> is combined peer performance measured over a 10 second interval.
 			<br>Ten is the average baseline.

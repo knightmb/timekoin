@@ -191,6 +191,13 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 // Store a hash of the current list of generating peers
 	$generating_hash = generation_peer_hash();
 
+	$generation_peer_hash = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generating_peers_hash' LIMIT 1"),0,0);
+
+	if($generating_hash != $generation_peer_hash)
+	{
+		// Store in database for quick reference from database
+		mysql_query("UPDATE `options` SET `field_data` = '$generating_hash' WHERE `options`.`field_name` = 'generating_peers_hash' LIMIT 1");
+	}
 //***********************************************************************************
 //***********************************************************************************
 // Generation IP Auto Update Detection
