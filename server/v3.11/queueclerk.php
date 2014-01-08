@@ -356,6 +356,14 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 	// Create a hash of my own transaction queue
 	$transaction_queue_hash = queue_hash();
 
+	$db_queue_hash = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'transaction_queue_hash' LIMIT 1"),0,0);
+
+	if($db_queue_hash != $transaction_queue_hash)
+	{
+		// Store in database for proper update when peers are polling this info
+		mysql_query("UPDATE `options` SET `field_data` = '$transaction_queue_hash' WHERE `options`.`field_name` = 'transaction_queue_hash' LIMIT 1");
+	}
+
 	// How does my transaction queue compare to others?
 	// Ask all of my active peers
 	$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND() LIMIT 10";
