@@ -296,6 +296,7 @@ if($sql_num_results > 0)
 	// Record how long transaction processing took in the logs
 	$time_start = time();
 	$record_insert_counter = 0;
+	$record_failure_counter = 0;
 
 	// Special set the Transaction History Hash so that slower peers don't confuse faster peers that poll
 	// this hash if they complete before this peer does. This saves bandwidth and CPU overall since
@@ -379,6 +380,7 @@ if($sql_num_results > 0)
 								{
 									//Something didn't work
 									write_log("Generation Insert Failed for this Key:" . base64_encode($public_key), "G");
+									$record_failure_counter++;
 								}
 								else
 								{
@@ -398,18 +400,21 @@ if($sql_num_results > 0)
 							{
 								// Failed Hash check or Valid Amount check
 								write_log("Generation Hash or Amount Check Failed for this Key:" . base64_encode($public_key), "G");
+								$record_failure_counter++;
 							}
 						}
 						else
 						{
 							// Not enough time has passed
 							write_log("Generation Too Early for this Key:" . base64_encode($public_key), "G");
+							$record_failure_counter++;
 						}
 					}
 					else
 					{
 						// Duplicate generation transaction already exist
 						write_log("Generation Duplicate Discarded for this Key:" . base64_encode($public_key), "G");
+						$record_failure_counter++;
 					}
 
 				}// End generation allowed check
@@ -484,20 +489,23 @@ if($sql_num_results > 0)
 							// Invalid or blank Public Key(s)
 							write_log("Transaction Public Key Error for this Key:" . base64_encode($public_key), "T");
 							$safe_delete_transaction = TRUE;
+							$record_failure_counter++;
 						}
 					}
 					else
 					{
 						// Hash check failed
 						write_log("Transaction Hash Check Failed for this Key:" . base64_encode($public_key), "T");
-						$safe_delete_transaction = TRUE;						
-					}				
+						$safe_delete_transaction = TRUE;
+						$record_failure_counter++;
+					}
 				}
 				else
 				{
 					// Balance is incorrect, transaction invalid
 					write_log("Transaction Balance Check Failed for this Key:" . base64_encode($public_key), "T");
 					$safe_delete_transaction = TRUE;
+					$record_failure_counter++;
 				}
 			}
 			else
@@ -505,6 +513,7 @@ if($sql_num_results > 0)
 				// Duplicate Transaction
 				write_log("Duplicate Transaction Failed for this Key:" . base64_encode($public_key), "T");
 				$safe_delete_transaction = TRUE;
+				$record_failure_counter++;
 			}
 
 		} // Regular Transaction Check
@@ -540,7 +549,7 @@ if($sql_num_results > 0)
 	}
 
 	// Log transaction processing info
-	write_log("Treasurer Processed $record_insert_counter Transactions in " . (time() - $time_start) . " seconds", "TR");
+	write_log("Treasurer Processed " . ($record_insert_counter + $record_failure_counter) . " Transactions in " . (time() - $time_start) . " seconds.<br>[" . $record_insert_counter . "] Successful -- [" . $record_failure_counter . "] Denied", "TR");
 }
 else
 {
