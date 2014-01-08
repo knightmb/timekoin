@@ -1,5 +1,10 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 3.11 (Released 2014-1-8)
+============================================
+- Update queue hash quicker for peer polling, helps to cut down on unnecessary peer traffic
+- Treasurer counts successful and denied transactions in the logs now
+
 Timekoin Server - 3.10 (Released 2014-1-6)
 ============================================
 - User can choose between running Timekoin in the web server process pool (non-CLI mode) and regular stand alone command line interface (CLI mode) as before
