@@ -731,7 +731,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["poll_failure"] == "poll")
 		{
 			ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
-			ini_set('default_socket_timeout', 4); // Timeout for request in seconds
+			ini_set('default_socket_timeout', 3); // Timeout for request in seconds
 			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
 				<tr><th>Peer</th><th>My Failure Score</th></tr>';
 
@@ -786,9 +786,9 @@ if($_SESSION["valid_login"] == TRUE)
 				$body_string .= '<div class="table"><FORM ACTION="index.php?menu=peerlist&amp;save=newpeer" METHOD="post">
 					<table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
 		<th>Domain</th><th>Subfolder</th><th>Port Number</th><th></th><th></th></tr>
-		<tr><td class="style2"><input type="text" name="edit_ip" size="13" /></td>
+		<tr><td class="style2"><input type="text" name="edit_ip" size="30" /></td>
 		<td class="style2"><input type="text" name="edit_domain" size="20" /></td>
-		<td class="style2"><input type="text" name="edit_subfolder" size="10" /></td>
+		<td class="style2"><input type="text" name="edit_subfolder" size="8" /></td>
 		<td class="style2"><input type="text" name="edit_port" size="5" /></td>			 
 		<td><input type="image" src="img/save-icon.gif" title="Save New Peer" name="submit1" border="0"></td>
 		<td></td></tr></table></FORM></div>';
@@ -812,9 +812,9 @@ if($_SESSION["valid_login"] == TRUE)
 					$peer_subfolder = find_string("---subfolder=", "---port", $sql_row["field_data"]);
 					$peer_port_number = find_string("---port=", "---end", $sql_row["field_data"]);
 				
-					$body_string .= '<tr><td class="style2"><input type="text" name="first_contact_ip' . $counter . '" size="13" value="' . $peer_ip . '" /><br><br></td>
+					$body_string .= '<tr><td class="style2"><input type="text" name="first_contact_ip' . $counter . '" size="30" value="' . $peer_ip . '" /><br><br></td>
 					<td class="style2" valign="top"><input type="text" name="first_contact_domain' . $counter . '" size="20" value="' . $peer_domain . '" /></td>
-					<td class="style2" valign="top"><input type="text" name="first_contact_subfolder' . $counter . '" size="10" value="' . $peer_subfolder . '" /></td>
+					<td class="style2" valign="top"><input type="text" name="first_contact_subfolder' . $counter . '" size="8" value="' . $peer_subfolder . '" /></td>
 					<td class="style2" valign="top"><input type="text" name="first_contact_port' . $counter . '" size="5" value="' . $peer_port_number . '" /></td>			 
 					</tr>';
 
@@ -844,10 +844,10 @@ if($_SESSION["valid_login"] == TRUE)
 				$body_string .= '<FORM ACTION="index.php?menu=peerlist&amp;save=peer" METHOD="post">
 				<table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
 				<th>Domain</th><th>Subfolder</th><th>Port Number</th><th></th><th></th></tr>
-				<tr><td class="style2"><input type="text" name="edit_ip" size="13" value="' . $sql_row["IP_Address"] . '" /><br><br>
+				<tr><td class="style2"><input type="text" name="edit_ip" size="30" value="' . $sql_row["IP_Address"] . '" /><br><br>
 				<select name="perm_peer"><option value="expires" ' . $perm_peer2 . '>Purge When Inactive</option><option value="perm" ' . $perm_peer1 . '>Permanent Peer</select></td>
 				<td class="style2" valign="top"><input type="text" name="edit_domain" size="20" value="' . $sql_row["domain"] . '" /></td>
-				<td class="style2" valign="top"><input type="text" name="edit_subfolder" size="10" value="' . $sql_row["subfolder"] . '" /></td>
+				<td class="style2" valign="top"><input type="text" name="edit_subfolder" size="8" value="' . $sql_row["subfolder"] . '" /></td>
 				<td class="style2" valign="top"><input type="text" name="edit_port" size="5" value="' . $sql_row["port_number"] . '" /></td>			 
 				<td valign="top"><input type="hidden" name="update_ip" value="' . $sql_row["IP_Address"] . '">
 				<input type="hidden" name="update_domain" value="' . $sql_row["domain"] . '">
@@ -873,10 +873,12 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			// Default screen
 			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr>
-				<th><p style="font-size:11px; width:95px;">IP Address</p></th><th><p style="font-size:11px;">Domain</p></th>
-				<th><p style="font-size:11px; width:60px;">Subfolder</p></th><th><p style="font-size:11px;">Port Number</p></th>
-				<th><p style="font-size:11px;">Last Heartbeat</p></th><th><p style="font-size:11px; width:50px;">Joined</p></th>
-				<th><p style="font-size:11px;">Failure Score</p></th><th></th><th></th></tr>';			
+				<th><p style="font-size:11px; width:250px; text-align:center;">IP Address / Domain</p></th>
+				<th><p style="font-size:11px; width:60px;">Subfolder</p></th>
+				<th><p style="font-size:11px; width:50px;">Port Number</p></th>
+				<th><p style="font-size:11px; width:55px;">Last Heartbeat</p></th>
+				<th><p style="font-size:11px; width:55px;">Joined</p></th>
+				<th><p style="font-size:11px; width:50px; text-align:center;">Failure Score</p></th><th></th><th></th></tr>';			
 			
 			if($_GET["show"] == "reserve")
 			{
@@ -959,10 +961,8 @@ if($_SESSION["valid_login"] == TRUE)
 					$gen_peer = NULL;
 				}
 
-
 				$body_string .= '<tr>
-				 <td class="style2"><p style="word-wrap:break-word; ' . $gen_peer . 'font-size:11px;">' . $permanent1 . $sql_row["IP_Address"] . $permanent2 . '</p></td>
-				 <td class="style2"><p style="word-wrap:break-word; ' . $gen_peer . 'width:160px; font-size:11px;">' . $permanent1 . $sql_row["domain"] . $permanent2 . '</p></td>
+				 <td class="style2"><p style="word-wrap:break-word; ' . $gen_peer . 'font-size:11px;">' . $permanent1 . $sql_row["IP_Address"] . $sql_row["domain"] . $permanent2 . '</p></td>
 				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["subfolder"] . $permanent2 . '</p></td>
 				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["port_number"] . $permanent2 . '</p></td>
 				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $last_heartbeat . $permanent2 . '</p></td>
