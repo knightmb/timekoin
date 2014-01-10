@@ -285,6 +285,13 @@ function poll_peer($ip_address, $domain, $subfolder, $port_number, $max_length, 
 
 	if(empty($domain) == TRUE)
 	{
+		if(filter_var($ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
+		{
+			// IP Address is IPv6
+			// Fix up the format for proper polling
+			$ip_address = "[" . $ip_address . "]";
+		}		
+		
 		$site_address = $ip_address;
 	}
 	else
