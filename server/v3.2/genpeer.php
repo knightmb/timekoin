@@ -432,7 +432,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						// Check the IP/Domain field and poll the IP to see if
 						// there is a valid Timekoin server at the address.
 						$crypt3_data = tk_decrypt($public_key, base64_decode($crypt3));
-						write_log("Decrypting Election Request Data: $crypt3_data","GP");
+						write_log("Decrypting Election Request Data: [$crypt3_data] for Public Key: " . base64_encode($public_key),"GP");
 
 						$peer_ip = find_string("---ip=", "---domain", $crypt3_data);
 						$peer_domain = find_string("---domain=", "---subfolder", $crypt3_data);
@@ -533,6 +533,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						// Check the IP/Domain field and poll the IP to see if
 						// there is a valid Timekoin server at the address.
 						$crypt3_data = tk_decrypt($public_key, base64_decode($crypt3));
+						write_log("Decrypting Election Request Data: [$crypt3_data] for Public Key: " . base64_encode($public_key),"GP");
 
 						$peer_ip = find_string("---ip=", "---domain", $crypt3_data);
 						$peer_domain = find_string("---domain=", "---subfolder", $crypt3_data);

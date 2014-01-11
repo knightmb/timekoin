@@ -359,7 +359,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 
 	$db_queue_hash = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'transaction_queue_hash' LIMIT 1"),0,0);
 
-	if($db_queue_hash != $transaction_queue_hash)
+	if($db_queue_hash !== $transaction_queue_hash)
 	{
 		// Store in database for proper update when peers are polling this info
 		mysql_query("UPDATE `options` SET `field_data` = '$transaction_queue_hash' WHERE `options`.`field_name` = 'transaction_queue_hash' LIMIT 1");
@@ -637,7 +637,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 
 //***********************************************************************************
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,"field_data");
+$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,0);
 
 // Check script status
 if($loop_active == 3)
