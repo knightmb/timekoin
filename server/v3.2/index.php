@@ -1708,7 +1708,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			$my_gen_IP_form = '<FORM ACTION="index.php?menu=generation&amp;IP=change" METHOD="post">
 				Generation IP <input type="text" name="gen_IP" size="15" maxlength="46" value="' . $my_generation_IP . '"/>
-				<input type="submit" name="IPChange" value="Update" /></FORM>' . $IP_save;
+				<input type="submit" name="IPChange" value="Save" /></FORM>' . $IP_save;
 
 			if(time() - $join_peer_list < 3600)
 			{
@@ -1877,7 +1877,7 @@ if($_SESSION["valid_login"] == TRUE)
 			// Create context resource for our request
 			$context = stream_context_create (array ( 'http' => $contextData ));
 
-			$firewall_poll = filter_sql(file_get_contents("http://timekoin.com/utility/firewall.php", FALSE, $context, NULL, 256));
+			$firewall_poll = filter_sql(file_get_contents('http://timekoin.com/utility/firewall.php', FALSE, $context, NULL, 256));
 
 			if(empty($firewall_poll) == TRUE)
 			{
@@ -2672,6 +2672,40 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 		}
 
+		if($_GET["action"] == "clear_foundation")
+		{
+			$sql = "TRUNCATE TABLE `transaction_foundation`";
+			
+			if(mysql_query($sql) == TRUE)
+			{
+				$body_string = '<strong>Transaction Foundation Hashes All Cleared</strong>';
+				write_log("Transaction Foundation Hashes All Cleared", "GU");
+			}
+		}
+
+		if($_GET["action"] == "clear_banlist")
+		{
+			$sql = "TRUNCATE TABLE `ip_banlist`";
+			
+			if(mysql_query($sql) == TRUE)
+			{
+				$body_string = '<strong>IP Address Ban List Table Cleared</strong>';
+				write_log("IP Address Ban List Table Cleared", "GU");
+			}
+		}
+
+		if($_GET["action"] == "clear_gen")
+		{
+			$sql = "TRUNCATE TABLE `generating_peer_list`";
+			$sql2 = "TRUNCATE TABLE `generating_peer_queue`";
+
+			if(mysql_query($sql) == TRUE && mysql_query($sql2) == TRUE)
+			{
+				$body_string = '<strong>Generation Peer List & Election Queue List Cleared</strong>';
+				write_log("Generation Peer List & Election Queue List Cleared", "GU");
+			}
+		}
+
 		if($_GET["action"] == "repair")
 		{
 			set_time_limit(999);
@@ -2941,13 +2975,16 @@ if($_SESSION["valid_login"] == TRUE)
 		$text_bar = tools_bar();
 
 		$quick_info = '<strong>History Walk</strong> will manually test all transactions starting at the specified cycle and give a status for each cycle.<br><br>
-			<strong>Schedule Check</strong> will schedule Timekoin to check and repair the specified cycle.<br><br>
-			<strong>Repair</strong> will force Timekoin to recalculate all verification hashes from the specified cycle to now.<br><br>
-			<strong>Check DB</strong> will check the data integrity of all tables in the database.<br><br>
-			<strong>Optimize DB</strong> will optimize all tables &amp; indexes in the database.<br><br>
-			<strong>Repair DB</strong> will attempt to repair all tables in the database.';
+		<strong>Check</strong> will schedule Timekoin to check and repair the specified cycle.<br><br>
+		<strong>Repair</strong> will force Timekoin to recalculate all verification hashes from the specified cycle to now.<br><br>
+		<strong>Check DB</strong> will check the data integrity of all tables in the database.<br><br>
+		<strong>Optimize DB</strong> will optimize all tables &amp; indexes in the database.<br><br>
+		<strong>Repair DB</strong> will attempt to repair all tables in the database.<br><br>
+		<strong>Clear Foundation</strong> will purge all transaction foundation hashes resulting in a database rebuild.<br><br>
+		<strong>Clear Banlist</strong> will wipe all recently banned IP address.<br><br>
+		<strong>Clear Gen</strong> will empty both the current generation list &amp; election queue list.<br><br>';
 		
-		home_screen('Tools &amp; Utilities', $text_bar, $body_string , $quick_info);
+		home_screen('Tools - Database Utilities - Server Logs', $text_bar, $body_string , $quick_info);
 		exit;
 	}
 //****************************************************************************

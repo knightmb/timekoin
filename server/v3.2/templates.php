@@ -861,22 +861,28 @@ function tools_bar()
 	$default_current = transaction_cycle(0, TRUE);
 
 	return '<FORM ACTION="index.php?menu=tools&amp;action=walk_history" METHOD="post">
-		<table style="float: left;" cellspacing="10" border="0"><tr><td><input type="submit" value="History Walk"/></td>
-		<td>Cycle#<input type="text" size="7" name="walk_history" value="' . $default_walk . '" /></td></tr></table></FORM>
-		<FORM ACTION="index.php?menu=tools&amp;action=check_tables" METHOD="post" onclick="return confirm(\'Database Check Can Take a Long Time. Continue?\');">
-		<table style="float: left;" cellspacing="10" border="0"><tr><td><input type="submit" value="Check DB"/></td></tr></table></FORM>
-		<FORM ACTION="index.php?menu=tools&amp;action=optimize_tables" METHOD="post" onclick="return confirm(\'Database Optimize Can Take a Long Time. Continue?\');">
-		<table style="float: left;" cellspacing="10" border="0"><tr><td><input type="submit" value="Optimize DB"/></td></tr></table></FORM>
-		<FORM ACTION="index.php?menu=tools&amp;action=repair_tables" METHOD="post" onclick="return confirm(\'Database Repair Can Take a Long Time. Continue?\');">
-		<table style="float: left;" cellspacing="10" border="0"><tr><td><input type="submit" value="Repair DB"/></td></tr></table></FORM>
-		<br><br><br><hr>
-		<FORM ACTION="index.php?menu=tools&amp;action=schedule_check" METHOD="post">
-		<table style="float: left;" cellspacing="10" border="0"><tr><td><input type="submit" value="Schedule Check"/></td>
-		<td>Cycle#<input type="text" size="7" name="schedule_check" value="' . $default_check . '" /></td></tr></table></FORM>
-		<FORM ACTION="index.php?menu=tools&amp;action=repair" METHOD="post">
-		<table style="float: left;" cellspacing="10" border="0"><tr><td><input type="submit" value="Repair" onclick="return confirm(\'Transaction Repair Can Take a Long Time. Continue?\');" /></td>
-		<td>From Cycle#<input type="text" size="7" name="repair_from" value="' . $default_check . '" /></td></tr></table></FORM>
-		<br><br><br>';
+	<table style="float: left;" cellspacing="5" border="0"><tr><td><input type="submit" value="History Walk"/></td>
+	<td>Cycle#<input type="text" size="6" name="walk_history" value="' . $default_walk . '" /></td></tr></table></FORM>
+	<FORM ACTION="index.php?menu=tools&amp;action=schedule_check" METHOD="post">
+	<table style="float: left;" cellspacing="5" border="0"><tr><td><input type="submit" value="Check"/></td>
+	<td>Cycle#<input type="text" size="6" name="schedule_check" value="' . $default_check . '" /></td></tr></table></FORM>
+	<FORM ACTION="index.php?menu=tools&amp;action=repair" METHOD="post">
+	<table style="float: left;" cellspacing="5" border="0"><tr><td><input type="submit" value="Repair" onclick="return confirm(\'Transaction Repair Can Take a Long Time. Continue?\');" /></td>
+	<td>From Cycle#<input type="text" size="6" name="repair_from" value="' . $default_check . '" /></td></tr></table></FORM>
+	<br><br><hr>
+	<FORM ACTION="index.php?menu=tools&amp;action=check_tables" METHOD="post" onclick="return confirm(\'Database Check Can Take a Long Time. Continue?\');">
+	<table style="float: left;" cellspacing="6" border="0"><tr><td><input type="submit" value="Check DB"/></td></tr></table></FORM>
+	<FORM ACTION="index.php?menu=tools&amp;action=optimize_tables" METHOD="post" onclick="return confirm(\'Database Optimize Can Take a Long Time. Continue?\');">
+	<table style="float: left;" cellspacing="6" border="0"><tr><td><input type="submit" value="Optimize DB"/></td></tr></table></FORM>
+	<FORM ACTION="index.php?menu=tools&amp;action=repair_tables" METHOD="post" onclick="return confirm(\'Database Repair Can Take a Long Time. Continue?\');">
+	<table style="float: left;" cellspacing="6" border="0"><tr><td><input type="submit" value="Repair DB"/></td></tr></table></FORM>
+	<FORM ACTION="index.php?menu=tools&amp;action=clear_foundation" METHOD="post" onclick="return confirm(\'This Will Clear All Foundation Hashes. Continue?\');">
+	<table style="float: left;" cellspacing="6" border="0"><tr><td><input type="submit" value="Clear Foundation"/></td></tr></table></FORM>
+	<FORM ACTION="index.php?menu=tools&amp;action=clear_banlist" METHOD="post" onclick="return confirm(\'This Will Clear All Banned IPs. Continue?\');">
+	<table style="float: left;" cellspacing="6" border="0"><tr><td><input type="submit" value="Clear Banlist"/></td></tr></table></FORM>
+	<FORM ACTION="index.php?menu=tools&amp;action=clear_gen" METHOD="post" onclick="return confirm(\'This Will Clear The Peer Generation List & Election Queue. Continue?\');">
+	<table style="float: left;" cellspacing="6" border="0"><tr><td><input type="submit" value="Clear Gen"/></td></tr></table></FORM>
+	<br><br>';
 }
 //***********************************************************
 //***********************************************************

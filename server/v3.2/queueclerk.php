@@ -348,10 +348,11 @@ else
 //***********************************************************************************
 $next_transaction_cycle = transaction_cycle(1);
 $current_transaction_cycle = transaction_cycle(0);
+$treasurer_status = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,0));
 
 // Can we work on the transactions in the database?
 // Not allowed 30 seconds before and 30 seconds after transaction cycle.
-if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cycle) > 30)
+if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cycle) > 30 && $treasurer_status == 2)
 {
 	// Create a hash of my own transaction queue
 	$transaction_queue_hash = queue_hash();
@@ -395,7 +396,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 			}
 			else
 			{
-				if(empty($poll_peer) == FALSE)
+				if(empty($poll_peer) == FALSE && $poll_peer != "PROC") // Ignore Peers that are still processing transactions
 				{
 					$transaction_queue_hash_different++;
 

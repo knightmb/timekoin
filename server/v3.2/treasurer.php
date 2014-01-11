@@ -298,10 +298,11 @@ if($sql_num_results > 0)
 	$record_insert_counter = 0;
 	$record_failure_counter = 0;
 
-	// Special set the Transaction History Hash so that slower peers don't confuse faster peers that poll
+	// Special set the Transaction History Hash + Queue Hash so that slower peers don't confuse faster peers that poll
 	// this hash if they complete before this peer does. This saves bandwidth and CPU overall since
 	// it stops unnecessary polling until completion.
 	mysql_query("UPDATE `options` SET `field_data` = 'PROC' WHERE `field_name` = 'transaction_history_hash' LIMIT 1");
+	mysql_query("UPDATE `options` SET `field_data` = 'PROC' WHERE `field_name` = 'transaction_queue_hash' LIMIT 1");	
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
