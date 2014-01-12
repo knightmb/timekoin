@@ -1406,7 +1406,15 @@ function initialization_database()
 //**************************************
 // Upgrade Database from v3.x earlier versions
 
-	// Standard Tabs Settings
+	// Auto IP Update Settings
+	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,0);
+	if($new_record_check === FALSE)
+	{
+		// Does not exist, create it
+		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('auto_update_generation_IP', '0')");
+	}
+
+	// CLI Mode Settings
 	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0);
 	if($new_record_check === FALSE)
 	{
@@ -1414,6 +1422,7 @@ function initialization_database()
 		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('cli_mode', '1')");
 	}
 
+	// CLI Mode Port Settings
 	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'cli_port' LIMIT 1"),0,0);
 	if($new_record_check === FALSE)
 	{
