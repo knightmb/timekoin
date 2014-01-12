@@ -988,7 +988,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 65, "transclerk.php?action=block_hash&block_number=$random_block");
 
-				if(empty($poll_peer) == TRUE)
+				if($poll_peer === FALSE)
 				{
 					// Add failure points to the peer in case further issues
 					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 4);
@@ -1019,13 +1019,13 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 					$random_hash_build = hash('sha256', $random_hash_build);
 
-					if($poll_peer !== $random_hash_build && empty($poll_peer) == FALSE)
+					if($poll_peer !== $random_hash_build && $poll_peer !== FALSE)
 					{
 						// Something is wrong, transaction history has an error.
 						// Schedule a check in case the peer has an error and not us.
 						mysql_query("UPDATE `main_loop_status` SET `field_data` = '$random_block' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1");
 
-						write_log("This Peer ($ip_address$domain) Reports that My Transaction Block #$random_block is Invalid.<br>Will Double Check with other Peers before making any corrections.", "TC");
+						write_log("This Peer ($ip_address$domain) Reports that My Transaction Block #$random_block is Wrong.<br>Will Double Check with other Peers before making any corrections.", "TC");
 					}
 				} // End empty poll check
 			} // End if/then record count check

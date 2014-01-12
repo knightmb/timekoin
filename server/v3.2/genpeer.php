@@ -635,6 +635,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 			} // End for loop
 
+		ini_set('default_socket_timeout', 3); // Reset Socket Timeout When Finished
+		
 		} // Empty results check
 
 	} // Election Cycle Check
