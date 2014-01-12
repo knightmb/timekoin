@@ -534,6 +534,9 @@ if($sql_num_results > 0)
 
 	} // End for Loop Record Type Search
 
+	// Log transaction processing info
+	write_log("Treasurer Processed " . ($record_insert_counter + $record_failure_counter) . " Transactions in " . (time() - $time_start) . " seconds.<br>[" . $record_insert_counter . "] Successful -- [" . $record_failure_counter . "] Denied", "TR");
+
 	// Wipe transaction queue of all old transaction from current to previous cycle
 	$sql = "DELETE QUICK FROM `transaction_queue` WHERE `transaction_queue`.`timestamp` < $current_generation_cycle";
 	if(mysql_query($sql) == FALSE)
@@ -548,9 +551,6 @@ if($sql_num_results > 0)
 		//Something didn't work
 		write_log("Could NOT Delete Old Generation Join Request or Currency Generation from the MyQueue", "TR");
 	}
-
-	// Log transaction processing info
-	write_log("Treasurer Processed " . ($record_insert_counter + $record_failure_counter) . " Transactions in " . (time() - $time_start) . " seconds.<br>[" . $record_insert_counter . "] Successful -- [" . $record_failure_counter . "] Denied", "TR");
 }
 else
 {

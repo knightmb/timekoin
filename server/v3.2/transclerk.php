@@ -25,7 +25,7 @@ if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 // Answer transaction history hash poll
 if($_GET["action"] == "history_hash")
 {
-	echo mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'transaction_history_hash' LIMIT 1"),0,"field_data");
+	echo mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'transaction_history_hash' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
 	log_ip("TC");
@@ -36,7 +36,7 @@ if($_GET["action"] == "history_hash")
 // Answer super peer poll
 if($_GET["action"] == "super_peer")
 {
-	echo mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'super_peer' LIMIT 1"),0,"field_data");
+	echo mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'super_peer' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
 	log_ip("TC");
@@ -119,7 +119,7 @@ while(1) // Begin Infinite Loop
 {
 set_time_limit(300);
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,"field_data");
+$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,0);
 
 // Check script status
 if($loop_active === FALSE)
@@ -281,7 +281,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 			$history_hash = transaction_history_hash();
 
-			if($history_hash != $current_history_hash)
+			if($history_hash !== $current_history_hash)
 			{
 				$current_history_hash = $history_hash;
 				
@@ -336,7 +336,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			}
 			else
 			{
-				if(empty($poll_peer) == FALSE && strlen($poll_peer) > 30 && $poll_peer != "ERROR_CHECK" && $poll_peer != "PROC")
+				if(empty($poll_peer) == FALSE && strlen($poll_peer) > 30 && $poll_peer !== "ERROR_CHECK" && $poll_peer !== "PROC")
 				{
 					$trans_list_hash_different++;
 
@@ -368,9 +368,9 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			}
 			else
 			{
-				// Upper Limit Reached, might be a stalled Transaction Clerk
-				// or really super fast peers? Reset back to 10, just in case.
-				$new_peer_poll_blocks = 10;
+				// Upper Limit Reached
+				// Really super fast peers? Keep at 50, just in case.
+				$new_peer_poll_blocks = 50;
 			}
 		}
 		else
@@ -585,7 +585,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 						// Is this a Super Peer?
 						$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 3, "transclerk.php?action=super_peer");
 
-						if(empty($poll_peer) == TRUE)
+						if($poll_peer === FALSE)
 						{
 							// Add failure points to the peer in case further issues
 							modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 2);
