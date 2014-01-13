@@ -423,6 +423,10 @@ $active_peers = mysql_num_rows(mysql_query($sql));
 $sql = "SELECT join_peer_list FROM `new_peers_list`";
 $new_peers = mysql_num_rows(mysql_query($sql));
 
+$my_server_domain = my_domain();
+$my_server_subfolder = my_subfolder();
+$my_server_port_number = my_port_number();
+
 if($active_peers == 0 && $new_peers == 0)
 {
 	// No active or new peers to poll from, start with the first contact servers
@@ -448,7 +452,7 @@ if($active_peers == 0 && $new_peers == 0)
 
 		// Insert into database as first contact server(s)
 		$sql = "INSERT INTO `active_peer_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`last_heartbeat`, `join_peer_list`, `failed_sent_heartbeat`)
-		VALUES ('$peer_ip', '$peer_domain', '$peer_subfolder', '$peer_port_number', UNIX_TIMESTAMP(), UNIX_TIMESTAMP(), '0');";
+		VALUES ('$peer_ip', '$peer_domain', '$peer_subfolder', '$peer_port_number', " . time() . ", " . time() . ", 65535)";
 
 		mysql_query($sql);
 	}	
@@ -460,10 +464,6 @@ if($active_peers < $max_active_peers)
 	$sql = "SELECT * FROM `new_peers_list` ORDER BY RAND() LIMIT 10";
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
-
-	$my_server_domain = my_domain();
-	$my_server_subfolder = my_subfolder();
-	$my_server_port_number = my_port_number();
 
 	// Peer difference
 	$peer_difference_count = $max_active_peers - $active_peers;
@@ -639,8 +639,6 @@ $new_peers_numbers = mysql_num_rows(mysql_query($sql));
 
 if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to avoid spamming for new peers
 {
-	$my_server_domain = my_domain();
-
 	if(empty($my_server_domain) == TRUE)
 	{
 		// No domain used
@@ -823,11 +821,12 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 		$join_peer_list = $sql_row["join_peer_list"];
 
 		// Choose the type polling done
-		$poll_type = rand(1,6);
+		$poll_type = rand(1,7);
 		// 1&2=CRC32
-		// 3&4=Server Full Check
-		// 5=Foundation Hash Poll
-		// 6=Transaction Hash Poll
+		// 3&4=Reverse Failure Score Check
+		// 5=Server Full Check
+		// 6=Foundation Hash Poll
+		// 7=Transaction Hash Poll
 
 		if($poll_type == 1 || $poll_type == 2)
 		{
@@ -852,6 +851,22 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 			}
 		}
 		else if($poll_type == 3 || $poll_type == 4)
+		{
+			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 5, "peerlist.php?action=poll_failure&domain=$my_server_domain&subfolder=$my_server_subfolder&port=$my_server_port_number");
+
+			if($poll_peer == "")
+			{
+				//No response, record polling failure for future reference (+10 failure score)
+				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 10);
+			}
+			else
+			{
+				// Score still active... Update Heartbeat Time
+				mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -2);
+			}			
+		}
+		else if($poll_type == 5)
 		{
 			// Is the server full to capacity with peers?
 			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 10, "peerlist.php?action=join");
@@ -891,7 +906,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 				mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 			}
 		}
-		else if($poll_type == 5)
+		else if($poll_type == 6)
 		{
 			if(empty($random_foundation_hash) == FALSE) // Make sure we had one to compare first
 			{
@@ -921,7 +936,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 				}
 			}
 		}
-		else if($poll_type == 6)
+		else if($poll_type == 7)
 		{
 			if(empty($random_transaction_hash) == FALSE) // Make sure we had one to compare first
 			{
@@ -957,7 +972,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 	// Remove all active peers that are offline for more than 5 minutes or have a high failure score
 	$peer_failure_grade = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,0);
 	mysql_query("DELETE QUICK FROM `active_peer_list` WHERE `last_heartbeat` < " . (time() - 300) . " AND `join_peer_list` != 0");
-	mysql_query("DELETE QUICK FROM `active_peer_list` WHERE `failed_sent_heartbeat` >= $peer_failure_grade AND `join_peer_list` != 0");
+	mysql_query("DELETE QUICK FROM `active_peer_list` WHERE `failed_sent_heartbeat` >= $peer_failure_grade AND `failed_sent_heartbeat` < 60000 AND `join_peer_list` != 0");
 
 //***********************************************************************************
 //***********************************************************************************

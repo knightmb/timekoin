@@ -583,10 +583,10 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 			else
 			{
-				$join_peer_list = 'UNIX_TIMESTAMP()';
+				$join_peer_list = time();
 			}
 			
-			$sql = "UPDATE `active_peer_list` SET `last_heartbeat` = UNIX_TIMESTAMP() ,`join_peer_list` = $join_peer_list , `failed_sent_heartbeat` = '0',
+			$sql = "UPDATE `active_peer_list` SET `last_heartbeat` = " . time() . " ,`join_peer_list` = $join_peer_list , `failed_sent_heartbeat` = '0',
 				`IP_Address` = '" . $_POST["edit_ip"] . "', `domain` = '" . $_POST["edit_domain"] . "', `subfolder` = '" . $_POST["edit_subfolder"] . "', `port_number` = '" . $_POST["edit_port"] . "'
 				WHERE `active_peer_list`.`IP_Address` = '" . $_POST["update_ip"] . "' AND `active_peer_list`.`domain` = '" . $_POST["update_domain"] . "' LIMIT 1";
 			mysql_query($sql);
@@ -596,8 +596,14 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			// Manually insert new peer
 			$sql = "INSERT INTO `active_peer_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`last_heartbeat` ,`join_peer_list` ,`failed_sent_heartbeat`)
-				VALUES ('" . $_POST["edit_ip"] . "', '" . $_POST["edit_domain"] . "', '" . $_POST["edit_subfolder"] . "', '" . $_POST["edit_port"] . "', UNIX_TIMESTAMP() , UNIX_TIMESTAMP() , '0')";
+				VALUES ('" . $_POST["edit_ip"] . "', '" . $_POST["edit_domain"] . "', '" . $_POST["edit_subfolder"] . "', '" . $_POST["edit_port"] . "', " . time() . " , " . time() . " , '0')";
 			mysql_query($sql);
+
+			ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
+			ini_set('default_socket_timeout', 3); // Timeout for request in seconds
+
+			// Send an exchange message to hopefully get passive traffic going with the manually added peer
+			poll_peer($_POST["edit_ip"], $_POST["edit_domain"], $_POST["edit_subfolder"], $_POST["edit_port"], 1, "peerlist.php?action=exchange&domain=" . my_domain() . "&subfolder=" . my_subfolder() . "&port_number=" . my_port_number());
 		}
 
 		if($_GET["save"] == "firstcontact")
@@ -961,13 +967,23 @@ if($_SESSION["valid_login"] == TRUE)
 					$gen_peer = NULL;
 				}
 
+				if($sql_row[$failed_column_name] > 60000)
+				{
+					// First Contact Peer
+					$failure_score = "F";
+				}
+				else
+				{
+					$failure_score = $sql_row[$failed_column_name];
+				}
+
 				$body_string .= '<tr>
 				 <td class="style2"><p style="word-wrap:break-word; ' . $gen_peer . 'font-size:11px;">' . $permanent1 . $sql_row["IP_Address"] . $sql_row["domain"] . $permanent2 . '</p></td>
 				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["subfolder"] . $permanent2 . '</p></td>
 				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["port_number"] . $permanent2 . '</p></td>
 				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $last_heartbeat . $permanent2 . '</p></td>
 				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $joined . $permanent2 . '</p></td>
-				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row[$failed_column_name] . $permanent2 . '</p></td>';
+				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $failure_score . $permanent2 . '</p></td>';
 
 				if($_GET["show"] == "reserve")
 				{
