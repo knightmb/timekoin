@@ -1873,7 +1873,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["firewall"] == "test")
 		{
 			ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
-			ini_set('default_socket_timeout', 5); // Timeout for request in seconds
+			ini_set('default_socket_timeout', 25); // Timeout for request in seconds
 
 			// Create map with request parameters
 			$params = array ('domain' => my_domain(), 
@@ -1893,7 +1893,7 @@ if($_SESSION["valid_login"] == TRUE)
 			// Create context resource for our request
 			$context = stream_context_create (array ( 'http' => $contextData ));
 
-			$firewall_poll = filter_sql(file_get_contents('http://timekoin.com/utility/firewall.php', FALSE, $context, NULL, 256));
+			$firewall_poll = filter_sql(file_get_contents('http://timekoin.com/utility/firewall.php', FALSE, $context, NULL, 1024));
 
 			if(empty($firewall_poll) == TRUE)
 			{
