@@ -209,7 +209,7 @@ INSERT INTO `options` (`field_name`, `field_data`) VALUES
 ('refresh_realtime_queue', '5'),
 ('server_domain', ''),
 ('server_port_number', '1528'),
-('server_request_max', '200'),
+('server_request_max', '500'),
 ('server_subfolder', 'timekoin'),
 ('standard_tabs_settings', '255'),
 ('super_peer', '0'),
