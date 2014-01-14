@@ -1,5 +1,23 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 3.2 (Released 2014-1-14)
+============================================
+- Properly format IPv6 Address for polling
+- Peer list to combine IP & Domain field for one view
+- Peer list IP field expanded to make room for IPv6 Address sizes
+- More Tools added to the Tools Tab to help server operator troubleshoot any unknown issues
+- Queue Clerk will not populate (remain idle) the Transaction Queue if the Treasurer Processor is not finished processing the previous cycle of transactions
+- Fix missing "auto_update_generation_IP" field that prevented turning on the feature for some users
+- Fix super peer status saving bug in GUI when Timekoin server is not running
+- Fix grade error with peers that are not set for super peer mode getting failure points in the peer list anyway
+- Manually adding a peer also sends a connect request exchange to that peer
+- Peers are scanned by the server to see if they are keeping communications going or just ignoring the server for network traffic
+- Firewall test utility now does more than just check for a server presence, it will also run through similar set of test that keep peers from getting elected and report back any errors
+- Re-organize System Tab settings to be easier to read and set
+- IPv4 & IPv6 filtering added to System tab to allow servers to link with IPv4 or IPv6 only peers if desired by the user
+- Self looping peer connections either by accident or on purpose now exit when detected
+
+
 Timekoin Server - 3.11 (Released 2014-1-8)
 ============================================
 - Update queue hash quicker for peer polling, helps to cut down on unnecessary peer traffic
