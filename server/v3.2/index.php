@@ -828,7 +828,7 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 
 				$body_string .= '<input type="hidden" name="field_numbers" value="' . ($counter - 1) . '">
-					<tr><td colspan="2"><input type="submit" value="Save First Contact Servers"/></td></tr>';
+					<tr><td colspan="4"><input type="submit" value="Save First Contact Servers"/></td></tr>';
 				$body_string .= '</table></div></FORM>';
 			}
 			else
@@ -1003,11 +1003,11 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 			}
 
-			$body_string .= '<tr><td colspan="2"><FORM ACTION="index.php?menu=peerlist&amp;show=reserve" METHOD="post"><input type="submit" value="Show Reserve Peers"/></FORM></td>
+			$body_string .= '<tr><td colspan="1"><FORM ACTION="index.php?menu=peerlist&amp;show=reserve" METHOD="post"><input type="submit" value="Show Reserve Peers"/></FORM></td>
 				<td colspan="3"><FORM ACTION="index.php?menu=peerlist&amp;edit=peer&amp;type=new" METHOD="post"><input type="submit" value="Add New Peer"/></FORM></td>
 				<td colspan="4"><FORM ACTION="index.php?menu=peerlist&amp;edit=peer&amp;type=firstcontact" METHOD="post"><input type="submit" value="First Contact Servers"/></FORM></td></tr>
-				<tr><td colspan="9"><hr></td></tr>
-				<tr><td colspan="3"><FORM ACTION="index.php?menu=peerlist&amp;time=poll" METHOD="post"><input name="Submit3" type="submit" value="Check Peer Clock &amp; Ping Times" /></FORM></td>
+				<tr><td colspan="8"><hr></td></tr>
+				<tr><td colspan="2"><FORM ACTION="index.php?menu=peerlist&amp;time=poll" METHOD="post"><input name="Submit3" type="submit" value="Check Peer Clock &amp; Ping Times" /></FORM></td>
 				<td colspan="6"><FORM ACTION="index.php?menu=peerlist&amp;poll_failure=poll" METHOD="post"><input name="Submit4" type="submit" value="Poll Failure Scores" /></FORM></td>
 				</tr></table></div>';
 
