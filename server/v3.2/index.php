@@ -1057,17 +1057,14 @@ if($_SESSION["valid_login"] == TRUE)
 //****************************************************************************
 	if($_GET["menu"] == "system")
 	{
-		if($_GET["peer_settings"] == "change")
+		if($_GET["server_settings"] == "change")
 		{
+			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["network_mode"] . "' WHERE `options`.`field_name` = 'network_mode' LIMIT 1");
+			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["network_mode"] . "' WHERE `main_loop_status`.`field_name` = 'network_mode' LIMIT 1");
 			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["max_peers"] . "' WHERE `options`.`field_name` = 'max_active_peers' LIMIT 1");
 			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["max_peers"] . "' WHERE `main_loop_status`.`field_name` = 'max_active_peers' LIMIT 1");
 			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["max_new_peers"] . "' WHERE `options`.`field_name` = 'max_new_peers' LIMIT 1");
 			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["max_new_peers"] . "' WHERE `main_loop_status`.`field_name` = 'max_new_peers' LIMIT 1");
-			$server_code = '<br><font color="green"><strong>Peer Settings Updated...</strong></font><br><br>';
-		}
-
-		if($_GET["server_settings"] == "change")
-		{
 			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["cli_port"] . "' WHERE `options`.`field_name` = 'cli_port' LIMIT 1");
 			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["cli_mode"] . "' WHERE `options`.`field_name` = 'cli_mode' LIMIT 1");
 			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["domain"] . "' WHERE `options`.`field_name` = 'server_domain' LIMIT 1");
@@ -1108,7 +1105,7 @@ if($_SESSION["valid_login"] == TRUE)
 			}			
 
 			mysql_query("UPDATE `options` SET `field_data` = '$port' WHERE `options`.`field_name` = 'server_port_number' LIMIT 1");
-			$server_code .= '<br><font color="blue"><strong>Server Settings Updated...</strong></font><br><br>';
+			$server_code .= '<br><font color="blue"><strong>System Settings Updated...</strong></font><br><br>';
 		}
 
 		if($_GET["stop"] == "watchdog")

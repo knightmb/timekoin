@@ -599,23 +599,37 @@ function system_screen()
 	$auto_update_generation_IP = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,0));
 	$cli_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
 	$cli_port = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_port' LIMIT 1"),0,0);
+	$network_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
 
-	if($cli_mode == 1)
+	if($network_mode == 3)
 	{
-		$cli_mode_1 = "CHECKED";
+		$network_mode_3 = "SELECTED";
+	}
+	else if($network_mode == 2)
+	{
+		$network_mode_2 = "SELECTED";
 	}
 	else
 	{
-		$cli_mode_0 = "CHECKED";
+		$network_mode_1 = "SELECTED";
+	}
+
+	if($cli_mode == 1)
+	{
+		$cli_mode_1 = "SELECTED";
+	}
+	else
+	{
+		$cli_mode_0 = "SELECTED";
 	}
 
 	if($auto_update_generation_IP == 1)
 	{
-		$auto_update_generation_IP_1 = "CHECKED";
+		$auto_update_generation_IP_1 = "SELECTED";
 	}
 	else
 	{
-		$auto_update_generation_IP_0 = "CHECKED";
+		$auto_update_generation_IP_0 = "SELECTED";
 	}
 
 	if($gen_list_no_sync == 0)
@@ -629,52 +643,52 @@ function system_screen()
 
 	if($perm_peer_priority == 1)
 	{
-		$perm_peer_priority_1 = "CHECKED";
+		$perm_peer_priority_1 = "SELECTED";
 	}
 	else
 	{
-		$perm_peer_priority_0 = "CHECKED";
+		$perm_peer_priority_0 = "SELECTED";
 	}
 
 	if($super_peer_mode >= 1)
 	{
-		$super_peer_check_1 = "CHECKED";
+		$super_peer_check_1 = "SELECTED";
 	}
 	else
 	{
-		$super_peer_check_0 = "CHECKED";
+		$super_peer_check_0 = "SELECTED";
 		$super_peer_mode = 1;
 	}
 
 	if($allow_lan_peers == 1)
 	{
-		$LAN_enable = "CHECKED";
+		$LAN_enable = "SELECTED";
 	}
 	else
 	{
-		$LAN_disable = "CHECKED";
+		$LAN_disable = "SELECTED";
 	}
 
 	if($allow_ambient_peer_restart == 1)
 	{
-		$ambient_restart_enable = "CHECKED";
+		$ambient_restart_enable = "SELECTED";
 	}
 	else
 	{
-		$ambient_restart_disable = "CHECKED";
+		$ambient_restart_disable = "SELECTED";
 	}
 
 	if($trans_history_check == 2)
 	{
-		$trans_history_check_2 = "CHECKED";
+		$trans_history_check_2 = "SELECTED";
 	}
 	else if($trans_history_check == 1)
 	{
-		$trans_history_check_1 = "CHECKED";
+		$trans_history_check_1 = "SELECTED";
 	}
 	else
 	{
-		$trans_history_check_0 = "CHECKED";
+		$trans_history_check_0 = "SELECTED";
 	}
 
 	if($block_check_start == "0")
@@ -718,33 +732,26 @@ function system_screen()
 	// Database Size
 	$db_size = mysql_result(mysql_query("SELECT CONCAT(SUM(ROUND(((DATA_LENGTH + INDEX_LENGTH - DATA_FREE) / 1024 / 1024),2)),\" MB\") AS Size FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA LIKE '" . MYSQL_DATABASE . "'"),0);
 
-	return '<FORM ACTION="index.php?menu=system&amp;peer_settings=change" METHOD="post">
-	<table border="0"><tr><td align="right">
+	$html_return = '<FORM ACTION="index.php?menu=system&amp;server_settings=change" METHOD="post">
+	<table border="0"><tr><td align="right" style="width:325px">
 	Maximum Active Peers: <input type="text" name="max_peers" size="3" value="' . $max . '"/><br>
-	Maximum Reserve Peers: <input type="text" name="max_new_peers" size="3" value="' . $new . '"/><br>
-	</td><td align="right">
-	<input type="submit" name="Submit1" value="Change Peer Settings" />
-	</td></tr>
-	</table></FORM>
-	<hr>
-	<FORM ACTION="index.php?menu=system&amp;server_settings=change" METHOD="post">
-	<table border="0"><tr><td align="right">
-	Server Domain: <input type="text" name="domain" size="25" maxlength="256" value="' . $domain . '"/><br>
-	Timekoin Subfolder: <input type="text" name="subfolder" size="25" maxlength="256" value="' . $subfolder . '"/><br>
+	Maximum Reserve Peers: <input type="text" name="max_new_peers" size="3" value="' . $new . '"/><br><br>
+	Domain: <input type="text" name="domain" size="25" maxlength="256" value="' . $domain . '"/><br>
+	Subfolder: <input type="text" name="subfolder" size="12" maxlength="256" value="' . $subfolder . '"/><br><br>
+	CLI Mode: <select name="cli_mode"><option value="0" ' . $cli_mode_0 . '>Disable</option><option value="1" ' . $cli_mode_1 . '>Enable</option></select><br><br>
+	Allow LAN Peers: <select name="allow_LAN"><option value="0" ' . $LAN_disable . '>Disable</option><option value="1" ' . $LAN_enable . '>Enable</option></select><br><br>
+	Allow Ambient Peer Restarts: <select name="allow_ambient"><option value="0" ' . $ambient_restart_disable . '>Disable</option><option value="1" ' . $ambient_restart_enable . '>Enable</option></select><br><br>
+	Super Peer: <select name="super_peer"><option value="0" ' . $super_peer_check_0 . '>Disable</option><option value="' . $super_peer_mode . '" ' . $super_peer_check_1 . '>Enable</option></select><br><br>
+	</td>
+	<td valign="top" align="right" style="width:300px">
 	Public Server Port: <input type="text" name="port" size="6" maxlength="5" value="' . $port . '"/><br>
 	Max Peer Query: <input type="text" name="max_request" size="6" maxlength="6" value="' . $request_max . '"/><br>
-	Local Server Port: <input type="text" name="cli_port" size="6" maxlength="5" value="' . $cli_port . '"/><br>
-	<br>CLI Mode: <input type="radio" name="cli_mode" value="0" ' . $cli_mode_0 . '>Disable <input type="radio" name="cli_mode" value="1" ' . $cli_mode_1 . '>Enable
-	<br><br>Allow LAN Peers: <input type="radio" name="allow_LAN" value="0" ' . $LAN_disable . '>Disable <input type="radio" name="allow_LAN" value="1" ' . $LAN_enable . '>Enable
-	<br><br>Allow Ambient Peer Restarts: <input type="radio" name="allow_ambient" value="0" ' . $ambient_restart_disable . '>Disable <input type="radio" name="allow_ambient" value="1" ' . $ambient_restart_enable . '>Enable
-	<br><br>Super Peer: <input type="radio" name="super_peer" value="0" ' . $super_peer_check_0 . '>Disabled <input type="radio" name="super_peer" value="' . $super_peer_mode . '" ' . $super_peer_check_1 . '> Enable
-	<br><br>Permanent Peer Priority: <input type="radio" name="perm_peer_priority" value="0" ' . $perm_peer_priority_0 . '>Disabled <input type="radio" name="perm_peer_priority" value="1" ' . $perm_peer_priority_1 . '> Enable
-	<br><br>Auto Generation IP Update: <input type="radio" name="auto_update_IP" value="0" ' . $auto_update_generation_IP_0 . '>Disabled <input type="radio" name="auto_update_IP" value="1" ' . $auto_update_generation_IP_1 . '> Enable
-	<br><br>Transaction History Checks: <input type="radio" name="trans_history_check" value="0" ' . $trans_history_check_0 . '>Rare <input type="radio" name="trans_history_check" value="1" ' . $trans_history_check_1 . '> Normal <input type="radio" name="trans_history_check" value="2" ' . $trans_history_check_2 . '>Frequent
-	</td><td align="right">
-	<input type="submit" name="Submit2" value="Change Server Settings" />
-	</td></tr>
-	</table></FORM>
+	Local Server Port: <input type="text" name="cli_port" size="6" maxlength="5" value="' . $cli_port . '"/><br><br>
+	Network Mode: <select name="network_mode"><option value="1" ' . $network_mode_1 . '>IPv4 + IPv6</option><option value="2" ' . $network_mode_2 . '>IPv4 Only</option><option value="3" ' . $network_mode_3 . '>IPv6 Only</option></select><br><br>
+	Permanent Peer Priority: <select name="perm_peer_priority"><option value="0" ' . $perm_peer_priority_0 . '>Disable</option><option value="1" ' . $perm_peer_priority_1 . '>Enable</option></select><br><br>
+	Auto Generation IP Update: <select name="auto_update_IP"><option value="0" ' . $auto_update_generation_IP_0 . '>Disable</option><option value="1" ' . $auto_update_generation_IP_1 . '>Enable</option></select><br><br>
+	Transaction History Checks: <select name="trans_history_check"><option value="0" ' . $trans_history_check_0 . '>Rare</option><option value="1" ' . $trans_history_check_1 . '>Normal</option><option value="2" ' . $trans_history_check_2 . '>Frequent</option></select><br><br>
+	</td></tr></table><input type="submit" name="submit_server" value="Update System Settings" /></FORM>
 	<hr>
 	<table border="0"><tr><td align="right">
 	<strong>Miscellaneous Server</strong><br><br>
@@ -767,6 +774,8 @@ function system_screen()
 	' . tk_time_convert(time() - $uptime) . '<br>
 	' . $db_size .
 	'</strong></td></tr></table><hr>';
+
+	return $html_return;
 }
 //***********************************************************
 //***********************************************************

@@ -233,11 +233,10 @@ if($_GET["action"] == "join")
 // Answer exchange request
 if($_GET["action"] == "exchange")
 {
-	$allow_lan_peers = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,"field_data"));
-	$max_active_peers = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,"field_data");
+	$max_active_peers = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,0);
 
 	// How many active peers do we have?
-	$sql = "SELECT * FROM `active_peer_list`";
+	$sql = "SELECT port_number FROM `active_peer_list`";
 	$active_peers = mysql_num_rows(mysql_query($sql));
 
 	if($active_peers >= $max_active_peers)
@@ -251,6 +250,8 @@ if($_GET["action"] == "exchange")
 		$my_server_domain = my_domain();
 		$my_server_subfolder = my_subfolder();
 		$my_server_port_number = my_port_number();
+		$allow_lan_peers = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,0));
+		$network_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
 
 		if(empty($my_server_domain) == TRUE)
 		{
@@ -307,8 +308,54 @@ if($_GET["action"] == "exchange")
 					// Check for non-private IP range
 					if(is_private_ip($ip_address, $allow_lan_peers) == FALSE)
 					{
-						// Neither IP nor Domain exist
-						$duplicate_peer = FALSE;
+						// Using IP only, is there a duplicate IP or Domain or correct Network Mode IPv4 vs IPv6
+						// Mode 1 = IPv4 + IPv6
+						// Mode 2 = IPv4 Only
+						// Mode 3 = Ipv6 Only
+						if($network_mode == 1)// IPv4 + IPv6 Peers Allowed
+						{
+							$duplicate_peer = FALSE;
+						}
+
+						if($network_mode == 2)// IPv4 Only Peers Allowed
+						{
+							if(filter_var($ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
+							{
+								// IP Address is IPv6, ignore peer
+								$duplicate_peer = TRUE;
+							}
+							else
+							{
+								if(empty($duplicate_check1) == TRUE && empty($duplicate_check2) == TRUE)
+								{
+									$duplicate_peer = FALSE;
+								}
+								else
+								{
+									$duplicate_peer = TRUE;
+								}
+							}
+						} // IP v4 Only Peers Allowed
+
+						if($network_mode == 3)// IPv6 Only Peers Allowed
+						{
+							if(filter_var($ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
+							{
+								if(empty($duplicate_check1) == TRUE && empty($duplicate_check2) == TRUE)
+								{
+									$duplicate_peer = FALSE;
+								}
+								else
+								{
+									$duplicate_peer = TRUE;
+								}
+							}
+							else
+							{
+								// IP Address is IPv4, ignore peer
+								$duplicate_peer = TRUE;
+							}
+						} // IP v6 Only Peers Allowed
 					}
 					else
 					{
@@ -350,7 +397,7 @@ if($_GET["action"] == "exchange")
 			// Already in our list, might be a re-connect, so give the other peer the OK
 			echo "-----status=OK-----domain=$my_server_domain-----subfolder=$my_server_subfolder-----port_number=$my_server_port_number-----";
 		}
-	}
+	} // Full Server Check
 
 	// Log inbound IP activity
 	log_ip("PL");
@@ -412,9 +459,10 @@ else
 }
 //***********************************************************************************
 //***********************************************************************************
-$max_active_peers = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,"field_data");
-$max_new_peers = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'max_new_peers' LIMIT 1"),0,"field_data");
-$allow_lan_peers = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,"field_data"));
+$max_active_peers = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,0);
+$max_new_peers = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'max_new_peers' LIMIT 1"),0,0);
+$allow_lan_peers = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,0));
+$network_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
 
 // How many active peers do we have?
 $sql = "SELECT join_peer_list FROM `active_peer_list`";
@@ -499,15 +547,54 @@ if($active_peers < $max_active_peers)
 			// Check for non-private IP range
 			if(is_private_ip($ip_address, $allow_lan_peers) == FALSE)
 			{
-				// Using IP only, is there a duplicate IP or Domain
-				if(empty($duplicate_check1) == TRUE && empty($duplicate_check2) == TRUE)
+				// Using IP only, is there a duplicate IP or Domain or correct Network Mode IPv4 vs IPv6
+				// Mode 1 = IPv4 + IPv6
+				// Mode 2 = IPv4 Only
+				// Mode 3 = Ipv6 Only
+				if($network_mode == 1)// IPv4 + IPv6 Peers Allowed
 				{
 					$duplicate_peer = FALSE;
 				}
-				else
+
+				if($network_mode == 2)// IP v4 Only Peers Allowed
 				{
-					$duplicate_peer = TRUE;
-				}
+					if(filter_var($ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
+					{
+						// IP Address is IPv6, ignore peer
+						$duplicate_peer = TRUE;
+					}
+					else
+					{
+						if(empty($duplicate_check1) == TRUE && empty($duplicate_check2) == TRUE)
+						{
+							$duplicate_peer = FALSE;
+						}
+						else
+						{
+							$duplicate_peer = TRUE;
+						}
+					}
+				} // IP v4 Only Peers Allowed
+
+				if($network_mode == 3)// IP v6 Only Peers Allowed
+				{
+					if(filter_var($ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
+					{
+						if(empty($duplicate_check1) == TRUE && empty($duplicate_check2) == TRUE)
+						{
+							$duplicate_peer = FALSE;
+						}
+						else
+						{
+							$duplicate_peer = TRUE;
+						}
+					}
+					else
+					{
+						// IP Address is IPv4, ignore peer
+						$duplicate_peer = TRUE;
+					}
+				} // IP v6 Only Peers Allowed
 			}
 			else
 			{
@@ -735,7 +822,55 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 							if(is_private_ip($peer_IP, $allow_lan_peers) == FALSE)
 							{
 								// Neither IP nor Domain exist
-								$duplicate_peer = FALSE;
+
+								// Using IP only, is there a duplicate IP or Domain or correct Network Mode IPv4 vs IPv6
+								// Mode 1 = IPv4 + IPv6
+								// Mode 2 = IPv4 Only
+								// Mode 3 = Ipv6 Only
+								if($network_mode == 1)// IPv4 + IPv6 Peers Allowed
+								{
+									$duplicate_peer = FALSE;
+								}
+
+								if($network_mode == 2)// IPv4 Only Peers Allowed
+								{
+									if(filter_var($peer_IP, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
+									{
+										// IP Address is IPv6, ignore peer
+										$duplicate_peer = TRUE;
+									}
+									else
+									{
+										if(empty($duplicate_check1) == TRUE && empty($duplicate_check2) == TRUE)
+										{
+											$duplicate_peer = FALSE;
+										}
+										else
+										{
+											$duplicate_peer = TRUE;
+										}
+									}
+								} // IP v4 Only Peers Allowed
+
+								if($network_mode == 3)// IPv6 Only Peers Allowed
+								{
+									if(filter_var($peer_IP, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
+									{
+										if(empty($duplicate_check1) == TRUE && empty($duplicate_check2) == TRUE)
+										{
+											$duplicate_peer = FALSE;
+										}
+										else
+										{
+											$duplicate_peer = TRUE;
+										}
+									}
+									else
+									{
+										// IP Address is IPv4, ignore peer
+										$duplicate_peer = TRUE;
+									}
+								} // IP v6 Only Peers Allowed
 							}
 							else
 							{

@@ -290,7 +290,7 @@ function poll_peer($ip_address, $domain, $subfolder, $port_number, $max_length, 
 			// IP Address is IPv6
 			// Fix up the format for proper polling
 			$ip_address = "[" . $ip_address . "]";
-		}		
+		}
 		
 		$site_address = $ip_address;
 	}
@@ -1430,6 +1430,14 @@ function initialization_database()
 		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('cli_port', '')");
 	}
 
+	// IPv4 + IPv6 Network Mode
+	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0);
+	if($new_record_check === FALSE)
+	{
+		// Does not exist, create it
+		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('network_mode', '1')");
+	}
+
 //**************************************
 	// Check for an empty generation IP address,
 	// if none exist, attempt to auto-detect one
@@ -1511,6 +1519,9 @@ function initialization_database()
 	
 	$db_to_RAM = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,0);
 	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('peer_failure_grade', '$db_to_RAM')");
+
+	$db_to_RAM = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0);
+	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('network_mode', '$db_to_RAM')");	
 //**************************************
 	return 0;
 }
