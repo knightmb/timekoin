@@ -181,7 +181,7 @@ CREATE TABLE IF NOT EXISTS `options` (
 INSERT INTO `options` (`field_name`, `field_data`) VALUES
 ('allow_ambient_peer_restart', '0'),
 ('allow_LAN_peers', '0'),
-('auto_update_generation_IP', '0'),
+('auto_update_generation_IP', '1'),
 ('cli_mode', '0'),
 ('cli_port', ''),
 ('default_timezone', ''),
@@ -199,6 +199,7 @@ INSERT INTO `options` (`field_name`, `field_data`) VALUES
 ('generation_key_crypt', ''),
 ('max_active_peers', '8'),
 ('max_new_peers', '15'),
+('network_mode', '1'),
 ('password', '5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5'),
 ('peer_failure_grade', '30'),
 ('perm_peer_priority', '0'),
