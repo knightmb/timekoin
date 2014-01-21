@@ -137,6 +137,7 @@ if($_GET["action"] == "input_transaction")
 			{
 				write_log("Queue Hash Data MisMatch from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
 				$hash_match = "mismatch";
+				log_ip("QU", 5);
 			}
 			else
 			{
@@ -153,6 +154,7 @@ if($_GET["action"] == "input_transaction")
 					// Ok, something is wrong here...
 					write_log("Crypt Field Hash Check Failed from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
 					$hash_match = "mismatch";
+					log_ip("QU", 5);
 				}
 			}
 		}
@@ -161,6 +163,7 @@ if($_GET["action"] == "input_transaction")
 			// A qhash is required to verify the transaction
 			write_log("Queue Hash Data Empty from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
 			$hash_match = "mismatch";
+			log_ip("QU", 5);
 		}
 
 		$transaction_public_key = filter_sql(base64_decode($transaction_public_key));
@@ -277,11 +280,11 @@ if($_GET["action"] == "input_transaction")
 	//to help prevent direct Transaction spamming
 	if($transaction_attribute == "T")
 	{
-		log_ip("QU", 2);
+		log_ip("QU", 5);
 	}
 	else if($transaction_attribute == "G")
 	{
-		log_ip("QU", 50);
+		log_ip("QU", 100);
 	}
 	else
 	{
