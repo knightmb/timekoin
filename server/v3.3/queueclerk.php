@@ -137,12 +137,12 @@ if($_GET["action"] == "input_transaction")
 			{
 				write_log("Queue Hash Data MisMatch from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
 				$hash_match = "mismatch";
-				log_ip("QU", 5);
+				log_ip("QU", 10);
 			}
 			else
 			{
 				// Make sure hash is actually valid and not made up to stop other transactions
-				$crypt_hash_check = hash('sha256', $transaction_crypt1 . $transaction_crypt2 . $transaction_crypt3);				
+				$crypt_hash_check = hash('sha256', $transaction_crypt1 . $transaction_crypt2 . $transaction_crypt3);
 
 				if($transaction_hash == $crypt_hash_check)
 				{
@@ -154,7 +154,7 @@ if($_GET["action"] == "input_transaction")
 					// Ok, something is wrong here...
 					write_log("Crypt Field Hash Check Failed from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
 					$hash_match = "mismatch";
-					log_ip("QU", 5);
+					log_ip("QU", 25);
 				}
 			}
 		}
@@ -163,7 +163,7 @@ if($_GET["action"] == "input_transaction")
 			// A qhash is required to verify the transaction
 			write_log("Queue Hash Data Empty from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
 			$hash_match = "mismatch";
-			log_ip("QU", 5);
+			log_ip("QU", 50);
 		}
 
 		$transaction_public_key = filter_sql(base64_decode($transaction_public_key));
@@ -240,7 +240,7 @@ if($_GET["action"] == "input_transaction")
 				&& $valid_amount == TRUE)
 			{
 				// Check for 100 public key limit in the transaction queue
-				$sql = "SELECT * FROM `transaction_queue` WHERE `public_key` = '$transaction_public_key'";
+				$sql = "SELECT timestamp FROM `transaction_queue` WHERE `public_key` = '$transaction_public_key'";
 				$sql_result = mysql_query($sql);
 				$sql_num_results = mysql_num_rows($sql_result);
 

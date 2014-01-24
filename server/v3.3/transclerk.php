@@ -356,8 +356,8 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 	{
 		//More than 50% of the active peers have a different transaction history list, start comparing your
 		//transaction list with one that is different
-		$hash_check_counter = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_start_blocks' LIMIT 1"),0,"field_data"));
-		$peer_transaction_performance = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_performance' LIMIT 1"),0,"field_data"));
+		$hash_check_counter = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_start_blocks' LIMIT 1"),0,0));
+		$peer_transaction_performance = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_performance' LIMIT 1"),0,0));
 
 		//Scale the amount of transaction cycles to check based on the last peer performance reading
 		if($peer_transaction_performance <= 10)
@@ -643,14 +643,14 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 										while(empty($poll_peer) == FALSE)
 										{
-											$transaction_timestamp = filter_sql(find_string("-----timestamp$tc=", "-----public_key_from$tc", $poll_peer));
+											$transaction_timestamp = intval(find_string("-----timestamp$tc=", "-----public_key_from$tc", $poll_peer));
 											$transaction_public_key_from = filter_sql(find_string("-----public_key_from$tc=", "-----public_key_to$tc", $poll_peer));
 											$transaction_public_key_to = filter_sql(find_string("-----public_key_to$tc=", "-----crypt1data$tc", $poll_peer));
 											$transaction_crypt1 = filter_sql(find_string("-----crypt1data$tc=", "-----crypt2data$tc", $poll_peer));
 											$transaction_crypt2 = filter_sql(find_string("-----crypt2data$tc=", "-----crypt3data$tc", $poll_peer));
 											$transaction_crypt3 = filter_sql(find_string("-----crypt3data$tc=", "-----hash$tc", $poll_peer));
 											$transaction_hash = filter_sql(find_string("-----hash$tc=", "-----attribute$tc", $poll_peer));
-											$transaction_attribute = filter_sql(find_string("-----attribute$tc=", "-----end$tc", $poll_peer));
+											$transaction_attribute = find_string("-----attribute$tc=", "-----end$tc", $poll_peer);
 
 											if(empty($transaction_public_key_from) == TRUE && empty($transaction_public_key_to) == TRUE)
 											{
@@ -661,11 +661,31 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 											$transaction_public_key_from = filter_sql(base64_decode($transaction_public_key_from));
 											$transaction_public_key_to = filter_sql(base64_decode($transaction_public_key_to));
 
-											$found_duplicate = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
-
 											// Check for valid attribute
 											if($transaction_attribute == "G" || $transaction_attribute == "T" || $transaction_attribute == "H")
 											{
+												if($transaction_attribute == "G" || $transaction_attribute == "T")
+												{
+													// Check that verification hash for transaction data matches
+													$crypt_hash_check = hash('sha256', $transaction_crypt1 . $transaction_crypt2 . $transaction_crypt3);													
+													
+													if($transaction_hash == $crypt_hash_check)
+													{
+														// Continue with duplicate record test
+														$found_duplicate = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+													}
+													else
+													{
+														// Use duplicate test to fail this transaction data
+														$found_duplicate = "INVALID";
+													}
+												}
+												else
+												{
+													// Transaction Cycle Hash, continue duplicate record test
+													$found_duplicate = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+												}
+
 												if(empty($found_duplicate) == TRUE)
 												{
 													// Limit Max Query String to 1MB (1,024,000 bytes)
@@ -758,7 +778,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 					while(empty($poll_peer) == FALSE)
 					{
-						$transaction_timestamp = filter_sql(find_string("-----timestamp$tc=", "-----public_key_from$tc", $poll_peer));
+						$transaction_timestamp = intval(find_string("-----timestamp$tc=", "-----public_key_from$tc", $poll_peer));
 						$transaction_public_key_from = find_string("-----public_key_from$tc=", "-----public_key_to$tc", $poll_peer);
 						$transaction_public_key_to = find_string("-----public_key_to$tc=", "-----crypt1data$tc", $poll_peer);
 						$transaction_crypt1 = filter_sql(find_string("-----crypt1data$tc=", "-----crypt2data$tc", $poll_peer));
@@ -776,11 +796,31 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 						$transaction_public_key_from = filter_sql(base64_decode($transaction_public_key_from));
 						$transaction_public_key_to = filter_sql(base64_decode($transaction_public_key_to));
 
-						$found_duplicate = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `public_key_from` = '$transaction_public_key_from' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
-
 						// Check for valid attribute
 						if($transaction_attribute == "G" || $transaction_attribute == "T" || $transaction_attribute == "H")
 						{
+							if($transaction_attribute == "G" || $transaction_attribute == "T")
+							{
+								// Check that verification hash for transaction data matches
+								$crypt_hash_check = hash('sha256', $transaction_crypt1 . $transaction_crypt2 . $transaction_crypt3);													
+								
+								if($transaction_hash == $crypt_hash_check)
+								{
+									// Continue with duplicate record test
+									$found_duplicate = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+								}
+								else
+								{
+									// Use duplicate test to fail this transaction data
+									$found_duplicate = "INVALID";
+								}
+							}
+							else
+							{
+								// Transaction Cycle Hash, continue duplicate record test
+								$found_duplicate = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+							}
+
 							if(empty($found_duplicate) == TRUE)
 							{
 								$sql = "INSERT INTO `transaction_history` (`timestamp`,`public_key_from`,`public_key_to`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
@@ -963,7 +1003,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 			// Reset Performance Data
 			mysql_query("UPDATE `main_loop_status` SET `field_data` = '10' WHERE `main_loop_status`.`field_name` = 'peer_transaction_performance' LIMIT 1");
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '10' WHERE `main_loop_status`.`field_name` = 'peer_transaction_start_blocks' LIMIT 1");
+			mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'peer_transaction_start_blocks' LIMIT 1");
 		}
 
 		if(rand(1,4) == 2)

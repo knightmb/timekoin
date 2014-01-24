@@ -78,10 +78,9 @@ else
 }
 //***********************************************************************************
 //***********************************************************************************
-$previous_generation_cycle = transaction_cycle(-1);
-$current_generation_cycle = transaction_cycle(0);
-$next_generation_cycle = transaction_cycle(1);
-$current_generation_block = transaction_cycle(0, TRUE);
+$previous_transaction_cycle = transaction_cycle(-1);
+$current_transaction_cycle = transaction_cycle(0);
+$next_transaction_cycle = transaction_cycle(1);
 //*****************************************************************************************************
 //*****************************************************************************************************
 // Check my transaction queue and copy pending transaction to the main transaction queue, giving priority
@@ -96,7 +95,7 @@ if($sql_num_results > 0)
 {
 	// Can we copy my transaction queue to the main queue in the allowed time?
 	// Not allowed 120 seconds before and 20 seconds after transaction cycle.
-	if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycle) > 20)
+	if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cycle) > 20)
 	{
 		$firewall_blocked = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'firewall_blocked_peer' LIMIT 1"),0,"field_data");
 		
@@ -138,9 +137,9 @@ if($sql_num_results > 0)
 			}
 			else
 			{
-				$timestamp = $current_generation_cycle + 3; // Format timestamp for a few seconds after transaction cycle
+				$timestamp = $current_transaction_cycle + 3; // Format timestamp for a few seconds after transaction cycle
 
-				if($firewall_blocked == "1" || ($next_generation_cycle - time()) > 230)// Mix outbound transaction broadcasting and regular polling
+				if($firewall_blocked == "1" || ($next_transaction_cycle - time()) > 230)// Mix outbound transaction broadcasting and regular polling
 				{
 					if($attribute == "T" || $attribute == "G")
 					{
@@ -286,7 +285,7 @@ if($sql_num_results > 0)
 //*****************************************************************************************************
 //*****************************************************************************************************
 // Find all transactions between the Previous Transaction Cycle and the Current
-$sql = "SELECT * FROM `transaction_queue` WHERE `timestamp` >= $previous_generation_cycle AND `timestamp` < $current_generation_cycle GROUP BY `hash` ORDER BY `attribute`, `hash` ASC";
+$sql = "SELECT * FROM `transaction_queue` WHERE `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle GROUP BY `hash` ORDER BY `attribute`, `hash` ASC";
 
 $sql_result = mysql_query($sql);
 $sql_num_results = mysql_num_rows($sql_result);
@@ -318,23 +317,24 @@ if($sql_num_results > 0)
 			if(generation_cycle() == TRUE)
 			{
 				// Is this public key allowed to generate currency?
-				$generation_public_key = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),0,"public_key");			
+				$generation_public_key = mysql_result(mysql_query("SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),0,0);			
 				
 				if(empty($generation_public_key) == TRUE)
 				{
 					//Not allowed to generate currency
 					write_log("Key Not in Generation Peer List: " . base64_encode($public_key), "G");
+					$record_failure_counter++;
 				}
 				else
 				{
 					// Check to make sure there is not a duplicate generation transaction already
-					$found_public_key_queue = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `attribute` = 'G' AND `timestamp` >= $previous_generation_cycle AND `timestamp` < $current_generation_cycle LIMIT 1"),0,0);
+					$found_public_key_queue = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `attribute` = 'G' AND `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle LIMIT 1"),0,0);
 
 					if(empty($found_public_key_queue) == TRUE)
 					{
 						// Check to make sure enough time has passed since this public key joined the network to allow currency generation
 						// Default is 1 Hour or 3600 seconds
-						$join_peer_list = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),0,"join_peer_list");
+						$join_peer_list = mysql_result(mysql_query("SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),0,0);
 
 						if((time() - $join_peer_list) >= 3600) // It's been more than 3600 seconds since this public key joined the generating peer list
 						{
@@ -389,7 +389,7 @@ if($sql_num_results > 0)
 								}
 
 								// Update the last generation timestamp
-								$sql = "UPDATE `generating_peer_list` SET `last_generation` = '$current_generation_cycle' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1";
+								$sql = "UPDATE `generating_peer_list` SET `last_generation` = '$current_transaction_cycle' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1";
 
 								if(mysql_query($sql) == FALSE)
 								{
@@ -479,6 +479,7 @@ if($sql_num_results > 0)
 							{
 								//Something didn't work
 								write_log("Transaction Database Insert Failed for this Key:" . base64_encode($public_key), "T");
+								$record_failure_counter++;
 							}
 							else
 							{
@@ -538,7 +539,7 @@ if($sql_num_results > 0)
 	write_log("Treasurer Processed " . ($record_insert_counter + $record_failure_counter) . " Transactions in " . (time() - $time_start) . " seconds.<br>[" . $record_insert_counter . "] Successful -- [" . $record_failure_counter . "] Denied", "TR");
 
 	// Wipe transaction queue of all old transaction from current to previous cycle
-	$sql = "DELETE QUICK FROM `transaction_queue` WHERE `transaction_queue`.`timestamp` < $current_generation_cycle";
+	$sql = "DELETE QUICK FROM `transaction_queue` WHERE `transaction_queue`.`timestamp` < $current_transaction_cycle";
 	if(mysql_query($sql) == FALSE)
 	{
 		//Something didn't work
@@ -555,22 +556,22 @@ if($sql_num_results > 0)
 else
 {
 	// Wipe transaction that are too old to be used in the next transaction cycle
-	mysql_query("DELETE QUICK FROM `transaction_queue` WHERE `transaction_queue`.`timestamp` < $previous_generation_cycle");
+	mysql_query("DELETE QUICK FROM `transaction_queue` WHERE `transaction_queue`.`timestamp` < $previous_transaction_cycle");
 }
 
 //***********************************************************************************	
 // Check to see if it is time to write a hash of the last cycle transactions
 
 $generation_arbitrary = ARBITRARY_KEY;
-$current_hash = mysql_result(mysql_query("SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $current_generation_cycle AND `timestamp` < $next_generation_cycle AND `attribute` = 'H' LIMIT 1"),0,"hash");
-$past_hash = mysql_result(mysql_query("SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $previous_generation_cycle AND `timestamp` < $current_generation_cycle AND `attribute` = 'H' LIMIT 1"),0,"hash");
+$current_hash = mysql_result(mysql_query("SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $current_transaction_cycle AND `timestamp` < $next_transaction_cycle AND `attribute` = 'H' LIMIT 1"),0,"hash");
+$past_hash = mysql_result(mysql_query("SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle AND `attribute` = 'H' LIMIT 1"),0,"hash");
 
 if(empty($current_hash) == TRUE)
 {
 	if(empty($past_hash) == FALSE)//If the past cycle hash is missing, can't move forward without it.
 	{
 		//A hash from the previous generation cycle does not exist yet, so create it
-		$sql = "SELECT timestamp, hash FROM `transaction_history` WHERE `timestamp` >= $previous_generation_cycle AND `timestamp` < $current_generation_cycle ORDER BY `timestamp`, `hash`";
+		$sql = "SELECT timestamp, hash FROM `transaction_history` WHERE `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle ORDER BY `timestamp`, `hash`";
 
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
@@ -592,7 +593,7 @@ if(empty($current_hash) == TRUE)
 			$hash = hash('sha256', $hash);
 
 			$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from` ,`public_key_to` ,`crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
-			VALUES ('$current_generation_cycle', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$hash', 'H')";
+			VALUES ('$current_transaction_cycle', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$hash', 'H')";
 			mysql_query($sql);
 
 			// Update Transaction History Hash
