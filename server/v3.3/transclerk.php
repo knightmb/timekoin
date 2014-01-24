@@ -458,7 +458,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				mysql_query($sql);
 				
 				// How many times have this checked reached the end and still not fixed the transaction history?
-				$hash_number_back_database = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'block_check_back' LIMIT 1"),0,"field_data");
+				$hash_number_back_database = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'block_check_back' LIMIT 1"),0,0);
 				
 				$hash_number_back = $hash_number_back_database * 10;
 
@@ -490,7 +490,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 					mysql_query("UPDATE `main_loop_status` SET `field_data` = '$hash_number_back_database' WHERE `main_loop_status`.`field_name` = 'block_check_back' LIMIT 1");
 				}
 
-				$hash_check_counter = 10;  // Reset to check another 10 blocks forward
+				$hash_check_counter = 1;  // Reset to check another 1 block forward
 			}
 		}
 
