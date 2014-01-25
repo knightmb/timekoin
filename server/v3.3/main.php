@@ -89,7 +89,11 @@ if($_GET["action"] == "begin_main")
 				}
 				else
 				{
-					write_log("Can NOT Start Plugin Service in Non-CLI Mode [$plugin_service]", "MA");
+					// Start Plugin Service
+					call_script($plugin_file, 0, TRUE, TRUE);
+
+					// Log Service Start
+					write_log("Started Plugin Service: $plugin_service", "MA");
 				}
 			}
 		}

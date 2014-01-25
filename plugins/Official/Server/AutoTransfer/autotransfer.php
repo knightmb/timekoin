@@ -10,9 +10,15 @@ session_start(); // Continue Session
 // Server does not login to start this plugin
 if($_SESSION["valid_login"] == FALSE)
 {
+	// CLI Mode uses this path
 	include 'templates.php';// Path to files already used by Timekoin
 	include 'function.php';// Path to files already used by Timekoin
 	include 'configuration.php';// Path to files already used by Timekoin
+
+	// Non-CLI Mode uses this path
+	include '../templates.php';// Path to files already used by Timekoin
+	include '../function.php';// Path to files already used by Timekoin
+	include '../configuration.php';// Path to files already used by Timekoin
 
 	// Make DB Connection
 	mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD);
@@ -34,7 +40,7 @@ if($_SESSION["valid_login"] == FALSE)
 
 	while(1) // Begin Infinite Loop :)
 	{
-		set_time_limit(300); // Reset Timeout
+		set_time_limit(999); // Reset Timeout
 
 		// Are we to remain active?
 		$timekoin_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,"field_data");

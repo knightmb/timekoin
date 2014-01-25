@@ -333,14 +333,28 @@ function call_script($script, $priority = 1, $plugin = FALSE, $web_server_call =
 		if(empty($cli_port) == TRUE)
 		{
 			// Use the same server port that is reported to other peers
-			poll_peer(NULL, "localhost", my_subfolder(), my_port_number(), 1, $script);
+			if($plugin == TRUE)
+			{
+				poll_peer(NULL, "localhost", my_subfolder() . "/plugins", my_port_number(), 1, $script);
+			}
+			else
+			{
+				poll_peer(NULL, "localhost", my_subfolder(), my_port_number(), 1, $script);
+			}
 		}
 		else
 		{
 			// Use a different port number than what is reported to other peers.
 			// Useful for port forwarding where the External Internet port is different than
 			// the Internal web server port being forwarded through the router.
-			poll_peer(NULL, "localhost", my_subfolder(), $cli_port, 1, $script);
+			if($plugin == TRUE)
+			{
+				poll_peer(NULL, "localhost", my_subfolder() . "/plugins", $cli_port, 1, $script);
+			}
+			else
+			{
+				poll_peer(NULL, "localhost", my_subfolder(), $cli_port, 1, $script);
+			}			
 		}
 	}
 	else if($priority == 1)
