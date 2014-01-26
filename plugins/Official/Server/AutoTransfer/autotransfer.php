@@ -103,7 +103,7 @@ if($_SESSION["valid_login"] == FALSE)
 								$new_string = str_replace("---enable=1", "---enable=0", $new_string);
 								// Update DB to Disable Task to Avoid Looping Transactions
 								mysql_query("UPDATE `options` SET `field_data` = '$new_string' WHERE `options`.`field_name` = '$tx_record_name' LIMIT 1");
-								write_log("Auto Transfer Task ($tx_name) Has Completed.", "PL");
+								write_log("Auto Transfer Task ($tx_name) Has Completed.", "T");
 							}
 						}
 					}
@@ -139,7 +139,7 @@ if($_SESSION["valid_login"] == FALSE)
 								
 								// Update DB to Reset Countdown
 								mysql_query("UPDATE `options` SET `field_data` = '$new_string' WHERE `options`.`field_name` = '$tx_record_name' LIMIT 1");
-								write_log("Auto Transfer Task ($tx_name) Has Completed.", "PL");
+								write_log("Auto Transfer Task ($tx_name) Has Completed.", "T");
 							}
 						}
 					}
@@ -163,7 +163,7 @@ if($_SESSION["valid_login"] == FALSE)
 
 							// Update DB to Disable Task When Finished
 							mysql_query("UPDATE `options` SET `field_data` = '$new_string' WHERE `options`.`field_name` = '$tx_record_name' LIMIT 1");
-							write_log("Auto Transfer Task ($tx_name) Has Completed.", "PL");							
+							write_log("Auto Transfer Task ($tx_name) Has Completed.", "T");							
 						}
 					}
 				} // One Shot Amount Match Transfer
@@ -184,7 +184,7 @@ if($_SESSION["valid_login"] == FALSE)
 							// Create Transaction
 							if(send_timekoins($tx_key1, $tx_key2, $tx_key3, $tx_amount, NULL) == TRUE)
 							{
-								write_log("Auto Transfer Task ($tx_name) Has Completed.", "PL");
+								write_log("Auto Transfer Task ($tx_name) Has Completed.", "T");
 							}
 						}
 					}
