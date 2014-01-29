@@ -19,8 +19,10 @@ if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 	// Sorry, your IP address has been banned :(
 	exit ("Your IP Has Been Banned");
 }
-
-log_ip("GE", 100);
+//***********************************************************************************
+// External Flood Protection
+log_ip("GE", scale_trigger(4));
+//***********************************************************************************
 
 // First time run check
 $loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,0);

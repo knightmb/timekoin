@@ -106,7 +106,7 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 	} // End Randomize Check
 
 	// Log inbound IP activity
-	log_ip("PL", scale_trigger(200));
+	log_ip("PL", scale_trigger(100));
 	exit;
 }
 //***********************************************************************************
@@ -117,7 +117,7 @@ if($_GET["action"] == "polltime")
 	echo time();
 	
 	// Log inbound IP activity
-	log_ip("PL", scale_trigger(200));
+	log_ip("PL", scale_trigger(100));
 	exit;
 }
 //***********************************************************************************
@@ -141,7 +141,7 @@ if($_GET["action"] == "poll_failure")
 		echo mysql_result(mysql_query("SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port LIMIT 1"),0,0);
 	}
 
-	log_ip("PL", scale_trigger(200));
+	log_ip("PL", scale_trigger(100));
 	exit;
 }
 //***********************************************************************************
@@ -199,7 +199,7 @@ if($_GET["action"] == "new_peers")
 	}
 
 	// Log inbound IP activity
-	log_ip("PL", scale_trigger(200));
+	log_ip("PL", scale_trigger(100));
 	exit;
 }
 //***********************************************************************************
@@ -225,7 +225,7 @@ if($_GET["action"] == "join")
 	}
 
 	// Log inbound IP activity
-	log_ip("PL", scale_trigger(200));
+	log_ip("PL", scale_trigger(100));
 	exit;
 }
 //***********************************************************************************
@@ -323,7 +323,14 @@ if($_GET["action"] == "exchange")
 						// Mode 3 = Ipv6 Only
 						if($network_mode == 1)// IPv4 + IPv6 Peers Allowed
 						{
-
+							if(empty($duplicate_check1) == TRUE && empty($duplicate_check2) == TRUE)
+							{
+								$duplicate_peer = FALSE;
+							}
+							else
+							{
+								$duplicate_peer = TRUE;
+							}
 						}
 
 						if($network_mode == 2)// IPv4 Only Peers Allowed
@@ -417,7 +424,7 @@ if($_GET["action"] == "exchange")
 	} // Full Server Check
 
 	// Log inbound IP activity
-	log_ip("PL", scale_trigger(200));
+	log_ip("PL", scale_trigger(100));
 	exit;
 }
 //***********************************************************************************
@@ -489,7 +496,7 @@ $network_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `main_lo
 $sql = "SELECT join_peer_list FROM `active_peer_list`";
 $active_peers = mysql_num_rows(mysql_query($sql));
 
-$sql = "SELECT join_peer_list FROM `new_peers_list`";
+$sql = "SELECT poll_failures FROM `new_peers_list`";
 $new_peers = mysql_num_rows(mysql_query($sql));
 
 $my_server_domain = my_domain();
@@ -545,12 +552,14 @@ if($active_peers < $max_active_peers)
 		$subfolder = $sql_row["subfolder"];
 		$port_number = $sql_row["port_number"];
 		$poll_failures = $sql_row["poll_failures"];
+		$duplicate_peer = FALSE;
+		$invalid_peer = FALSE;
 
 		// Check to make sure that this peer is not already in our active peer list
 		$duplicate_check1 = mysql_result(mysql_query("SELECT last_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' LIMIT 1"),0,0);
 		$duplicate_check2 = mysql_result(mysql_query("SELECT domain FROM `active_peer_list` WHERE `domain` LIKE '$domain' LIMIT 1"),0,0);
 
-		if(empty($ip_address) == TRUE)
+		if(empty($ip_address) == TRUE) // Check Domain
 		{
 			//Don't have an IP address, check for duplicate domain or my own domain
 			if(empty($duplicate_check2) == TRUE && $my_server_domain != $domain)
@@ -563,7 +572,7 @@ if($active_peers < $max_active_peers)
 				$duplicate_peer = TRUE;
 			}
 		}
-		else
+		else // Check IP Address
 		{
 			// Check for non-private IP range
 			if(is_private_ip($ip_address, $allow_lan_peers) == FALSE)
@@ -574,7 +583,16 @@ if($active_peers < $max_active_peers)
 				// Mode 3 = Ipv6 Only
 				if($network_mode == 1)// IPv4 + IPv6 Peers Allowed
 				{
-					$duplicate_peer = FALSE;
+					$invalid_peer = FALSE;
+
+					if(empty($duplicate_check1) == TRUE && empty($duplicate_check2) == TRUE)
+					{
+						$duplicate_peer = FALSE;
+					}
+					else
+					{
+						$duplicate_peer = TRUE;
+					}					
 				}
 
 				if($network_mode == 2)// IP v4 Only Peers Allowed
@@ -582,7 +600,7 @@ if($active_peers < $max_active_peers)
 					if(filter_var($ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
 					{
 						// IP Address is IPv6, ignore peer
-						$duplicate_peer = TRUE;
+						$invalid_peer = TRUE;
 					}
 					else
 					{
@@ -613,18 +631,18 @@ if($active_peers < $max_active_peers)
 					else
 					{
 						// IP Address is IPv4, ignore peer
-						$duplicate_peer = TRUE;
+						$invalid_peer = TRUE;
 					}
 				} // IP v6 Only Peers Allowed
 			}
 			else
 			{
 				// Filter private IP ranges
-				$duplicate_peer = TRUE;
+				$invalid_peer = TRUE;
 			}
 		}
 
-		if($duplicate_peer == FALSE)
+		if($duplicate_peer == FALSE && $invalid_peer == FALSE)
 		{
 			//Send a challenge hash to see if a timekoin server is active
 			$poll_challenge = rand(1, 999999);

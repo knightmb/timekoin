@@ -29,11 +29,11 @@ if($_GET["action"] == "trans_hash")
 	// Log inbound IP activity
 	if($_GET["client"] == "api")
 	{
-		log_ip("AP", scale_trigger(10));
+		log_ip("AP", scale_trigger(100));
 	}
 	else
 	{
-		log_ip("QU", scale_trigger(10));
+		log_ip("QU", scale_trigger(100));
 	}
 
 	exit;
@@ -62,11 +62,11 @@ if($_GET["action"] == "queue")
 	// Log inbound IP activity
 	if($_GET["client"] == "api")
 	{
-		log_ip("AP", scale_trigger(10));
+		log_ip("AP", scale_trigger(100));
 	}
 	else
 	{
-		log_ip("QU", scale_trigger(10));
+		log_ip("QU", scale_trigger(100));
 	}
 	exit;
 }
@@ -262,11 +262,13 @@ if($_GET["action"] == "input_transaction")
 				else
 				{
 					write_log("More Than 100 Transactions Trying to Queue from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
+					log_ip("QU", scale_trigger(5));
 				}
 			}
 			else
 			{
 				write_log("Invalid Transaction Queue Data Discarded from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
+				log_ip("QU", scale_trigger(5));
 			}
 
 		} // End Duplicate & Timestamp check

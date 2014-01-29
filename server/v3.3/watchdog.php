@@ -23,7 +23,7 @@ if($_GET["action"]=="begin_watchdog")
 		exit ("Your IP Has Been Banned");
 	}
 
-	log_ip("WA", 50);// Avoid flood loading system process
+	log_ip("WA", scale_trigger(5));// Avoid flood loading system process
 
 	// Check last heartbeat and make sure it was more than X seconds ago
 	$watchdog_heartbeat_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,0);
@@ -76,7 +76,7 @@ if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 	exit ("Your IP Has Been Banned");
 }
 
-log_ip("WA", 25);// Avoid flood loading system process
+log_ip("WA", scale_trigger(5));// Avoid flood loading system process
 
 while(1)
 {

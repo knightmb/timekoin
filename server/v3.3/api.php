@@ -28,8 +28,8 @@ $hash_code = mysql_result(mysql_query("SELECT field_name FROM `options` WHERE `f
 if(empty($hash_code) == TRUE)
 {
 	// Invalid Hashcode
-	// Log inbound IP activity x50 to Prevent Brute-Force Attacking/Guessing
-	log_ip("AP", 50);
+	// Log inbound IP activity to Prevent Brute-Force Attacking/Guessing
+	log_ip("AP", scale_trigger(5));
 	exit;
 }
 else
@@ -42,7 +42,7 @@ if($_GET["action"] == "tk_hash_status")
 {
 	echo TRUE;
 
-	log_ip("AP");
+	log_ip("AP", scale_trigger(100));
 	exit;
 }
 //***********************************************************************************
@@ -306,7 +306,7 @@ if($_GET["action"] == "tk_process_status")
 	}// Valid Permissions Check
 
 	// Log inbound IP activity
-	log_ip("AP");
+	log_ip("AP", scale_trigger(100));
 	exit;
 }
 //***********************************************************************************
@@ -334,7 +334,7 @@ if($_GET["action"] == "pk_valid")
 	}// Valid Permissions Check
 
 	// Log inbound IP activity
-	log_ip("AP");
+	log_ip("AP", scale_trigger(100));
 	exit;
 }
 //***********************************************************************************
@@ -352,7 +352,7 @@ if($_GET["action"] == "pk_balance")
 	}// Valid Permissions Check
 
 	// Log inbound IP activity
-	log_ip("AP");
+	log_ip("AP", scale_trigger(100));
 	exit;
 }
 //***********************************************************************************
@@ -472,7 +472,7 @@ if($_GET["action"] == "send_tk")
 	} // End Permission Check
 
 	// Log inbound IP activity
-	log_ip("AP");
+	log_ip("AP", scale_trigger(100));
 	exit;
 }
 //***********************************************************************************
@@ -528,7 +528,7 @@ if($_GET["action"] == "pk_history")
 			}
 
 			// Log inbound IP activity
-			log_ip("AP");
+			log_ip("AP", scale_trigger(100));
 			exit;		
 		
 		} // Sent to Public Key
@@ -573,14 +573,14 @@ if($_GET["action"] == "pk_history")
 			}
 
 			// Log inbound IP activity
-			log_ip("AP");
+			log_ip("AP", scale_trigger(100));
 			exit;		
 		
 		} // Sent from Public Key
 
 	}// Valid Permissions Check
 
-	log_ip("AP");
+	log_ip("AP", scale_trigger(100));
 	exit;
 }
 //***********************************************************************************
@@ -596,7 +596,7 @@ if($_GET["action"] == "pk_gen_amt")
 	}
 
 	// Log inbound IP activity
-	log_ip("AP");
+	log_ip("AP", scale_trigger(100));
 	exit;
 }
 //***********************************************************************************
@@ -651,7 +651,7 @@ if($_GET["action"] == "tk_trans_total")
 	}// End Permission Check
 
 	// Log inbound IP activity
-	log_ip("AP");
+	log_ip("AP", scale_trigger(100));
 	exit;
 }
 //***********************************************************************************
@@ -711,7 +711,7 @@ if($_GET["action"] == "pk_recv")
 	}// End Permission Check
 
 	// Log inbound IP activity
-	log_ip("AP");
+	log_ip("AP", scale_trigger(100));
 	exit;
 }
 //***********************************************************************************
@@ -771,7 +771,7 @@ if($_GET["action"] == "pk_sent")
 	} // End Permission Check
 
 	// Log inbound IP activity
-	log_ip("AP");
+	log_ip("AP", scale_trigger(100));
 	exit;
 }
 //***********************************************************************************
@@ -833,11 +833,11 @@ if($_GET["action"] == "pk_gen_total")
 	} // End Permission Check
 
 	// Log inbound IP activity
-	log_ip("AP");
+	log_ip("AP", scale_trigger(100));
 	exit;
 }
 //***********************************************************************************
 //***********************************************************************************
 // Log IP even when not using any functions, just in case
-log_ip("AP");
+log_ip("AP", scale_trigger(10));
 ?>

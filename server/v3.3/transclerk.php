@@ -28,7 +28,7 @@ if($_GET["action"] == "history_hash")
 	echo mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'transaction_history_hash' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
-	log_ip("TC", scale_trigger(10));
+	log_ip("TC", scale_trigger(100));
 	exit;
 }
 //***********************************************************************************
@@ -39,7 +39,7 @@ if($_GET["action"] == "super_peer")
 	echo mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'super_peer' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
-	log_ip("TC", scale_trigger(10));
+	log_ip("TC", scale_trigger(100));
 	exit;
 }
 //***********************************************************************************
@@ -1013,13 +1013,13 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 			if($transaction_repair_made == TRUE)
 			{
-				write_log("Manual History Check From Transaction Cycle #$transaction_history_block_check to #" . ($transaction_history_block_check + $hash_check_counter - 1) . " Completed With Repairs", "TC");
+				write_log("Manual History Check From Transaction Cycle #" . ($hash_number - $hash_check_counter) . " to #" . ($hash_number - 1) . " Completed With Repairs", "TC");
 				// Reset Transction Hash Count Cache
 				reset_transaction_hash_count();
 			}
 			else
 			{
-				write_log("Manual History Check Complete. No Errors Found with Transaction Cycle #$transaction_history_block_check to #" . ($transaction_history_block_check + $hash_check_counter - 1), "TC");
+				write_log("Manual History Check Complete. No Errors Found with Transaction Cycle #" . ($hash_number - $hash_check_counter) . " to #" . ($hash_number - 1), "TC");
 			}
 
 			// Reset Repair Notification Flag

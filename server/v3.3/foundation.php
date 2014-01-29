@@ -30,9 +30,13 @@ if($_GET["action"] == "block_hash" && $_GET["block_number"] >= 0)
 	echo mysql_result(mysql_query("SELECT hash FROM `transaction_foundation` WHERE `block` = $block_number LIMIT 1"),0,0);
 
 	// Log inbound IP activity
-	log_ip("FO");
+	log_ip("FO", scale_trigger(100));
 	exit;
 }
+//***********************************************************************************
+//***********************************************************************************
+// External Flood Protection
+log_ip("FO", scale_trigger(4));
 //***********************************************************************************
 // First time run check
 $loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,0);

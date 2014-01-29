@@ -18,7 +18,7 @@ if($_SESSION["valid_login"] == FALSE && $_GET["action"] != "login")
 		exit ("Your IP Has Been Banned");
 	}	
 
-	log_ip("GU", 50); // Avoid flood loading loging screen
+	log_ip("GU", scale_trigger(5)); // Avoid flood loading loging screen
 
 	$_SESSION["valid_session"] = TRUE;
 
@@ -86,7 +86,7 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 		write_log("Invalid Login from IP: " . $_SERVER['REMOTE_ADDR'] . " trying Username:[" . filter_sql($http_username) . "] with Password:[" . filter_sql($http_password) . "]", "GU");
 	}
 
-	log_ip("GU", 100); // Avoid flood-brute password guessing
+	log_ip("GU", scale_trigger(3)); // Avoid flood-brute password guessing
 	sleep(1); // One second delay to help prevent brute force attack
 	login_screen("Login Failed");
 	exit;
@@ -1036,8 +1036,7 @@ if($_SESSION["valid_login"] == TRUE)
 			<br><br>Peers in <font color="green">Green</font> are at maximum capacity set by the server operator.
 			<br><br><u>Underline</u> Peers are generating currency.
 			<br><br><strong>Failure Score</strong> is a total of failed polling or data exchange events. Peers that score over the failure limit are kicked from the peer list.
-			<br><br><strong>Peer Speed</strong> is combined peer performance measured over a 10 second interval.
-			<br>Ten is the average baseline.
+			<br><br><strong>Peer Speed</strong> is number of transaction cycles polled over a 10 second interval.
 			<br><br><strong>Group Response</strong> is a sample average of all peers and how long it took the group to respond to a 10 second task.
 			<br>Less than 10 seconds increases peer speed by +1 and longer than 10 seconds decreases peer speed by -1.';
 
