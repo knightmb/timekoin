@@ -260,13 +260,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 			$subfolder = $sql_row["subfolder"];
 			$port_number = $sql_row["port_number"];
 
-			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 100, "genpeer.php?action=gen_hash");
-
-			if(empty($poll_peer) == TRUE)
-			{
-				// Add failure points to the peer in case further issues
-				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 4);
-			}
+			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 64, "genpeer.php?action=gen_hash");
 
 			if($generating_hash === $poll_peer)
 			{

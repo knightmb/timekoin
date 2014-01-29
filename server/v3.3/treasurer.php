@@ -380,7 +380,7 @@ if($sql_num_results > 0)
 								if(mysql_query($sql) == FALSE)
 								{
 									//Something didn't work
-									write_log("Generation Insert Failed for this Key:" . base64_encode($public_key), "G");
+									write_log("Generation Insert Failed for this Key: " . base64_encode($public_key), "G");
 									$record_failure_counter++;
 								}
 								else
@@ -394,27 +394,27 @@ if($sql_num_results > 0)
 								if(mysql_query($sql) == FALSE)
 								{
 									//Something didn't work
-									write_log("Generation Timestamp Update Failed for this Key:" . base64_encode($public_key), "G");
+									write_log("Generation Timestamp Update Failed for this Key: " . base64_encode($public_key), "G");
 								}
 							}
 							else
 							{
 								// Failed Hash check or Valid Amount check
-								write_log("Generation Hash or Amount Check Failed for this Key:" . base64_encode($public_key), "G");
+								write_log("Generation Hash or Amount Check Failed for this Key: " . base64_encode($public_key), "G");
 								$record_failure_counter++;
 							}
 						}
 						else
 						{
 							// Not enough time has passed
-							write_log("Generation Too Early for this Key:" . base64_encode($public_key), "G");
+							write_log("Generation Too Early for this Key: " . base64_encode($public_key), "G");
 							$record_failure_counter++;
 						}
 					}
 					else
 					{
 						// Duplicate generation transaction already exist
-						write_log("Generation Duplicate Discarded for this Key:" . base64_encode($public_key), "G");
+						write_log("Generation Duplicate Discarded for this Key: " . base64_encode($public_key), "G");
 						$record_failure_counter++;
 					}
 
@@ -424,7 +424,7 @@ if($sql_num_results > 0)
 			else
 			{
 				// Not enough time has passed
-				write_log("Generation Wrong Time for this Key:" . base64_encode($public_key), "G");
+				write_log("Generation Wrong Time for this Key: " . base64_encode($public_key), "G");
 				$record_failure_counter++;
 			}
 
@@ -484,7 +484,7 @@ if($sql_num_results > 0)
 							if(mysql_query($sql) == FALSE)
 							{
 								//Something didn't work
-								write_log("Transaction Database Insert Failed for this Key:" . base64_encode($public_key), "T");
+								write_log("Transaction Database Insert Failed for this Key: " . base64_encode($public_key), "T");
 								$record_failure_counter++;
 							}
 							else
@@ -495,7 +495,7 @@ if($sql_num_results > 0)
 						else
 						{
 							// Invalid or blank Public Key(s)
-							write_log("Transaction Public Key Error for this Key:" . base64_encode($public_key), "T");
+							write_log("Transaction Public Key Error for this Key: " . base64_encode($public_key), "T");
 							$safe_delete_transaction = TRUE;
 							$record_failure_counter++;
 						}
@@ -503,7 +503,7 @@ if($sql_num_results > 0)
 					else
 					{
 						// Hash check failed
-						write_log("Transaction Hash Check Failed for this Key:" . base64_encode($public_key), "T");
+						write_log("Transaction Hash Check Failed for this Key: " . base64_encode($public_key), "T");
 						$safe_delete_transaction = TRUE;
 						$record_failure_counter++;
 					}
@@ -511,7 +511,7 @@ if($sql_num_results > 0)
 				else
 				{
 					// Balance is incorrect, transaction invalid
-					write_log("Transaction Balance Check Failed for this Key:" . base64_encode($public_key), "T");
+					write_log("Transaction Balance Check Failed for this Key: " . base64_encode($public_key), "T");
 					$safe_delete_transaction = TRUE;
 					$record_failure_counter++;
 				}
@@ -519,7 +519,7 @@ if($sql_num_results > 0)
 			else
 			{
 				// Duplicate Transaction
-				write_log("Duplicate Transaction Failed for this Key:" . base64_encode($public_key), "T");
+				write_log("Duplicate Transaction Failed for this Key: " . base64_encode($public_key), "T");
 				$safe_delete_transaction = TRUE;
 				$record_failure_counter++;
 			}

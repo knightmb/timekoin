@@ -323,12 +323,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 65, "transclerk.php?action=history_hash");
 
-			if(empty($poll_peer) == TRUE)
-			{
-				// Add failure points to the peer in case further issues
-				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 4);
-			}
-			else if($poll_peer == "PROC")
+			if($poll_peer == "PROC")
 			{
 				// Add *less* failure points to the peer for slower transaction processing
 				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 1);
@@ -1076,7 +1071,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				if($poll_peer === FALSE)
 				{
 					// Add failure points to the peer in case further issues
-					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 4);
+					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 2);
 				}
 
 				if(empty($poll_peer) == FALSE && strlen($poll_peer) > 60)
