@@ -149,10 +149,13 @@ if($_GET["action"] == "poll_failure")
 // Answer a request to see our new/active peer list (Random 10 from new peer list, Random 5 from active peer list)
 if($_GET["action"] == "new_peers")
 {
-	$allow_lan_peers = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,"field_data"));
+	$allow_lan_peers = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,0));
+	$peer_failure_grade = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,0);
 
-	// Only show peers that have less than 10 poll failures
-	$sql = "SELECT * FROM `new_peers_list` WHERE `poll_failures` < 10 ORDER BY RAND() LIMIT 10";
+	// Only show peers that have less than 1/2 poll failure score limit
+	$peer_failure_grade = intval($peer_failure_grade / 2);
+
+	$sql = "SELECT * FROM `new_peers_list` WHERE `poll_failures` < $peer_failure_grade ORDER BY RAND() LIMIT 10";
 
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
