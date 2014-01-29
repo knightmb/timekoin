@@ -114,8 +114,8 @@ if($_GET["action"] == "input_transaction")
 	$current_transaction_cycle = transaction_cycle(0);
 
 	// Can we work on the transactions in the database?
-	// Not allowed 120 seconds before and 20 seconds after transaction cycle.
-	if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cycle) > 20)
+	// Not allowed 180 seconds before and 20 seconds after transaction cycle.
+	if(($next_transaction_cycle - time()) > 180 && (time() - $current_transaction_cycle) > 20)
 	{
 		$transaction_timestamp = intval($_POST["timestamp"]);
 		$transaction_public_key = $_POST["public_key"];
@@ -148,8 +148,8 @@ if($_GET["action"] == "input_transaction")
 
 				if($transaction_hash == $crypt_hash_check)
 				{
-					// Hash check good
-					$hash_match = mysql_result(mysql_query("SELECT timestamp FROM `transaction_queue` WHERE `hash` = '$transaction_hash' LIMIT 1"),0,0);
+					// Hash check good, check for duplicate transaction already in queue
+					$hash_match = mysql_result(mysql_query("SELECT timestamp FROM `transaction_queue` WHERE `timestamp`= $transaction_timestamp AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
 				}
 				else
 				{
@@ -455,16 +455,16 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 				{
 					write_log("$peer_transaction_limit Transaction limit reached from Peer: $ip_address:$domain:$port_number/$subfolder", "QC");
 					// Add failure points to the peer in case further issues
-					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 3);					
-					break;					
+					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 3);
+					break;
 				}
 
 				if($mismatch_error_count > $mismatch_error_limit)
 				{
 					write_log("$mismatch_error_limit Transaction Error limit reached from Peer: $ip_address:$domain:$port_number/$subfolder", "QC");
 					// Add failure points to the peer in case further issues
-					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 5);					
-					break;					
+					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 5);
+					break;
 				}
 
 				//Check if this transaction is already in our queue

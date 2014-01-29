@@ -183,7 +183,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 					$time1 = transaction_cycle(0 - $current_generation_block + $foundation_time_start);
 					$time2 = transaction_cycle(0 - $current_generation_block + $foundation_time_end);
 
-					$sql = "SELECT timestamp, public_key_from, public_key_to, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` <= $time2 ORDER BY `timestamp`, `hash`";
+					$sql = "SELECT timestamp, public_key_from, public_key_to, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` <= $time2 ORDER BY `timestamp`, `hash` ASC";
 					$sql_result2 = mysql_query($sql);
 					$sql_num_results2 = mysql_num_rows($sql_result2);
 
@@ -404,7 +404,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 						$time1 = transaction_cycle(0 - $current_generation_block + $foundation_time_start);
 						$time2 = transaction_cycle(0 - $current_generation_block + $foundation_time_end);
 
-						$sql = "SELECT timestamp, public_key_from, public_key_to, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` <= $time2 ORDER BY `timestamp`, `hash`";
+						$sql = "SELECT timestamp, public_key_from, public_key_to, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` <= $time2 ORDER BY `timestamp`, `hash` ASC";
 						$sql_result2 = mysql_query($sql);
 						$sql_num_results2 = mysql_num_rows($sql_result2);
 

@@ -221,7 +221,7 @@ function queue_hash()
 		{
 			$sql_row = mysql_fetch_array($sql_result);
 			$transaction_queue_hash .= $sql_row["public_key"] . $sql_row["crypt_data1"] . 
-				$sql_row["crypt_data2"] . $sql_row["crypt_data3"] . $sql_row["hash"] . $sql_row["attribute"];
+			$sql_row["crypt_data2"] . $sql_row["crypt_data3"] . $sql_row["hash"] . $sql_row["attribute"];
 		}
 		
 		$transaction_queue_hash = hash('md5', $transaction_queue_hash);

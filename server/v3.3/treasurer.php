@@ -95,8 +95,8 @@ $sql_num_results = mysql_num_rows($sql_result);
 if($sql_num_results > 0)
 {
 	// Can we copy my transaction queue to the main queue in the allowed time?
-	// Not allowed 120 seconds before and 20 seconds after transaction cycle.
-	if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cycle) > 20)
+	// Not allowed 180 seconds before and 20 seconds after transaction cycle.
+	if(($next_transaction_cycle - time()) > 180 && (time() - $current_transaction_cycle) > 20)
 	{
 		$firewall_blocked = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'firewall_blocked_peer' LIMIT 1"),0,0));
 		
@@ -148,7 +148,7 @@ if($sql_num_results > 0)
 						// The best we can do is try to submit our transaction out to a peer
 						// that is accepting inbound connections and hopefully they will replicate
 						// out to the peer network.
-						$sql_result2 = mysql_query("SELECT * FROM `active_peer_list` ORDER BY RAND()");
+						$sql_result2 = mysql_query("SELECT * FROM `active_peer_list` ORDER BY RAND() LIMIT 25");
 						$sql_num_results2 = mysql_num_rows($sql_result2);							
 						$peer_failure;
 
@@ -286,7 +286,7 @@ if($sql_num_results > 0)
 //*****************************************************************************************************
 //*****************************************************************************************************
 // Find all transactions between the Previous Transaction Cycle and the Current
-$sql = "SELECT * FROM `transaction_queue` WHERE `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle GROUP BY `hash` ORDER BY `attribute`, `hash` ASC";
+$sql = "SELECT * FROM `transaction_queue` WHERE `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle ORDER BY `attribute`, `hash`, `timestamp` ASC";
 
 $sql_result = mysql_query($sql);
 $sql_num_results = mysql_num_rows($sql_result);
@@ -578,7 +578,7 @@ if(empty($current_hash) == TRUE)
 	if(empty($past_hash) == FALSE)//If the past cycle hash is missing, can't move forward without it.
 	{
 		//A hash from the previous generation cycle does not exist yet, so create it
-		$sql = "SELECT timestamp, hash FROM `transaction_history` WHERE `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle ORDER BY `timestamp`, `hash`";
+		$sql = "SELECT timestamp, hash FROM `transaction_history` WHERE `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle ORDER BY `timestamp`, `hash` ASC";
 
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);

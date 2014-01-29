@@ -510,7 +510,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			$time1 = transaction_cycle(0 - $current_generation_block + $hash_number);
 			$time2 = transaction_cycle(0 - $current_generation_block + 1 + $hash_number);
 
-			$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash`";
+			$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
 
 			$sql_result = mysql_query($sql);
 			$sql_num_results = mysql_num_rows($sql_result);
@@ -888,7 +888,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 					$double_check_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time3 AND `timestamp` < $time4 AND `attribute` = 'H' LIMIT 1"),0,0);
 
 					// Build Hash from previous transaction block data
-					$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash`";
+					$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
 					$sql_result = mysql_query($sql);
 					$sql_num_results = mysql_num_rows($sql_result);
 					$build_hash = 0;
@@ -1082,7 +1082,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 					$time1 = transaction_cycle(0 - $current_generation_block + $random_block);
 					$time2 = transaction_cycle(0 - $current_generation_block + 1 + $random_block);	
 
-					$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash`";
+					$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
 
 					$sql_result = mysql_query($sql);
 					$sql_num_results = mysql_num_rows($sql_result);

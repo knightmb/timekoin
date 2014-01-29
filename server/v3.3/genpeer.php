@@ -140,7 +140,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 	if(election_cycle() == TRUE)
 	{
 		// Find all transactions between the Previous Transaction Cycle and the Current		
-		$sql = "SELECT * FROM `generating_peer_queue` WHERE `timestamp` < $current_generation_cycle ORDER BY `generating_peer_queue`.`IP_Address` ASC";
+		$sql = "SELECT * FROM `generating_peer_queue` WHERE `timestamp` < $current_generation_cycle ORDER BY `IP_Address` ASC";
 
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
