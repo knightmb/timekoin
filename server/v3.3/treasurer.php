@@ -97,7 +97,7 @@ if($sql_num_results > 0)
 	// Not allowed 120 seconds before and 20 seconds after transaction cycle.
 	if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cycle) > 20)
 	{
-		$firewall_blocked = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'firewall_blocked_peer' LIMIT 1"),0,"field_data");
+		$firewall_blocked = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'firewall_blocked_peer' LIMIT 1"),0,0));
 		
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
@@ -137,9 +137,9 @@ if($sql_num_results > 0)
 			}
 			else
 			{
-				$timestamp = $current_transaction_cycle + 3; // Format timestamp for a few seconds after transaction cycle
+				$timestamp = $current_transaction_cycle + 1; // Format timestamp for a few seconds after transaction cycle
 
-				if($firewall_blocked == "1" || ($next_transaction_cycle - time()) > 230)// Mix outbound transaction broadcasting and regular polling
+				if($firewall_blocked == TRUE || ($next_transaction_cycle - time()) > 230)// Mix outbound transaction broadcasting and regular polling
 				{
 					if($attribute == "T" || $attribute == "G")
 					{
@@ -250,7 +250,7 @@ if($sql_num_results > 0)
 
 				if(empty($found_public_key_queue) == TRUE) // Not in transaction queue
 				{					
-					if($firewall_blocked == "0") // Firewall blocked peers can not queue election request or transactions
+					if($firewall_blocked == FALSE) // Firewall blocked peers can not queue election request or transactions
 					{
 						// Full Internet exposure					
 						$sql = "INSERT INTO `transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
@@ -418,9 +418,15 @@ if($sql_num_results > 0)
 						$record_failure_counter++;
 					}
 
-				}// End generation allowed check
+				}// End key allowed check
 
-			} // End random time check
+			} // End generation allowed check
+			else
+			{
+				// Not enough time has passed
+				write_log("Generation Wrong Time for this Key:" . base64_encode($public_key), "G");
+				$record_failure_counter++;
+			}
 
 		} // End Transaction type G check
 

@@ -28,7 +28,7 @@ if($_GET["action"] == "history_hash")
 	echo mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'transaction_history_hash' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
-	log_ip("TC");
+	log_ip("TC", scale_trigger(10));
 	exit;
 }
 //***********************************************************************************
@@ -39,7 +39,7 @@ if($_GET["action"] == "super_peer")
 	echo mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'super_peer' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
-	log_ip("TC");
+	log_ip("TC", scale_trigger(10));
 	exit;
 }
 //***********************************************************************************
@@ -54,7 +54,7 @@ if($_GET["action"] == "block_hash" && $_GET["block_number"] >= 0)
 	echo mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` = $block_number LIMIT 1"),0,0);
 
 	// Log inbound IP activity
-	log_ip("TC");
+	log_ip("TC", scale_trigger(500));
 	exit;
 }
 //***********************************************************************************
@@ -90,9 +90,13 @@ if($_GET["action"] == "transaction_data" && $_GET["block_number"] >= 0)
 	}
 
 	// Log inbound IP activity
-	log_ip("TC");
+	log_ip("TC", scale_trigger(500));
 	exit;
 }
+//***********************************************************************************
+//***********************************************************************************
+// External Flood Protection
+	log_ip("TC", scale_trigger(4));
 //***********************************************************************************
 // First time run check
 $loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,0);
@@ -349,6 +353,12 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 		} // End for Loop
 
 	} // End number of results check
+	else
+	{
+		write_log("No Active Peers to Poll", "TC");
+		$trans_list_hash_different = 0;
+		$trans_list_hash_match = 0;
+	}
 //***********************************************************************************
 //***********************************************************************************
 	// Compare transaction history tallies
@@ -697,7 +707,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 														if($super_peer_record_count == 1)
 														{
-															$super_peer_insert.= "('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
+															$super_peer_insert = "('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
 														}
 														else
 														{
@@ -776,6 +786,9 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 						modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 4);
 					}					
 
+					$norm_record_insert_counter = 0;
+					$norm_record_insert = NULL;
+
 					while(empty($poll_peer) == FALSE)
 					{
 						$transaction_timestamp = intval(find_string("-----timestamp$tc=", "-----public_key_from$tc", $poll_peer));
@@ -821,15 +834,33 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 								$found_duplicate = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
 							}
 
-							if(empty($found_duplicate) == TRUE)
+							if(empty($found_duplicate) == TRUE) // No duplicate found
 							{
-								$sql = "INSERT INTO `transaction_history` (`timestamp`,`public_key_from`,`public_key_to`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
-								VALUES ('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
+								$norm_record_insert_counter++; // How many records are spooling up
 
-								if(mysql_query($sql) == TRUE)
+								if($norm_record_insert_counter == 1)
 								{
-									// Flag for a re-check afterwards
-									$double_check_block = TRUE;
+									$norm_record_insert = "('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
+								}
+								else
+								{
+									$norm_record_insert.= ",('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
+								}
+
+								if($norm_record_insert_counter >= 500)
+								{
+									// Insert Spooling Finished, write to database
+									$sql = "INSERT INTO `transaction_history` (`timestamp`,`public_key_from`,`public_key_to`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`) VALUES " . $norm_record_insert;
+
+									if(mysql_query($sql) == TRUE)
+									{
+										// Flag for a re-check afterwards
+										$double_check_block = TRUE;
+
+										// Reset Counter
+										$norm_record_insert_counter = 0;
+										$norm_record_insert = NULL;
+									}
 								}
 							}
 						}
@@ -838,8 +869,22 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 					} // End while loop
 
-				}//End Database clear block check
+					// Check for data to insert if the while loop was broken before 500 records
+					if(empty($norm_record_insert) == FALSE)
+					{
+						// Still something left to insert
+						$sql = "INSERT INTO `transaction_history` (`timestamp`,`public_key_from`,`public_key_to`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`) VALUES " . $norm_record_insert;
 
+						if(mysql_query($sql) == TRUE)
+						{
+							// Flag for a re-check afterwards
+							$double_check_block = TRUE;
+
+						}
+					}
+//************************************************************
+				}//End Database clear block check
+//************************************************************
 				if($double_check_counter != 0 && empty($poll_peer) == FALSE) // Don't run this check unless necessary
 				{
 					// Double check the new hash against the last block transanstion(s) in case of tampering
@@ -929,14 +974,14 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			{
 				if($transaction_repair_made == TRUE)
 				{
-					write_log("Automatic History Check From Transaction Cycle #" . ($hash_number - ($hash_check_counter - 1)) . " to #" . $hash_number . " Completed With Repairs", "TC");
+					write_log("Automatic History Check From Transaction Cycle #" . ($hash_number - $hash_check_counter) . " to #" . ($hash_number - 1) . " Completed With Repairs", "TC");
 
 					// Reset Transction Hash Count Cache
 					reset_transaction_hash_count();
 				}
 				else
 				{
-					write_log("Automatic History Check Complete. No Errors Found from Transaction Cycle #" . ($hash_number - ($hash_check_counter - 1)) . " to #" . $hash_number, "TC");
+					write_log("Automatic History Check Complete. No Errors Found from Transaction Cycle #" . ($hash_number - $hash_check_counter) . " to #" . ($hash_number - 1), "TC");
 				}
 
 				// Reset Repair Notification Flag

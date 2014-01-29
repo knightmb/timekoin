@@ -106,7 +106,7 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 	} // End Randomize Check
 
 	// Log inbound IP activity
-	log_ip("PL");
+	log_ip("PL", scale_trigger(200));
 	exit;
 }
 //***********************************************************************************
@@ -117,7 +117,7 @@ if($_GET["action"] == "polltime")
 	echo time();
 	
 	// Log inbound IP activity
-	log_ip("PL");
+	log_ip("PL", scale_trigger(200));
 	exit;
 }
 //***********************************************************************************
@@ -141,7 +141,7 @@ if($_GET["action"] == "poll_failure")
 		echo mysql_result(mysql_query("SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port LIMIT 1"),0,0);
 	}
 
-	log_ip("PL");
+	log_ip("PL", scale_trigger(200));
 	exit;
 }
 //***********************************************************************************
@@ -199,7 +199,7 @@ if($_GET["action"] == "new_peers")
 	}
 
 	// Log inbound IP activity
-	log_ip("PL");
+	log_ip("PL", scale_trigger(200));
 	exit;
 }
 //***********************************************************************************
@@ -225,7 +225,7 @@ if($_GET["action"] == "join")
 	}
 
 	// Log inbound IP activity
-	log_ip("PL");
+	log_ip("PL", scale_trigger(200));
 	exit;
 }
 //***********************************************************************************
@@ -247,6 +247,8 @@ if($_GET["action"] == "exchange")
 	else
 	{
 		// Server has room for another peer
+		$duplicate_peer;
+		$invalid_peer;
 		$my_server_domain = my_domain();
 		$my_server_subfolder = my_subfolder();
 		$my_server_port_number = my_port_number();
@@ -288,7 +290,7 @@ if($_GET["action"] == "exchange")
 			{
 				if($my_server_domain == $domain)
 				{
-					$duplicate_peer = TRUE;
+					$invalid_peer = TRUE;
 				}
 				else
 				{
@@ -321,7 +323,7 @@ if($_GET["action"] == "exchange")
 						// Mode 3 = Ipv6 Only
 						if($network_mode == 1)// IPv4 + IPv6 Peers Allowed
 						{
-							$duplicate_peer = FALSE;
+
 						}
 
 						if($network_mode == 2)// IPv4 Only Peers Allowed
@@ -329,7 +331,7 @@ if($_GET["action"] == "exchange")
 							if(filter_var($ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
 							{
 								// IP Address is IPv6, ignore peer
-								$duplicate_peer = TRUE;
+								$invalid_peer = TRUE;
 							}
 							else
 							{
@@ -360,13 +362,13 @@ if($_GET["action"] == "exchange")
 							else
 							{
 								// IP Address is IPv4, ignore peer
-								$duplicate_peer = TRUE;
+								$invalid_peer = TRUE;
 							}
 						} // IP v6 Only Peers Allowed
 					}
 					else
 					{
-						$duplicate_peer = TRUE;
+						$invalid_peer = TRUE;
 					}
 				}
 			}
@@ -376,40 +378,52 @@ if($_GET["action"] == "exchange")
 			}
 		}
 
-		if($duplicate_peer == FALSE)
+		if($invalid_peer == FALSE)
 		{
-			if(empty($domain) == FALSE)
+			if($duplicate_peer == FALSE)
 			{
-				//Assign by domain only if one is included, instead of having both IP and Domain at the same time.
-				$ip_address = NULL;
-			}
-			
-			$sql = "INSERT INTO `active_peer_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`last_heartbeat` ,`join_peer_list` ,`failed_sent_heartbeat`)
-	VALUES ('$ip_address', '$domain', '$subfolder', '$port_number', '" . time() . "', '" . time() . "', '0')";
+				if(empty($domain) == FALSE)
+				{
+					//Assign by domain only if one is included, instead of having both IP and Domain at the same time.
+					$ip_address = NULL;
+				}
+				
+				$sql = "INSERT INTO `active_peer_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`last_heartbeat` ,`join_peer_list` ,`failed_sent_heartbeat`)
+		VALUES ('$ip_address', '$domain', '$subfolder', '$port_number', '" . time() . "', '" . time() . "', '0')";
 
-			if(mysql_query($sql) == TRUE)
-			{
-				// Exchange was saved, now output our peer information
-				echo "-----status=OK-----domain=$my_server_domain-----subfolder=$my_server_subfolder-----port_number=$my_server_port_number-----";
-				write_log("Peer Joined My Server $ip_address$domain:$port_number/$subfolder", "PL");
+				if(mysql_query($sql) == TRUE)
+				{
+					// Exchange was saved, now output our peer information
+					echo "-----status=OK-----domain=$my_server_domain-----subfolder=$my_server_subfolder-----port_number=$my_server_port_number-----";
+					write_log("Peer Joined My Server $ip_address$domain:$port_number/$subfolder", "PL");
+				}
+				else
+				{
+					// Could not save peer, report error problem
+					echo "-----status=FAILED-----domain";
+				}
 			}
 			else
 			{
-				// Could not save peer, report error problem
-				echo "-----status=FAILED-----domain";
+				// Already in our list, might be a re-connect, so give the other peer the OK
+				echo "-----status=OK-----domain=$my_server_domain-----subfolder=$my_server_subfolder-----port_number=$my_server_port_number-----";
 			}
 		}
 		else
 		{
-			// Already in our list, might be a re-connect, so give the other peer the OK
-			echo "-----status=OK-----domain=$my_server_domain-----subfolder=$my_server_subfolder-----port_number=$my_server_port_number-----";
+			// Peer not allowed to connect (invalid type)
+			echo "-----status=FAILED-----domain";
 		}
 	} // Full Server Check
 
 	// Log inbound IP activity
-	log_ip("PL");
+	log_ip("PL", scale_trigger(200));
 	exit;
 }
+//***********************************************************************************
+//***********************************************************************************
+// External Flood Protection
+	log_ip("PL", scale_trigger(4));
 //***********************************************************************************
 // First time run check
 $loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,0);

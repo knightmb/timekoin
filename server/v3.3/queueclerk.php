@@ -29,11 +29,11 @@ if($_GET["action"] == "trans_hash")
 	// Log inbound IP activity
 	if($_GET["client"] == "api")
 	{
-		log_ip("AP");
+		log_ip("AP", scale_trigger(10));
 	}
 	else
 	{
-		log_ip("QU");
+		log_ip("QU", scale_trigger(10));
 	}
 
 	exit;
@@ -62,11 +62,11 @@ if($_GET["action"] == "queue")
 	// Log inbound IP activity
 	if($_GET["client"] == "api")
 	{
-		log_ip("AP");
+		log_ip("AP", scale_trigger(10));
 	}
 	else
 	{
-		log_ip("QU");
+		log_ip("QU", scale_trigger(10));
 	}
 	exit;
 }
@@ -97,11 +97,11 @@ if($_GET["action"] == "transaction" && empty($_GET["number"]) == FALSE)
 	// Log inbound IP activity
 	if($_GET["client"] == "api")
 	{
-		log_ip("AP");
+		log_ip("AP", scale_trigger(105));
 	}
 	else
 	{
-		log_ip("QU");
+		log_ip("QU", scale_trigger(105));
 	}
 	exit;
 }
@@ -126,6 +126,8 @@ if($_GET["action"] == "input_transaction")
 		$transaction_attribute = $_POST["attribute"];
 		$transaction_qhash = $_POST["qhash"];
 
+		$request_max = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'server_request_max' LIMIT 1"),0,0);
+
 		// If a qhash is included, use this to verify the data
 		if(empty($transaction_qhash) == FALSE)
 		{
@@ -137,7 +139,7 @@ if($_GET["action"] == "input_transaction")
 			{
 				write_log("Queue Hash Data MisMatch from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
 				$hash_match = "mismatch";
-				log_ip("QU", 10);
+				log_ip("QU", scale_trigger(5));
 			}
 			else
 			{
@@ -154,7 +156,7 @@ if($_GET["action"] == "input_transaction")
 					// Ok, something is wrong here...
 					write_log("Crypt Field Hash Check Failed from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
 					$hash_match = "mismatch";
-					log_ip("QU", 25);
+					log_ip("QU", scale_trigger(5));
 				}
 			}
 		}
@@ -163,7 +165,7 @@ if($_GET["action"] == "input_transaction")
 			// A qhash is required to verify the transaction
 			write_log("Queue Hash Data Empty from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
 			$hash_match = "mismatch";
-			log_ip("QU", 50);
+			log_ip("QU", scale_trigger(5));
 		}
 
 		$transaction_public_key = filter_sql(base64_decode($transaction_public_key));
@@ -280,19 +282,22 @@ if($_GET["action"] == "input_transaction")
 	//to help prevent direct Transaction spamming
 	if($transaction_attribute == "T")
 	{
-		log_ip("QU", 5);
+		log_ip("QU", scale_trigger(100));
 	}
 	else if($transaction_attribute == "G")
 	{
-		log_ip("QU", 100);
+		log_ip("QU", scale_trigger(2));
 	}
 	else
 	{
-		log_ip("QU", 1);
-	}		
+		log_ip("QU", scale_trigger(25));
+	}
 
 	exit;
 }
+//***********************************************************************************
+// External Flood Protection
+	log_ip("QU", scale_trigger(4));
 //***********************************************************************************
 // First time run check
 $loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,0);

@@ -76,6 +76,16 @@ function log_ip($attribute, $multiple = 1)
 	return;
 }
 //***********************************************************************************
+function scale_trigger($trigger = 100)
+{
+	// Scale the amount of copies of the IP based on the trigger set.
+	// So for example, a trigger of 1 means that one event can trigger flood protection.
+	// A trigger of 2 means 2 events will trigger flood protection. So only half as many
+	// IP copies are returned in this function.
+	$request_max = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'server_request_max' LIMIT 1"),0,0);
+
+	return intval($request_max / $trigger);
+}
 //***********************************************************************************
 function find_string($start_tag, $end_tag, $full_string, $end_match = FALSE)
 {
