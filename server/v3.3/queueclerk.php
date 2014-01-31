@@ -43,18 +43,27 @@ if($_GET["action"] == "trans_hash")
 // Answer transaction queue poll
 if($_GET["action"] == "queue")
 {
-	$sql = "SELECT hash FROM `transaction_queue` ORDER BY RAND() LIMIT 100";
+	$sql = "SELECT * FROM `transaction_queue` ORDER BY RAND() LIMIT 100";
 
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 	$queue_number = 1;
+	$transaction_queue_hash;
 
 	if($sql_num_results > 0)
 	{
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
 			$sql_row = mysql_fetch_array($sql_result);
-			echo "---queue$queue_number=" , $sql_row["hash"] , "---end$queue_number";
+
+			$transaction_queue_hash.= $sql_row["timestamp"] . $sql_row["public_key"] . $sql_row["crypt_data1"] . 
+			$sql_row["crypt_data2"] . $sql_row["crypt_data3"] . $sql_row["hash"] . $sql_row["attribute"];
+
+			echo "---queue$queue_number=" , hash('md5', $transaction_queue_hash) , "---end$queue_number";
+
+			// Clear Variable
+			$transaction_queue_hash = NULL;
+
 			$queue_number++;
 		}
 	}
@@ -77,32 +86,47 @@ if($_GET["action"] == "transaction" && empty($_GET["number"]) == FALSE)
 {
 	$current_hash = filter_sql($_GET["number"]);
 
-	$sql = "SELECT * FROM `transaction_queue` WHERE `hash` = '$current_hash' LIMIT 1";
-
+	$sql = "SELECT * FROM `transaction_queue`";
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
+	$transaction_queue_hash;
+	$qhash;
 
 	if($sql_num_results > 0)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		for ($i = 0; $i < $sql_num_results; $i++)
+		{
+			$sql_row = mysql_fetch_array($sql_result);
 
-		$qhash = $sql_row["timestamp"] . base64_encode($sql_row["public_key"]) . $sql_row["crypt_data1"] . $sql_row["crypt_data2"] . $sql_row["crypt_data3"] . $sql_row["hash"] . $sql_row["attribute"];
-		$qhash = hash('md5', $qhash);
+			$transaction_queue_hash.= $sql_row["timestamp"] . $sql_row["public_key"] . $sql_row["crypt_data1"] . 
+			$sql_row["crypt_data2"] . $sql_row["crypt_data3"] . $sql_row["hash"] . $sql_row["attribute"];		
 
-		echo "-----timestamp=" , $sql_row["timestamp"] , "-----public_key=" , base64_encode($sql_row["public_key"]) , "-----crypt1=" , $sql_row["crypt_data1"];
-		echo "-----crypt2=" , $sql_row["crypt_data2"] , "-----crypt3=" , $sql_row["crypt_data3"] , "-----hash=" , $sql_row["hash"];
-		echo "-----attribute=" , $sql_row["attribute"] , "-----end---qhash=$qhash---endqhash";
+			if(hash('md5', $transaction_queue_hash) == $current_hash)
+			{
+				$qhash = $sql_row["timestamp"] . base64_encode($sql_row["public_key"]) . $sql_row["crypt_data1"] . $sql_row["crypt_data2"] . $sql_row["crypt_data3"] . $sql_row["hash"] . $sql_row["attribute"];
+				$qhash = hash('md5', $qhash);
+
+				echo "-----timestamp=" , $sql_row["timestamp"] , "-----public_key=" , base64_encode($sql_row["public_key"]) , "-----crypt1=" , $sql_row["crypt_data1"];
+				echo "-----crypt2=" , $sql_row["crypt_data2"] , "-----crypt3=" , $sql_row["crypt_data3"] , "-----hash=" , $sql_row["hash"];
+				echo "-----attribute=" , $sql_row["attribute"] , "-----end---qhash=$qhash---endqhash";
+				break;
+			}
+
+			// No match, move on to next record
+			$transaction_queue_hash = NULL;
+		}
 	}
 
 	// Log inbound IP activity
 	if($_GET["client"] == "api")
 	{
-		log_ip("AP", scale_trigger(105));
+		log_ip("AP", scale_trigger(200));
 	}
 	else
 	{
-		log_ip("QU", scale_trigger(105));
+		log_ip("QU", scale_trigger(200));
 	}
+	
 	exit;
 }
 //***********************************************************************************
@@ -126,8 +150,6 @@ if($_GET["action"] == "input_transaction")
 		$transaction_attribute = $_POST["attribute"];
 		$transaction_qhash = $_POST["qhash"];
 
-		$request_max = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'server_request_max' LIMIT 1"),0,0);
-
 		// If a qhash is included, use this to verify the data
 		if(empty($transaction_qhash) == FALSE)
 		{
@@ -139,7 +161,7 @@ if($_GET["action"] == "input_transaction")
 			{
 				write_log("Queue Hash Data MisMatch from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
 				$hash_match = "mismatch";
-				log_ip("QU", scale_trigger(5));
+				log_ip("QU", scale_trigger(10));
 			}
 			else
 			{
@@ -153,7 +175,7 @@ if($_GET["action"] == "input_transaction")
 				}
 				else
 				{
-					// Ok, something is wrong here...
+					// Ok, something is very wrong here...
 					write_log("Crypt Field Hash Check Failed from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
 					$hash_match = "mismatch";
 					log_ip("QU", scale_trigger(5));
@@ -165,7 +187,7 @@ if($_GET["action"] == "input_transaction")
 			// A qhash is required to verify the transaction
 			write_log("Queue Hash Data Empty from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
 			$hash_match = "mismatch";
-			log_ip("QU", scale_trigger(5));
+			log_ip("QU", scale_trigger(10));
 		}
 
 		$transaction_public_key = filter_sql(base64_decode($transaction_public_key));
@@ -467,15 +489,53 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 					break;
 				}
 
-				//Check if this transaction is already in our queue
-				$hash_match = mysql_result(mysql_query("SELECT timestamp FROM `transaction_queue` WHERE `hash` = '$current_hash' LIMIT 1"),0,0);
+				if(strlen($current_hash) >= 64)
+				{
+					// Old Queue System Check
+					//Check if this transaction is already in our queue
+					$hash_match = mysql_result(mysql_query("SELECT timestamp FROM `transaction_queue` WHERE `hash` = '$current_hash' LIMIT 1"),0,0);
+				}
+				else
+				{
+					// New Queue System Check
+					$sql2 = "SELECT * FROM `transaction_queue`";
+					$sql_result2 = mysql_query($sql2);
+					$sql_num_results2 = mysql_num_rows($sql_result2);
+					$queue_hash_test = NULL;
+
+					if($sql_num_results2 > 0)
+					{
+						for ($i2 = 0; $i2 < $sql_num_results2; $i2++)
+						{
+							$sql_row2 = mysql_fetch_array($sql_result2);
+
+							$queue_hash_test.= $sql_row2["timestamp"] . $sql_row2["public_key"] . $sql_row2["crypt_data1"] . 
+							$sql_row2["crypt_data2"] . $sql_row2["crypt_data3"] . $sql_row2["hash"] . $sql_row2["attribute"];		
+
+							if(hash('md5', $queue_hash_test) == $current_hash)
+							{
+								// This Transaction Already Exist in the Queue
+								$hash_match = TRUE;
+								break;
+							}
+							else
+							{
+								// No match, continue searching
+								$hash_match = NULL;
+							}
+
+							// No match, move on to next record
+							$queue_hash_test = NULL;
+						}
+					}
+				}
 
 				if(empty($hash_match) == TRUE)
 				{
 					// This peer has a different transaction, ask for the full details of it
 					$poll_hash = poll_peer($ip_address, $domain, $subfolder, $port_number, 1500, "queueclerk.php?action=transaction&number=$current_hash");
 
-					$transaction_timestamp = filter_sql(find_string("-----timestamp=", "-----public_key", $poll_hash));
+					$transaction_timestamp = intval(find_string("-----timestamp=", "-----public_key", $poll_hash));
 					$transaction_public_key = find_string("-----public_key=", "-----crypt1", $poll_hash);
 					$transaction_crypt1 = filter_sql(find_string("-----crypt1=", "-----crypt2", $poll_hash));
 					$transaction_crypt2 = filter_sql(find_string("-----crypt2=", "-----crypt3", $poll_hash));

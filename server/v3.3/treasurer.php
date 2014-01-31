@@ -103,7 +103,6 @@ if($sql_num_results > 0)
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
 			$sql_row = mysql_fetch_array($sql_result);
-			$time_created = $sql_row["timestamp"];
 			$public_key = $sql_row["public_key"];
 			$crypt1 = $sql_row["crypt_data1"];
 			$crypt2 = $sql_row["crypt_data2"];
@@ -152,6 +151,32 @@ if($sql_num_results > 0)
 						$sql_num_results2 = mysql_num_rows($sql_result2);							
 						$peer_failure;
 
+						$qhash = $timestamp . base64_encode($public_key) . $crypt1 . $crypt2 . $crypt3 . $hash_check . $attribute;
+						$qhash = hash('md5', $qhash);
+
+						// Create map with request parameters
+						$params = array ('timestamp' => $timestamp, 
+							'public_key' => base64_encode($public_key), 
+							'crypt_data1' => $crypt1, 
+							'crypt_data2' => $crypt2, 
+							'crypt_data3' => $crypt3, 
+							'hash' => $hash_check, 
+							'attribute' => $attribute,
+							'qhash' => $qhash);
+						 
+						// Build Http query using params
+						$query = http_build_query($params);
+						 
+						// Create Http context details
+						$contextData = array (
+											 'method' => 'POST',
+											 'header' => "Connection: close\r\n".
+															 "Content-Length: ".strlen($query)."\r\n",
+											 'content'=> $query );
+						 
+						// Create context resource for our request
+						$context = stream_context_create (array ( 'http' => $contextData ));
+
 						// Broadcast to all active peers
 						for ($i2 = 0; $i2 < $sql_num_results2; $i2++)
 						{
@@ -161,32 +186,6 @@ if($sql_num_results > 0)
 							$subfolder = $sql_row2["subfolder"];
 							$port_number = $sql_row2["port_number"];
 
-							$qhash = $timestamp . base64_encode($public_key) . $crypt1 . $crypt2 . $crypt3 . $hash_check . $attribute;
-							$qhash = hash('md5', $qhash);
-
-							// Create map with request parameters
-							$params = array ('timestamp' => $timestamp, 
-								'public_key' => base64_encode($public_key), 
-								'crypt_data1' => $crypt1, 
-								'crypt_data2' => $crypt2, 
-								'crypt_data3' => $crypt3, 
-								'hash' => $hash_check, 
-								'attribute' => $attribute,
-								'qhash' => $qhash);
-							 
-							// Build Http query using params
-							$query = http_build_query($params);
-							 
-							// Create Http context details
-							$contextData = array (
-												 'method' => 'POST',
-												 'header' => "Connection: close\r\n".
-																 "Content-Length: ".strlen($query)."\r\n",
-												 'content'=> $query );
-							 
-							// Create context resource for our request
-							$context = stream_context_create (array ( 'http' => $contextData ));
-			
 							$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 5, "queueclerk.php?action=input_transaction", $context);
 
 							if($poll_peer == "OK")
@@ -240,9 +239,9 @@ if($sql_num_results > 0)
 								}
 							} // Failure/Success Check & Logging
 
-						} // Transaction Attribute Check
+						} // Cycle Through Active Peers
 
-					} // Cycle through Active Peers END
+					} // Transaction Attribute Check
 
 				} // Firewall Mode & Broadcast Session Check
 
@@ -570,8 +569,8 @@ else
 // Check to see if it is time to write a hash of the last cycle transactions
 
 $generation_arbitrary = ARBITRARY_KEY;
-$current_hash = mysql_result(mysql_query("SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $current_transaction_cycle AND `timestamp` < $next_transaction_cycle AND `attribute` = 'H' LIMIT 1"),0,"hash");
-$past_hash = mysql_result(mysql_query("SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle AND `attribute` = 'H' LIMIT 1"),0,"hash");
+$current_hash = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `timestamp` >= $current_transaction_cycle AND `timestamp` < $next_transaction_cycle AND `attribute` = 'H' LIMIT 1"),0,0);
+$past_hash = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle AND `attribute` = 'H' LIMIT 1"),0,0);
 
 if(empty($current_hash) == TRUE)
 {
