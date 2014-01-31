@@ -115,7 +115,7 @@ else
 // Can we work on the transactions in the database?
 // Not allowed 60 seconds before and 45 seconds after transaction cycle.
 // Don't build anything if a foundation check is already going on.
-// Don't build anything is the Treasurer is still processing transactions (idle = 2)
+// Don't build anything if the Treasurer is still processing transactions (idle = 2)
 if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle) > 45 && $foundation_task == 0 && $treasurer_status == 2)
 {
 //***********************************************************************************
@@ -149,7 +149,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 		if(empty($current_foundation_hash) == FALSE)
 		{
 			// How frequent the transaction foundation checks are set by the user
-			$trans_history_check = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'trans_history_check' LIMIT 1"),0,"field_data"));
+			$trans_history_check = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'trans_history_check' LIMIT 1"),0,0));
 			$rand_freq = 99; // Rare - Default if no user set value
 
 			if($trans_history_check == 1)
@@ -233,7 +233,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 					$subfolder = $sql_row["subfolder"];
 					$port_number = $sql_row["port_number"];
 
-					$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 65, "foundation.php?action=block_hash&block_number=$rand_block");
+					$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 64, "foundation.php?action=block_hash&block_number=$rand_block");
 
 					if($current_foundation_hash === $poll_peer)
 					{
@@ -241,7 +241,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 					}
 					else
 					{
-						if(empty($poll_peer) == FALSE && strlen($poll_peer) > 60)
+						if(empty($poll_peer) == FALSE && strlen($poll_peer) >= 64)
 						{
 							$foundation_hash_different++;
 						}

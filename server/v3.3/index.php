@@ -790,7 +790,7 @@ if($_SESSION["valid_login"] == TRUE)
 			{
 				// Manually add a peer
 				$body_string .= '<div class="table"><FORM ACTION="index.php?menu=peerlist&amp;save=newpeer" METHOD="post">
-					<table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
+		<table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
 		<th>Domain</th><th>Subfolder</th><th>Port Number</th><th></th><th></th></tr>
 		<tr><td class="style2"><input type="text" name="edit_ip" size="30" /></td>
 		<td class="style2"><input type="text" name="edit_domain" size="20" /></td>
@@ -879,12 +879,12 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			// Default screen
 			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr>
-				<th><p style="font-size:11px; width:250px; text-align:center;">IP Address / Domain</p></th>
-				<th><p style="font-size:11px; width:60px;">Subfolder</p></th>
-				<th><p style="font-size:11px; width:50px;">Port Number</p></th>
-				<th><p style="font-size:11px; width:55px;">Last Heartbeat</p></th>
-				<th><p style="font-size:11px; width:55px;">Joined</p></th>
-				<th><p style="font-size:11px; width:50px; text-align:center;">Failure Score</p></th><th></th><th></th></tr>';			
+			<th><p style="font-size:11px; width:250px; text-align:center;">IP Address / Domain</p></th>
+			<th><p style="font-size:11px; width:60px;">Subfolder</p></th>
+			<th><p style="font-size:11px; width:50px;">Port Number</p></th>
+			<th><p style="font-size:11px; width:55px;">Last Heartbeat</p></th>
+			<th><p style="font-size:11px; width:55px;">Joined</p></th>
+			<th><p style="font-size:11px; width:50px; text-align:center;">Failure Score</p></th><th></th><th></th></tr>';			
 			
 			if($_GET["show"] == "reserve")
 			{
@@ -1004,12 +1004,12 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 
 			$body_string .= '<tr><td colspan="1"><FORM ACTION="index.php?menu=peerlist&amp;show=reserve" METHOD="post"><input type="submit" value="Show Reserve Peers"/></FORM></td>
-				<td colspan="3"><FORM ACTION="index.php?menu=peerlist&amp;edit=peer&amp;type=new" METHOD="post"><input type="submit" value="Add New Peer"/></FORM></td>
-				<td colspan="4"><FORM ACTION="index.php?menu=peerlist&amp;edit=peer&amp;type=firstcontact" METHOD="post"><input type="submit" value="First Contact Servers"/></FORM></td></tr>
-				<tr><td colspan="8"><hr></td></tr>
-				<tr><td colspan="2"><FORM ACTION="index.php?menu=peerlist&amp;time=poll" METHOD="post"><input name="Submit3" type="submit" value="Check Peer Clock &amp; Ping Times" /></FORM></td>
-				<td colspan="6"><FORM ACTION="index.php?menu=peerlist&amp;poll_failure=poll" METHOD="post"><input name="Submit4" type="submit" value="Poll Failure Scores" /></FORM></td>
-				</tr></table></div>';
+			<td colspan="3"><FORM ACTION="index.php?menu=peerlist&amp;edit=peer&amp;type=new" METHOD="post"><input type="submit" value="Add New Peer"/></FORM></td>
+			<td colspan="4"><FORM ACTION="index.php?menu=peerlist&amp;edit=peer&amp;type=firstcontact" METHOD="post"><input type="submit" value="First Contact Servers"/></FORM></td></tr>
+			<tr><td colspan="8"><hr></td></tr>
+			<tr><td colspan="2"><FORM ACTION="index.php?menu=peerlist&amp;time=poll" METHOD="post"><input name="Submit3" type="submit" value="Check Peer Clock &amp; Ping Times" /></FORM></td>
+			<td colspan="6"><FORM ACTION="index.php?menu=peerlist&amp;poll_failure=poll" METHOD="post"><input name="Submit4" type="submit" value="Poll Failure Scores" /></FORM></td>
+			</tr></table></div>';
 
 			
 			$sql = "SELECT * FROM `new_peers_list`";
@@ -1036,7 +1036,7 @@ if($_SESSION["valid_login"] == TRUE)
 			<br><br>Peers in <font color="green">Green</font> are at maximum capacity set by the server operator.
 			<br><br><u>Underline</u> Peers are generating currency.
 			<br><br><strong>Failure Score</strong> is a total of failed polling or data exchange events. Peers that score over the failure limit are kicked from the peer list.
-			<br><br><strong>Peer Speed</strong> is number of transaction cycles polled over a 10 second interval.
+			<br><br><strong>Peer Speed</strong> is the number of transaction cycles polled over the Group Response interval.
 			<br><br><strong>Group Response</strong> is a sample average of all peers and how long it took the group to respond to a 10 second task.
 			<br>Less than 10 seconds increases peer speed by +1 and longer than 10 seconds decreases peer speed by -1.';
 
