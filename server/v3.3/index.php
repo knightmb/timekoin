@@ -108,6 +108,8 @@ if($_SESSION["valid_login"] == TRUE)
 		exit;
 	}
 //****************************************************************************
+	$user_timezone = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,0);
+	
 	if($_GET["menu"] == "home" || empty($_GET["menu"]) == TRUE)
 	{
 		$my_public_key = my_public_key();
@@ -1780,7 +1782,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 				$body_string .= '<tr>
 				<td class="style2">' . $public_key . '</p></td>
-				<td class="style2"><p style="font-size:10px;">' . unix_timestamp_to_human($sql_row["join_peer_list"]) . '</p></td>
+				<td class="style2"><p style="font-size:10px;">' . unix_timestamp_to_human($sql_row["join_peer_list"], $user_timezone) . '</p></td>
 				<td class="style2"><p style="font-size:10px;">' . tk_time_convert(time() - $sql_row["last_generation"]) . ' ago</p></td></tr>';
 			}
 
@@ -1923,7 +1925,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 				if($last3_gen + $tk_random_number > 16)
 				{
-					$body_string.= '<br><font color="blue">Election Event</font> at ' . transaction_cycle($i) . ' - ' . unix_timestamp_to_human(transaction_cycle($i));
+					$body_string.= '<br><font color="blue">Election Event</font> at ' . transaction_cycle($i) . ' - ' . unix_timestamp_to_human(transaction_cycle($i), $user_timezone);
 					$total_elections++;
 				}
 			}
@@ -1953,7 +1955,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 				if($last3_gen + $tk_random_number < 6)
 				{
-					$body_string.= '<br><font color="blue">Generation Event</font> at ' . transaction_cycle($i) . ' - ' . unix_timestamp_to_human(transaction_cycle($i));
+					$body_string.= '<br><font color="blue">Generation Event</font> at ' . transaction_cycle($i) . ' - ' . unix_timestamp_to_human(transaction_cycle($i), $user_timezone);
 					$total_generations++;
 				}
 			}
@@ -2160,12 +2162,12 @@ if($_SESSION["valid_login"] == TRUE)
 
 				if($_POST["highlight_cycle"] - 1500 == $start_transaction_cycle)
 				{
-					$body_string .= '<tr><td class="style2"><p style="font-size: 12px;"><h9 id="' . $start_transaction_cycle . '"></h9><font color="blue">' . $start_transaction_cycle . '<br>' . unix_timestamp_to_human($start_transaction_cycle) . '</font></p></td>
+					$body_string .= '<tr><td class="style2"><p style="font-size: 12px;"><h9 id="' . $start_transaction_cycle . '"></h9><font color="blue">' . $start_transaction_cycle . '<br>' . unix_timestamp_to_human($start_transaction_cycle, $user_timezone) . '</font></p></td>
 						<td class="style2"><table border="0" cellspacing="0" cellpadding="0"><tr>';
 				}
 				else
 				{
-					$body_string .= '<tr><td class="style2"><p style="font-size: 12px;"><h9 id="' . $start_transaction_cycle . '"></h9>' . $start_transaction_cycle . '<br>' . unix_timestamp_to_human($start_transaction_cycle) . '</p></td>
+					$body_string .= '<tr><td class="style2"><p style="font-size: 12px;"><h9 id="' . $start_transaction_cycle . '"></h9>' . $start_transaction_cycle . '<br>' . unix_timestamp_to_human($start_transaction_cycle, $user_timezone) . '</p></td>
 						<td class="style2"><table border="0" cellspacing="0" cellpadding="0"><tr>';
 				}
 
@@ -2279,7 +2281,7 @@ if($_SESSION["valid_login"] == TRUE)
 			}			
 
 			$body_string .= "<br><br><strong>Amount:</strong> $transaction_amount";
-			$body_string .= "<br><br><strong>Created:</strong> ($timestamp_created) " . unix_timestamp_to_human($timestamp_created);
+			$body_string .= "<br><br><strong>Created:</strong> ($timestamp_created) " . unix_timestamp_to_human($timestamp_created, $user_timezone);
 			$body_string .= "<br><br><strong>Message:</strong> $inside_message";
 			$body_string .= "<br><br><strong>Inside Hash:</strong> $inside_transaction_hash";
 
@@ -2328,7 +2330,7 @@ if($_SESSION["valid_login"] == TRUE)
 				<input type="submit" name="Submit5" value="Return to Transaction Browser" /></FORM><hr>';
 
 			$text_bar = '<table border="0" cellspacing="0" cellpadding="0"><tr><td style="width:190px;"><strong>Timestamp:</strong> (' . $_POST["timestamp"] . 
-				')</td><td>' . unix_timestamp_to_human($_POST["timestamp"]) . '</td></tr>
+				')</td><td>' . unix_timestamp_to_human($_POST["timestamp"], $user_timezone) . '</td></tr>
 				<tr><td colspan="2"><strong>Hash:</strong>' . $triple1 . $_POST["hash"] . $triple2 . '</font></td></tr></table>';
 			$quick_info = '<strong>Timestamp</strong> represents when the transaction request to be recorded in the transaction history.<br><br>
 				<strong>Hash</strong> is included with the transaction to allow Timekoin to check if any of the encrypted fields have been tampered with.<br><br>
@@ -2464,7 +2466,7 @@ if($_SESSION["valid_login"] == TRUE)
 						$cycles_back = intval((time() - $sql_row["timestamp"]) / 300);
 
 						$body_string .= '<tr>
-						<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>' 
+						<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($sql_row["timestamp"], $user_timezone) . '</p></td>' 
 						. $public_key_from . '</td>
 						<td class="style2"><p style="font-size: 11px;">' . $transaction_amount . '</p></td>
 						<td class="style2"><p style="font-size: 11px;">' . $cycles_back . '</p></td>
@@ -2519,7 +2521,7 @@ if($_SESSION["valid_login"] == TRUE)
 						$cycles_back = intval((time() - $sql_row["timestamp"]) / 300);
 
 						$body_string .= '<tr>
-						<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>' 
+						<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($sql_row["timestamp"], $user_timezone) . '</p></td>' 
 						. $public_key_from . '</td>
 						<td class="style2"><p style="font-size: 11px;">' . $transaction_amount . '</p></td>
 						<td class="style2"><p style="font-size: 11px;">' . $cycles_back . '</p></td>
@@ -2642,7 +2644,7 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 
 			$body_string .= '<tr>
-			<td class="style2">' . unix_timestamp_to_human($sql_row["timestamp"]) . '</td>' 
+			<td class="style2">' . unix_timestamp_to_human($sql_row["timestamp"], $user_timezone) . '</td>' 
 			. $public_key_from . '</td>'
 			. $public_key_to . '</td>
 			<td class="style2">' . $transaction_amount . '</td></tr>';
@@ -2974,7 +2976,7 @@ if($_SESSION["valid_login"] == TRUE)
 				$sql_row = mysql_fetch_array($sql_result);
 
 				$body_string .= '<tr>
-				<td class="style2"><p style="width:162px;">[ ' . $sql_row["timestamp"] . ' ]<br>' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>
+				<td class="style2"><p style="width:162px;">[ ' . $sql_row["timestamp"] . ' ]<br>' . unix_timestamp_to_human($sql_row["timestamp"], $user_timezone) . '</p></td>
 				<td class="style2"><p style="word-wrap:break-word; width:425px;">' . $sql_row["log"] . '</p></td>
 				<td class="style2">' . $sql_row["attribute"] . '</td></tr>';
 			}

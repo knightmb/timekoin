@@ -28,7 +28,7 @@ if($_GET["action"] == "gen_hash")
 	echo mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generating_peers_hash' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
-	log_ip("GP", scale_trigger(100));
+	log_ip("GP", scale_trigger(200));
 	exit;
 }
 //***********************************************************************************
@@ -39,7 +39,7 @@ if($_GET["action"] == "gen_key_crypt")
 	echo mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_key_crypt' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
-	log_ip("GP", scale_trigger(100));
+	log_ip("GP", scale_trigger(200));
 	exit;
 }
 //***********************************************************************************
@@ -66,7 +66,7 @@ if($_GET["action"] == "gen_peer_list")
 	}
 
 	// Log inbound IP activity
-	log_ip("GP", scale_trigger(100));
+	log_ip("GP", scale_trigger(200));
 	exit;
 }
 //***********************************************************************************

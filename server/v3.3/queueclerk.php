@@ -29,11 +29,11 @@ if($_GET["action"] == "trans_hash")
 	// Log inbound IP activity
 	if($_GET["client"] == "api")
 	{
-		log_ip("AP", scale_trigger(100));
+		log_ip("AP", scale_trigger(200));
 	}
 	else
 	{
-		log_ip("QU", scale_trigger(100));
+		log_ip("QU", scale_trigger(200));
 	}
 
 	exit;
@@ -71,11 +71,11 @@ if($_GET["action"] == "queue")
 	// Log inbound IP activity
 	if($_GET["client"] == "api")
 	{
-		log_ip("AP", scale_trigger(100));
+		log_ip("AP", scale_trigger(200));
 	}
 	else
 	{
-		log_ip("QU", scale_trigger(100));
+		log_ip("QU", scale_trigger(200));
 	}
 	exit;
 }

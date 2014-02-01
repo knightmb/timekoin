@@ -28,7 +28,7 @@ if($_GET["action"] == "history_hash")
 	echo mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'transaction_history_hash' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
-	log_ip("TC", scale_trigger(100));
+	log_ip("TC", scale_trigger(200));
 	exit;
 }
 //***********************************************************************************
@@ -39,7 +39,7 @@ if($_GET["action"] == "super_peer")
 	echo mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'super_peer' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
-	log_ip("TC", scale_trigger(100));
+	log_ip("TC", scale_trigger(200));
 	exit;
 }
 //***********************************************************************************

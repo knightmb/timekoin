@@ -1107,10 +1107,8 @@ function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $a
 }
 //***********************************************************************************
 //***********************************************************************************
-function unix_timestamp_to_human($timestamp = "", $format = 'D d M Y - H:i:s')
+function unix_timestamp_to_human($timestamp = "", $default_timezone, $format = 'D d M Y - H:i:s')
 {
-	$default_timezone = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,"field_data");
-
 	if(empty($default_timezone) == FALSE)
 	{	
 		date_default_timezone_set($default_timezone);

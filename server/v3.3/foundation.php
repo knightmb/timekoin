@@ -30,7 +30,7 @@ if($_GET["action"] == "block_hash" && $_GET["block_number"] >= 0)
 	echo mysql_result(mysql_query("SELECT hash FROM `transaction_foundation` WHERE `block` = $block_number LIMIT 1"),0,0);
 
 	// Log inbound IP activity
-	log_ip("FO", scale_trigger(100));
+	log_ip("FO", scale_trigger(200));
 	exit;
 }
 //***********************************************************************************
