@@ -217,7 +217,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 				}
 				else
 				{
-					write_log("Transaction Foundation #$rand_block did NOT pass verification test. Transactions in this Foundation will be repaired.", "FO");
+					write_log("Transaction Foundation #$rand_block did NOT pass verification test.<br>Transactions in this Foundation will be repaired.", "FO");
 					$repair_block = TRUE;
 				}
 			}
@@ -440,7 +440,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 					}
 					else
 					{
-						write_log("Transaction History Walk FAILED. A Transaction History Check has been scheduled to Examine Transaction Cycle #$do_history_walk", "FO");
+						write_log("Transaction History Walk FAILED.<br>A Transaction History Check has been scheduled to Examine Transaction Cycle #$do_history_walk", "FO");
 						
 						// The history walk failed due to an error somewhere, can't continue.
 						// Schedule a block check at the location -1 in hopes that it will be cleared up for the next loop
