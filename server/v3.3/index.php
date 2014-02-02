@@ -969,10 +969,15 @@ if($_SESSION["valid_login"] == TRUE)
 					$gen_peer = NULL;
 				}
 
-				if($sql_row[$failed_column_name] > 60000)
+				if($sql_row[$failed_column_name] == 65535)
 				{
 					// First Contact Peer
-					$failure_score = "F";
+					$failure_score = "First<br>Contact";
+				}
+				else if($sql_row[$failed_column_name] == 65534)
+				{
+					// First Contact Peer
+					$failure_score = "Gateway";
 				}
 				else
 				{
@@ -1693,36 +1698,89 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["IP"] == "change")
 		{
-			$sql = "UPDATE `options` SET `field_data` = '" . $_POST["gen_IP"] . "' WHERE `options`.`field_name` = 'generation_IP' LIMIT 1";
-			
-			if(mysql_query($sql) == TRUE)
-			{
-				// Let the user know the IP was saved
-				$IP_save = '<font color="blue"><strong>IP Update Successful</strong></font>';
-			}
+			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["gen_IP"] . "' WHERE `options`.`field_name` = 'generation_IP' LIMIT 1");
+			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["gen_IP_v6"] . "' WHERE `options`.`field_name` = 'generation_IP_v6' LIMIT 1");
+
+			// Let the user know the IP was saved
+			$IP_save = '<font color="blue"><strong>IP Update Successful</strong></font>';
 		}
 
-		$sql = "SELECT * FROM `generating_peer_queue`";
-		$generate_peer_queue = mysql_num_rows(mysql_query($sql));
-
-		$generate_currency_enabled = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'generate_currency' LIMIT 1"),0,"field_data");		
-
-		$sql = "SELECT * FROM `generating_peer_list`";
+		$sql = "SELECT IP_Address FROM `generating_peer_list`";
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
 
-		$generating_peers_now = $sql_num_results;
+		$ipv4_counter = 0;
+		$ipv6_counter = 0;
+		// Count separate IPv4 & IPv6 Peers
+		for ($i = 0; $i < $sql_num_results; $i++)
+		{
+			$sql_row = mysql_fetch_array($sql_result);
+
+			if(ipv6_test($sql_row["IP_Address"]) == TRUE)
+			{
+				$ipv6_counter++;
+			}
+			else
+			{
+				$ipv4_counter++;
+			}
+		}
+
+		$sql = "SELECT IP_Address FROM `generating_peer_queue`";
+		$sql_result = mysql_query($sql);
+		$sql_num_results = mysql_num_rows($sql_result);
+
+		$ipv4_counter_queue = 0;
+		$ipv6_counter_queue = 0;
+		// Count separate IPv4 & IPv6 Peers
+		for ($i = 0; $i < $sql_num_results; $i++)
+		{
+			$sql_row = mysql_fetch_array($sql_result);
+
+			if(ipv6_test($sql_row["IP_Address"]) == TRUE)
+			{
+				$ipv6_counter_queue++;
+			}
+			else
+			{
+				$ipv4_counter_queue++;
+			}
+		}
+
+		$generate_currency_enabled = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generate_currency' LIMIT 1"),0,0);
 
 		if($generate_currency_enabled == "1")
 		{
 			$my_public_key = my_public_key();
-			$join_peer_list = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$my_public_key' LIMIT 1"),0,"join_peer_list");
-			$last_generation = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$my_public_key' LIMIT 1"),0,"last_generation");
-			$my_generation_IP = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,"field_data");
+			$join_peer_list = mysql_result(mysql_query("SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$my_public_key' LIMIT 1"),0,0);
+			$last_generation = mysql_result(mysql_query("SELECT last_generation FROM `generating_peer_list` WHERE `public_key` = '$my_public_key' LIMIT 1"),0,0);
+			$my_generation_IP = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,0);
+			$my_generation_IP_v6 = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP_v6' LIMIT 1"),0,0);
 
-			$my_gen_IP_form = '<FORM ACTION="index.php?menu=generation&amp;IP=change" METHOD="post">
-				Generation IP <input type="text" name="gen_IP" size="15" maxlength="46" value="' . $my_generation_IP . '"/>
+			$network_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
+
+			if($network_mode == 1)
+			{
+				// Both as Gateway Peer
+				$my_gen_IP_form = '<FORM ACTION="index.php?menu=generation&amp;IP=change" METHOD="post">
+				IPv4 Generation IP <input type="text" name="gen_IP" size="15" maxlength="15" value="' . $my_generation_IP . '"/><br>
+				IPv6 Generation IP <input type="text" name="gen_IP_v6" size="34" maxlength="39" value="' . $my_generation_IP_v6 . '"/>
 				<input type="submit" name="IPChange" value="Save" /></FORM>' . $IP_save;
+			}
+			else if($network_mode == 2)
+			{
+				// IPv4 Only
+				$my_gen_IP_form = '<FORM ACTION="index.php?menu=generation&amp;IP=change" METHOD="post">
+				IPv4 Generation IP <input type="text" name="gen_IP" size="15" maxlength="15" value="' . $my_generation_IP . '"/>
+				<input type="submit" name="IPChange" value="Save" /></FORM>' . $IP_save;
+			}
+			else if($network_mode == 3)
+			{
+				// IPv6 Only
+				$my_gen_IP_form = '<FORM ACTION="index.php?menu=generation&amp;IP=change" METHOD="post">
+				IPv6 Generation IP <input type="text" name="gen_IP_v6" size="34" maxlength="39" value="' . $my_generation_IP_v6 . '"/>
+				<input type="submit" name="IPChange" value="Save" /></FORM>' . $IP_save;
+			}
 
 			if(time() - $join_peer_list < 3600)
 			{
@@ -1823,7 +1881,7 @@ if($_SESSION["valid_login"] == TRUE)
 		}
 
 		// Next Election Calculator
-		$max_cycles_ahead = 723;
+		$max_cycles_ahead = 999;
 
 		for ($i = 0; $i < $max_cycles_ahead; $i++)
 		{
@@ -1847,10 +1905,13 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 		}
 
-		$text_bar = '<table cellspacing="10" border="0"><tr><td valign="top" width="230">' . $generate_currency . '</td><td>Generating Peers: <font color="green"><strong>' . $generating_peers_now . '</strong></font><br>
-			Queue for Election: <font color="blue"><strong>' . $generate_peer_queue . '</strong></font></td></tr>
-			<tr><td align="right">' . $continuous_production . '</td><td>' . $generate_rate . '</td></tr>
-			<tr><td colspan="2">' . $my_gen_IP_form . '</td></tr></table>';
+		$text_bar = '<table cellspacing="10" border="0"><tr><td valign="top" width="230">' . $generate_currency . '</td>
+		<td>IPv4 Generating Peers: <font color="green"><strong>' . $ipv4_counter . '</strong></font><br>
+		IPv4 Queue for Election: <font color="blue"><strong>' . $ipv4_counter_queue . '</strong></font></td><td>
+		IPv6 Generating Peers: <font color="green"><strong>' . $ipv6_counter . '</strong></font><br>
+		IPv6 Queue for Election: <font color="blue"><strong>' . $ipv6_counter_queue . '</strong></font></td></tr>
+		<tr><td align="right">' . $continuous_production . '</td><td>' . $generate_rate . '</td></tr>
+		<tr><td colspan="3">' . $my_gen_IP_form . '</td></tr></table>';
 
 		$quick_info = 'You must remain online and have a valid Internet accessible server to generate currency.<br><br>
 			Timekoin will attempt to auto-detect the <font color="blue">Generation IP</font> when the field is left blank upon service starting.<br><br>
@@ -1911,6 +1972,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string = NULL;
 			$total_elections = 0;
 			$max_cycles_ahead = 576;
+
 
 			for ($i = 1; $i < $max_cycles_ahead; $i++)
 			{

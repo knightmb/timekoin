@@ -420,7 +420,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 			$subfolder = $sql_row["subfolder"];
 			$port_number = $sql_row["port_number"];
 
-			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 40, "queueclerk.php?action=trans_hash");
+			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 32, "queueclerk.php?action=trans_hash");
 
 			if($transaction_queue_hash === $poll_peer)
 			{
@@ -428,7 +428,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 			}
 			else
 			{
-				if(empty($poll_peer) == FALSE && $poll_peer != "PROC") // Ignore Peers that are still processing transactions
+				if(strlen($poll_peer) == 32) // Ignore Peers will improper responses
 				{
 					$transaction_queue_hash_different++;
 

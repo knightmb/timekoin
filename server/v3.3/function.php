@@ -270,10 +270,14 @@ function my_domain()
 function modify_peer_grade($ip_address, $domain, $subfolder, $port_number, $grade)
 {
 	$peer_failure = mysql_result(mysql_query("SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1"),0,0);
-	$peer_failure += $grade;
-	if($peer_failure >= 0)
+	
+	if($peer_failure < 50000) // Don't change anything over 50,000 as it is reserved for peers where failure grade is not used
 	{
-		mysql_query("UPDATE `active_peer_list` SET `failed_sent_heartbeat` = $peer_failure WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+		$peer_failure += $grade;
+		if($peer_failure >= 0)
+		{
+			mysql_query("UPDATE `active_peer_list` SET `failed_sent_heartbeat` = $peer_failure WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+		}
 	}
 	return;
 }
@@ -965,71 +969,203 @@ function tk_time_convert($time)
 }
 //***********************************************************************************
 //***********************************************************************************
-function election_cycle($when = 0)
+function election_cycle($when = 0, $ip_type = 1)
 {
-	// Check if a peer election should take place now or
-	// so many cycles ahead in the future
-	if($when == 0)
+	if($ip_type == 1)
 	{
-		// Check right now
-		$current_generation_cycle = transaction_cycle(0);
-		$current_generation_block = transaction_cycle(0, TRUE);
+		// IPv4 Election Cycle Checking
+		// Check if a peer election should take place now or
+		// so many cycles ahead in the future
+		if($when == 0)
+		{
+			// Check right now
+			$current_generation_cycle = transaction_cycle(0);
+			$current_generation_block = transaction_cycle(0, TRUE);
+		}
+		else
+		{
+			// Sometime further in the future
+			$current_generation_cycle = transaction_cycle($when);
+			$current_generation_block = transaction_cycle($when, TRUE);
+		}
+
+		$str = strval($current_generation_cycle);
+		$last3_gen = intval($str[strlen($str)-3]);
+
+		TKRandom::seed($current_generation_block);
+		$tk_random_number = TKRandom::num(0, 9);
+
+		if($last3_gen + $tk_random_number > 16)
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
 	}
-	else
+	else if($ip_type == 2)
 	{
-		// Sometime further in the future
-		$current_generation_cycle = transaction_cycle($when);
-		$current_generation_block = transaction_cycle($when, TRUE);
+		// IPv6 Election Cycle Checking
+		// Check if a peer election should take place now or
+		// so many cycles ahead in the future
+		if($when == 0)
+		{
+			// Check right now
+			$current_generation_cycle = transaction_cycle(0);
+			$current_generation_block = transaction_cycle(0, TRUE);
+		}
+		else
+		{
+			// Sometime further in the future
+			$current_generation_cycle = transaction_cycle($when);
+			$current_generation_block = transaction_cycle($when, TRUE);
+		}
+
+		$str = strval($current_generation_cycle);
+		$last3_gen = intval($str[strlen($str)-3]);
+
+		// Transpose waveform 180 degrees from IPv4 Generation
+		if($last3_gen == 0)
+		{
+			$last3_gen = 5;
+		}
+		else if($last3_gen == 1)
+		{
+			$last3_gen = 6;
+		}
+		else if($last3_gen == 2)
+		{
+			$last3_gen = 7;
+		}
+		else if($last3_gen == 3)
+		{
+			$last3_gen = 8;
+		}
+		else if($last3_gen == 4)
+		{
+			$last3_gen = 9;
+		}
+		else
+		{
+			$last3_gen-= 5;
+		}
+		// Transpose waveform 180 degrees from IPv4 Generation
+
+		TKRandom::seed($current_generation_block);
+		$tk_random_number = TKRandom::num(0, 9);
+
+		if($last3_gen + $tk_random_number > 16)
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
 	}
 
-	$str = strval($current_generation_cycle);
-	$last3_gen = $str[strlen($str)-3];
-
-	TKRandom::seed($current_generation_block);
-	$tk_random_number = TKRandom::num(0, 9);
-
-	if($last3_gen + $tk_random_number > 16)
-	{
-		return TRUE;
-	}
-	else
-	{
-		return FALSE;
-	}
+	// No match to anything
+	return FALSE;
 }
 //***********************************************************************************
 //***********************************************************************************
-function generation_cycle($when = 0)
+function generation_cycle($when = 0, $ip_type = 1))
 {
-	// Check if a peer election should take place now or
-	// so many cycles ahead in the future
-	if($when == 0)
-	{
-		// Check right now
-		$current_generation_cycle = transaction_cycle(0);
-		$current_generation_block = transaction_cycle(0, TRUE);
+	if($ip_type == 1)
+	{	
+		// IPv4 Generation Cycle
+		// Check if a peer election should take place now or
+		// so many cycles ahead in the future
+		if($when == 0)
+		{
+			// Check right now
+			$current_generation_cycle = transaction_cycle(0);
+			$current_generation_block = transaction_cycle(0, TRUE);
+		}
+		else
+		{
+			// Sometime further in the future
+			$current_generation_cycle = transaction_cycle($when);
+			$current_generation_block = transaction_cycle($when, TRUE);
+		}
+
+		$str = strval($current_generation_cycle);
+		$last3_gen = intval($str[strlen($str)-3]);
+
+		TKRandom::seed($current_generation_block);
+		$tk_random_number = TKRandom::num(0, 9);
+
+		if($last3_gen + $tk_random_number < 6)
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
 	}
-	else
+	else if($ip_type == 2)
 	{
-		// Sometime further in the future
-		$current_generation_cycle = transaction_cycle($when);
-		$current_generation_block = transaction_cycle($when, TRUE);
+		// IPv6 Generation Cycle
+		// Check if a peer election should take place now or
+		// so many cycles ahead in the future
+		if($when == 0)
+		{
+			// Check right now
+			$current_generation_cycle = transaction_cycle(0);
+			$current_generation_block = transaction_cycle(0, TRUE);
+		}
+		else
+		{
+			// Sometime further in the future
+			$current_generation_cycle = transaction_cycle($when);
+			$current_generation_block = transaction_cycle($when, TRUE);
+		}
+
+		$str = strval($current_generation_cycle);
+		$last3_gen = intval($str[strlen($str)-3]);
+		// Transpose waveform 180 degrees from IPv4 Generation
+		if($last3_gen == 0)
+		{
+			$last3_gen = 5;
+		}
+		else if($last3_gen == 1)
+		{
+			$last3_gen = 6;
+		}
+		else if($last3_gen == 2)
+		{
+			$last3_gen = 7;
+		}
+		else if($last3_gen == 3)
+		{
+			$last3_gen = 8;
+		}
+		else if($last3_gen == 4)
+		{
+			$last3_gen = 9;
+		}
+		else
+		{
+			$last3_gen-= 5;
+		}
+		// Transpose waveform 180 degrees from IPv4 Generation
+		TKRandom::seed($current_generation_block);
+		$tk_random_number = TKRandom::num(0, 9);
+
+		if($last3_gen + $tk_random_number < 6)
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
 	}
 
-	$str = strval($current_generation_cycle);
-	$last3_gen = $str[strlen($str)-3];
-
-	TKRandom::seed($current_generation_block);
-	$tk_random_number = TKRandom::num(0, 9);
-
-	if($last3_gen + $tk_random_number < 6)
-	{
-		return TRUE;
-	}
-	else
-	{
-		return FALSE;
-	}
+	// No match to anything
+	return FALSE;	
 }
 //***********************************************************************************
 //***********************************************************************************
@@ -1456,6 +1592,14 @@ function initialization_database()
 	{
 		// Does not exist, create it
 		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('network_mode', '1')");
+	}
+
+	// IPv6 Generation IP Field
+	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'generation_IP_v6' LIMIT 1"),0,0);
+	if($new_record_check === FALSE)
+	{
+		// Does not exist, create it
+		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('generation_IP_v6', '')");
 	}
 
 //**************************************
@@ -2378,6 +2522,7 @@ function check_standard_tab_settings($permissions_number, $standard_tab)
 	return FALSE;
 }
 //***********************************************************************************
+//***********************************************************************************
 function file_upload($http_file_name)
 {
 	$user_file_upload = strtolower(basename($_FILES[$http_file_name]['name']));
@@ -2394,12 +2539,113 @@ function file_upload($http_file_name)
 	}	
 }
 //***********************************************************************************
+//***********************************************************************************
 function read_plugin($filename)
 {
 	$handle = fopen($filename, "r");
 	$contents = stream_get_contents($handle);
 	fclose($handle);
 	return $contents;
+}
+//***********************************************************************************
+//***********************************************************************************
+function ipv6_test($ip_address)
+{
+	if(filter_var($ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
+	{
+		// IP Address is IPv6
+		return TRUE;
+	}
+
+	return FALSE;
+}
+//***********************************************************************************
+//***********************************************************************************
+function find_v4_gen_key($my_public_key)
+{
+	$sql = "SELECT IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
+	$sql_result = mysql_query($sql);
+	$sql_num_results = mysql_num_rows($sql_result);
+
+	for ($i = 0; $i < $sql_num_results; $i++)
+	{
+		$sql_row = mysql_fetch_array($sql_result);
+
+		if(ipv6_test($sql_row["IP_Address"]) == FALSE)
+		{
+			//IPv4 Address Associated with this Generating Public Key
+			return TRUE;
+		}
+	}
+
+	// No Matching Key with an IPv4 Address Found
+	return;
+}
+//***********************************************************************************
+//***********************************************************************************
+function find_v4_gen_IP($my_public_key)
+{
+	$sql = "SELECT IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
+	$sql_result = mysql_query($sql);
+	$sql_num_results = mysql_num_rows($sql_result);
+
+	for ($i = 0; $i < $sql_num_results; $i++)
+	{
+		$sql_row = mysql_fetch_array($sql_result);
+
+		if(ipv6_test($sql_row["IP_Address"]) == FALSE)
+		{
+			// Return IPv4 Address Associated with this Generating Public Key
+			return $sql_row["IP_Address"];
+		}
+	}
+
+	// No Matching Key with an IPv4 Address Found
+	return;
+}
+//***********************************************************************************
+//***********************************************************************************
+function find_v4_gen_join($my_public_key)
+{
+	$sql = "SELECT join_peer_list, IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
+	$sql_result = mysql_query($sql);
+	$sql_num_results = mysql_num_rows($sql_result);
+
+	for ($i = 0; $i < $sql_num_results; $i++)
+	{
+		$sql_row = mysql_fetch_array($sql_result);
+
+		if(ipv6_test($sql_row["IP_Address"]) == FALSE)
+		{
+			// Return IPv4 Address Associated with this Generating Public Key
+			return $sql_row["join_peer_list"];
+		}
+	}
+
+	// No Matching Key with an IPv4 Address Found
+	return;
+}
+//***********************************************************************************
+//***********************************************************************************
+function find_v6_gen_key($my_public_key)
+{
+	$sql = "SELECT IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
+	$sql_result = mysql_query($sql);
+	$sql_num_results = mysql_num_rows($sql_result);
+
+	for ($i = 0; $i < $sql_num_results; $i++)
+	{
+		$sql_row = mysql_fetch_array($sql_result);
+
+		if(ipv6_test($sql_row["IP_Address"]) == TRUE)
+		{
+			//IPv6 Address Associated with this Generating Public Key
+			return TRUE;
+		}
+	}
+
+	// No Matching Keys with an IPv6 Address Found
+	return;
 }
 //***********************************************************************************
 ?>

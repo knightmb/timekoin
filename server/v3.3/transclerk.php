@@ -326,10 +326,15 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 32, "transclerk.php?action=history_hash");
 
-			if($poll_peer == "PROC")
+			if($poll_peer == "PROC" || $poll_peer == "ERROR_CHECK" || $poll_peer == "FOUNDATION_CHECK")
 			{
-				// Add *less* failure points to the peer for slower transaction processing
+				// Add *less* failure points to the peer for slower transaction processing or error checking own database
 				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 1);
+			}
+			else if(strlen($poll_peer) != 32)
+			{
+				// Peer Not Responding Properly
+				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 2);
 			}
 
 			if($current_history_hash === $poll_peer)
@@ -338,11 +343,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			}
 			else
 			{
-				if(empty($poll_peer) == FALSE && 
-					strlen($poll_peer) > 30 && 
-					$poll_peer !== "ERROR_CHECK" && 
-					$poll_peer !== "FOUNDATION_CHECK" && 
-					$poll_peer !== "PROC")
+				if(strlen($poll_peer) == 32) // Only count valid data returns from polling
 				{
 					$trans_list_hash_different++;
 
@@ -559,7 +560,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				{
 					$hash_agree++;
 				}
-				else if($my_hash !== $poll_peer && empty($poll_peer) == FALSE)
+				else if($my_hash !== $poll_peer && strlen($poll_peer) == 64)
 				{
 					$hash_disagree++;
 
@@ -973,6 +974,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			{
 				// Reset Failsafe Counter
 				$double_check_counter = 0;
+				
 				// Log Repair Success
 				if($block_number == $hash_number)
 				{
@@ -1062,7 +1064,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 	else
 	{
 		// Entire Transaction History in sync, reset block check start to 0
-		$block_check_start = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'block_check_start' LIMIT 1"),0,"field_data");		
+		$block_check_start = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'block_check_start' LIMIT 1"),0,0);
 
 		if($block_check_start > 0)
 		{
@@ -1074,77 +1076,85 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'peer_transaction_start_blocks' LIMIT 1");
 		}
 
-		if(rand(1,4) == 2)
+		if(rand(1,10) == 10) // Randomize to avoid spamming checks all the time
 		{
 			// Poll a random block from a random peer for random accuracy :)
 			// Within the range of the current foundation block to now
 			$current_foundation_block = foundation_cycle(0, TRUE) * 500;
 			$random_block = rand($current_foundation_block, transaction_cycle(-1, TRUE));
 
+			// Do a real hash compare
+			$current_generation_block = transaction_cycle(0, TRUE);
+			
+			$time1 = transaction_cycle(0 - $current_generation_block + $random_block);
+			$time2 = transaction_cycle(0 - $current_generation_block + 1 + $random_block);	
+
+			$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
+
+			$sql_result = mysql_query($sql);
+			$sql_num_results = mysql_num_rows($sql_result);
+			$random_hash_build = 0;
+
+			if($sql_num_results > 0)
+			{
+				for ($i = 0; $i < $sql_num_results; $i++)
+				{
+					$sql_row = mysql_fetch_array($sql_result);
+					$random_hash_build.= $sql_row["hash"];
+				}
+			}
+
+			$random_hash_build = hash('sha256', $random_hash_build);
+
 			$sql = perm_peer_mode();
 			$sql_result = mysql_query($sql);
 			$sql_num_results = mysql_num_rows($sql_result);
 
+			$target_number = intval((3 / 5) * $sql_num_results); // 3/5 of peers must disagree to trigger check
+			$peer_disagree = 0;
+			$peer_disagree_list = NULL;
+
 			if($sql_num_results > 0)
 			{
-				$sql_row = mysql_fetch_array($sql_result);
-
-				$ip_address = $sql_row["IP_Address"];
-				$domain = $sql_row["domain"];
-				$subfolder = $sql_row["subfolder"];
-				$port_number = $sql_row["port_number"];
-
-				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 64, "transclerk.php?action=block_hash&block_number=$random_block");
-
-				if($poll_peer === FALSE)
+				for ($i = 0; $i < $sql_num_results; $i++)
 				{
-					// Add failure points to the peer in case further issues
-					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 2);
-				}
+					$sql_row = mysql_fetch_array($sql_result);
+					$ip_address = $sql_row["IP_Address"];
+					$domain = $sql_row["domain"];
+					$subfolder = $sql_row["subfolder"];
+					$port_number = $sql_row["port_number"];
+					$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 64, "transclerk.php?action=block_hash&block_number=$random_block");
 
-				if(empty($poll_peer) == FALSE && strlen($poll_peer) > 60)
-				{
-					// Do a real hash compare
-					$current_generation_block = transaction_cycle(0, TRUE);
-					
-					$time1 = transaction_cycle(0 - $current_generation_block + $random_block);
-					$time2 = transaction_cycle(0 - $current_generation_block + 1 + $random_block);	
-
-					$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
-
-					$sql_result = mysql_query($sql);
-					$sql_num_results = mysql_num_rows($sql_result);
-					$random_hash_build = 0;
-
-					if($sql_num_results > 0)
+					if(strlen($poll_peer) == 64)
 					{
-						for ($i = 0; $i < $sql_num_results; $i++)
+						if($poll_peer !== $random_hash_build)
 						{
-							$sql_row = mysql_fetch_array($sql_result);
-							$random_hash_build .= $sql_row["hash"];
-						}		
-					}
+							$peer_disagree++;
+							$peer_disagree_list.= "($ip_address$domain) ";
 
-					$random_hash_build = hash('sha256', $random_hash_build);
-
-					if($poll_peer !== $random_hash_build && $poll_peer !== FALSE)
-					{
-						// Something is wrong, transaction history has an error.
-						// Schedule a check in case the peer has an error and not us.
-						mysql_query("UPDATE `main_loop_status` SET `field_data` = '$random_block' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1");
-						write_log("This Peer ($ip_address$domain) Reports that My Transaction Block #$random_block is Wrong.<br>Will Double Check with other Peers before making any changes.", "TC");
+							if($peer_disagree >= $target_number)
+							{
+								// Something is wrong, transaction history has an error.
+								// Schedule a check in case the peer has an error and not us.
+								mysql_query("UPDATE `main_loop_status` SET `field_data` = '$random_block' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1");
+								write_log("These Peers $peer_disagree_list Report that My Transaction Block #$random_block is Wrong.<br>Will Double Check with other Peers before making any changes.", "TC");
+								break;
+							}
+						}
 					}
-				} // End empty poll check
-			} // End if/then record count check
-		} // Random chance check
+				}
+			}
+		} // Random Transaction Cycle Check
+		
+	//***********************************************************************************
 
 	} // End else
 
-//***********************************************************************************
+	//***********************************************************************************
 
 	} // End if/then check for processing 4 or more records - live database mode
 	
-//***********************************************************************************	
+	//***********************************************************************************	
 
 } // End if/then time check
 

@@ -122,6 +122,17 @@ if($_GET["action"] == "polltime")
 }
 //***********************************************************************************
 //***********************************************************************************
+// Answer network mode polling
+if($_GET["action"] == "gateway")
+{
+	echo intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));	
+	
+	// Log inbound IP activity
+	log_ip("PL", scale_trigger(200));
+	exit;
+}
+//***********************************************************************************
+//***********************************************************************************
 // Another peer is asking for a failure score
 if($_GET["action"] == "poll_failure")
 {
@@ -338,7 +349,7 @@ if($_GET["action"] == "exchange")
 
 						if($network_mode == 2)// IPv4 Only Peers Allowed
 						{
-							if(filter_var($ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
+							if(ipv6_test($ip_address) == TRUE)
 							{
 								// IP Address is IPv6, ignore peer
 								$invalid_peer = TRUE;
@@ -358,7 +369,7 @@ if($_GET["action"] == "exchange")
 
 						if($network_mode == 3)// IPv6 Only Peers Allowed
 						{
-							if(filter_var($ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
+							if(ipv6_test($ip_address) == TRUE)
 							{
 								if(empty($duplicate_check1) == TRUE && empty($duplicate_check2) == TRUE)
 								{
@@ -600,7 +611,7 @@ if($active_peers < $max_active_peers)
 
 				if($network_mode == 2)// IP v4 Only Peers Allowed
 				{
-					if(filter_var($ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
+					if(ipv6_test($ip_address) == TRUE)
 					{
 						// IP Address is IPv6, ignore peer
 						$invalid_peer = TRUE;
@@ -620,7 +631,7 @@ if($active_peers < $max_active_peers)
 
 				if($network_mode == 3)// IP v6 Only Peers Allowed
 				{
-					if(filter_var($ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
+					if(ipv6_test($ip_address) == TRUE)
 					{
 						if(empty($duplicate_check1) == TRUE && empty($duplicate_check2) == TRUE)
 						{
@@ -879,7 +890,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 
 								if($network_mode == 2)// IPv4 Only Peers Allowed
 								{
-									if(filter_var($peer_IP, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
+									if(ipv6_test($peer_IP) == TRUE)
 									{
 										// IP Address is IPv6, ignore peer
 										$duplicate_peer = TRUE;
@@ -899,7 +910,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 
 								if($network_mode == 3)// IPv6 Only Peers Allowed
 								{
-									if(filter_var($peer_IP, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
+									if(ipv6_test($peer_IP) == TRUE)
 									{
 										if(empty($duplicate_check1) == TRUE && empty($duplicate_check2) == TRUE)
 										{
@@ -1002,13 +1013,14 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 
 		// Choose the type polling done
 		$poll_type = rand(1,7);
-		// 1&2=CRC32
+		// 1=CRC32
+		// 2=Network Mode
 		// 3&4=Reverse Failure Score Check
 		// 5=Server Full Check
 		// 6=Foundation Hash Poll
 		// 7=Transaction Hash Poll
 
-		if($poll_type == 1 || $poll_type == 2)
+		if($poll_type == 1)
 		{
 			//Send a challenge hash to see if a timekoin server is active
 			$poll_challenge = rand(1, 999999);
@@ -1029,6 +1041,28 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 				//No response, record polling failure for future reference (+1 failure score)
 				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 1);
 			}
+		}
+		else if($poll_type == 2)
+		{
+			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 1, "peerlist.php?action=poll_failure&domain=$my_server_domain&subfolder=$my_server_subfolder&port=$my_server_port_number");
+
+			if($poll_peer == "")
+			{
+				//No response, record polling failure for future reference (+1 failure score)
+				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 1);
+			}
+			else
+			{
+				// Still active... Update Heartbeat Time
+				mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -1);
+
+				if($poll_peer == 1)
+				{
+					// This is a gateway peer, change it status over to gateway peer
+					mysql_query("UPDATE `active_peer_list` SET `failed_sent_heartbeat` = '65534' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				}
+			}			
 		}
 		else if($poll_type == 3 || $poll_type == 4)
 		{

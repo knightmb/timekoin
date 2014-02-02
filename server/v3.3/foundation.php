@@ -241,14 +241,9 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 					}
 					else
 					{
-						if(empty($poll_peer) == FALSE && strlen($poll_peer) >= 64)
+						if(strlen($poll_peer) == 64)
 						{
 							$foundation_hash_different++;
-						}
-						else
-						{
-							// Polling Errors can cause false corruption assumptions
-							$poll_errors++;
 						}
 					}
 				} // End for Loop

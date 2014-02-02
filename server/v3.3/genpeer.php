@@ -264,7 +264,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 			$subfolder = $sql_row["subfolder"];
 			$port_number = $sql_row["port_number"];
 
-			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 64, "genpeer.php?action=gen_hash");
+			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 32, "genpeer.php?action=gen_hash");
 
 			if($generating_hash === $poll_peer)
 			{
@@ -273,7 +273,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 			else
 			{
 				// Make sure both the response exist and that no connectoin error occurred
-				if(empty($poll_peer) == FALSE && $poll_peer !== FALSE)
+				if(strlen($poll_peer) == 32)
 				{
 					$gen_list_hash_different++;
 

@@ -747,7 +747,7 @@ function system_screen()
 	Public Server Port: <input type="text" name="port" size="6" maxlength="5" value="' . $port . '"/><br>
 	Max Peer Query: <input type="text" name="max_request" size="6" maxlength="6" value="' . $request_max . '"/><br>
 	Local Server Port: <input type="text" name="cli_port" size="6" maxlength="5" value="' . $cli_port . '"/><br><br>
-	Network Mode: <select name="network_mode"><option value="1" ' . $network_mode_1 . '>IPv4 + IPv6</option><option value="2" ' . $network_mode_2 . '>IPv4 Only</option><option value="3" ' . $network_mode_3 . '>IPv6 Only</option></select><br><br>
+	Network Mode: <select name="network_mode"><option value="1" ' . $network_mode_1 . '>IPv4 + IPv6 Gateway</option><option value="2" ' . $network_mode_2 . '>IPv4 Only</option><option value="3" ' . $network_mode_3 . '>IPv6 Only</option></select><br><br>
 	Permanent Peer Priority: <select name="perm_peer_priority"><option value="0" ' . $perm_peer_priority_0 . '>Disable</option><option value="1" ' . $perm_peer_priority_1 . '>Enable</option></select><br><br>
 	Auto Generation IP Update: <select name="auto_update_IP"><option value="0" ' . $auto_update_generation_IP_0 . '>Disable</option><option value="1" ' . $auto_update_generation_IP_1 . '>Enable</option></select><br><br>
 	Transaction History Checks: <select name="trans_history_check"><option value="0" ' . $trans_history_check_0 . '>Rare</option><option value="1" ' . $trans_history_check_1 . '>Normal</option><option value="2" ' . $trans_history_check_2 . '>Frequent</option></select><br><br>
