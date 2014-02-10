@@ -2105,22 +2105,6 @@ function do_updates()
 }
 //***********************************************************************************
 //***********************************************************************************
-function find_file($dir, $pattern)
-{
-	// Get a list of all matching files in the current directory
-	$files = glob("$dir/$pattern");
-
-	// Find a list of all directories in the current directory
-	foreach (glob("$dir/{*}", GLOB_BRACE|GLOB_ONLYDIR) as $sub_dir)
-	{
-		$arr = find_file($sub_dir, $pattern);  // Resursive call
-		$files = array_merge($files, $arr); // Merge array with files from subdirectory
-	}
-
-	return $files;
-}
-//***********************************************************************************
-//***********************************************************************************
 function update_windows_port($new_port)
 {
 	// Update the pms_config.ini file if it exist
