@@ -2105,6 +2105,107 @@ function do_updates()
 }
 //***********************************************************************************
 //***********************************************************************************
+function plugin_check_for_updates($http_url, $ssl_enable = FALSE)
+{
+	// Example Usage
+	//
+	// plugin_check_for_updates("mysite.blah/updates/plugin_update_01.txt", TRUE)
+	//
+	// This would return what was in the text file, such as a version number of the latest
+	// plugin version for example.
+
+	$context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
+	ini_set('user_agent', 'Timekoin Server (Plugin) v' . TIMEKOIN_VERSION);
+	ini_set('default_socket_timeout', 10); // Timeout for request in seconds
+
+	if($ssl_enable == TRUE)
+	{
+		return file_get_contents("https://$http_url", FALSE, $context, NULL);
+	}
+	else
+	{
+		return file_get_contents("http://$http_url", FALSE, $context, NULL);
+	}
+}
+//***********************************************************************************
+function plugin_download_update($http_url, $http_url_sha256, $ssl_enable = FALSE, $plugin_file)
+{
+	// Example Usage
+	//
+	// plugin_download_update("mysite.blah/updates/plugin.txt", "mysite.com/updates/plugin.sha", TRUE, "myplugin.php")
+	//
+	// This would first download the file plugin.txt and then plugin.sha into memory.
+	// Then the SHA256 of the file plugin.txt is compared to value of plugin.sha for a match.
+	// If no SHA256 URL is used (NULL setting), then the hash check will be ignored.
+	// Once the check passes (or ignored), the file name myplugin.php will be opened up for writing.
+	// The downloaded file will be overwritten on top of the myplugin.php and then closed to complete the write.
+	// This function should return a TRUE / (1) if successful and anything else will be an error number (0,2,3,4,5)
+
+	$download_file;
+	$download_file_SHA256;
+	$sha256_check_pass = TRUE; // Default Pass if No SHA256 Used
+
+	$context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
+	ini_set('user_agent', 'Timekoin Server (Plugin) v' . TIMEKOIN_VERSION);
+	ini_set('default_socket_timeout', 10); // Timeout for request in seconds
+
+	if($ssl_enable == TRUE)
+	{
+		$download_file = file_get_contents("https://$http_url", FALSE, $context, NULL);
+		$download_file_SHA256 = file_get_contents("https://$http_url_sha256", FALSE, $context, NULL);
+	}
+	else
+	{
+		$download_file =  file_get_contents("http://$http_url", FALSE, $context, NULL);
+		$download_file_SHA256 = file_get_contents("http://$http_url_sha256", FALSE, $context, NULL);
+	}
+
+	if(empty($download_file) == FALSE && empty($http_url_sha256) == FALSE)
+	{
+		// Check file against SHA256 Hash to make sure of no file corruption/tampering
+		if(hash('sha256', $download_file) != $download_file_SHA256)
+		{
+			// No SHA256 Match, Error Back
+			return 2;
+		}
+	}
+
+	if(empty($download_file) == FALSE) // Downloaded file exist in memory
+	{
+		$fh = fopen($plugin_file, 'w'); // Open Plugin File for Writing
+
+		if($fh != FALSE)
+		{
+			if(fwrite($fh, $download_file) > 0) // Overwrite Downloaded File directly to Plugin File
+			{
+				if(fclose($fh) == TRUE)
+				{
+					// Update Complete
+					return TRUE;
+				}
+				else
+				{
+					// Update FAILED with a File Close Error
+					return 3;
+				}
+			}
+		}
+		else
+		{
+			// Update FAILED with Unable to Open File Error.
+			return 4;
+		}	
+	}
+	else
+	{
+		// File Download Failed
+		return 5;
+	}
+
+	// Unknown Error
+	return FALSE;
+}
+//***********************************************************************************
 function update_windows_port($new_port)
 {
 	// Update the pms_config.ini file if it exist
