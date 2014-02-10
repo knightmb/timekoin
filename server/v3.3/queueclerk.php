@@ -29,11 +29,11 @@ if($_GET["action"] == "trans_hash")
 	// Log inbound IP activity
 	if($_GET["client"] == "api")
 	{
-		log_ip("AP", scale_trigger(200));
+		log_ip("AP", 1);
 	}
 	else
 	{
-		log_ip("QU", scale_trigger(200));
+		log_ip("QU", 1);
 	}
 
 	exit;
@@ -43,7 +43,7 @@ if($_GET["action"] == "trans_hash")
 // Answer transaction queue poll
 if($_GET["action"] == "queue")
 {
-	$sql = "SELECT * FROM `transaction_queue` ORDER BY RAND() LIMIT 100";
+	$sql = "SELECT * FROM `transaction_queue` ORDER BY RAND() LIMIT 1000";
 
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
@@ -71,11 +71,11 @@ if($_GET["action"] == "queue")
 	// Log inbound IP activity
 	if($_GET["client"] == "api")
 	{
-		log_ip("AP", scale_trigger(200));
+		log_ip("AP", 1);
 	}
 	else
 	{
-		log_ip("QU", scale_trigger(200));
+		log_ip("QU", 1);
 	}
 	exit;
 }
@@ -120,11 +120,11 @@ if($_GET["action"] == "transaction" && empty($_GET["number"]) == FALSE)
 	// Log inbound IP activity
 	if($_GET["client"] == "api")
 	{
-		log_ip("AP", scale_trigger(200));
+		log_ip("AP", 1);
 	}
 	else
 	{
-		log_ip("QU", scale_trigger(200));
+		log_ip("QU", 1);
 	}
 	
 	exit;
@@ -428,7 +428,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 			}
 			else
 			{
-				if(strlen($poll_peer) == 32) // Ignore Peers will improper responses
+				if(strlen($poll_peer) == 32) // Ignore Peers with improper responses
 				{
 					$transaction_queue_hash_different++;
 
@@ -449,6 +449,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 		// Transaction Queue still not in sync with all peers
 		$hash_array = array();
 		$transaction_counter = 0;
+		$peer_transaction_limit = 1000;
 
 		for ($i = 1; $i < $transaction_queue_hash_different + 1; $i++)
 		{
@@ -457,14 +458,13 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 			$subfolder = $hash_different["subfolder$i"];
 			$port_number = $hash_different["port_number$i"];
 
-			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 8300, "queueclerk.php?action=queue");
+			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 83000, "queueclerk.php?action=queue");
 
 			// Bring up first match (if any) to compare agaist our database
 			$match_number = 1;
 			$current_hash = find_string("---queue$match_number=", "---end$match_number", $poll_peer);
 
 			$transaction_counter = 0;
-			$peer_transaction_limit = 100;
 			$mismatch_error_count = 0;
 			$mismatch_error_limit = 10;
 

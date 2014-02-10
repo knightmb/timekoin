@@ -1070,7 +1070,7 @@ function election_cycle($when = 0, $ip_type = 1)
 }
 //***********************************************************************************
 //***********************************************************************************
-function generation_cycle($when = 0, $ip_type = 1))
+function generation_cycle($when = 0, $ip_type = 1)
 {
 	if($ip_type == 1)
 	{	

@@ -201,7 +201,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						// Crypt3 field will contain the IP address/Domain/etc of where the election request originates from.
 						// This will allow a reverse check for a valid Timekoin server.
 						$my_domain = my_domain();
-						$my_subfolder my_subfolder();
+						$my_subfolder = my_subfolder();
 						$my_port = my_port_number();
 
 						// All request have the DELETE_IP attached to the end to clear out someone using a previous IP to generate currency from
@@ -261,7 +261,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						// Crypt3 field will contain the IP address/Domain/etc of where the election request originates from.
 						// This will allow a reverse check for a valid Timekoin server.
 						$my_domain = my_domain();
-						$my_subfolder my_subfolder();
+						$my_subfolder = my_subfolder();
 						$my_port = my_port_number();
 
 						$crypt3_data = "---ip=$my_generation_IP---domain=$my_domain---subfolder=$my_subfolder---port=$my_port---end";
@@ -325,19 +325,11 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 
 		}// Generation IPv4 Enabled Check
 
-
 		if($network_mode == 1 || $network_mode == 3)
 		{
 			// IPv6 Generation
 
 		}
-
-
-
-
-
-
-
 
 	} // Generation enabled check
 

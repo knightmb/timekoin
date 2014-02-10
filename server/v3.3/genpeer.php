@@ -28,7 +28,7 @@ if($_GET["action"] == "gen_hash")
 	echo mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generating_peers_hash' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
-	log_ip("GP", scale_trigger(200));
+	log_ip("GP", 1);
 	exit;
 }
 //***********************************************************************************
@@ -39,7 +39,7 @@ if($_GET["action"] == "gen_key_crypt")
 	echo mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_key_crypt' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
-	log_ip("GP", scale_trigger(200));
+	log_ip("GP", 1);
 	exit;
 }
 //***********************************************************************************
@@ -47,7 +47,7 @@ if($_GET["action"] == "gen_key_crypt")
 // Answer generation peer list poll
 if($_GET["action"] == "gen_peer_list")
 {
-	$sql = "SELECT * FROM `generating_peer_list` ORDER BY RAND() LIMIT 50";
+	$sql = "SELECT * FROM `generating_peer_list` ORDER BY RAND() LIMIT 100";
 
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
@@ -66,7 +66,7 @@ if($_GET["action"] == "gen_peer_list")
 	}
 
 	// Log inbound IP activity
-	log_ip("GP", scale_trigger(200));
+	log_ip("GP", 1);
 	exit;
 }
 //***********************************************************************************
@@ -316,7 +316,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		$subfolder = $hash_different["subfolder$i"];
 		$port_number = $hash_different["port_number$i"];
 
-		$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 39000, "genpeer.php?action=gen_peer_list");
+		$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 80000, "genpeer.php?action=gen_peer_list");
 
 		if(empty($poll_peer) == TRUE)
 		{
@@ -331,7 +331,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 		while(empty($gen_peer_public_key) == FALSE)
 		{
-			if($counter > 50) // Peer should never give more than 50 peers at a time
+			if($counter > 100) // Peer should never give more than 100 peers at a time
 			{
 				// Too many loops for peers, something is wrong or peer
 				// is giving out garbage information, break from loop

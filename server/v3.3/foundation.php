@@ -30,7 +30,7 @@ if($_GET["action"] == "block_hash" && $_GET["block_number"] >= 0)
 	echo mysql_result(mysql_query("SELECT hash FROM `transaction_foundation` WHERE `block` = $block_number LIMIT 1"),0,0);
 
 	// Log inbound IP activity
-	log_ip("FO", scale_trigger(200));
+	log_ip("FO", 1);
 	exit;
 }
 //***********************************************************************************
@@ -127,7 +127,6 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 
 	$foundation_hash_match = 0;
 	$foundation_hash_different = 0;
-	$poll_errors = 0;
 	$repair_block = FALSE;
 
 	if($sql_num_results > 0)
@@ -271,7 +270,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 				{
 					// Anything deeper than +1 block back requires 100% of the peers
 					// to disagree before a block wipe/repair is scheduled.
-					if($foundation_hash_match == 0 && $poll_errors == 0)
+					if($foundation_hash_match == 0)
 					{
 						// 100% of all peers say something is wrong
 						$repair_block = TRUE;

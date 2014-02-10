@@ -106,7 +106,7 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 	} // End Randomize Check
 
 	// Log inbound IP activity
-	log_ip("PL", scale_trigger(200));
+	log_ip("PL", 1);
 	exit;
 }
 //***********************************************************************************
@@ -117,7 +117,7 @@ if($_GET["action"] == "polltime")
 	echo time();
 	
 	// Log inbound IP activity
-	log_ip("PL", scale_trigger(200));
+	log_ip("PL", 1);
 	exit;
 }
 //***********************************************************************************
@@ -128,7 +128,7 @@ if($_GET["action"] == "gateway")
 	echo intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));	
 	
 	// Log inbound IP activity
-	log_ip("PL", scale_trigger(200));
+	log_ip("PL", 1);
 	exit;
 }
 //***********************************************************************************
@@ -152,7 +152,7 @@ if($_GET["action"] == "poll_failure")
 		echo mysql_result(mysql_query("SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port LIMIT 1"),0,0);
 	}
 
-	log_ip("PL", scale_trigger(200));
+	log_ip("PL", 1);
 	exit;
 }
 //***********************************************************************************
@@ -213,7 +213,7 @@ if($_GET["action"] == "new_peers")
 	}
 
 	// Log inbound IP activity
-	log_ip("PL", scale_trigger(200));
+	log_ip("PL", 1);
 	exit;
 }
 //***********************************************************************************

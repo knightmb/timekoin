@@ -28,7 +28,7 @@ if($_GET["action"] == "history_hash")
 	echo mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'transaction_history_hash' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
-	log_ip("TC", scale_trigger(200));
+	log_ip("TC", 1);
 	exit;
 }
 //***********************************************************************************
