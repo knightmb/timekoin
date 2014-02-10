@@ -1075,7 +1075,7 @@ function generation_cycle($when = 0, $ip_type = 1)
 	if($ip_type == 1)
 	{	
 		// IPv4 Generation Cycle
-		// Check if a peer election should take place now or
+		// Check if currency generation should take place now or
 		// so many cycles ahead in the future
 		if($when == 0)
 		{
@@ -1108,7 +1108,7 @@ function generation_cycle($when = 0, $ip_type = 1)
 	else if($ip_type == 2)
 	{
 		// IPv6 Generation Cycle
-		// Check if a peer election should take place now or
+		// Check if currency generation should take place now or
 		// so many cycles ahead in the future
 		if($when == 0)
 		{
