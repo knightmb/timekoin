@@ -502,6 +502,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 					$sql_result2 = mysql_query($sql2);
 					$sql_num_results2 = mysql_num_rows($sql_result2);
 					$queue_hash_test = NULL;
+					$hash_match = NULL;					
 
 					if($sql_num_results2 > 0)
 					{

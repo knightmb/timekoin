@@ -1044,7 +1044,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 		}
 		else if($poll_type == 2)
 		{
-			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 1, "peerlist.php?action=poll_failure&domain=$my_server_domain&subfolder=$my_server_subfolder&port=$my_server_port_number");
+			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 1, "peerlist.php?action=gateway");
 
 			if($poll_peer == "")
 			{

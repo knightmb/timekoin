@@ -128,6 +128,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 	$foundation_hash_match = 0;
 	$foundation_hash_different = 0;
 	$repair_block = FALSE;
+	$no_peer_answer = FALSE;
 
 	if($sql_num_results > 0)
 	{
@@ -244,6 +245,11 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 						{
 							$foundation_hash_different++;
 						}
+						else
+						{
+							// No peer answer
+							$no_peer_answer++;
+						}
 					}
 				} // End for Loop
 
@@ -270,7 +276,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 				{
 					// Anything deeper than +1 block back requires 100% of the peers
 					// to disagree before a block wipe/repair is scheduled.
-					if($foundation_hash_match == 0)
+					if($foundation_hash_match == 0 && $no_peer_answer == FALSE)
 					{
 						// 100% of all peers say something is wrong
 						$repair_block = TRUE;
