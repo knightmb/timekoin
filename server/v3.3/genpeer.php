@@ -47,7 +47,7 @@ if($_GET["action"] == "gen_key_crypt")
 // Answer generation peer list poll
 if($_GET["action"] == "gen_peer_list")
 {
-	$sql = "SELECT * FROM `generating_peer_list` ORDER BY RAND() LIMIT 100";
+	$sql = "SELECT * FROM `generating_peer_list` ORDER BY RAND() LIMIT 150";
 
 	$sql_result = mysql_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
@@ -316,7 +316,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		$subfolder = $hash_different["subfolder$i"];
 		$port_number = $hash_different["port_number$i"];
 
-		$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 80000, "genpeer.php?action=gen_peer_list");
+		$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 90000, "genpeer.php?action=gen_peer_list");
 
 		if(empty($poll_peer) == TRUE)
 		{
@@ -331,7 +331,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 		while(empty($gen_peer_public_key) == FALSE)
 		{
-			if($counter > 100) // Peer should never give more than 100 peers at a time
+			if($counter > 150) // Peer should never give more than 150 peers at a time
 			{
 				// Too many loops for peers, something is wrong or peer
 				// is giving out garbage information, break from loop
