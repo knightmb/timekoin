@@ -94,7 +94,6 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 
 if($_SESSION["valid_login"] == TRUE)
 {
-
 //****************************************************************************
 	if(mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD) == FALSE)
 	{
@@ -108,8 +107,10 @@ if($_SESSION["valid_login"] == TRUE)
 		exit;
 	}
 //****************************************************************************
+// Global Variables
 	$user_timezone = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,0);
-	
+//*********************************
+// Home Menu
 	if($_GET["menu"] == "home" || empty($_GET["menu"]) == TRUE)
 	{
 		$my_public_key = my_public_key();
@@ -117,8 +118,8 @@ if($_SESSION["valid_login"] == TRUE)
 		$body_string = '<table border="0" cellspacing="10" cellpadding="2" bgcolor="#FFFFFF"><tr><td></td>
 			<td align="center"><strong>Process</strong></td><td align="left"><strong>Status</strong></td></tr>';
 
-		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
+		$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,0);
 
 		$cli_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
 
@@ -128,7 +129,7 @@ if($_SESSION["valid_login"] == TRUE)
 		}
 		else
 		{
-			$main_timeout_delay = 60;
+			$main_timeout_delay = 65;
 		}
 
 		if($script_loop_active > 0)
@@ -1406,7 +1407,8 @@ if($_SESSION["valid_login"] == TRUE)
 						$_POST["tk_trans_total$counter"],
 						$_POST["pk_sent$counter"],
 						$_POST["pk_gen_total$counter"],
-						$_POST["tk_process_status$counter"]) . "')");
+						$_POST["tk_process_status$counter"],
+						$_POST["tk_start_stop$counter"]) . "')");
 				}
 
 				$counter++;
@@ -1442,6 +1444,7 @@ if($_SESSION["valid_login"] == TRUE)
 				<input type="checkbox" name="send_tk'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "send_tk", TRUE) . '>send_tk<br>
 				<input type="checkbox" name="tk_trans_total'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "tk_trans_total", TRUE) . '>tk_trans_total
 				<input type="checkbox" name="tk_process_status'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "tk_process_status", TRUE) . '>tk_process_status
+				<input type="checkbox" name="tk_start_stop'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "tk_start_stop", TRUE) . '>tk_start_stop
 				</td></tr><tr><td colspan="2"><hr></td></tr>';
 
 				$counter++;

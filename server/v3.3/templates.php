@@ -147,7 +147,7 @@ if(check_standard_tab_settings($standard_settings_number, 8) == TRUE) { $menu_ou
 if(check_standard_tab_settings($standard_settings_number, 16) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=generation" ' . $generation . '>Generation</a></li>'; }
 if(check_standard_tab_settings($standard_settings_number, 32) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=system" ' . $system . '>System</a></li>'; }
 		$menu_output .= '<li><a href="../index.php?menu=options" ' . $options . '>Options</a></li>';
-if(check_standard_tab_settings($standard_settings_number, 64) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=backup" ' . $backup . '>Backup</a></li>'; }
+if(check_standard_tab_settings($standard_settings_number, 64) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=backup" ' . $backup . ' onclick="return confirm(\'This will load your private key! Only view this over your Private Network or SSL if accessing remotely from the Internet. Continue?\');">Backup</a></li>'; }
 if(check_standard_tab_settings($standard_settings_number, 128) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=tools" ' . $tools . '>Tools</a></li>'; }
 		$menu_output .= $plugin_output;
 		$menu_output .= '<li><a href="../index.php?menu=logoff">Log Out</a></li>';
@@ -162,7 +162,7 @@ if(check_standard_tab_settings($standard_settings_number, 8) == TRUE) { $menu_ou
 if(check_standard_tab_settings($standard_settings_number, 16) == TRUE) { $menu_output .= '<li><a href="index.php?menu=generation" ' . $generation . '>Generation</a></li>'; }
 if(check_standard_tab_settings($standard_settings_number, 32) == TRUE) { $menu_output .= '<li><a href="index.php?menu=system" ' . $system . '>System</a></li>'; }
 		$menu_output .= '<li><a href="index.php?menu=options" ' . $options . '>Options</a></li>';
-if(check_standard_tab_settings($standard_settings_number, 64) == TRUE) { $menu_output .= '<li><a href="index.php?menu=backup" ' . $backup . '>Backup</a></li>'; }
+if(check_standard_tab_settings($standard_settings_number, 64) == TRUE) { $menu_output .= '<li><a href="index.php?menu=backup" ' . $backup . ' onclick="return confirm(\'This will load your private key! Only view this over your Private Network or SSL if accessing remotely from the Internet. Continue?\');">Backup</a></li>'; }
 if(check_standard_tab_settings($standard_settings_number, 128) == TRUE) { $menu_output .= '<li><a href="index.php?menu=tools" ' . $tools . '>Tools</a></li>'; }
 		$menu_output .= $plugin_output;
 		$menu_output .= '<li><a href="index.php?menu=logoff">Log Out</a></li>';
@@ -870,6 +870,13 @@ function tools_bar()
 	$default_check = transaction_cycle(0, TRUE) - 10;
 	$default_current = transaction_cycle(0, TRUE);
 
+	$main_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
+	
+	if($main_active != FALSE)
+	{
+		$disable_db_util = "DISABLED";
+	}
+
 	return '<FORM ACTION="index.php?menu=tools&amp;action=walk_history" METHOD="post">
 	<table style="float: left;" cellspacing="5" border="0"><tr><td><input type="submit" value="History Walk"/></td>
 	<td>Cycle#<input type="text" size="6" name="walk_history" value="' . $default_walk . '" /></td></tr></table></FORM>
@@ -881,11 +888,11 @@ function tools_bar()
 	<td>From Cycle#<input type="text" size="6" name="repair_from" value="' . $default_check . '" /></td></tr></table></FORM>
 	<br><br><hr>
 	<FORM ACTION="index.php?menu=tools&amp;action=check_tables" METHOD="post" onclick="return confirm(\'Database Check Can Take a Long Time. Continue?\');">
-	<table style="float: left;" cellspacing="6" border="0"><tr><td><input type="submit" value="Check DB"/></td></tr></table></FORM>
+	<table style="float: left;" cellspacing="6" border="0"><tr><td><input type="submit" value="Check DB"/ '.$disable_db_util.'></td></tr></table></FORM>
 	<FORM ACTION="index.php?menu=tools&amp;action=optimize_tables" METHOD="post" onclick="return confirm(\'Database Optimize Can Take a Long Time. Continue?\');">
-	<table style="float: left;" cellspacing="6" border="0"><tr><td><input type="submit" value="Optimize DB"/></td></tr></table></FORM>
+	<table style="float: left;" cellspacing="6" border="0"><tr><td><input type="submit" value="Optimize DB" '.$disable_db_util.'/></td></tr></table></FORM>
 	<FORM ACTION="index.php?menu=tools&amp;action=repair_tables" METHOD="post" onclick="return confirm(\'Database Repair Can Take a Long Time. Continue?\');">
-	<table style="float: left;" cellspacing="6" border="0"><tr><td><input type="submit" value="Repair DB"/></td></tr></table></FORM>
+	<table style="float: left;" cellspacing="6" border="0"><tr><td><input type="submit" value="Repair DB" '.$disable_db_util.'/></td></tr></table></FORM>
 	<FORM ACTION="index.php?menu=tools&amp;action=clear_foundation" METHOD="post" onclick="return confirm(\'This Will Clear All Foundation Hashes. Continue?\');">
 	<table style="float: left;" cellspacing="6" border="0"><tr><td><input type="submit" value="Clear Foundation"/></td></tr></table></FORM>
 	<FORM ACTION="index.php?menu=tools&amp;action=clear_banlist" METHOD="post" onclick="return confirm(\'This Will Clear All Banned IPs. Continue?\');">

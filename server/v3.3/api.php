@@ -47,6 +47,290 @@ if($_GET["action"] == "tk_hash_status")
 }
 //***********************************************************************************
 //***********************************************************************************
+if($_GET["action"] == "tk_start_stop")
+{
+	if(check_hashcode_permissions($hash_permissions, "tk_start_stop") == TRUE)
+	{
+		$active = intval($_GET["active"]); // Should only be a number
+
+		if($active == 1) // Start Timekoin Server
+		{
+			write_log("Main Process Sent START Command from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
+			$main_heartbeat_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
+
+			if($main_heartbeat_active == FALSE)
+			{
+				// Database Initialization
+				initialization_database();
+
+				mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'main_last_heartbeat' LIMIT 1");
+
+				// Set loop at active now
+				mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1");
+
+				activate(TIMEKOINSYSTEM, 1); // In case this was disabled from a emergency stop call in the server GUI
+
+				// CLI Mode selection
+				$cli_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
+
+				// Start main system script
+				if($cli_mode == TRUE)
+				{
+					call_script("main.php");
+				}
+				else
+				{
+					session_name("tkmaincli");
+					session_start();
+					ini_set('default_socket_timeout', 1);
+					call_script("main.php", NULL, NULL, TRUE);			
+				}
+
+				// Use uPNP to map inbound ports for Windows systems
+				if(getenv("OS") == "Windows_NT" && file_exists("utils\upnpc.exe") == TRUE)
+				{
+					$server_port_number = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,0);
+					$server_IP = gethostbyname(trim(`hostname`));
+					pclose(popen("start /B utils\upnpc.exe -e Timekoin -a $server_IP $server_port_number $server_port_number TCP", "r"));
+				}
+
+				// Start any plugins
+				$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' ORDER BY `options`.`field_name` ASC";
+				$sql_result = mysql_query($sql);
+				$sql_num_results = mysql_num_rows($sql_result);
+
+				for ($i = 0; $i < $sql_num_results; $i++)
+				{
+					$sql_row = mysql_fetch_array($sql_result);
+
+					$plugin_file = find_string("---file=", "---enable", $sql_row["field_data"]);		
+					$plugin_enable = intval(find_string("---enable=", "---show", $sql_row["field_data"]));
+					$plugin_service = find_string("---service=", "---end", $sql_row["field_data"]);
+
+					if($plugin_enable == TRUE && empty($plugin_service) == FALSE)
+					{
+						if($cli_mode == TRUE)
+						{
+							// Start Plugin Service
+							call_script($plugin_file, 0, TRUE);
+
+							// Log Service Start
+							write_log("Started Plugin Service: $plugin_service", "MA");
+						}
+						else
+						{
+							// Start Plugin Service
+							call_script($plugin_file, 0, TRUE, TRUE);
+
+							// Log Service Start
+							write_log("Started Plugin Service: $plugin_service", "MA");
+						}
+					}
+				}
+				// Finish Starting Plugin Services
+				echo 1;
+			}
+			else
+			{
+				// Already Active
+				echo 2;
+			}
+		}// End Main System Start
+
+		if($active == 2) // Stop Timekoin Server
+		{
+			write_log("Main Process Sent STOP Command from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
+			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,0);
+
+			// Use uPNP to delete inbound ports for Windows systems
+			if(getenv("OS") == "Windows_NT" && file_exists("utils\upnpc.exe") == TRUE)
+			{
+				pclose(popen("start /B utils\upnpc.exe -d " . my_port_number() . " TCP", "r"));
+			}
+
+			if($script_loop_active > 0)
+			{
+				// Main should still be active
+				if((time() - $script_last_heartbeat) > 30) // Greater than triple the loop time, something is wrong
+				{
+					// Main stop was unexpected
+					$sql = "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1";
+					
+					if(mysql_query($sql) == TRUE)
+					{
+						// Clear transaction queue to avoid unnecessary peer confusion
+						mysql_query("TRUNCATE TABLE `transaction_queue`");
+
+						// Clear Status for other Scripts
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
+						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active' LIMIT 1");						
+
+						// Stop all other script activity
+						activate(FOUNDATION_DISABLED, 0);
+						activate(GENERATION_DISABLED, 0);
+						activate(GENPEER_DISABLED, 0);
+						activate(PEERLIST_DISABLED, 0);
+						activate(QUEUECLERK_DISABLED, 0);
+						activate(TRANSCLERK_DISABLED, 0);
+						activate(TREASURER_DISABLED, 0);
+						activate(BALANCE_DISABLED, 0);
+
+						echo 1;
+					}
+					else
+					{
+						echo 0;
+					}
+				}
+				else
+				{
+					// Set database to flag main to stop
+					$sql = "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1";
+					
+					if(mysql_query($sql) == TRUE)
+					{
+						// Clear transaction queue to avoid unnecessary peer confusion
+						mysql_query("TRUNCATE TABLE `transaction_queue`");
+
+						// Flag other process to stop
+						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
+						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
+						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
+						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
+						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
+						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
+						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
+						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active' LIMIT 1");
+						
+						// Stop all other script activity
+						activate(FOUNDATION_DISABLED, 0);
+						activate(GENERATION_DISABLED, 0);
+						activate(GENPEER_DISABLED, 0);
+						activate(PEERLIST_DISABLED, 0);
+						activate(QUEUECLERK_DISABLED, 0);
+						activate(TRANSCLERK_DISABLED, 0);
+						activate(TREASURER_DISABLED, 0);
+						activate(BALANCE_DISABLED, 0);
+
+						echo 1;
+					}
+					else
+					{
+						echo 0;
+					}
+				}
+			} // Check if Timekoin Was Active
+			else
+			{
+				// Already Stopped
+				echo 2;
+			}
+
+		} // End Stop Main Timekoin
+
+		if($active == 3) // Start Watchdog
+		{
+			write_log("Watchdog Sent START Command from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
+			// Check last heartbeat and make sure it was more than X seconds ago
+			$watchdog_heartbeat_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,0);
+
+			if($watchdog_heartbeat_active == FALSE) // Not running currently
+			{
+				if($watchdog_heartbeat_active === FALSE) // No record exist yet, need to create one
+				{
+					mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('watchdog_heartbeat_active', '0')");
+				}
+				
+				mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'watchdog_last_heartbeat' LIMIT 1");
+
+				// Set loop at active now
+				mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'watchdog_heartbeat_active' LIMIT 1");
+
+				// CLI Mode selection
+				$cli_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
+
+				// Start main system script
+				if($cli_mode == TRUE)
+				{
+					call_script("watchdog.php", 0);
+				}
+				else
+				{
+					session_name("tkwatchcli");
+					session_start();
+					ini_set('default_socket_timeout', 1);
+					call_script("watchdog.php", NULL, NULL, TRUE);			
+				}
+
+				echo 1;
+			}
+			else
+			{
+				echo 2;
+			}
+
+		} // End Start Watchdog
+
+		if($active == 4) // Stop Watchdog
+		{
+			write_log("Watchdog Sent STOP Command from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
+			$watchdog_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,0);
+			$watchdog_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_last_heartbeat' LIMIT 1"),0,0);
+
+			if($watchdog_loop_active > 0)
+			{
+				// Watchdog should still be active
+				if((time() - $watchdog_last_heartbeat) > 60) // Greater than double the loop time, something is wrong
+				{
+					// Watchdog stop was unexpected
+					$sql = "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'watchdog_heartbeat_active' LIMIT 1";
+					
+					if(mysql_query($sql) == TRUE)
+					{
+						echo 1;
+					}
+					else
+					{
+						echo 0;
+					}
+				}
+				else
+				{
+					// Set database to flag watchdog to stop
+					$sql = "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'watchdog_heartbeat_active' LIMIT 1";
+					
+					if(mysql_query($sql) == TRUE)
+					{
+						echo 1;
+					}
+					else
+					{
+						echo 0;
+					}					
+				}
+			}
+			else
+			{
+				// Watchdog Alread Stopped
+				echo 2;
+			}
+		} // End Stop Watchdog
+
+	}// Valid Permissions Check
+
+	// Log inbound IP activity
+	log_ip("AP", scale_trigger(100));
+	exit;
+}
+//***********************************************************************************
+//***********************************************************************************
 if($_GET["action"] == "tk_process_status")
 {
 	if(check_hashcode_permissions($hash_permissions, "tk_process_status") == TRUE)
