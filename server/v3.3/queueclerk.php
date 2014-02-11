@@ -147,7 +147,7 @@ if($_GET["action"] == "input_transaction")
 		$transaction_crypt2 = filter_sql($_POST["crypt_data2"]);
 		$transaction_crypt3 = filter_sql($_POST["crypt_data3"]);
 		$transaction_hash = filter_sql($_POST["hash"]);
-		$transaction_attribute = $_POST["attribute"];
+		$transaction_attribute = filter_sql($_POST["attribute"]);
 		$transaction_qhash = $_POST["qhash"];
 
 		// If a qhash is included, use this to verify the data
@@ -534,14 +534,14 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 				if(empty($hash_match) == TRUE)
 				{
 					// This peer has a different transaction, ask for the full details of it
-					$poll_hash = poll_peer($ip_address, $domain, $subfolder, $port_number, 1500, "queueclerk.php?action=transaction&number=$current_hash");
+					$poll_hash = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 1500, "queueclerk.php?action=transaction&number=$current_hash"));
 
 					$transaction_timestamp = intval(find_string("-----timestamp=", "-----public_key", $poll_hash));
 					$transaction_public_key = find_string("-----public_key=", "-----crypt1", $poll_hash);
-					$transaction_crypt1 = filter_sql(find_string("-----crypt1=", "-----crypt2", $poll_hash));
-					$transaction_crypt2 = filter_sql(find_string("-----crypt2=", "-----crypt3", $poll_hash));
-					$transaction_crypt3 = filter_sql(find_string("-----crypt3=", "-----hash", $poll_hash));
-					$transaction_hash = filter_sql(find_string("-----hash=", "-----attribute", $poll_hash));
+					$transaction_crypt1 = find_string("-----crypt1=", "-----crypt2", $poll_hash);
+					$transaction_crypt2 = find_string("-----crypt2=", "-----crypt3", $poll_hash);
+					$transaction_crypt3 = find_string("-----crypt3=", "-----hash", $poll_hash);
+					$transaction_hash = find_string("-----hash=", "-----attribute", $poll_hash);
 					$transaction_attribute = find_string("-----attribute=", "-----end", $poll_hash);
 					$transaction_qhash = find_string("---qhash=", "---endqhash", $poll_hash);					
 

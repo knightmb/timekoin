@@ -114,7 +114,7 @@ function write_log($message, $type)
 {
 	// Write Log Entry
 	mysql_query("INSERT INTO `activity_logs` (`timestamp` ,`log` ,`attribute`)	
-		VALUES ('" . time() . "', '" . substr($message, 0, 256) . "', '$type')");
+		VALUES ('" . time() . "', '" . filter_sql(substr($message, 0, 256)) . "', '$type')");
 	return;
 }
 //***********************************************************************************
@@ -1272,7 +1272,7 @@ function gen_simple_poll_test($ip_address, $domain, $subfolder, $port_number)
 
 	if(empty($random_foundation_hash) == FALSE) // Make sure we had one to compare first
 	{
-		$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 65, "foundation.php?action=block_hash&block_number=$rand_block");
+		$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 64, "foundation.php?action=block_hash&block_number=$rand_block");
 
 		// Is it valid?
 		if(empty($poll_peer) == TRUE)
@@ -1298,7 +1298,7 @@ function gen_simple_poll_test($ip_address, $domain, $subfolder, $port_number)
 
 	if(empty($random_transaction_hash) == FALSE) // Make sure we had one to compare first
 	{
-		$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 65, "transclerk.php?action=block_hash&block_number=$rand_block2");
+		$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 64, "transclerk.php?action=block_hash&block_number=$rand_block2");
 
 		// Is it valid?
 		if(empty($poll_peer) == TRUE)

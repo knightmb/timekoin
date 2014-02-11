@@ -561,8 +561,11 @@ if($sql_num_results > 0)
 }
 else
 {
-	// Wipe transaction that are too old to be used in the next transaction cycle
-	mysql_query("DELETE QUICK FROM `transaction_queue` WHERE `transaction_queue`.`timestamp` < $previous_transaction_cycle");
+	if(rand(1,4) == 4)// Randomize to cut down on DB I/O
+	{
+		// Wipe transaction that are too old to be used in the next transaction cycle
+		mysql_query("DELETE QUICK FROM `transaction_queue` WHERE `transaction_queue`.`timestamp` < $previous_transaction_cycle");
+	}
 }
 
 //***********************************************************************************	
@@ -615,7 +618,7 @@ if(empty($current_hash) == TRUE)
 } // End Empty Hash Check
 //***********************************************************************************
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,"field_data");
+$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,0);
 
 // Check script status
 if($loop_active == 3)

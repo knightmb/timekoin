@@ -655,7 +655,7 @@ if($_GET["action"] == "send_tk")
 		$transaction_crypt2 = filter_sql($_POST["crypt_data2"]);
 		$transaction_crypt3 = filter_sql($_POST["crypt_data3"]);
 		$transaction_hash = filter_sql($_POST["hash"]);
-		$transaction_attribute = $_POST["attribute"];
+		$transaction_attribute = filter_sql($_POST["attribute"]);
 		$transaction_qhash = $_POST["qhash"];
 
 		// If a qhash is included, use this to verify the data
@@ -957,7 +957,7 @@ if($_GET["action"] == "pk_recv")
 			$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
 		}
 
-		// Find every Time Koin sent to this public Key
+		// Find every TimeKoin sent to this public Key
 		$sql = "SELECT crypt_data3, attribute FROM `transaction_history` WHERE `public_key_to` = '$public_key'";
 
 		$sql_result = mysql_query($sql);

@@ -222,10 +222,10 @@ if($_GET["action"] == "new_peers")
 // Answer join request
 if($_GET["action"] == "join")
 {
-	$max_active_peers = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,"field_data");
+	$max_active_peers = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,0);
 
 	// How many active peers do we have?
-	$sql = "SELECT * FROM `active_peer_list`";
+	$sql = "SELECT last_heartbeat FROM `active_peer_list`";
 	$active_peers = mysql_num_rows(mysql_query($sql));
 
 	if($active_peers >= $max_active_peers)
@@ -251,7 +251,7 @@ if($_GET["action"] == "exchange")
 	$max_active_peers = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,0);
 
 	// How many active peers do we have?
-	$sql = "SELECT port_number FROM `active_peer_list`";
+	$sql = "SELECT last_heartbeat FROM `active_peer_list`";
 	$active_peers = mysql_num_rows(mysql_query($sql));
 
 	if($active_peers >= $max_active_peers)
@@ -805,7 +805,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 		$subfolder = $sql_row["subfolder"];
 		$port_number = $sql_row["port_number"];
 
-		$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 10000, "peerlist.php?action=new_peers");
+		$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 10000, "peerlist.php?action=new_peers"));
 
 		$peer_counter = 1; // Reset peer counter
 
@@ -1125,7 +1125,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 		{
 			if(empty($random_foundation_hash) == FALSE) // Make sure we had one to compare first
 			{
-				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 65, "foundation.php?action=block_hash&block_number=$rand_block");
+				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 64, "foundation.php?action=block_hash&block_number=$rand_block");
 
 				// Is it valid?
 				if(empty($poll_peer) == TRUE)
@@ -1155,7 +1155,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 		{
 			if(empty($random_transaction_hash) == FALSE) // Make sure we had one to compare first
 			{
-				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 65, "transclerk.php?action=block_hash&block_number=$rand_block2");
+				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 64, "transclerk.php?action=block_hash&block_number=$rand_block2");
 
 				// Is it valid?
 				if(empty($poll_peer) == TRUE)

@@ -83,7 +83,7 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 		}
 
 		// Log invalid attempts
-		write_log("Invalid Login from IP: " . $_SERVER['REMOTE_ADDR'] . " trying Username:[" . filter_sql($http_username) . "] with Password:[" . filter_sql($http_password) . "]", "GU");
+		write_log("Invalid Login from IP: " . $_SERVER['REMOTE_ADDR'] . " trying Username:[" . $http_username . "] with Password:[" . $http_password . "]", "GU");
 	}
 
 	log_ip("GU", scale_trigger(3)); // Avoid flood-brute password guessing

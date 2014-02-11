@@ -316,7 +316,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		$subfolder = $hash_different["subfolder$i"];
 		$port_number = $hash_different["port_number$i"];
 
-		$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 90000, "genpeer.php?action=gen_peer_list");
+		$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 90000, "genpeer.php?action=gen_peer_list"));
 
 		if(empty($poll_peer) == TRUE)
 		{
@@ -340,9 +340,9 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 			}
 			
 			$gen_peer_public_key = find_string("-----public_key$match_number=", "-----join$match_number", $poll_peer);
-			$gen_peer_join_peer_list = filter_sql(find_string("-----join$match_number=", "-----last$match_number", $poll_peer));
-			$gen_peer_last_generation = filter_sql(find_string("-----last$match_number=", "-----ip$match_number", $poll_peer));
-			$gen_peer_IP = filter_sql(find_string("-----ip$match_number=", "-----END$match_number", $poll_peer));
+			$gen_peer_join_peer_list = find_string("-----join$match_number=", "-----last$match_number", $poll_peer);
+			$gen_peer_last_generation = find_string("-----last$match_number=", "-----ip$match_number", $poll_peer);
+			$gen_peer_IP = find_string("-----ip$match_number=", "-----END$match_number", $poll_peer);
 
 			$gen_peer_public_key = filter_sql(base64_decode($gen_peer_public_key));
 
@@ -429,7 +429,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 					{
 						// Check the IP/Domain field and poll the IP to see if
 						// there is a valid Timekoin server at the address.
-						$crypt3_data = tk_decrypt($public_key, base64_decode($crypt3));
+						$crypt3_data = filter_sql(tk_decrypt($public_key, base64_decode($crypt3)));
 						write_log("Decrypting Election Request Data: [$crypt3_data] for Public Key: " . base64_encode($public_key),"GP");
 
 						$peer_ip = find_string("---ip=", "---domain", $crypt3_data);
@@ -530,7 +530,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 					{
 						// Check the IP/Domain field and poll the IP to see if
 						// there is a valid Timekoin server at the address.
-						$crypt3_data = tk_decrypt($public_key, base64_decode($crypt3));
+						$crypt3_data = filter_sql(tk_decrypt($public_key, base64_decode($crypt3)));
 						write_log("Decrypting Election Request Data: [$crypt3_data] for Public Key: " . base64_encode($public_key),"GP");
 
 						$peer_ip = find_string("---ip=", "---domain", $crypt3_data);
@@ -540,7 +540,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						$delete_request = find_string("---end=", "---end2", $crypt3_data);						
 
 						// Check if IP is already in the generation peer list
-						$IP_exist1 = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,1);
+						$IP_exist1 = mysql_result(mysql_query("SELECT join_peer_list FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,1);
 
 						// Calculate public key half-crypt-hash
 						$arr1 = str_split($public_key, 181);
@@ -643,7 +643,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 //***********************************************************************************
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,"field_data");
+$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,0);
 
 // Check script status
 if($loop_active == 3)

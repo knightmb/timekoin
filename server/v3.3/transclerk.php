@@ -653,7 +653,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 									while($super_transaction_cycle < $block_number + $super_peer_cycles)
 									{
-										$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 5000000, "transclerk.php?action=transaction_data&block_number=$super_transaction_cycle");
+										$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 5000000, "transclerk.php?action=transaction_data&block_number=$super_transaction_cycle"));
 
 										if(empty($poll_peer) == TRUE)
 										{
@@ -672,12 +672,12 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 										while(empty($poll_peer) == FALSE)
 										{
 											$transaction_timestamp = intval(find_string("-----timestamp$tc=", "-----public_key_from$tc", $poll_peer));
-											$transaction_public_key_from = filter_sql(find_string("-----public_key_from$tc=", "-----public_key_to$tc", $poll_peer));
-											$transaction_public_key_to = filter_sql(find_string("-----public_key_to$tc=", "-----crypt1data$tc", $poll_peer));
-											$transaction_crypt1 = filter_sql(find_string("-----crypt1data$tc=", "-----crypt2data$tc", $poll_peer));
-											$transaction_crypt2 = filter_sql(find_string("-----crypt2data$tc=", "-----crypt3data$tc", $poll_peer));
-											$transaction_crypt3 = filter_sql(find_string("-----crypt3data$tc=", "-----hash$tc", $poll_peer));
-											$transaction_hash = filter_sql(find_string("-----hash$tc=", "-----attribute$tc", $poll_peer));
+											$transaction_public_key_from = find_string("-----public_key_from$tc=", "-----public_key_to$tc", $poll_peer);
+											$transaction_public_key_to = find_string("-----public_key_to$tc=", "-----crypt1data$tc", $poll_peer);
+											$transaction_crypt1 = find_string("-----crypt1data$tc=", "-----crypt2data$tc", $poll_peer);
+											$transaction_crypt2 = find_string("-----crypt2data$tc=", "-----crypt3data$tc", $poll_peer);
+											$transaction_crypt3 = find_string("-----crypt3data$tc=", "-----hash$tc", $poll_peer);
+											$transaction_hash = find_string("-----hash$tc=", "-----attribute$tc", $poll_peer);
 											$transaction_attribute = find_string("-----attribute$tc=", "-----end$tc", $poll_peer);
 
 											if(empty($transaction_public_key_from) == TRUE && empty($transaction_public_key_to) == TRUE)
@@ -795,7 +795,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 					} // End blank data ahead check to allow Super Peer
 	//************************************************************
 
-					$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 5000000, "transclerk.php?action=transaction_data&block_number=$block_number");
+					$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 5000000, "transclerk.php?action=transaction_data&block_number=$block_number"));
 					$tc = 1;
 
 					if(empty($poll_peer) == TRUE)
@@ -812,10 +812,10 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 						$transaction_timestamp = intval(find_string("-----timestamp$tc=", "-----public_key_from$tc", $poll_peer));
 						$transaction_public_key_from = find_string("-----public_key_from$tc=", "-----public_key_to$tc", $poll_peer);
 						$transaction_public_key_to = find_string("-----public_key_to$tc=", "-----crypt1data$tc", $poll_peer);
-						$transaction_crypt1 = filter_sql(find_string("-----crypt1data$tc=", "-----crypt2data$tc", $poll_peer));
-						$transaction_crypt2 = filter_sql(find_string("-----crypt2data$tc=", "-----crypt3data$tc", $poll_peer));
-						$transaction_crypt3 = filter_sql(find_string("-----crypt3data$tc=", "-----hash$tc", $poll_peer));
-						$transaction_hash = filter_sql(find_string("-----hash$tc=", "-----attribute$tc", $poll_peer));
+						$transaction_crypt1 = find_string("-----crypt1data$tc=", "-----crypt2data$tc", $poll_peer);
+						$transaction_crypt2 = find_string("-----crypt2data$tc=", "-----crypt3data$tc", $poll_peer);
+						$transaction_crypt3 = find_string("-----crypt3data$tc=", "-----hash$tc", $poll_peer);
+						$transaction_hash = find_string("-----hash$tc=", "-----attribute$tc", $poll_peer);
 						$transaction_attribute = find_string("-----attribute$tc=", "-----end$tc", $poll_peer);
 
 						if(empty($transaction_public_key_from) == TRUE && empty($transaction_public_key_to) == TRUE)
@@ -1160,7 +1160,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 //***********************************************************************************
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,"field_data");
+$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,0);
 
 // Check script status
 if($loop_active == 3)
