@@ -125,7 +125,8 @@ if($_GET["action"] == "polltime")
 // Answer network mode polling
 if($_GET["action"] == "gateway")
 {
-	echo intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));	
+	echo 0;
+	//echo intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));	
 	
 	// Log inbound IP activity
 	log_ip("PL", 1);

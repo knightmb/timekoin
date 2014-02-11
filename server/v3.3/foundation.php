@@ -128,7 +128,6 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 	$foundation_hash_match = 0;
 	$foundation_hash_different = 0;
 	$repair_block = FALSE;
-	$no_peer_answer = FALSE;
 
 	if($sql_num_results > 0)
 	{
@@ -245,43 +244,46 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 						{
 							$foundation_hash_different++;
 						}
-						else
-						{
-							// No peer answer
-							$no_peer_answer++;
-						}
 					}
 				} // End for Loop
 
-				// Compare tallies
-				if($rand_block == $previous_foundation_block)
+				if($foundation_hash_match == 0 && $foundation_hash_different == 0)
 				{
-					// 2/3 of the peers must disagree to schedule a block wipe/repair
-					// this recent.
-					if($foundation_hash_different == 0)
+					write_log("No Peers Are Responding to Transaction Foundation Polling","FO");
+				}
+				else
+				{
+					// Compare tallies
+					if($rand_block == $previous_foundation_block)
 					{
-						// No peers disagrees, all is well
-						$repair_block = FALSE;
+						// 2/3 of the peers must disagree to schedule a block wipe/repair
+						// this recent.
+						if($foundation_hash_different == 0)
+						{
+							// No peers disagrees, all is well
+							$repair_block = FALSE;
+						}
+						else
+						{
+							if($foundation_hash_different / $sql_num_results >= 2 / 3)
+							{
+								// 2/3 or more of peers say something is wrong
+								$repair_block = TRUE;
+							}
+						}
 					}
 					else
 					{
-						if($foundation_hash_different / $sql_num_results >= 2 / 3)
+						// Anything deeper than +1 block back requires 100% of the peers
+						// to disagree before a block wipe/repair is scheduled.
+						if($foundation_hash_match == 0)
 						{
-							// 2/3 or more of peers say something is wrong
+							// 100% of all peers say something is wrong
 							$repair_block = TRUE;
 						}
 					}
 				}
-				else
-				{
-					// Anything deeper than +1 block back requires 100% of the peers
-					// to disagree before a block wipe/repair is scheduled.
-					if($foundation_hash_match == 0 && $no_peer_answer == FALSE)
-					{
-						// 100% of all peers say something is wrong
-						$repair_block = TRUE;
-					}
-				}
+
 			} // End Foundation Compare check
 
 			if($repair_block == TRUE)
