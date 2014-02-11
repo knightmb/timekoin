@@ -1,7 +1,8 @@
 Timekoin Server - Change Log
 
-Timekoin Server - 3.3 (Released 2014-2-11)
+Timekoin Server - 3.36 (Released 2014-2-11)
 ============================================
+- Bug fix for Treasurer Processor that was triggering flood protection in other peers
 - Servers running in non-CLI Mode can now use Service Plugins
 - Speed increase for Transaction Clerk when updating/sync transaction history database with high latency/unreliable peers
 - Fix Transaction Queue Clerk filtering bug for duplicate transactions that fill up the queue but can't be processed
