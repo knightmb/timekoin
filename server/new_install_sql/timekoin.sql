@@ -196,6 +196,7 @@ INSERT INTO `options` (`field_name`, `field_data`) VALUES
 ('generate_currency', '0'),
 ('generating_peers_hash', '0'),
 ('generation_IP', ''),
+('generation_IP_v6', ''),
 ('generation_key_crypt', ''),
 ('max_active_peers', '8'),
 ('max_new_peers', '15'),
