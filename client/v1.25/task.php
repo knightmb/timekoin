@@ -41,7 +41,6 @@ function transaction_queue()
 	$transaction_queue_hash_different = 0;
 	$hash_different = array();
 
-
 	$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND()";
 
 	$sql_result = mysql_query($sql);
@@ -63,7 +62,7 @@ function transaction_queue()
 			$subfolder = $sql_row["subfolder"];
 			$port_number = $sql_row["port_number"];
 
-			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 40, "queueclerk.php?action=trans_hash&client=api");
+			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 32, "queueclerk.php?action=trans_hash&client=api");
 
 			if($transaction_queue_hash === $poll_peer)
 			{
@@ -100,14 +99,14 @@ function transaction_queue()
 			$subfolder = $hash_different["subfolder$i"];
 			$port_number = $hash_different["port_number$i"];
 
-			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 8200, "queueclerk.php?action=queue&client=api");
+			$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 83000, "queueclerk.php?action=queue&client=api"));
 
 			// Bring up first match (if any) to compare agaist our database
 			$match_number = 1;
 			$current_hash = find_string("---queue$match_number=", "---end$match_number", $poll_peer);
 
 			$transaction_counter = 0;
-			$peer_transaction_limit = 100;
+			$peer_transaction_limit = 1000;
 			$mismatch_error_count = 0;
 			$mismatch_error_limit = 10;
 
@@ -126,20 +125,59 @@ function transaction_queue()
 					break;					
 				}
 
-				//Check if this transaction is already in our queue
-				$hash_match = mysql_result(mysql_query("SELECT hash FROM `transaction_queue` WHERE `hash` = '$current_hash' LIMIT 1"),0,0);
+				if(strlen($current_hash) >= 64)
+				{
+					// Old Queue System Check
+					//Check if this transaction is already in our queue
+					$hash_match = mysql_result(mysql_query("SELECT timestamp FROM `transaction_queue` WHERE `hash` = '$current_hash' LIMIT 1"),0,0);
+				}
+				else
+				{
+					// New Queue System Check
+					$sql2 = "SELECT * FROM `transaction_queue`";
+					$sql_result2 = mysql_query($sql2);
+					$sql_num_results2 = mysql_num_rows($sql_result2);
+					$queue_hash_test = NULL;
+					$hash_match = NULL;					
+
+					if($sql_num_results2 > 0)
+					{
+						for ($i2 = 0; $i2 < $sql_num_results2; $i2++)
+						{
+							$sql_row2 = mysql_fetch_array($sql_result2);
+
+							$queue_hash_test.= $sql_row2["timestamp"] . $sql_row2["public_key"] . $sql_row2["crypt_data1"] . 
+							$sql_row2["crypt_data2"] . $sql_row2["crypt_data3"] . $sql_row2["hash"] . $sql_row2["attribute"];		
+
+							if(hash('md5', $queue_hash_test) == $current_hash)
+							{
+								// This Transaction Already Exist in the Queue
+								$hash_match = TRUE;
+								break;
+							}
+							else
+							{
+								// No match, continue searching
+								$hash_match = NULL;
+							}
+
+							// No match, move on to next record
+							$queue_hash_test = NULL;
+						}
+					}
+				}
 
 				if(empty($hash_match) == TRUE)
 				{
 					// This peer has a different transaction, ask for the full details of it
 					$poll_hash = poll_peer($ip_address, $domain, $subfolder, $port_number, 1500, "queueclerk.php?action=transaction&number=$current_hash&client=api");
 
-					$transaction_timestamp = filter_sql(find_string("-----timestamp=", "-----public_key", $poll_hash));
+					$transaction_timestamp = find_string("-----timestamp=", "-----public_key", $poll_hash);
 					$transaction_public_key = find_string("-----public_key=", "-----crypt1", $poll_hash);
-					$transaction_crypt1 = filter_sql(find_string("-----crypt1=", "-----crypt2", $poll_hash));
-					$transaction_crypt2 = filter_sql(find_string("-----crypt2=", "-----crypt3", $poll_hash));
-					$transaction_crypt3 = filter_sql(find_string("-----crypt3=", "-----hash", $poll_hash));
-					$transaction_hash = filter_sql(find_string("-----hash=", "-----attribute", $poll_hash));
+					$transaction_crypt1 = find_string("-----crypt1=", "-----crypt2", $poll_hash);
+					$transaction_crypt2 = find_string("-----crypt2=", "-----crypt3", $poll_hash);
+					$transaction_crypt3 = find_string("-----crypt3=", "-----hash", $poll_hash);
+					$transaction_hash = find_string("-----hash=", "-----attribute", $poll_hash);
 					$transaction_attribute = find_string("-----attribute=", "-----end", $poll_hash);
 					$transaction_qhash = find_string("---qhash=", "---endqhash", $poll_hash);					
 
@@ -155,45 +193,107 @@ function transaction_queue()
 							$transaction_attribute = "mismatch";
 							$mismatch_error_count++;
 						}
+						else
+						{
+							// Make sure hash is actually valid and not made up to stop other transactions
+							$crypt_hash_check = hash('sha256', $transaction_crypt1 . $transaction_crypt2 . $transaction_crypt3);
+
+							if($crypt_hash_check != $transaction_hash)
+							{
+								// Ok, something is wrong here...
+								$transaction_attribute = "mismatch";
+								$mismatch_error_count++;
+							}
+						}
 					}
 					else
 					{
-						// Qhash is required to match hash now
+						// Qhash is required to match hash
 						$transaction_attribute = "mismatch";
-						$mismatch_error_count++;						
+						$mismatch_error_count++;
 					}
 
 					$transaction_public_key = filter_sql(base64_decode($transaction_public_key));
 
-					if($transaction_attribute == "T" || $transaction_attribute == "G")
+					if($transaction_attribute == "R")
 					{
-						// Decrypt transaction information for regular transaction data
-						// and check to make sure the public key that is being sent to
-						// has not been tampered with.
-						$transaction_info = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt3));
-
-						$inside_transaction_hash = find_string("HASH=", "", $transaction_info, TRUE);
-
-						// Check if a message is encoded in this data as well
-						if(strlen($inside_transaction_hash) != 64)
+						// Check to make sure this public key isn't forged or made up to win the list
+						$inside_transaction_hash = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt1));
+						
+						$final_hash_compare = $transaction_crypt2;
+						$crypt_hash_check = $transaction_hash;
+						$valid_amount = TRUE; // No amount, but needs this to pass amount test
+						$public_key_to = $transaction_public_key; // None is used, but needs this to pass the key length test
+					}
+					else
+					{
+						if($transaction_attribute == "T" || $transaction_attribute == "G")
 						{
-							// A message is also encoded
-							$inside_transaction_hash = find_string("HASH=", "---MSG", $transaction_info);
+							// Decrypt transaction information for regular transaction data
+							// and check to make sure the public key that is being sent to
+							// has not been tampered with.
+							$transaction_info = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt3));
+
+							// Find destination public key
+							$public_key_to_1 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt1));
+							$public_key_to_2 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt2));
+							$public_key_to = $public_key_to_1 . $public_key_to_2;
+
+							$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
+
+							$transaction_amount_sent_test = intval($transaction_amount_sent);
+
+							if($transaction_amount_sent_test == $transaction_amount_sent)
+							{
+								// Is a valid integer, amount greater than zero?
+								if($transaction_amount_sent > 0)
+								{
+									$valid_amount = TRUE;
+								}
+								else
+								{
+									$valid_amount = FALSE;
+								}
+							}
+							else
+							{
+								// Is NOT a valid integer, fail check
+								$valid_amount = FALSE;
+							}
+
+							if($transaction_attribute == "G")
+							{
+								if($transaction_amount_sent_test > 10)
+								{
+									// Filter silly generation amounts :p
+									$valid_amount = FALSE;
+								}
+							}
+
+							$inside_transaction_hash = find_string("HASH=", "", $transaction_info, TRUE);
+
+							// Check if a message is encoded in this data as well
+							if(strlen($inside_transaction_hash) != 64)
+							{
+								// A message is also encoded
+								$inside_transaction_hash = find_string("HASH=", "---MSG", $transaction_info);
+							}
+
+							// Check Hash against 3 crypt fields
+							$crypt_hash_check = hash('sha256', $transaction_crypt1 . $transaction_crypt2 . $transaction_crypt3);
 						}
 
-						// Check Hash against 3 crypt fields
-						$crypt_hash_check = hash('sha256', $transaction_crypt1 . $transaction_crypt2 . $transaction_crypt3);
+						$final_hash_compare = hash('sha256', $transaction_crypt1 . $transaction_crypt2);
 					}
-
-					$final_hash_compare = hash('sha256', $transaction_crypt1 . $transaction_crypt2);
-
 
 					// Check to make sure this transaction is even valid (hash check, length check, & timestamp)
 					if($transaction_hash == $crypt_hash_check 
 						&& $inside_transaction_hash == $final_hash_compare 
 						&& strlen($transaction_public_key) > 300 
+						&& strlen($public_key_to) > 300 
 						&& $transaction_timestamp >= $current_transaction_cycle 
-						&& $transaction_timestamp < $next_transaction_cycle)
+						&& $transaction_timestamp < $next_transaction_cycle
+						&& $valid_amount == TRUE)
 					{
 						// Check for 100 public key limit in the transaction queue
 						$sql = "SELECT timestamp FROM `transaction_queue` WHERE `public_key` = '$transaction_public_key'";
@@ -202,14 +302,12 @@ function transaction_queue()
 
 						if($sql_num_results < 100)
 						{						
-							// Transaction hash and real hash match
-							$sql = "INSERT INTO `transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
-							VALUES ('$transaction_timestamp', '$transaction_public_key', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
-							
-							mysql_query($sql);
+							// Transaction hash and real hash match.
+							mysql_query("INSERT INTO `transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
+							VALUES ('$transaction_timestamp', '$transaction_public_key', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')");
 						}
-
 					}
+
 				} // End Empty Hash Check
 
 				$match_number++;				
@@ -241,7 +339,7 @@ function peer_list()
 	{
 		// No active or new peers to poll from, start with the first contact servers
 		// and copy them to the new peer list
-		$sql = "SELECT * FROM `options` WHERE `field_name` = 'first_contact_server'";
+		$sql = "SELECT * FROM `options` WHERE `field_name` = 'first_contact_server' ORDER BY RAND() LIMIT $max_active_peers";
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
 
@@ -616,6 +714,7 @@ function peer_list()
 function tk_client_task()
 {
 	// Repeat Task
+	sleep(1);
 	peer_list();
 	transaction_queue();
 	
@@ -633,7 +732,7 @@ function tk_client_task()
 //***********************************************************************************
 if($_GET["task"] == "refresh")
 {
-	$refresh_header = '<meta http-equiv="refresh" content="' . rand(10,15) . '" />';
+	$refresh_header = '<meta http-equiv="refresh" content="' . rand(10,14) . '" />';
 
 	?>
 	<!DOCTYPE html>

@@ -152,11 +152,11 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($display_balance === "NA")
 		{
-			$display_balance = '<font color="red">NA</font>';
+			$display_balance_GUI = '<font color="red">Waiting For Network</font>';
 		}
 		else
 		{
-			$display_balance = number_format($display_balance);
+			$display_balance_GUI = number_format($display_balance);
 		}
 
 		$update_available = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'update_available' LIMIT 1"),0,"field_data");
@@ -170,16 +170,21 @@ if($_SESSION["valid_login"] == TRUE)
 			$update_available = NULL;
 		}
 
-		$text_bar = '<table border="0"><tr><td style="width:325px"><strong>Current Billfold Balance: <font color="green">' . $display_balance . '</font></strong></td></tr>
+		$text_bar = '<table border="0"><tr><td style="width:325px"><strong>Current Billfold Balance: <font color="green">' . $display_balance_GUI . '</font></strong></td></tr>
 			<tr>' . $update_available . '</table>';
 
 		$quick_info = 'This section will contain helpful information about each tab in the software.';
 
-		$home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
+		$home_update = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,0);
 
 		if($home_update < 60 && $home_update != 0) // Cap home updates refresh to 1 minute
 		{
 			$home_update = 60;
+		}
+		
+		if($display_balance === "NA")
+		{
+			$home_update = 5;
 		}
 
 		home_screen("Home", $text_bar, $body_string, $quick_info , $home_update);
