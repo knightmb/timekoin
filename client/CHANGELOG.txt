@@ -1,12 +1,17 @@
 Timekoin Client - Change Log
 
+Timekoin Client - 1.25 (Released 2014-2-12)
+===========================================
+- Update Queue Watch for new Timekoin Queue management system
+- Speed Tweaks to Interface
+
+
 Timekoin Client - 1.2 (Released 2013-11-09)
 ===========================================
 - Added AES-256 Private Key Encryption Code
 - Merge plugin code into Client
 - Update CSS to match Server theme
 - HTML5 Code Cleanup
-
 
 Timekoin Client - 1.1 (Released 2013-10-22)
 ===========================================
