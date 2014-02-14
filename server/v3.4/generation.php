@@ -169,7 +169,8 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 					election_cycle(2) == TRUE ||
 					election_cycle(3) == TRUE ||
 					election_cycle(4) == TRUE ||
-					election_cycle(5) == TRUE) // Check 1-5 cycles ahead
+					election_cycle(5) == TRUE ||
+					election_cycle(6) == TRUE) // Check 1-6 cycles ahead (30 minutes)
 				{			
 					// Check to see if this request is already in my transaction queue.
 					$found_public_trans_queue = mysql_result(mysql_query("SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'R' LIMIT 1"),0,0);				
@@ -229,7 +230,8 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 					election_cycle(2) == TRUE ||
 					election_cycle(3) == TRUE ||
 					election_cycle(4) == TRUE ||
-					election_cycle(5) == TRUE) // Check 1-5 cycles ahead
+					election_cycle(5) == TRUE ||
+					election_cycle(6) == TRUE) // Check 1-6 cycles ahead (30 minutes)
 				{
 					// Check to see if this request is already in my transaction queue
 					$found_public_trans_queue = mysql_result(mysql_query("SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'R' LIMIT 1"),0,0);				

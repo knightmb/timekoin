@@ -395,7 +395,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		election_cycle(2) == TRUE ||
 		election_cycle(3) == TRUE ||
 		election_cycle(4) == TRUE ||
-	  	election_cycle(5) == TRUE) // Don't queue election request until 1-5 cycles before election
+		election_cycle(5) == TRUE ||
+		election_cycle(6) == TRUE) // Don't queue election request until 1-6 cycles before election (30 minutes)
 	{
 		$sql = "SELECT * FROM `transaction_queue` WHERE `attribute` = 'R'";
 		$sql_result = mysql_query($sql);
@@ -403,8 +404,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 		if($sql_num_results > 0)
 		{
-			ini_set('default_socket_timeout', 4); // Increase Polling Timeout +1000ms
-
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
 				$sql_row = mysql_fetch_array($sql_result);
@@ -633,8 +632,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 			} // End for loop
 
-		ini_set('default_socket_timeout', 3); // Reset Socket Timeout When Finished
-		
 		} // Empty results check
 
 	} // Election Cycle Check
