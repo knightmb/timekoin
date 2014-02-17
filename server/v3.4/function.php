@@ -925,7 +925,7 @@ function tk_time_convert($time)
 {
 	if($time < 0)
 	{
-		return "0 sec";
+		return "Now";
 	}
 	
 	if($time < 60)
@@ -1386,7 +1386,7 @@ function visual_walkhistory($block_start = 0, $block_end = 0)
 				}
 				else
 				{
-					$output .= '<br><font color=blue>Public Key Length Wrong<br>Timestamp: [' . $sql_row["timestamp"] . ']<br>Hash: [' . $sql_row["hash"] . ']</font>';
+					$output .= '<br><font color=blue>Public Key Length Wrong<br>Timestamp: [' . $sql_row["timestamp"] . ']<br>Hash: [' . $sql_row["hash"] . ']</font><br>';
 				}
 			}
 

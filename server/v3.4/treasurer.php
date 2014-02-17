@@ -374,7 +374,7 @@ if($sql_num_results > 0)
 							// Find destination public key, it should be the same as the source public key
 							$public_key_to_1 = tk_decrypt($public_key, base64_decode($crypt1));
 							$public_key_to_2 = tk_decrypt($public_key, base64_decode($crypt2));
-							$public_key_to = $public_key_to_1 . $public_key_to_2;
+							$public_key_to = filter_sql($public_key_to_1 . $public_key_to_2);
 
 							if(hash('sha256', $crypt1 . $crypt2 . $crypt3) == $hash_check && $amount_valid == TRUE && $public_key_to == $public_key) // Hash check for tampering
 							{
@@ -405,7 +405,7 @@ if($sql_num_results > 0)
 							else if($amount_valid == FALSE)
 							{
 								// Failed Hash check or Valid Amount check
-								write_log("Generation Amount Failed for this Key: " . base64_encode($public_key), "G");
+								write_log("Generation Amount Invalid for this Key: " . base64_encode($public_key), "G");
 								$record_failure_counter++;
 							}
 							else if(hash('sha256', $crypt1 . $crypt2 . $crypt3) != $hash_check)
@@ -490,7 +490,7 @@ if($sql_num_results > 0)
 						$public_key_to_1 = tk_decrypt($public_key, base64_decode($crypt1));
 						$public_key_to_2 = tk_decrypt($public_key, base64_decode($crypt2));
 						
-						$public_key_to = $public_key_to_1 . $public_key_to_2;
+						$public_key_to = filter_sql($public_key_to_1 . $public_key_to_2);
 
 						if(strlen($public_key) > 300 && strlen($public_key_to) > 300 && $public_key !== $public_key_to) // Filter to/from self public keys
 						{
