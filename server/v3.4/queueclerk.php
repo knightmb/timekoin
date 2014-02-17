@@ -557,7 +557,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 							$mismatch_error_count++;
 
 							// Add failure points to the peer in case further issues
-							modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 3);							
+							modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 3);
 						}
 						else
 						{
@@ -572,7 +572,17 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 								$mismatch_error_count++;
 
 								// Add failure points to the peer in case further issues
-								modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 6);								
+								modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 6);
+							}
+							else
+							{
+								$last_hash_match = mysql_result(mysql_query("SELECT timestamp FROM `transaction_queue` WHERE `timestamp`= $transaction_timestamp AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+
+								if(empty($last_hash_match) == FALSE)
+								{
+									// Duplicate Already in the Transaction Queue
+									$transaction_attribute = "mismatch";
+								}
 							}
 						}
 					}
@@ -584,7 +594,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 						$mismatch_error_count++;
 
 						// Add failure points to the peer in case further issues
-						modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 2);						
+						modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 2);
 					}
 
 					$transaction_public_key = filter_sql(base64_decode($transaction_public_key));
@@ -701,7 +711,6 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 		mysql_query("UPDATE `options` SET `field_data` = '$transaction_queue_hash' WHERE `options`.`field_name` = 'transaction_queue_hash' LIMIT 1");
 
 	} // End Compare Tallies
-
 } // If/then Check for valid times
 
 //***********************************************************************************
