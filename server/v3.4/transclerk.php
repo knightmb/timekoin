@@ -696,8 +696,16 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 												{
 													// Check that verification hash for transaction data matches
 													$crypt_hash_check = hash('sha256', $transaction_crypt1 . $transaction_crypt2 . $transaction_crypt3);													
-													
-													if($transaction_hash == $crypt_hash_check)
+
+													// Find destination public key
+													$public_key_to_1 = tk_decrypt($transaction_public_key_from, base64_decode($transaction_crypt1));
+													$public_key_to_2 = tk_decrypt($transaction_public_key_from, base64_decode($transaction_crypt2));
+													$internal_public_key_to = $public_key_to_1 . $public_key_to_2;
+
+													if($transaction_hash == $crypt_hash_check && 
+														strlen($transaction_public_key_from) > 300 && 
+														strlen($transaction_public_key_to) > 300 && 
+														$internal_public_key_to == $transaction_public_key_to)
 													{
 														// Continue with duplicate record test
 														$found_duplicate = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
@@ -834,8 +842,16 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 							{
 								// Check that verification hash for transaction data matches
 								$crypt_hash_check = hash('sha256', $transaction_crypt1 . $transaction_crypt2 . $transaction_crypt3);													
-								
-								if($transaction_hash == $crypt_hash_check)
+
+								// Find destination public key
+								$public_key_to_1 = tk_decrypt($transaction_public_key_from, base64_decode($transaction_crypt1));
+								$public_key_to_2 = tk_decrypt($transaction_public_key_from, base64_decode($transaction_crypt2));
+								$internal_public_key_to = $public_key_to_1 . $public_key_to_2;
+
+								if($transaction_hash == $crypt_hash_check && 
+									strlen($transaction_public_key_from) > 300 && 
+									strlen($transaction_public_key_to) > 300 && 
+									$internal_public_key_to == $transaction_public_key_to)
 								{
 									// Continue with duplicate record test
 									$found_duplicate = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);

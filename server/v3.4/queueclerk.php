@@ -519,15 +519,13 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 								$hash_match = TRUE;
 								break;
 							}
-							else
-							{
-								// No match, continue searching
-								$hash_match = NULL;
-							}
 
 							// No match, move on to next record
 							$queue_hash_test = NULL;
 						}
+
+						// No match found, empty string
+						$hash_match = NULL;
 					}
 				}
 

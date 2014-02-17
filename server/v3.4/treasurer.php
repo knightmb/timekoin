@@ -371,7 +371,12 @@ if($sql_num_results > 0)
 								$amount_valid = FALSE;
 							}
 
-							if(hash('sha256', $crypt1 . $crypt2 . $crypt3) == $hash_check && $amount_valid == TRUE) // Hash check for tampering
+							// Find destination public key, it should be the same as the source public key
+							$public_key_to_1 = tk_decrypt($public_key, base64_decode($crypt1));
+							$public_key_to_2 = tk_decrypt($public_key, base64_decode($crypt2));
+							$public_key_to = $public_key_to_1 . $public_key_to_2;
+
+							if(hash('sha256', $crypt1 . $crypt2 . $crypt3) == $hash_check && $amount_valid == TRUE && $public_key_to == $public_key) // Hash check for tampering
 							{
 								// Public key not found, insert into final transaction history
 								$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from`, `public_key_to` ,`crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
@@ -397,12 +402,24 @@ if($sql_num_results > 0)
 									write_log("Generation Timestamp Update Failed for this Key: " . base64_encode($public_key), "G");
 								}
 							}
-							else
+							else if($amount_valid == FALSE)
 							{
 								// Failed Hash check or Valid Amount check
-								write_log("Generation Hash or Amount Check Failed for this Key: " . base64_encode($public_key), "G");
+								write_log("Generation Amount Failed for this Key: " . base64_encode($public_key), "G");
 								$record_failure_counter++;
 							}
+							else if(hash('sha256', $crypt1 . $crypt2 . $crypt3) != $hash_check)
+							{
+								// Failed Hash check or Valid Amount check
+								write_log("Generation Hash Check Failed for this Key: " . base64_encode($public_key), "G");
+								$record_failure_counter++;
+							}
+							else if($public_key_to != $public_key)
+							{
+								// Failed Hash check or Valid Amount check
+								write_log("Generation Public Key Source and Destination DO NOT MATCH for this Key: " . base64_encode($public_key), "G");
+								$record_failure_counter++;
+							}							
 						}
 						else
 						{

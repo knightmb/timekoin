@@ -447,7 +447,7 @@ function walkhistory($block_start = 0, $block_end = 0)
 		$time4 = transaction_cycle(0 - $current_generation_block + 2 + $i);
 		$next_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time3 AND `timestamp` < $time4 AND `attribute` = 'H' LIMIT 1"),0,0);
 
-		$sql = "SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
+		$sql = "SELECT timestamp, public_key_from, public_key_to, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
 
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
@@ -458,13 +458,21 @@ function walkhistory($block_start = 0, $block_end = 0)
 		for ($h = 0; $h < $sql_num_results; $h++)
 		{
 			$sql_row = mysql_fetch_array($sql_result);
-			
+
+			if($sql_row["attribute"] == "T" || $sql_row["attribute"] == "G")
+			{
+				if(strlen($sql_row["public_key_from"]) > 300 && strlen($sql_row["public_key_to"]) > 300)
+				{
+					$my_hash .= $sql_row["hash"];
+				}
+			}
+
 			if($sql_row["attribute"] == "H" || $sql_row["attribute"] == "B")
 			{
 				$timestamp = $sql_row["timestamp"];
-			}
 
-			$my_hash .= $sql_row["hash"];
+				$my_hash .= $sql_row["hash"];
+			}
 		}		
 
 		if($next_timestamp != $timestamp)
@@ -1359,7 +1367,7 @@ function visual_walkhistory($block_start = 0, $block_end = 0)
 		
 		$next_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time3 AND `timestamp` < $time4 AND `attribute` = 'H' LIMIT 1"),0,0);
 
-		$sql = "SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
+		$sql = "SELECT timestamp, public_key_from, public_key_to, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
 
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
@@ -1369,13 +1377,25 @@ function visual_walkhistory($block_start = 0, $block_end = 0)
 		for ($h = 0; $h < $sql_num_results; $h++)
 		{
 			$sql_row = mysql_fetch_array($sql_result);
-			
+
+			if($sql_row["attribute"] == "T" || $sql_row["attribute"] == "G")
+			{
+				if(strlen($sql_row["public_key_from"]) > 300 && strlen($sql_row["public_key_to"]) > 300)
+				{
+					$my_hash .= $sql_row["hash"];
+				}
+				else
+				{
+					$output .= '<br><font color=blue>Public Key Length Wrong<br>Timestamp: [' . $sql_row["timestamp"] . ']<br>Hash: [' . $sql_row["hash"] . ']</font>';
+				}
+			}
+
 			if($sql_row["attribute"] == "H" || $sql_row["attribute"] == "B")
 			{
 				$timestamp = $sql_row["timestamp"];
-			}
 
-			$my_hash .= $sql_row["hash"];
+				$my_hash .= $sql_row["hash"];
+			}
 		}		
 
 		if($next_timestamp != $timestamp)
@@ -1423,7 +1443,6 @@ function visual_walkhistory($block_start = 0, $block_end = 0)
 	$finish_output .= '<br><font color="red"><strong>Transaction Cycles Wrong:</strong></font><strong> ' . $wrong_hash_numbers . '</strong></td></tr>';
 
 	return $finish_output . $output . $finish_output;
-
 }
 //***********************************************************************************
 //***********************************************************************************
