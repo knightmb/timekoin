@@ -1446,15 +1446,16 @@ function visual_walkhistory($block_start = 0, $block_end = 0)
 }
 //***********************************************************************************
 //***********************************************************************************
-function visual_repair($block_start = 0)
+function visual_repair($block_start = 0, $cycle_limit = 500)
 {
-	$current_generation_block = transaction_cycle(0, TRUE);
+	$current_transaction_cycle = transaction_cycle(0, TRUE);
 	$output;
 
 	// Wipe all blocks ahead
-	$time_range = transaction_cycle(0 - $current_generation_block + $block_start);
+	$time_range1 = transaction_cycle(0 - $current_transaction_cycle + $block_start);
+	$time_range2 = transaction_cycle(0 - $current_transaction_cycle + $block_start + $cycle_limit);
 
-	$sql = "DELETE QUICK FROM `transaction_history` WHERE `transaction_history`.`timestamp` >= $time_range AND `attribute` = 'H'";
+	$sql = "DELETE QUICK FROM `transaction_history` WHERE `transaction_history`.`timestamp` >= $time_range1 AND `transaction_history`.`timestamp` <= $time_range2 AND `attribute` = 'H'";
 
 	if(mysql_query($sql) == TRUE)
 	{
@@ -1467,12 +1468,17 @@ function visual_repair($block_start = 0)
 
 	$generation_arbitrary = ARBITRARY_KEY;
 
-	for ($t = $block_start; $t < $current_generation_block; $t++)
+	for ($t = $block_start; $t < $current_transaction_cycle; $t++)
 	{
+		if($cycle_limit < 0) // Finished
+		{
+			break;
+		}
+
 		$output .= "<tr><td><strong>Repairing Block# $t</strong>";
 
-		$time1 = transaction_cycle(0 - $current_generation_block - 1 + $t);
-		$time2 = transaction_cycle(0 - $current_generation_block + $t);
+		$time1 = transaction_cycle(0 - $current_transaction_cycle - 1 + $t);
+		$time2 = transaction_cycle(0 - $current_transaction_cycle + $t);
 
 		$sql = "SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
 
@@ -1501,6 +1507,9 @@ function visual_repair($block_start = 0)
 		{
 			$output .= '<br><strong><font color="blue">Repair Complete...</font></strong></td></tr>';
 		}
+
+		$cycle_limit--;
+
 	} // End for loop
 
 	return $output;

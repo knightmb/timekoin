@@ -864,9 +864,18 @@ function send_receive_body($fill_in_key, $amount, $cancel = FALSE, $easy_key, $m
 }
 //***********************************************************
 //***********************************************************
-function tools_bar()
+function tools_bar($walk_history)
 {
-	$default_walk = foundation_cycle(0, TRUE) * 500;
+	if(empty($walk_history) == TRUE)
+	{
+		$default_walk = foundation_cycle(0, TRUE) * 500;
+	}
+	else
+	{
+		$default_walk = $walk_history + 500;
+	}
+	
+	
 	$default_check = transaction_cycle(0, TRUE) - 10;
 	$default_current = transaction_cycle(0, TRUE);
 

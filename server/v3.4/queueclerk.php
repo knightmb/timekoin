@@ -666,6 +666,11 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 							// Check Hash against 3 crypt fields
 							$crypt_hash_check = hash('sha256', $transaction_crypt1 . $transaction_crypt2 . $transaction_crypt3);
 						}
+						else
+						{
+							// Attribute does not match anything valid
+							$valid_amount == FALSE;
+						}
 
 						$final_hash_compare = hash('sha256', $transaction_crypt1 . $transaction_crypt2);
 					}

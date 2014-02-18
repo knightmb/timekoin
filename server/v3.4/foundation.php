@@ -128,6 +128,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 	$foundation_hash_match = 0;
 	$foundation_hash_different = 0;
 	$repair_block = FALSE;
+	$foundations_built = 0;
 
 	if($sql_num_results > 0)
 	{
@@ -432,12 +433,17 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 							{
 								write_log("FAILED to Clear Balance Index Table after Transaction Foundation #$i was Created", "FO");
 							}
-							
-							// Break out of this loop in case there is a lot
-							// of history to catch up on. We don't want to tie
-							// up the server with building many transaction foundations
-							// in a row.
-							break;
+
+							$foundations_built++;
+
+							if($foundations_built > 3)
+							{
+								// Break out of this loop in case there is a lot
+								// of history to catch up on. We don't want to tie
+								// up the server with building many transaction foundations
+								// in a row.
+								break;
+							}
 						}
 					}
 					else

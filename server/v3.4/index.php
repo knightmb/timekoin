@@ -3051,11 +3051,11 @@ if($_SESSION["valid_login"] == TRUE)
 				<table border="0"><tr><td style="width:650px" align="right"><input type="submit" name="clear_logs" value="Clear All Logs" /></td></tr></table></FORM></div>';
 		}
 		
-		$text_bar = tools_bar();
+		$text_bar = tools_bar($_POST["walk_history"]);
 
 		$quick_info = '<strong>History Walk</strong> will manually test all transactions starting at the specified cycle and give a status for each cycle.<br><br>
 		<strong>Check</strong> will schedule Timekoin to check and repair the specified cycle.<br><br>
-		<strong>Repair</strong> will force Timekoin to recalculate all verification hashes from the specified cycle to now.<br><br>
+		<strong>Repair</strong> will force Timekoin to recalculate all verification hashes from the specified cycle to +500 transaction cycles ahead.<br><br>
 		<strong>Check DB</strong> will check the data integrity of all tables in the database.<br><br>
 		<strong>Optimize DB</strong> will optimize all tables &amp; indexes in the database.<br><br>
 		<strong>Repair DB</strong> will attempt to repair all tables in the database.<br><br>
