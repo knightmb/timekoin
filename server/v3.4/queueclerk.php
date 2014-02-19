@@ -447,12 +447,19 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 	if($transaction_queue_hash_different > 0)
 	{
 		// Transaction Queue still not in sync with all peers
-		$hash_array = array();
+		$hash_array = array(); // Empty Array
 		$transaction_counter = 0;
 		$peer_transaction_limit = 1000;
+		$mismatch_error_limit = 5;
 
 		for ($i = 1; $i < $transaction_queue_hash_different + 1; $i++)
 		{
+			if($next_transaction_cycle - time() < 10)
+			{
+				// Transaction Cycle has almost ended, break from loop
+				break;
+			}			
+			
 			$ip_address = $hash_different["ip_address$i"];
 			$domain = $hash_different["domain$i"];
 			$subfolder = $hash_different["subfolder$i"];
@@ -466,10 +473,15 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 
 			$transaction_counter = 0;
 			$mismatch_error_count = 0;
-			$mismatch_error_limit = 10;
 
 			while(empty($current_hash) == FALSE)
 			{
+				if($next_transaction_cycle - time() < 10)
+				{
+					// Transaction Cycle has almost ended, break from loop
+					break;
+				}
+				
 				// Count transactions coming from this peer
 				$transaction_counter++;
 
@@ -489,7 +501,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 					break;
 				}
 
-				if(strlen($current_hash) >= 64)
+				if(strlen($current_hash) == 64)
 				{
 					// Old Queue System Check
 					//Check if this transaction is already in our queue
@@ -567,7 +579,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 							if($crypt_hash_check != $transaction_hash)
 							{
 								// Ok, something is wrong here...
-								write_log("Crypt Field Hash Check Failed for Public Key: " . base64_encode($transaction_public_key), "QC");
+								write_log("Crypt Field Hash Check Failed for Public Key: " . $transaction_public_key, "QC");
 								$transaction_attribute = "mismatch";
 								$mismatch_error_count++;
 
@@ -669,7 +681,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 						else
 						{
 							// Attribute does not match anything valid
-							$valid_amount == FALSE;
+							$valid_amount = FALSE;
 						}
 
 						$final_hash_compare = hash('sha256', $transaction_crypt1 . $transaction_crypt2);
@@ -681,7 +693,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 						&& strlen($transaction_public_key) > 300 
 						&& strlen($public_key_to) > 300 
 						&& $transaction_timestamp >= $current_transaction_cycle 
-						&& $transaction_timestamp < $next_transaction_cycle
+						&& $transaction_timestamp < $next_transaction_cycle 
 						&& $valid_amount == TRUE)
 					{
 						// Check for 100 public key limit in the transaction queue
