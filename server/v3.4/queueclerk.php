@@ -98,7 +98,7 @@ if($_GET["action"] == "transaction" && empty($_GET["number"]) == FALSE)
 		{
 			$sql_row = mysql_fetch_array($sql_result);
 
-			$transaction_queue_hash.= $sql_row["timestamp"] . $sql_row["public_key"] . $sql_row["crypt_data1"] . 
+			$transaction_queue_hash = $sql_row["timestamp"] . $sql_row["public_key"] . $sql_row["crypt_data1"] . 
 			$sql_row["crypt_data2"] . $sql_row["crypt_data3"] . $sql_row["hash"] . $sql_row["attribute"];		
 
 			if(hash('md5', $transaction_queue_hash) == $current_hash)
@@ -206,7 +206,7 @@ if($_GET["action"] == "input_transaction")
 				// Find destination public key
 				$public_key_to_1 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt1));
 				$public_key_to_2 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt2));
-				$public_key_to = $public_key_to_1 . $public_key_to_2;
+				$public_key_to = filter_sql($public_key_to_1 . $public_key_to_2);
 
 				$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 
@@ -450,13 +450,13 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 		$hash_array = array(); // Empty Array
 		$transaction_counter = 0;
 		$peer_transaction_limit = 1000;
-		$mismatch_error_limit = 5;
+		$mismatch_error_limit = 3;
 
 		for ($i = 1; $i < $transaction_queue_hash_different + 1; $i++)
 		{
 			if($next_transaction_cycle - time() < 10)
 			{
-				// Transaction Cycle has almost ended, break from loop
+				// Transaction Cycle has almost ended, break from loop early
 				break;
 			}			
 			
@@ -474,11 +474,16 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 			$transaction_counter = 0;
 			$mismatch_error_count = 0;
 
+			// Load queue data from database first, then recycle it for seeking to avoid a constant DB I/O hit
+			$sql2 = "SELECT * FROM `transaction_queue`";
+			$sql_result2 = mysql_query($sql2);
+			$sql_num_results2 = mysql_num_rows($sql_result2);
+
 			while(empty($current_hash) == FALSE)
 			{
 				if($next_transaction_cycle - time() < 10)
 				{
-					// Transaction Cycle has almost ended, break from loop
+					// Transaction Cycle has almost ended, break from loop early
 					break;
 				}
 				
@@ -510,11 +515,10 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 				else
 				{
 					// New Queue System Check
-					$sql2 = "SELECT * FROM `transaction_queue`";
-					$sql_result2 = mysql_query($sql2);
-					$sql_num_results2 = mysql_num_rows($sql_result2);
 					$queue_hash_test = NULL;
 					$hash_match = NULL;					
+					
+					mysql_data_seek($sql_result2, 0); // Reset pointer back to beginning of data
 
 					if($sql_num_results2 > 0)
 					{
@@ -522,7 +526,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 						{
 							$sql_row2 = mysql_fetch_array($sql_result2);
 
-							$queue_hash_test.= $sql_row2["timestamp"] . $sql_row2["public_key"] . $sql_row2["crypt_data1"] . 
+							$queue_hash_test = $sql_row2["timestamp"] . $sql_row2["public_key"] . $sql_row2["crypt_data1"] . 
 							$sql_row2["crypt_data2"] . $sql_row2["crypt_data3"] . $sql_row2["hash"] . $sql_row2["attribute"];		
 
 							if(hash('md5', $queue_hash_test) == $current_hash)
@@ -633,7 +637,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 							// Find destination public key
 							$public_key_to_1 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt1));
 							$public_key_to_2 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt2));
-							$public_key_to = $public_key_to_1 . $public_key_to_2;
+							$public_key_to = filter_sql($public_key_to_1 . $public_key_to_2);
 
 							$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 

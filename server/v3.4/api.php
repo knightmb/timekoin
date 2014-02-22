@@ -672,12 +672,25 @@ if($_GET["action"] == "send_tk")
 			}
 			else
 			{
-				$hash_match = mysql_result(mysql_query("SELECT * FROM `transaction_queue` WHERE `hash` = '$transaction_hash' LIMIT 1"),0,0);
+				// Make sure hash is actually valid and not made up to stop other transactions
+				$crypt_hash_check = hash('sha256', $transaction_crypt1 . $transaction_crypt2 . $transaction_crypt3);
+
+				if($transaction_hash == $crypt_hash_check)
+				{
+					// Hash check good, check for duplicate transaction already in queue
+					$hash_match = mysql_result(mysql_query("SELECT timestamp FROM `transaction_queue` WHERE `timestamp`= $transaction_timestamp AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+				}
+				else
+				{
+					// Ok, something is very wrong here...
+					write_log("Crypt Field Hash Check Failed from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "AP");
+					$hash_match = "mismatch";
+				}
 			}
 		}
 		else
 		{
-			// A qhash is required to verify the transaction now
+			// A qhash is required to verify the transaction
 			write_log("Queue Hash Data Empty from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "AP");
 			$hash_match = "mismatch";
 		}
@@ -698,7 +711,7 @@ if($_GET["action"] == "send_tk")
 				// Find destination public key
 				$public_key_to_1 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt1));
 				$public_key_to_2 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt2));
-				$public_key_to = $public_key_to_1 . $public_key_to_2;
+				$public_key_to = filter_sql($public_key_to_1 . $public_key_to_2);
 
 				$inside_transaction_hash = find_string("HASH=", "", $transaction_info, TRUE);
 
