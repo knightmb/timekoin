@@ -2792,7 +2792,7 @@ if($_SESSION["valid_login"] == TRUE)
 				This can take some time, please be patient...</strong><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Repair History</th></tr>';
 
-			$body_string .= visual_repair($_POST["repair_from"]);
+			$body_string .= visual_repair($_POST["repair_from"], 0);
 			$body_string .= '</table></div>';
 
 			write_log("A History Data Repair was started from Transaction Cycle #" . $_POST["repair_from"], "GU");

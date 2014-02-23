@@ -1451,6 +1451,11 @@ function visual_repair($block_start = 0, $cycle_limit = 500)
 	$current_transaction_cycle = transaction_cycle(0, TRUE);
 	$output;
 
+	if($cycle_limit == 0)
+	{
+		$cycle_limit = transaction_cycle(0, TRUE);
+	}
+
 	// Wipe all blocks ahead
 	$time_range1 = transaction_cycle(0 - $current_transaction_cycle + $block_start);
 	$time_range2 = transaction_cycle(0 - $current_transaction_cycle + $block_start + $cycle_limit);
@@ -1459,7 +1464,7 @@ function visual_repair($block_start = 0, $cycle_limit = 500)
 
 	if(mysql_query($sql) == TRUE)
 	{
-		$output .= '<tr><td class="style2">Clearing Hash Timestamps Ahead of Block #' . $block_start . '</td></tr>';
+		$output .= '<tr><td class="style2">Clearing Hash Timestamps Ahead of Transaction Cycle #' . $block_start . '</td></tr>';
 	}
 	else
 	{
@@ -1475,7 +1480,7 @@ function visual_repair($block_start = 0, $cycle_limit = 500)
 			break;
 		}
 
-		$output .= "<tr><td><strong>Repairing Block# $t</strong>";
+		$output .= "<tr><td><strong>Repairing Transaction Cycle# $t</strong>";
 
 		$time1 = transaction_cycle(0 - $current_transaction_cycle - 1 + $t);
 		$time2 = transaction_cycle(0 - $current_transaction_cycle + $t);
