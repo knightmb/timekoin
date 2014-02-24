@@ -1,5 +1,10 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 3.4 (Released 2014-2-14)
+============================================
+- Blank/Invalid/Garbage Destination Public Keys are properly ignored and not stored in the transaction history
+
+
 Timekoin Server - 3.36 (Released 2014-2-11)
 ============================================
 - Bug fix for Treasurer Processor that was triggering flood protection in other peers
@@ -15,7 +20,6 @@ Timekoin Server - 3.36 (Released 2014-2-11)
 - Backup Tab requires confirm button before displaying Private Key to avoid accidental click exposure over un-encrypted connection or public network
 - Functions added to allow plugin developers to auto-update inside the GUI vs. uninstall, re-install new plugin versions
 - More intelligent sql injection filtering that is more CPU friendly for low end servers
-
 
 Timekoin Server - 3.2 (Released 2014-1-14)
 ============================================
