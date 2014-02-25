@@ -321,7 +321,7 @@ if($_GET["action"] == "input_transaction")
 }
 //***********************************************************************************
 // External Flood Protection
-	log_ip("QU", scale_trigger(4));
+	log_ip("QU", scale_trigger(10));
 //***********************************************************************************
 // First time run check
 $loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,0);
@@ -350,6 +350,7 @@ else
 		if($clone_id == $crc32_password_hash)// Check if Process Cloning should take place
 		{
 			$process_clone = TRUE;
+			session_write_close(); // Don't lock session, let multiple instances run
 		}
 		else
 		{
@@ -415,6 +416,16 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 	{
 		// Store in database for proper update when peers are polling this info
 		mysql_query("UPDATE `options` SET `field_data` = '$transaction_queue_hash' WHERE `options`.`field_name` = 'transaction_queue_hash' LIMIT 1");
+	}
+	
+	if($process_clone == FALSE)
+	{
+		// Launch Extra Process into Web Server to better poll more peers at once
+		$crc32_password_hash = hash('crc32', mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,0));
+		clone_script("queueclerk.php?clone_id=$crc32_password_hash");
+		clone_script("queueclerk.php?clone_id=$crc32_password_hash");
+		clone_script("queueclerk.php?clone_id=$crc32_password_hash");
+		clone_script("queueclerk.php?clone_id=$crc32_password_hash");
 	}
 
 	// How does my transaction queue compare to others?
@@ -781,9 +792,6 @@ else
 //***********************************************************************************
 if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cycle) > 30)
 {
-	// Launch Extra Process into Web Server to better poll more peers at once
-	$crc32_password_hash = hash('crc32', mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,0));
-	clone_script("queueclerk.php?clone_id=$crc32_password_hash");
 	sleep(1);
 }
 else
