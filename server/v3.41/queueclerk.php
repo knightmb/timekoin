@@ -326,6 +326,7 @@ if($_GET["action"] == "input_transaction")
 // First time run check
 $loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,0);
 $last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_last_heartbeat' LIMIT 1"),0,0);
+$clone_id = $_GET["clone_id"];
 
 if($loop_active === FALSE && $last_heartbeat == 1)
 {
@@ -336,9 +337,25 @@ if($loop_active === FALSE && $last_heartbeat == 1)
 }
 else
 {
-	// Record already exist, called while another process of this script
-	// was already running.
-	exit;
+	if(empty($clone_id) == TRUE)
+	{
+		// Record already exist, called while another process of this script
+		// was already running.
+		exit;
+	}
+	else
+	{
+		$crc32_password_hash = hash('crc32', mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,0));
+
+		if($clone_id == $crc32_password_hash)// Check if Process Cloning should take place
+		{
+			$process_clone = TRUE;
+		}
+		else
+		{
+			exit;
+		}
+	}
 }
 
 ini_set('user_agent', 'Timekoin Server (Queueclerk) v' . TIMEKOIN_VERSION);
@@ -348,33 +365,36 @@ while(1) // Begin Infinite Loop
 {
 set_time_limit(300);
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,0);
+if($process_clone == FALSE) // No Activity Settings for Clone Process
+{
+	$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,0);
 
-// Check script status
-if($loop_active === FALSE)
-{
-	// Time to exit
-	exit;
-}
-else if($loop_active == 0)
-{
-	// Set the working status of 1
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
-}
-else if($loop_active == 2) // Wake from sleep
-{
-	// Set the working status of 1
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
-}
-else if($loop_active == 3) // Shutdown
-{
-	mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active'");
-	exit;
-}
-else
-{
-	// Script called while still working
-	exit;
+	// Check script status
+	if($loop_active === FALSE)
+	{
+		// Time to exit
+		exit;
+	}
+	else if($loop_active == 0)
+	{
+		// Set the working status of 1
+		mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
+	}
+	else if($loop_active == 2) // Wake from sleep
+	{
+		// Set the working status of 1
+		mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
+	}
+	else if($loop_active == 3) // Shutdown
+	{
+		mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active'");
+		exit;
+	}
+	else
+	{
+		// Script called while still working
+		exit;
+	}
 }
 //***********************************************************************************
 //***********************************************************************************
@@ -736,30 +756,38 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 
 //***********************************************************************************
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,0);
-
-// Check script status
-if($loop_active == 3)
+if($process_clone == FALSE)
 {
-	// Time to exit
-	mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active'");
-	exit;
+	$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,0);
+
+	// Check script status
+	if($loop_active == 3)
+	{
+		// Time to exit
+		mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active'");
+		exit;
+	}
+
+	// Script finished, set standby status to 2
+	mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
+
+	// Record when this script finished
+	mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'queueclerk_last_heartbeat' LIMIT 1");
 }
-
-// Script finished, set standby status to 2
-mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
-
-// Record when this script finished
-mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'queueclerk_last_heartbeat' LIMIT 1");
-
+else
+{
+	exit; // Exit Clone Process
+}
 //***********************************************************************************
 if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cycle) > 30)
 {
+	// Launch Extra Process into Web Server to better poll more peers at once
+	$crc32_password_hash = hash('crc32', mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,0));
+	clone_script("queueclerk.php?clone_id=$crc32_password_hash");
 	sleep(1);
 }
 else
 {
-	set_time_limit(300);	// Reset Timer to avoid sleep timeout
 	sleep(10);
 }
 } // End Infinite Loop

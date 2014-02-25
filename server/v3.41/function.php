@@ -340,7 +340,7 @@ function call_script($script, $priority = 1, $plugin = FALSE, $web_server_call =
 	if($web_server_call == TRUE)
 	{
 		// No Properly working PHP CLI Extensions for some odd reason, call from web server instead
-		$cli_port = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_port' LIMIT 1"),0,0);		
+		$cli_port = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_port' LIMIT 1"),0,0);
 		
 		if(empty($cli_port) == TRUE)
 		{
@@ -409,6 +409,24 @@ function call_script($script, $priority = 1, $plugin = FALSE, $web_server_call =
 	return;
 }
 //***********************************************************************************
+function clone_script($script)
+{
+	// No Properly working PHP CLI Extensions for some odd reason, call from web server instead
+	$cli_port = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_port' LIMIT 1"),0,0);
+		
+	if(empty($cli_port) == TRUE)
+	{
+		// Use the same server port that is reported to other peers
+		poll_peer(NULL, "localhost", my_subfolder(), my_port_number(), 1, $script);
+	}
+	else
+	{
+		// Use a different port number than what is reported to other peers.
+		// Useful for port forwarding where the External Internet port is different than
+		// the Internal web server port being forwarded through the router.
+		poll_peer(NULL, "localhost", my_subfolder(), $cli_port, 1, $script);
+	}
+}
 //***********************************************************************************
 function walkhistory($block_start = 0, $block_end = 0)
 {
