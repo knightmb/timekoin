@@ -16,7 +16,17 @@ if($_SESSION["valid_login"] == FALSE && $_GET["action"] != "login")
 	{
 		// Sorry, your IP address has been banned :(
 		exit ("Your IP Has Been Banned");
-	}	
+	}
+	
+	 // START WARMACH ADDED ****************************************** 
+    // Check if SSL is required
+    $UI_SSL = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'UI_SSL' LIMIT 1"),0,"field_data");    
+    if($UI_SSL == "1" && $_SERVER["HTTPS"] != "on")
+    {
+        header("Location: https://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]);
+        exit();
+    }
+    // END WARMACH ADDED ****************************************** 
 
 	log_ip("GU", scale_trigger(5)); // Avoid flood loading loging screen
 
@@ -106,6 +116,16 @@ if($_SESSION["valid_login"] == TRUE)
 		home_screen('ERROR','<font color="red"><strong>Could Not Select Database</strong></font>', '', '');
 		exit;
 	}
+	
+	// START WARMACH ADDED ****************************************** 
+    // Check if SSL is required
+    $UI_SSL = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'UI_SSL' LIMIT 1"),0,"field_data");    
+    if($UI_SSL == "1" && $_SERVER["HTTPS"] != "on")
+    {
+        header("Location: https://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]);
+        exit();
+    }
+    // END WARMACH ADDED ****************************************** 
 //****************************************************************************
 // Global Variables
 	$user_timezone = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,0);
@@ -1338,6 +1358,32 @@ if($_SESSION["valid_login"] == TRUE)
 			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["peerlist_update"] . "' WHERE `options`.`field_name` = 'refresh_realtime_peerlist' LIMIT 1");
 			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["queue_update"] . "' WHERE `options`.`field_name` = 'refresh_realtime_queue' LIMIT 1");
 			
+			 // START WARMACH ADDED ******************************************                          
+		            $UI_SSL_db = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'UI_SSL' LIMIT 1"),0,"field_data");
+		            if ($_POST["UI_SSL"] == "1")
+		            {                                
+		                if ($UI_SSL_db == "")
+		                {
+		                    mysql_query("INSERT INTO `options` (`field_name`,`field_data`) VALUES('UI_SSL','1')");
+		                }
+		                ELSE
+		                {
+		                    mysql_query("UPDATE `options` SET `field_data` = '1' WHERE `options`.`field_name` = 'UI_SSL' LIMIT 1");
+		                }
+		            }
+		            else
+		            {
+		                if ($UI_SSL_db == "")
+		                {
+		                    mysql_query("INSERT INTO `options` (`field_name`,`field_data`) VALUES('UI_SSL','0')");
+		                }
+		                ELSE
+		                {
+		                    mysql_query("UPDATE `options` SET `field_data` = '0' WHERE `options`.`field_name` = 'UI_SSL' LIMIT 1");
+		                }
+		            }
+		            // END WARMACH ADDED ******************************************   
+            
 			$super_peer_limit = intval($_POST["super_peer_limit"]);
 			if($super_peer_limit > 0 && $super_peer_limit < 10) { $super_peer_limit = 10; } // Limit range
 			if($super_peer_limit > 500) { $super_peer_limit = 500; } // Limit range
