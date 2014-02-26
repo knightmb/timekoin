@@ -1957,7 +1957,7 @@ function check_for_updates($code_feedback = FALSE)
 	}
 	else
 	{
-		$update_check1 .= '<strong>ERROR: Could Not Contact Secure Server https://timekoin.com</strong>';
+		$update_check1 .= '<strong><font color="red">ERROR: Could Not Contact Secure Server https://timekoin.com</font></strong>';
 	}
 
 	return $update_check1;
@@ -2038,7 +2038,7 @@ function run_script_update($script_name, $script_php, $poll_version, $context, $
 
 		if($sha_check == FALSE)
 		{
-			return ' - <strong>ERROR: Unable to Download File Properly</strong>...<br><br>';
+			return ' - <strong><font color="red">ERROR: Unable to Download File Properly</font></strong>...<br><br>';
 		}
 		else
 		{
