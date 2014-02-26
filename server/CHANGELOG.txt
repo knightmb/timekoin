@@ -1,9 +1,18 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 3.45 (Released 2014-2-26)
+============================================
+- Red highlight errors in built-in software update
+- Standardize Broadcast Transactions to +1 Transaction Cycle format for Timestamp
+- Generation Transaction Creation & Storage times now locked to +1 second after transaction cycle they are to be stored in
+- Slow/High Latency Peer timeout limits created to prevent stalling Queue Transaction collection
+- Added extra web process for transaction queue processing
+- Use more unique self key for peerlist when preventing self connections
+
+
 Timekoin Server - 3.4 (Released 2014-2-14)
 ============================================
 - Blank/Invalid/Garbage Destination Public Keys are properly ignored and not stored in the transaction history
-
 
 Timekoin Server - 3.36 (Released 2014-2-11)
 ============================================
