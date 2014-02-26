@@ -300,6 +300,8 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						// How much can be generated at one time?
 						$allowed_amount = peer_gen_amount($my_public_key);
 
+						$creation_time = $current_generation_cycle + 1;
+
 						//Not found, add it to transaction queue
 						$arr1 = str_split($my_public_key, 181);
 
@@ -309,14 +311,14 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						$encryptedData2 = tk_encrypt($my_private_key, $arr1[1]);					
 						
 						$encryptedData64_2 = base64_encode($encryptedData2);
-						$transaction_data = "AMOUNT=$allowed_amount---TIME=" . time() . "---HASH=" . hash('sha256', $encryptedData64_1 . $encryptedData64_2);
+						$transaction_data = "AMOUNT=$allowed_amount---TIME=" . $creation_time . "---HASH=" . hash('sha256', $encryptedData64_1 . $encryptedData64_2);
 						$encryptedData3 = tk_encrypt($my_private_key, $transaction_data);
 						
 						$encryptedData64_3 = base64_encode($encryptedData3);
 						$duplicate_hash_check = hash('sha256', $encryptedData64_1 . $encryptedData64_2 . $encryptedData64_3);
 
 						$sql = "INSERT INTO `my_transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
-						VALUES ('" . time() . "', '$my_public_key', '$encryptedData64_1', '$encryptedData64_2' , '$encryptedData64_3', '$duplicate_hash_check' , 'G')";
+						VALUES ('" . $creation_time . "', '$my_public_key', '$encryptedData64_1', '$encryptedData64_2' , '$encryptedData64_3', '$duplicate_hash_check' , 'G')";
 						
 						mysql_query($sql);
 					}
