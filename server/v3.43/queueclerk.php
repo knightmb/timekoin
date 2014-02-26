@@ -321,7 +321,7 @@ if($_GET["action"] == "input_transaction")
 }
 //***********************************************************************************
 // External Flood Protection
-	log_ip("QU", scale_trigger(10));
+	log_ip("QU", scale_trigger(5));
 //***********************************************************************************
 // First time run check
 $loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,0);
@@ -417,12 +417,11 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 		// Store in database for proper update when peers are polling this info
 		mysql_query("UPDATE `options` SET `field_data` = '$transaction_queue_hash' WHERE `options`.`field_name` = 'transaction_queue_hash' LIMIT 1");
 	}
-	
+
 	if($process_clone == FALSE)
 	{
 		// Launch Extra Process into Web Server to better poll more peers at once
 		$crc32_password_hash = hash('crc32', mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,0));
-		clone_script("queueclerk.php?clone_id=$crc32_password_hash");
 		clone_script("queueclerk.php?clone_id=$crc32_password_hash");
 		clone_script("queueclerk.php?clone_id=$crc32_password_hash");
 		clone_script("queueclerk.php?clone_id=$crc32_password_hash");
@@ -482,6 +481,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 		$transaction_counter = 0;
 		$peer_transaction_limit = 1000;
 		$mismatch_error_limit = 3;
+		$max_peer_sync_time = 30; // Maximum seconds to allow Peer before moving to another peer
 
 		for ($i = 1; $i < $transaction_queue_hash_different + 1; $i++)
 		{
@@ -495,6 +495,8 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 			$domain = $hash_different["domain$i"];
 			$subfolder = $hash_different["subfolder$i"];
 			$port_number = $hash_different["port_number$i"];
+
+			$peer_clock_start = time();
 
 			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 83000, "queueclerk.php?action=queue");
 
@@ -517,7 +519,13 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 					// Transaction Cycle has almost ended, break from loop early
 					break;
 				}
-				
+
+				if(time() - $peer_clock_start > $max_peer_sync_time)
+				{
+					// Peer is too slow, break away queue collection
+					break;
+				}
+
 				// Count transactions coming from this peer
 				$transaction_counter++;
 
