@@ -641,6 +641,8 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 		// Scale clones to number of active peers to avoid clones ganging up on a single peer
 		$scale_clones = intval($active_peers / 5);
 
+		if($scale_clones > 5) { $scale_clones = 5; }// Set Max Limit Range
+
 		while($scale_clones > 0)
 		{
 			clone_script("queueclerk.php?clone_id=$crc32_password_hash");
