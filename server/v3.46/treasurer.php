@@ -95,8 +95,8 @@ $sql_num_results = mysql_num_rows($sql_result);
 if($sql_num_results > 0)
 {
 	// Can we copy my transaction queue to the main queue in the allowed time?
-	// Not allowed 180 seconds before and 20 seconds after transaction cycle.
-	if(($next_transaction_cycle - time()) > 180 && (time() - $current_transaction_cycle) > 20)
+	// Not allowed 150 seconds before and 15 seconds after transaction cycle.
+	if(($next_transaction_cycle - time()) > 150 && (time() - $current_transaction_cycle) > 15)
 	{
 		$firewall_blocked = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'firewall_blocked_peer' LIMIT 1"),0,0));
 		
@@ -156,26 +156,24 @@ if($sql_num_results > 0)
 
 						// Create map with request parameters
 						$params = array ('timestamp' => $timestamp, 
-							'public_key' => base64_encode($public_key), 
-							'crypt_data1' => $crypt1, 
-							'crypt_data2' => $crypt2, 
-							'crypt_data3' => $crypt3, 
-							'hash' => $hash_check, 
-							'attribute' => $attribute,
-							'qhash' => $qhash);
+						'public_key' => base64_encode($public_key), 
+						'crypt_data1' => $crypt1, 
+						'crypt_data2' => $crypt2, 
+						'crypt_data3' => $crypt3, 
+						'hash' => $hash_check, 
+						'attribute' => $attribute,
+						'qhash' => $qhash);
 						 
 						// Build Http query using params
 						$query = http_build_query($params);
 						 
 						// Create Http context details
-						$contextData = array (
-											 'method' => 'POST',
-											 'header' => "Connection: close\r\n".
-															 "Content-Length: ".strlen($query)."\r\n",
-											 'content'=> $query );
+						$contextData = array ('method' => 'POST',
+						'header' => "Connection: close\r\n"."Content-Length: ".strlen($query)."\r\n",
+						'content'=> $query);
 						 
 						// Create context resource for our request
-						$context = stream_context_create (array ( 'http' => $contextData ));
+						$context = stream_context_create(array('http' => $contextData));
 
 						// Broadcast to all active peers
 						for ($i2 = 0; $i2 < $sql_num_results2; $i2++)

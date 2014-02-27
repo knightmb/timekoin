@@ -40,6 +40,214 @@ if($_GET["action"] == "trans_hash")
 }
 //***********************************************************************************
 //***********************************************************************************
+// Answer transaction hash poll
+if($_GET["action"] == "reverse_queue")
+{
+	$next_transaction_cycle = transaction_cycle(1);
+	$current_transaction_cycle = transaction_cycle(0);
+
+	// Can we work on the transactions in the database?
+	// Not allowed 30 seconds before and 30 seconds after transaction cycle.
+	if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cycle) > 30)
+	{
+		$domain = filter_sql($_GET["domain"]);
+		$ip = $_SERVER['REMOTE_ADDR'];
+		$subfolder = filter_sql($_GET["subfolder"]);
+		$port = intval($_GET["port"]);
+		$reverse_queue_data = filter_sql($_POST["reverse_queue_data"]);
+		$qhash = $_POST["qhash"];
+		$connected_peer_check;
+
+		if(empty($domain) == TRUE) //Only work with data from peers you are connected with, avoid Anonymous data from flooding in
+		{
+			// No Domain, IP Only
+			$connected_peer_check = mysql_result(mysql_query("SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip' AND `subfolder` = '$subfolder' AND `port_number` = $port LIMIT 1"),0,0);
+		}
+		else
+		{
+			// Domain
+			$connected_peer_check = mysql_result(mysql_query("SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port LIMIT 1"),0,0);
+		}
+
+		if($connected_peer_check != "" && empty($reverse_queue_data) == TRUE)
+		{
+			// Polling to check for active and working reverse queue possible
+			echo "OK";
+
+			// Log inbound IP activity
+			log_ip("QU", 1);
+			exit;
+		}
+		else if($connected_peer_check == "")
+		{
+			// Don't allow flood/spam data from unknown peers
+			log_ip("QU", scale_trigger(20));
+			exit;
+		}
+
+		if($connected_peer_check != "" && empty($reverse_queue_data) == FALSE && $qhash == hash('md5', $reverse_queue_data))// Connected Peer has Bulk Queue Data to Process
+		{
+			// Data passes MD5 check for Data Corruption
+			session_write_close(); // Don't lock session, so other peer is not waiting for a finish reply while processing
+			$match_number = 1;
+			$good_transaction_insert = 0;
+			$ignore_transaction_insert = 0;		
+			$transaction_timestamp = intval(find_string("---timestamp$match_number=", "---public_key$match_number", $reverse_queue_data));
+			$transaction_public_key = filter_sql(base64_decode(find_string("---public_key$match_number=", "---crypt1_data$match_number", $reverse_queue_data)));
+			$transaction_crypt1 = filter_sql(find_string("---crypt1_data$match_number=", "---crypt2_data$match_number", $reverse_queue_data));
+			$transaction_crypt2 = filter_sql(find_string("---crypt2_data$match_number=", "---crypt3_data$match_number", $reverse_queue_data));
+			$transaction_crypt3 = filter_sql(find_string("---crypt3_data$match_number=", "---hash$match_number", $reverse_queue_data));
+			$transaction_hash = filter_sql(find_string("---hash$match_number=", "---attribute$match_number", $reverse_queue_data));
+			$transaction_attribute = filter_sql(find_string("---attribute$match_number=", "---end$match_number", $reverse_queue_data));
+
+			while(empty($transaction_public_key) == FALSE && $transaction_attribute != "R")//Insert Queue Transactions that do not currently exist
+			{
+				// Make sure hash is actually valid and not made up to stop other transactions
+				$crypt_hash_check = hash('sha256', $transaction_crypt1 . $transaction_crypt2 . $transaction_crypt3);
+
+				if($transaction_hash == $crypt_hash_check)
+				{
+					// Hash check good, check for duplicate transaction already in queue
+					$hash_match = mysql_result(mysql_query("SELECT timestamp FROM `transaction_queue` WHERE `timestamp`= $transaction_timestamp AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+				}
+				else
+				{
+					// Ok, something is very wrong here...
+					$ignore_transaction_insert++;
+					$hash_match = "mismatch";
+				}
+
+				if(empty($hash_match) == TRUE) // Duplicate Check
+				{
+					// No duplicate found, continue processing
+					// Check to make sure attribute is valid
+					if($transaction_attribute == "T" || $transaction_attribute == "G")
+					{
+						// Decrypt transaction information for regular transaction data
+						// and check to make sure the public key that is being sent to
+						// has not been tampered with.
+						$transaction_info = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt3));
+						
+						// Find destination public key
+						$public_key_to_1 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt1));
+						$public_key_to_2 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt2));
+						$public_key_to = filter_sql($public_key_to_1 . $public_key_to_2);
+
+						$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
+
+						$transaction_amount_sent_test = intval($transaction_amount_sent);
+
+						if($transaction_amount_sent_test == $transaction_amount_sent)
+						{
+							// Is a valid integer, amount greater than zero?
+							if($transaction_amount_sent > 0)
+							{
+								$valid_amount = TRUE;
+							}
+							else
+							{
+								$valid_amount = FALSE;
+							}
+						}
+						else
+						{
+							// Is NOT a valid integer, fail check
+							$valid_amount = FALSE;
+						}
+
+						if($transaction_attribute == "G")
+						{
+							if($transaction_amount_sent_test > 10)
+							{
+								// Filter silly generation amounts :p
+								$valid_amount = FALSE;
+							}
+						}
+
+						$inside_transaction_hash = find_string("HASH=", "", $transaction_info, TRUE);
+
+						// Check if a message is encoded in this data as well
+						if(strlen($inside_transaction_hash) != 64)
+						{
+							// A message is also encoded
+							$inside_transaction_hash = find_string("HASH=", "---MSG", $transaction_info);
+						}
+
+						// Check Hash against 3 crypt fields
+						$crypt_hash_check = hash('sha256', $transaction_crypt1 . $transaction_crypt2 . $transaction_crypt3);					
+					}
+
+					$final_hash_compare = hash('sha256', $transaction_crypt1 . $transaction_crypt2);
+
+					// Check to make sure this transaction is even valid
+					if($transaction_hash == $crypt_hash_check 
+						&& $inside_transaction_hash == $final_hash_compare 
+						&& strlen($transaction_public_key) > 300 
+						&& strlen($public_key_to) > 300 
+						&& $transaction_timestamp >= $current_transaction_cycle 
+						&& $transaction_timestamp < $next_transaction_cycle
+						&& $valid_amount == TRUE)
+					{
+						// Check for 100 public key limit in the transaction queue
+						$sql = "SELECT timestamp FROM `transaction_queue` WHERE `public_key` = '$transaction_public_key'";
+						$sql_result = mysql_query($sql);
+						$sql_num_results = mysql_num_rows($sql_result);
+
+						if($sql_num_results < 100)
+						{						
+							// Transaction hash and real hash match
+							$sql = "INSERT INTO `transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
+							VALUES ('$transaction_timestamp', '$transaction_public_key', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
+							
+							if(mysql_query($sql) == TRUE)
+							{
+								// Transaction Insert Accepted
+								$good_transaction_insert++;
+							}
+						}
+						else
+						{
+							// More than 100 Transactions for Same Public Key
+							$ignore_transaction_insert++;
+						}
+					}
+					else
+					{
+						// Something was wrong with Transaction Data
+						$ignore_transaction_insert++;
+					}
+
+				} // End Duplicate & Timestamp check
+				else
+				{
+					// This Transaction is Already in the Queue
+					$ignore_transaction_insert++;
+				}
+
+				// Cycle up next batch of data
+				$match_number++;
+				$transaction_timestamp = intval(find_string("---timestamp$match_number=", "---public_key$match_number", $reverse_queue_data));
+				$transaction_public_key = filter_sql(base64_decode(find_string("---public_key$match_number=", "---crypt1_data$match_number", $reverse_queue_data)));
+				$transaction_crypt1 = filter_sql(find_string("---crypt1_data$match_number=", "---crypt2_data$match_number", $reverse_queue_data));
+				$transaction_crypt2 = filter_sql(find_string("---crypt2_data$match_number=", "---crypt3_data$match_number", $reverse_queue_data));
+				$transaction_crypt3 = filter_sql(find_string("---crypt3_data$match_number=", "---hash$match_number", $reverse_queue_data));
+				$transaction_hash = filter_sql(find_string("---hash$match_number=", "---attribute$match_number", $reverse_queue_data));
+				$transaction_attribute = filter_sql(find_string("---attribute$match_number=", "---end$match_number", $reverse_queue_data));			
+
+			} // End While Loop Cycling
+
+			write_log("Reverse Queue Update For [$good_transaction_insert] Transactions Complete - [$ignore_transaction_insert] Ignored - From Peer $ip$domain:$port/$subfolder", "QC");
+
+		} // End Valid Queue Data MD5 Check
+
+	}// End Valid Transaction Cycle Check
+
+	// Log inbound IP activity
+	log_ip("QU", 1);
+	exit;
+}
+//***********************************************************************************
+//***********************************************************************************
 // Answer transaction queue poll
 if($_GET["action"] == "queue")
 {
@@ -138,8 +346,8 @@ if($_GET["action"] == "input_transaction")
 	$current_transaction_cycle = transaction_cycle(0);
 
 	// Can we work on the transactions in the database?
-	// Not allowed 180 seconds before and 20 seconds after transaction cycle.
-	if(($next_transaction_cycle - time()) > 180 && (time() - $current_transaction_cycle) > 20)
+	// Not allowed 180 seconds before and 15 seconds after transaction cycle.
+	if(($next_transaction_cycle - time()) > 180 && (time() - $current_transaction_cycle) > 15)
 	{
 		$transaction_timestamp = intval($_POST["timestamp"]);
 		$transaction_public_key = $_POST["public_key"];
@@ -159,7 +367,7 @@ if($_GET["action"] == "input_transaction")
 			// Compare hashes to make sure data is intact
 			if($transaction_qhash != $qhash)
 			{
-				write_log("Queue Hash Data MisMatch from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
+				write_log("Queue Hash Data MisMatch from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: $transaction_public_key", "QC");
 				$hash_match = "mismatch";
 				log_ip("QU", scale_trigger(10));
 			}
@@ -176,7 +384,7 @@ if($_GET["action"] == "input_transaction")
 				else
 				{
 					// Ok, something is very wrong here...
-					write_log("Crypt Field Hash Check Failed from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
+					write_log("Crypt Field Hash Check Failed from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: $transaction_public_key", "QC");
 					$hash_match = "mismatch";
 					log_ip("QU", scale_trigger(5));
 				}
@@ -185,7 +393,7 @@ if($_GET["action"] == "input_transaction")
 		else
 		{
 			// A qhash is required to verify the transaction
-			write_log("Queue Hash Data Empty from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
+			write_log("Queue Hash Data Empty from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: $transaction_public_key", "QC");
 			$hash_match = "mismatch";
 			log_ip("QU", scale_trigger(10));
 		}
@@ -418,13 +626,26 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 		mysql_query("UPDATE `options` SET `field_data` = '$transaction_queue_hash' WHERE `options`.`field_name` = 'transaction_queue_hash' LIMIT 1");
 	}
 
+	$my_server_domain = my_domain();
+	$my_server_subfolder = my_subfolder();
+	$my_server_port_number = my_port_number();
+
 	if($process_clone == FALSE)
 	{
+		// How many active peers do we have?
+		$active_peers = mysql_num_rows(mysql_query("SELECT join_peer_list FROM `active_peer_list`"));
+
 		// Launch Extra Process into Web Server to better poll more peers at once
 		$crc32_password_hash = hash('crc32', mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,0));
-		clone_script("queueclerk.php?clone_id=$crc32_password_hash");
-		clone_script("queueclerk.php?clone_id=$crc32_password_hash");
-		clone_script("queueclerk.php?clone_id=$crc32_password_hash");
+
+		// Scale clones to number of active peers to avoid clones ganging up on a single peer
+		$scale_clones = intval($active_peers / 5);
+
+		while($scale_clones > 0)
+		{
+			clone_script("queueclerk.php?clone_id=$crc32_password_hash");
+			$scale_clones--;
+		}
 	}
 
 	// How does my transaction queue compare to others?
@@ -511,6 +732,92 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 			$sql2 = "SELECT * FROM `transaction_queue`";
 			$sql_result2 = mysql_query($sql2);
 			$sql_num_results2 = mysql_num_rows($sql_result2);
+
+			if($process_clone == TRUE)// Only clone process do Reverse Queue Bulk Transactions
+			{
+				// Check if Peer supports Reverse Queue Processing
+				// The two peers must be connected to each other, won't send bulk data to unknown peers
+				$reverse_queue_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 2, "queueclerk.php?action=reverse_queue&domain=$my_server_domain&subfolder=$my_server_subfolder&port=$my_server_port_number");
+
+				if($reverse_queue_peer == "OK") // Check to make sure this is an active/connected peer
+				{
+					$reverse_queue_data = NULL;
+					$reverse_queue_data_counter = 1;
+
+					mysql_data_seek($sql_result2, 0); // Reset pointer back to beginning of data
+
+					if($sql_num_results2 > 0)
+					{
+						for ($i2 = 0; $i2 < $sql_num_results2; $i2++)
+						{
+							$sql_row2 = mysql_fetch_array($sql_result2);
+							$reverse_match_number = 1;
+							$reverse_current_hash = find_string("---queue$reverse_match_number=", "---end$reverse_match_number", $poll_peer);
+
+							$queue_hash_test = $sql_row2["timestamp"] . $sql_row2["public_key"] . $sql_row2["crypt_data1"] . 
+							$sql_row2["crypt_data2"] . $sql_row2["crypt_data3"] . $sql_row2["hash"] . $sql_row2["attribute"];
+
+							while(empty($reverse_current_hash) == FALSE)
+							{
+								if(hash('md5', $queue_hash_test) == $reverse_current_hash)
+								{
+									// This Peer Already Has This Transaction in Queue
+									$hash_match = TRUE;
+									break;
+								}
+								else
+								{
+									$hash_match = NULL;
+								}
+
+								$reverse_match_number++;				
+								$reverse_current_hash = find_string("---queue$reverse_match_number=", "---end$reverse_match_number", $poll_peer);					
+							}
+
+							if(empty($hash_match) == TRUE && $sql_row2["attribute"] != "R")
+							{
+								// Build Data String to Send to Peer
+								$reverse_queue_data.= "---timestamp$reverse_queue_data_counter=" . $sql_row2["timestamp"] . "---public_key$reverse_queue_data_counter=" . base64_encode($sql_row2["public_key"]) . 
+								"---crypt1_data$reverse_queue_data_counter=" . $sql_row2["crypt_data1"] . "---crypt2_data$reverse_queue_data_counter=" . $sql_row2["crypt_data2"] .
+								"---crypt3_data$reverse_queue_data_counter=" . $sql_row2["crypt_data3"] . "---hash$reverse_queue_data_counter=" . $sql_row2["hash"] . 
+								"---attribute$reverse_queue_data_counter=" . $sql_row2["attribute"] . "---end$reverse_queue_data_counter";
+								$reverse_queue_data_counter++;
+							}
+
+							// No match, move on to next record
+							$queue_hash_test = NULL;
+
+						} // Finished Scanning Transactions
+
+						$qhash = hash('md5', $reverse_queue_data);
+
+						// Create map with request parameters
+						$params = array ('reverse_queue_data' => $reverse_queue_data, 
+						'qhash' => $qhash);
+						 
+						// Build Http query using params
+						$query = http_build_query($params);
+						 
+						// Create Http context details
+						$contextData = array ('method' => 'POST',
+						'header' => "Connection: close\r\n"."Content-Length: ".strlen($query)."\r\n",
+						'content'=> $query);
+						 
+						// Create context resource for our request
+						$context = stream_context_create(array('http' => $contextData));
+						
+						if(empty($reverse_queue_data) == FALSE)
+						{
+							// Send Bulk Transaction Queue Data
+							poll_peer($ip_address, $domain, $subfolder, $port_number, 2, "queueclerk.php?action=reverse_queue&domain=$my_server_domain&subfolder=$my_server_subfolder&port=$my_server_port_number", $context);
+							write_log("Sent [" . ($reverse_queue_data_counter - 1) . "] Bulk Queue Transactions to Peer $ip_address$domain:$port_number/$subfolder","QC");
+						}
+
+					} // More than 0 results returned from Queue
+
+				} // Connected Peer Check for Reverse Queue Bulk Sending
+
+			} // Clone Process Valid Check
 
 			while(empty($current_hash) == FALSE)
 			{
