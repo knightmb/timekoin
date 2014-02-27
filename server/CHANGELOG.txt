@@ -1,5 +1,12 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 3.46 (Released 2014-2-27)
+============================================
+- Reverse polling feature added to Queue Clerk
+- Treasurer tweaks to allow new queue transactions to enter the network sooner
+- Clone Process limit set for 5 in case server admin is running a high number of active clients (+30 or more)
+
+
 Timekoin Server - 3.45 (Released 2014-2-26)
 ============================================
 - Red highlight errors in built-in software update
@@ -8,7 +15,6 @@ Timekoin Server - 3.45 (Released 2014-2-26)
 - Slow/High Latency Peer timeout limits created to prevent stalling Queue Transaction collection
 - Added extra web process for transaction queue processing
 - Use more unique self key for peerlist when preventing self connections
-
 
 Timekoin Server - 3.4 (Released 2014-2-14)
 ============================================
