@@ -753,38 +753,43 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 						for ($i2 = 0; $i2 < $sql_num_results2; $i2++)
 						{
 							$sql_row2 = mysql_fetch_array($sql_result2);
-							$reverse_match_number = 1;
-							$reverse_current_hash = find_string("---queue$reverse_match_number=", "---end$reverse_match_number", $poll_peer);
 
-							$queue_hash_test = $sql_row2["timestamp"] . $sql_row2["public_key"] . $sql_row2["crypt_data1"] . 
-							$sql_row2["crypt_data2"] . $sql_row2["crypt_data3"] . $sql_row2["hash"] . $sql_row2["attribute"];
-
-							while(empty($reverse_current_hash) == FALSE)
+							if($sql_row2["attribute"] == "G" || $sql_row2["attribute"] == "T")
 							{
-								if(hash('md5', $queue_hash_test) == $reverse_current_hash)
+								$reverse_match_number = 1;
+								$reverse_current_hash = find_string("---queue$reverse_match_number=", "---end$reverse_match_number", $poll_peer);
+
+								$queue_hash_test = $sql_row2["timestamp"] . $sql_row2["public_key"] . $sql_row2["crypt_data1"] . 
+								$sql_row2["crypt_data2"] . $sql_row2["crypt_data3"] . $sql_row2["hash"] . $sql_row2["attribute"];
+
+								while(empty($reverse_current_hash) == FALSE)
 								{
-									// This Peer Already Has This Transaction in Queue
-									$hash_match = TRUE;
-									break;
-								}
-								else
-								{
-									$hash_match = NULL;
+									if(hash('md5', $queue_hash_test) == $reverse_current_hash)
+									{
+										// This Peer Already Has This Transaction in Queue
+										$hash_match = TRUE;
+										break;
+									}
+									else
+									{
+										$hash_match = NULL;
+									}
+
+									$reverse_match_number++;				
+									$reverse_current_hash = find_string("---queue$reverse_match_number=", "---end$reverse_match_number", $poll_peer);					
 								}
 
-								$reverse_match_number++;				
-								$reverse_current_hash = find_string("---queue$reverse_match_number=", "---end$reverse_match_number", $poll_peer);					
-							}
+								if(empty($hash_match) == TRUE)
+								{
+									// Build Data String to Send to Peer
+									$reverse_queue_data.= "---timestamp$reverse_queue_data_counter=" . $sql_row2["timestamp"] . "---public_key$reverse_queue_data_counter=" . base64_encode($sql_row2["public_key"]) . 
+									"---crypt1_data$reverse_queue_data_counter=" . $sql_row2["crypt_data1"] . "---crypt2_data$reverse_queue_data_counter=" . $sql_row2["crypt_data2"] .
+									"---crypt3_data$reverse_queue_data_counter=" . $sql_row2["crypt_data3"] . "---hash$reverse_queue_data_counter=" . $sql_row2["hash"] . 
+									"---attribute$reverse_queue_data_counter=" . $sql_row2["attribute"] . "---end$reverse_queue_data_counter";
+									$reverse_queue_data_counter++;
+								}
 
-							if(empty($hash_match) == TRUE && $sql_row2["attribute"] != "R")
-							{
-								// Build Data String to Send to Peer
-								$reverse_queue_data.= "---timestamp$reverse_queue_data_counter=" . $sql_row2["timestamp"] . "---public_key$reverse_queue_data_counter=" . base64_encode($sql_row2["public_key"]) . 
-								"---crypt1_data$reverse_queue_data_counter=" . $sql_row2["crypt_data1"] . "---crypt2_data$reverse_queue_data_counter=" . $sql_row2["crypt_data2"] .
-								"---crypt3_data$reverse_queue_data_counter=" . $sql_row2["crypt_data3"] . "---hash$reverse_queue_data_counter=" . $sql_row2["hash"] . 
-								"---attribute$reverse_queue_data_counter=" . $sql_row2["attribute"] . "---end$reverse_queue_data_counter";
-								$reverse_queue_data_counter++;
-							}
+							}// Only build reverse queue data for Transactions & Generation
 
 							// No match, move on to next record
 							$queue_hash_test = NULL;
