@@ -1,11 +1,16 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 3.47 (Released 2014-3-4)
+============================================
+- Temporary date blocks added to give gradual enforcement of Time-stamp standard set for Generation Transactions
+- Tweak Queue Clerk Transaction Spooling to ignore Election Request when building a Reverse Queue Data string instead of scanning them first, then ignoring after spending CPU doing the scan
+
+
 Timekoin Server - 3.46 (Released 2014-2-27)
 ============================================
 - Reverse polling feature added to Queue Clerk
 - Treasurer tweaks to allow new queue transactions to enter the network sooner
 - Clone Process limit set for 5 in case server admin is running a high number of active clients (+30 or more)
-
 
 Timekoin Server - 3.45 (Released 2014-2-26)
 ============================================
