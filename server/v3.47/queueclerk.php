@@ -236,7 +236,7 @@ if($_GET["action"] == "reverse_queue")
 
 			} // End While Loop Cycling
 
-			write_log("Reverse Queue Update For [$good_transaction_insert] Transactions Complete - [$ignore_transaction_insert] Ignored - From Peer $ip$domain:$port/$subfolder", "QC");
+			write_log("Reverse Queue Update For [$good_transaction_insert] Transactions Complete - [$ignore_transaction_insert] Ignored - From Peer [$domain] $ip:$port/$subfolder", "QC");
 
 		} // End Valid Queue Data MD5 Check
 
