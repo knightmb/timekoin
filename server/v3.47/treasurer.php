@@ -344,9 +344,15 @@ if($sql_num_results > 0)
 
 							// Check generation amount to make sure it has not been tampered with
 							$transaction_info = tk_decrypt($public_key, base64_decode($crypt3));
-
 							$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
+							$transaction_timestamp = find_string("TIME=", "---HASH", $transaction_info);							
 							$transaction_amount_sent_test = intval($transaction_amount_sent);
+
+							if(time() < 1394341200 && $time_created != $transaction_timestamp) //Before [Sat 08 Mar 2014 11:00:00 PM CST]
+							{
+								write_log("Generation Timestamp Invalid for this Key - Allowing Passthrough: " . base64_encode($public_key), "G");
+								$transaction_timestamp = $time_created; // This will allow the transaction to pass timestamp match testing for now
+							}
 
 							if($transaction_amount_sent_test == $transaction_amount_sent && $transaction_amount_sent > 0)
 							{
@@ -374,7 +380,10 @@ if($sql_num_results > 0)
 							$public_key_to_2 = tk_decrypt($public_key, base64_decode($crypt2));
 							$public_key_to = filter_sql($public_key_to_1 . $public_key_to_2);
 
-							if(hash('sha256', $crypt1 . $crypt2 . $crypt3) == $hash_check && $amount_valid == TRUE && $public_key_to == $public_key) // Hash check for tampering
+							if(hash('sha256', $crypt1 . $crypt2 . $crypt3) == $hash_check && 
+								$amount_valid == TRUE && 
+								$public_key_to == $public_key && 
+								$time_created == $transaction_timestamp) // Check various parts of the generation transaction
 							{
 								// Public key not found, insert into final transaction history
 								$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from`, `public_key_to` ,`crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
@@ -392,13 +401,31 @@ if($sql_num_results > 0)
 								}
 
 								// Update the last generation timestamp
-								$sql = "UPDATE `generating_peer_list` SET `last_generation` = '$current_transaction_cycle' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1";
-
-								if(mysql_query($sql) == FALSE)
+								mysql_query("UPDATE `generating_peer_list` SET `last_generation` = '$current_transaction_cycle' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
+							}
+							else if(hash('sha256', $crypt1 . $crypt2 . $crypt3) == $hash_check && 
+								$amount_valid == TRUE && 
+								$public_key_to == $public_key && 
+								$time_created != $transaction_timestamp)
+							{
+								if(time() > 1394341200 && time() < 1395547200) //Between [Sat 08 Mar 2014 11:00:00 PM CST] and [Sat 22 Mar 2014 11:00:00 PM CDT]
 								{
-									//Something didn't work
-									write_log("Generation Timestamp Update Failed for this Key: " . base64_encode($public_key), "G");
+									// Keep Generation Status for Server
+									// Update the last generation timestamp
+									mysql_query("UPDATE `generating_peer_list` SET `last_generation` = '$current_transaction_cycle' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
+									write_log("Generation Timestamp Invalid for this Key but Generating Status Remains: " . base64_encode($public_key), "G");
 								}
+								else
+								{
+									write_log("Generation Timestamp Invalid for this Key: " . base64_encode($public_key), "G");
+									$record_failure_counter++;
+								}
+							}
+							else if($time_created != $transaction_timestamp)
+							{
+								// The timestamp format is invalid
+								write_log("Generation Timestamp Invalid for this Key: " . base64_encode($public_key), "G");
+								$record_failure_counter++;
 							}
 							else if($amount_valid == FALSE)
 							{
