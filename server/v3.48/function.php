@@ -228,6 +228,20 @@ function queue_hash()
 	return 0;
 }
 //***********************************************************************************
+function filter_public_key($public_key)
+{
+	if($public_key != ARBITRARY_KEY)
+	{
+		// Filter any characters or values that do not belong in a public key
+		$public_key = preg_replace("|[^\\a-zA-Z0-9\s\s+-/=]|", "", $public_key);
+		return $public_key;
+	}
+
+	// Not a public key, return the original string
+	return $public_key;
+}
+//***********************************************************************************
+//***********************************************************************************
 function perm_peer_mode()
 {
 	$perm_peer_priority = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'perm_peer_priority' LIMIT 1"),0,0));

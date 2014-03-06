@@ -726,18 +726,18 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 												{
 													// Limit Max Query String to 1MB (1,024,000 bytes)
 													// Many DB have this limit by default and most users may not know how to set it higher :(
-													if(strlen($super_peer_insert . ",('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')") <= 1024000)
+													if(strlen($super_peer_insert . ",('$transaction_timestamp', '" . filter_public_key($transaction_public_key_from) . "', '" . filter_public_key($transaction_public_key_to) . "', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')") <= 1024000)
 													{
 														// Query still under 1MB in size
 														$super_peer_record_count++;
 
 														if($super_peer_record_count == 1)
 														{
-															$super_peer_insert = "('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
+															$super_peer_insert = "('$transaction_timestamp', '" . filter_public_key($transaction_public_key_from) . "', '" . filter_public_key($transaction_public_key_to) . "', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
 														}
 														else
 														{
-															$super_peer_insert.= ",('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
+															$super_peer_insert.= ",('$transaction_timestamp', '" . filter_public_key($transaction_public_key_from) . "', '" . filter_public_key($transaction_public_key_to) . "', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
 														}
 													}
 													else
@@ -760,7 +760,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 														$super_peer_record_count = 1;
 
 														// Start New INSERT Query
-														$super_peer_insert.= "('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
+														$super_peer_insert.= "('$transaction_timestamp', '" . filter_public_key($transaction_public_key_from) . "', '" . filter_public_key($transaction_public_key_to) . "', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
 													}
 												}
 											}
@@ -874,11 +874,11 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 								if($norm_record_insert_counter == 1)
 								{
-									$norm_record_insert = "('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
+									$norm_record_insert = "('$transaction_timestamp', '" . filter_public_key($transaction_public_key_from) . "', '" . filter_public_key($transaction_public_key_to) . "', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
 								}
 								else
 								{
-									$norm_record_insert.= ",('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
+									$norm_record_insert.= ",('$transaction_timestamp', '" . filter_public_key($transaction_public_key_from) . "', '" . filter_public_key($transaction_public_key_to) . "', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
 								}
 
 								if($norm_record_insert_counter >= 500)
