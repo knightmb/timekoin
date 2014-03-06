@@ -1,10 +1,14 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 3.48 (Released 2014-3-6)
+============================================
+- Filter any characters that are not used for public keys (special characters or invalid characters) from the Transaction History
+
+
 Timekoin Server - 3.47 (Released 2014-3-4)
 ============================================
 - Temporary date blocks added to give gradual enforcement of Time-stamp standard set for Generation Transactions
 - Tweak Queue Clerk Transaction Spooling to ignore Election Request when building a Reverse Queue Data string instead of scanning them first, then ignoring after spending CPU doing the scan
-
 
 Timekoin Server - 3.46 (Released 2014-2-27)
 ============================================
