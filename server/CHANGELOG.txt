@@ -1,9 +1,17 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 3.49 (Released 2014-3-12)
+============================================
+- GUI based transaction hash repair at Cycle #0 bug fixed
+- Duplicate/Multiple Hash records within the same transaction cycle are ignored since only one can exist per transaction cycle
+- Smarter clone process during transaction queue processing track which peers are being polled to avoid multiple overlap of polling from the same server
+- Transaction Data time-range checking to prevent rogue transactions with invalid/hacked time-stamps from getting into the database of other peers and causing those peers to run removal process to purge the rogue transaction data
+- Remove first time milestone code for generation time-stamp enforcement as it has expired now
+
+
 Timekoin Server - 3.48 (Released 2014-3-6)
 ============================================
 - Filter any characters that are not used for public keys (special characters or invalid characters) from the Transaction History
-
 
 Timekoin Server - 3.47 (Released 2014-3-4)
 ============================================
