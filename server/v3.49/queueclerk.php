@@ -734,15 +734,31 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 			$sql2 = "SELECT * FROM `transaction_queue`";
 			$sql_result2 = mysql_query($sql2);
 			$sql_num_results2 = mysql_num_rows($sql_result2);
-
+	//***********************************************************
 			if($process_clone == TRUE)// Only clone process do Reverse Queue Bulk Transactions
 			{
-				// Check if Peer supports Reverse Queue Processing
-				// The two peers must be connected to each other, won't send bulk data to unknown peers
-				$reverse_queue_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 2, "queueclerk.php?action=reverse_queue&domain=$my_server_domain&subfolder=$my_server_subfolder&port=$my_server_port_number");
+				// Check to make sure this peer is not already being polled by another clone process
+				$peer_md5 = hash('md5', $ip_address . $domain . $subfolder . $port_number);
+				$clone_peer_busy = mysql_result(mysql_query("SELECT block FROM `balance_index` WHERE `block` = 5 AND `public_key_hash` = '$peer_md5' LIMIT 1"),0,0);
+
+				if(empty($clone_peer_busy) == TRUE)
+				{
+					// Check if Peer supports Reverse Queue Processing
+					// The two peers must be connected to each other, won't send bulk data to unknown peers
+					$reverse_queue_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 2, "queueclerk.php?action=reverse_queue&domain=$my_server_domain&subfolder=$my_server_subfolder&port=$my_server_port_number");
+				}
+				else
+				{
+					// Bypass Reverse Queue Polling, Go to Next Peer
+					$reverse_queue_peer = NULL;
+					$current_hash = NULL;
+				}
 
 				if($reverse_queue_peer == "OK") // Check to make sure this is an active/connected peer
 				{
+					// Store that this peer is being polled so other clone process don't poll the same peer at the same time
+					mysql_query("INSERT INTO `balance_index` (`block`, `public_key_hash`, `balance`) VALUES ('5', '$peer_md5', '0')");
+					
 					$reverse_queue_data = NULL;
 					$reverse_queue_data_counter = 1;
 
@@ -822,10 +838,13 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 
 					} // More than 0 results returned from Queue
 
+					// Finished Polling this Peer, Remove from Peer Polling Check List
+					mysql_query("DELETE FROM `balance_index` WHERE `block` = 5 AND `public_key_hash` = '$peer_md5'");
+				
 				} // Connected Peer Check for Reverse Queue Bulk Sending
 
 			} // Clone Process Valid Check
-
+	//***********************************************************
 			while(empty($current_hash) == FALSE)
 			{
 				if($next_transaction_cycle - time() < 10)

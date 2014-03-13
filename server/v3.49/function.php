@@ -222,7 +222,7 @@ function queue_hash()
 			$sql_row["crypt_data2"] . $sql_row["crypt_data3"] . $sql_row["hash"] . $sql_row["attribute"];
 		}
 	
-		return hash('md5', $transaction_queue_hash);	
+		return hash('md5', $transaction_queue_hash);
 	}
 
 	return 0;
@@ -1365,15 +1365,15 @@ function gen_simple_poll_test($ip_address, $domain, $subfolder, $port_number)
 	return $simple_poll_fail;
 }
 //***********************************************************************************
-function visual_walkhistory($block_start = 0, $block_end = 0)
+function visual_walkhistory($transaction_cycle_start = 0, $block_end = 0)
 {
 	$output;
 
 	$current_generation_block = transaction_cycle(0, TRUE);
 
-	if($block_end <= $block_start)
+	if($block_end <= $transaction_cycle_start)
 	{
-		$block_end = $block_start + 1;
+		$block_end = $transaction_cycle_start + 1;
 	}
 
 	if($block_end > $current_generation_block)
@@ -1386,9 +1386,9 @@ function visual_walkhistory($block_start = 0, $block_end = 0)
 	$wrong_hash = 0;
 	$wrong_hash_numbers = NULL;
 
-	$next_timestamp = TRANSACTION_EPOCH + ($block_start * 300);
+	$next_timestamp = TRANSACTION_EPOCH + ($transaction_cycle_start * 300);
 
-	for ($i = $block_start; $i < $block_end; $i++)
+	for ($i = $transaction_cycle_start; $i < $block_end; $i++)
 	{
 		$output .= '<tr><td class="style2">Transaction Cycle # ' . $i;
 		$time1 = transaction_cycle(0 - $current_generation_block + $i);
@@ -1478,7 +1478,7 @@ function visual_walkhistory($block_start = 0, $block_end = 0)
 }
 //***********************************************************************************
 //***********************************************************************************
-function visual_repair($block_start = 0, $cycle_limit = 500)
+function visual_repair($transaction_cycle_start = 0, $cycle_limit = 500)
 {
 	$current_transaction_cycle = transaction_cycle(0, TRUE);
 	$output;
@@ -1488,24 +1488,29 @@ function visual_repair($block_start = 0, $cycle_limit = 500)
 		$cycle_limit = transaction_cycle(0, TRUE);
 	}
 
+	if($transaction_cycle_start == 0)
+	{
+		$transaction_cycle_start = 1;
+	}
+
+	$generation_arbitrary = ARBITRARY_KEY;
+
 	// Wipe all blocks ahead
-	$time_range1 = transaction_cycle(0 - $current_transaction_cycle + $block_start);
-	$time_range2 = transaction_cycle(0 - $current_transaction_cycle + $block_start + $cycle_limit);
+	$time_range1 = transaction_cycle(0 - $current_transaction_cycle + $transaction_cycle_start);
+	$time_range2 = transaction_cycle(0 - $current_transaction_cycle + $transaction_cycle_start + $cycle_limit);
 
 	$sql = "DELETE QUICK FROM `transaction_history` WHERE `transaction_history`.`timestamp` >= $time_range1 AND `transaction_history`.`timestamp` <= $time_range2 AND `attribute` = 'H'";
 
 	if(mysql_query($sql) == TRUE)
 	{
-		$output .= '<tr><td class="style2">Clearing Hash Timestamps Ahead of Transaction Cycle #' . $block_start . '</td></tr>';
+		$output .= '<tr><td class="style2">Clearing Hash Timestamps Ahead of Transaction Cycle #' . $transaction_cycle_start . '</td></tr>';
 	}
 	else
 	{
 		return '<tr><td class="style2">Database ERROR, stopping repair process...</td></tr>';
 	}
 
-	$generation_arbitrary = ARBITRARY_KEY;
-
-	for ($t = $block_start; $t < $current_transaction_cycle; $t++)
+	for ($t = $transaction_cycle_start; $t < $current_transaction_cycle; $t++)
 	{
 		if($cycle_limit < 0) // Finished
 		{

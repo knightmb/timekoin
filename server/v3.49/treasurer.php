@@ -348,12 +348,6 @@ if($sql_num_results > 0)
 							$transaction_timestamp = find_string("TIME=", "---HASH", $transaction_info);							
 							$transaction_amount_sent_test = intval($transaction_amount_sent);
 
-							if(time() < 1394341200 && $time_created != $transaction_timestamp) //Before [Sat 08 Mar 2014 11:00:00 PM CST]
-							{
-								write_log("Generation Timestamp Invalid for this Key - Allowing Passthrough: " . base64_encode($public_key), "G");
-								$transaction_timestamp = $time_created; // This will allow the transaction to pass timestamp match testing for now
-							}
-
 							if($transaction_amount_sent_test == $transaction_amount_sent && $transaction_amount_sent > 0)
 							{
 								// Is a valid integer

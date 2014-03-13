@@ -166,11 +166,6 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 {
 	// Check if the transaction history is blank or not (either from reset or new setup)
 	$trans_record_count = mysql_result(mysql_query("SELECT COUNT(*) FROM `transaction_history`"),0);
-	
-//	$sql = "SELECT timestamp FROM `transaction_history` LIMIT 5";
-//	$sql_result = mysql_query($sql);
-//	$sql_num_results = mysql_num_rows($sql_result);
-
 	$generation_arbitrary = ARBITRARY_KEY;
 //***********************************************************************************
 	if($trans_record_count == 0 && $trans_record_count !== FALSE) //New or blank transaction history
@@ -203,7 +198,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				$second_generation_cycle = transaction_cycle((0 - $current_generation_block + 1));
 
 				// Build Hash
-				$sql = "SELECT timestamp, hash FROM `transaction_history` WHERE `timestamp` >= $first_generation_cycle AND `timestamp` < $second_generation_cycle";
+				$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $first_generation_cycle AND `timestamp` < $second_generation_cycle";
 
 				$sql_result = mysql_query($sql);
 				$sql_num_results = mysql_num_rows($sql_result);
@@ -601,7 +596,6 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 					$subfolder = $hash_disagree_peers["subfolder$peer_number"];
 					$port_number = $hash_disagree_peers["port_number$peer_number"];
 					$block_number = $hash_number;
-				
 	//************************************************************
 					// Check for blank data ahead (Super Peer Mode)
 					$time1_ahead = transaction_cycle(0 - $current_generation_block + 1 + $hash_number);
@@ -669,6 +663,10 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 											break;
 										}
 
+										$one_hash_limit = 0; // Only one hash per cycle allowed, extra/duplicates are ignored
+										$transaction_time_range_start = TRANSACTION_EPOCH + ($super_transaction_cycle * 300);// Valid Transaction Start Time Range
+										$transaction_time_range_end = TRANSACTION_EPOCH + (($super_transaction_cycle + 1) * 300);// Valid Transaction End Time Range
+
 										while(empty($poll_peer) == FALSE)
 										{
 											$transaction_timestamp = intval(find_string("-----timestamp$tc=", "-----public_key_from$tc", $poll_peer));
@@ -688,6 +686,13 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 											$transaction_public_key_from = filter_sql(base64_decode($transaction_public_key_from));
 											$transaction_public_key_to = filter_sql(base64_decode($transaction_public_key_to));
+
+											// Time-stamp range checking
+											if($transaction_timestamp < $transaction_time_range_start || $transaction_timestamp >= $transaction_time_range_end)
+											{
+												// This data is not in the correct time range, needs to be ignored
+												$transaction_attribute = "INVALID";
+											}
 
 											// Check for valid attribute
 											if($transaction_attribute == "G" || $transaction_attribute == "T" || $transaction_attribute == "H")
@@ -719,7 +724,18 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 												else
 												{
 													// Transaction Cycle Hash, continue duplicate record test
-													$found_duplicate = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+													$one_hash_limit++;
+
+													if($one_hash_limit == 1)// First Transaction Hash
+													{
+														// First Hash in Transaction Cycle Data
+														$found_duplicate = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+													}
+													else
+													{
+														// Another Hash in the same Transaction Cycle Data?
+														$found_duplicate = "DUPHASH";
+													}
 												}
 
 												if(empty($found_duplicate) == TRUE)
@@ -814,6 +830,9 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 					$norm_record_insert_counter = 0;
 					$norm_record_insert = NULL;
+					$one_hash_limit = 0; // Only one hash per cycle allowed, extra/duplicates are ignored
+					$transaction_time_range_start = TRANSACTION_EPOCH + ($block_number * 300);// Valid Transaction Start Time Range
+					$transaction_time_range_end = TRANSACTION_EPOCH + (($block_number + 1) * 300);// Valid Transaction End Time Range
 
 					while(empty($poll_peer) == FALSE)
 					{
@@ -834,6 +853,13 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 						$transaction_public_key_from = filter_sql(base64_decode($transaction_public_key_from));
 						$transaction_public_key_to = filter_sql(base64_decode($transaction_public_key_to));
+
+						// Time-stamp range checking
+						if($transaction_timestamp < $transaction_time_range_start || $transaction_timestamp >= $transaction_time_range_end)
+						{
+							// This data is not in the correct time range, needs to be ignored
+							$transaction_attribute = "INVALID";
+						}
 
 						// Check for valid attribute
 						if($transaction_attribute == "G" || $transaction_attribute == "T" || $transaction_attribute == "H")
@@ -864,8 +890,18 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 							}
 							else
 							{
-								// Transaction Cycle Hash, continue duplicate record test
-								$found_duplicate = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+								$one_hash_limit++; // First Transaction Hash
+
+								if($one_hash_limit == 1)
+								{
+									// First Hash in Transaction Cycle Data
+									$found_duplicate = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+								}
+								else
+								{
+									// Another Hash in the same Transaction Cycle Data?
+									$found_duplicate = "DUPHASH";
+								}							
 							}
 
 							if(empty($found_duplicate) == TRUE) // No duplicate found
