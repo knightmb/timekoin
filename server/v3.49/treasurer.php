@@ -305,7 +305,7 @@ if($sql_num_results > 0)
 	{
 		$sql_row = mysql_fetch_array($sql_result);
 		$safe_delete_transaction = FALSE;		
-		$public_key = $sql_row["public_key"];
+		$public_key = filter_public_key($sql_row["public_key"]);
 		$hash_check = $sql_row["hash"];
 
 		//Copy transaction to final transaction history
@@ -381,7 +381,7 @@ if($sql_num_results > 0)
 							{
 								// Public key not found, insert into final transaction history
 								$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from`, `public_key_to` ,`crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
-									VALUES ($time_created, '" . filter_public_key($public_key) . "', '" . filter_public_key($public_key) . "', '$crypt1', '$crypt2', '$crypt3', '$hash_check', 'G')";
+									VALUES ($time_created, '$public_key', '" . filter_public_key($public_key) . "', '$crypt1', '$crypt2', '$crypt3', '$hash_check', 'G')";
 
 								if(mysql_query($sql) == FALSE)
 								{
@@ -515,7 +515,7 @@ if($sql_num_results > 0)
 						{
 							// Public key not found, insert into final transaction history
 							$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from` , `public_key_to` , `crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
-								VALUES ($time_created, '" . filter_public_key($public_key) . "', '" . filter_public_key($public_key_to) . "' , '$crypt1', '$crypt2', '$crypt3', '$hash_check', 'T');";
+								VALUES ($time_created, '$public_key', '" . filter_public_key($public_key_to) . "' , '$crypt1', '$crypt2', '$crypt3', '$hash_check', 'T')";
 
 							if(mysql_query($sql) == FALSE)
 							{
