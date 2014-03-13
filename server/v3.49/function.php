@@ -1522,7 +1522,7 @@ function visual_repair($transaction_cycle_start = 0, $cycle_limit = 500)
 		$time1 = transaction_cycle(0 - $current_transaction_cycle - 1 + $t);
 		$time2 = transaction_cycle(0 - $current_transaction_cycle + $t);
 
-		$sql = "SELECT timestamp, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
+		$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
 
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
