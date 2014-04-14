@@ -1,5 +1,10 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 3.5 (Released 2014-4-14)
+============================================
+- Fix transactions crafted to decode wrong from stopping a normal valid transaction check when rebuilding the transaction history for new servers when the decoded data is harmless but self defeating
+
+
 Timekoin Server - 3.49 (Released 2014-3-12)
 ============================================
 - GUI based transaction hash repair at Cycle #0 bug fixed
@@ -7,7 +12,6 @@ Timekoin Server - 3.49 (Released 2014-3-12)
 - Smarter clone process during transaction queue processing track which peers are being polled to avoid multiple overlap of polling from the same server
 - Transaction Data time-range checking to prevent rogue transactions with invalid/hacked time-stamps from getting into the database of other peers and causing those peers to run removal process to purge the rogue transaction data
 - Remove first time milestone code for generation time-stamp enforcement as it has expired now
-
 
 Timekoin Server - 3.48 (Released 2014-3-6)
 ============================================
