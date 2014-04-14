@@ -3,6 +3,7 @@ Timekoin Server - Change Log
 Timekoin Server - 3.5 (Released 2014-4-14)
 ============================================
 - Fix transactions crafted to decode wrong from stopping a normal valid transaction check when rebuilding the transaction history for new servers when the decoded data is harmless but self defeating
+- Remove last milestone for Currency Generation Timestamp enforcement
 
 
 Timekoin Server - 3.49 (Released 2014-3-12)
