@@ -397,24 +397,6 @@ if($sql_num_results > 0)
 								// Update the last generation timestamp
 								mysql_query("UPDATE `generating_peer_list` SET `last_generation` = '$current_transaction_cycle' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
 							}
-							else if(hash('sha256', $crypt1 . $crypt2 . $crypt3) == $hash_check && 
-								$amount_valid == TRUE && 
-								$public_key_to == $public_key && 
-								$time_created != $transaction_timestamp)
-							{
-								if(time() > 1394341200 && time() < 1395547200) //Between [Sat 08 Mar 2014 11:00:00 PM CST] and [Sat 22 Mar 2014 11:00:00 PM CDT]
-								{
-									// Keep Generation Status for Server
-									// Update the last generation timestamp
-									mysql_query("UPDATE `generating_peer_list` SET `last_generation` = '$current_transaction_cycle' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
-									write_log("Generation Timestamp Invalid for this Key but Generating Status Remains: " . base64_encode($public_key), "G");
-								}
-								else
-								{
-									write_log("Generation Timestamp Invalid for this Key: " . base64_encode($public_key), "G");
-									$record_failure_counter++;
-								}
-							}
 							else if($time_created != $transaction_timestamp)
 							{
 								// The timestamp format is invalid
