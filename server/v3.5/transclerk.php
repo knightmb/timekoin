@@ -872,7 +872,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 								// Find destination public key
 								$public_key_to_1 = tk_decrypt($transaction_public_key_from, base64_decode($transaction_crypt1));
 								$public_key_to_2 = tk_decrypt($transaction_public_key_from, base64_decode($transaction_crypt2));
-								$internal_public_key_to = $public_key_to_1 . $public_key_to_2;
+								$internal_public_key_to = filter_public_key($public_key_to_1 . $public_key_to_2);
 
 								if($transaction_hash == $crypt_hash_check && 
 									strlen($transaction_public_key_from) > 300 && 
@@ -949,7 +949,6 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 						{
 							// Flag for a re-check afterwards
 							$double_check_block = TRUE;
-
 						}
 					}
 	//************************************************************
