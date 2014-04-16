@@ -139,7 +139,7 @@ if($sql_num_results > 0)
 			{
 				$timestamp = $current_transaction_cycle + 1; // Format timestamp for a few seconds after transaction cycle
 
-				if($firewall_blocked == TRUE || ($next_transaction_cycle - time()) > 230)// Mix outbound transaction broadcasting and regular polling
+				if($firewall_blocked == TRUE || ($next_transaction_cycle - time()) > 210)// Mix outbound transaction broadcasting and regular polling
 				{
 					if($attribute == "T" || $attribute == "G")
 					{
@@ -148,8 +148,12 @@ if($sql_num_results > 0)
 						// that is accepting inbound connections and hopefully they will replicate
 						// out to the peer network.
 						$sql_result2 = mysql_query("SELECT * FROM `active_peer_list` ORDER BY RAND() LIMIT 25");
-						$sql_num_results2 = mysql_num_rows($sql_result2);							
+						$sql_num_results2 = mysql_num_rows($sql_result2);
 						$peer_failure;
+
+						// Grab the data to the first contact servers
+						$sql_first_contact = mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'first_contact_server'");
+						$sql_num_first_contact = mysql_num_rows($sql_first_contact);
 
 						$qhash = $timestamp . base64_encode($public_key) . $crypt1 . $crypt2 . $crypt3 . $hash_check . $attribute;
 						$qhash = hash('md5', $qhash);
@@ -175,6 +179,34 @@ if($sql_num_results > 0)
 						// Create context resource for our request
 						$context = stream_context_create(array('http' => $contextData));
 
+						// Broadcast to First Contact Servers in one-shot no response needed form
+						for ($i3 = 0; $i3 < $sql_num_first_contact; $i3++)
+						{
+							$sql_row3 = mysql_fetch_array($sql_first_contact);
+
+							$ip_address = find_string("---ip=", "---domain", $sql_row3["field_data"]);
+							$domain = find_string("---domain=", "---subfolder", $sql_row3["field_data"]);
+							$subfolder = find_string("---subfolder=", "---port", $sql_row3["field_data"]);
+							$port_number = find_string("---port=", "---end", $sql_row3["field_data"]);
+
+							$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 5, "queueclerk.php?action=input_transaction", $context);
+
+							if($poll_peer == "OK")
+							{
+								// Insert to the First Contact Server was accepted
+								switch($attribute)
+								{
+									case "G":
+									write_log("Timekoin Currency Generation Broadcast Accepted by First Contact Server $ip_address$domain:$port_number/$subfolder", "G");
+									break;
+
+									case "T":
+									write_log("Standard Transaction Broadcast Accepted by First Contact Server $ip_address$domain:$port_number/$subfolder", "T");
+									break;							
+								}
+							}
+						} // Cycle through First Contact Servers
+
 						// Broadcast to all active peers
 						for ($i2 = 0; $i2 < $sql_num_results2; $i2++)
 						{
@@ -192,14 +224,14 @@ if($sql_num_results > 0)
 								switch($attribute)
 								{
 									case "G":
-										write_log("Timekoin Currency Generation Broadcast Accepted by remote Peer $ip_address$domain:$port_number/$subfolder", "G");
-										modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -3);										
-										break;
+									write_log("Timekoin Currency Generation Broadcast Accepted by remote Peer $ip_address$domain:$port_number/$subfolder", "G");
+									modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -3);										
+									break;
 
 									case "T":
-										write_log("Standard Transaction Broadcast Accepted by remote Peer $ip_address$domain:$port_number/$subfolder", "T");
-										modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -2);
-										break;							
+									write_log("Standard Transaction Broadcast Accepted by remote Peer $ip_address$domain:$port_number/$subfolder", "T");
+									modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -2);
+									break;							
 								}
 							}
 							else if($poll_peer == "DUP")
@@ -208,14 +240,14 @@ if($sql_num_results > 0)
 								switch($attribute)
 								{
 									case "G":
-										write_log("Timekoin Currency Generation Already Exist at remote Peer $ip_address$domain:$port_number/$subfolder", "G");
-										modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -3);
-										break;
+									write_log("Timekoin Currency Generation Already Exist at remote Peer $ip_address$domain:$port_number/$subfolder", "G");
+									modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -3);
+									break;
 
 									case "T":
-										write_log("Standard Transaction Already Exist at remote Peer $ip_address$domain:$port_number/$subfolder", "T");
-										modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -2);
-										break;							
+									write_log("Standard Transaction Already Exist at remote Peer $ip_address$domain:$port_number/$subfolder", "T");
+									modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -2);
+									break;							
 								}
 							}								
 							else
@@ -224,16 +256,16 @@ if($sql_num_results > 0)
 								switch($attribute)
 								{
 									case "G":
-										write_log("Timekoin Currency Generation Broadcast FAILED for remote Peer $ip_address$domain:$port_number/$subfolder", "G");
-										// Add failure points to the peer in case further issues
-										modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 5);
-										break;
+									write_log("Timekoin Currency Generation Broadcast FAILED for remote Peer $ip_address$domain:$port_number/$subfolder", "G");
+									// Add failure points to the peer in case further issues
+									modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 5);
+									break;
 
 									case "T":
-										write_log("Standard Transaction Broadcast FAILED for remote Peer $ip_address$domain:$port_number/$subfolder", "T");
-										// Add failure points to the peer in case further issues
-										modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 3);
-										break;							
+									write_log("Standard Transaction Broadcast FAILED for remote Peer $ip_address$domain:$port_number/$subfolder", "T");
+									// Add failure points to the peer in case further issues
+									modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 3);
+									break;							
 								}
 							} // Failure/Success Check & Logging
 
@@ -372,16 +404,17 @@ if($sql_num_results > 0)
 							// Find destination public key, it should be the same as the source public key
 							$public_key_to_1 = tk_decrypt($public_key, base64_decode($crypt1));
 							$public_key_to_2 = tk_decrypt($public_key, base64_decode($crypt2));
-							$public_key_to = filter_sql($public_key_to_1 . $public_key_to_2);
+							$public_key_to = $public_key_to_1 . $public_key_to_2;
 
 							if(hash('sha256', $crypt1 . $crypt2 . $crypt3) == $hash_check && 
+								strlen($public_key) > 300 &&
 								$amount_valid == TRUE && 
 								$public_key_to == $public_key && 
 								$time_created == $transaction_timestamp) // Check various parts of the generation transaction
 							{
 								// Public key not found, insert into final transaction history
 								$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from`, `public_key_to` ,`crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
-									VALUES ($time_created, '$public_key', '" . filter_public_key($public_key) . "', '$crypt1', '$crypt2', '$crypt3', '$hash_check', 'G')";
+									VALUES ($time_created, '$public_key', '$public_key', '$crypt1', '$crypt2', '$crypt3', '$hash_check', 'G')";
 
 								if(mysql_query($sql) == FALSE)
 								{
@@ -491,13 +524,13 @@ if($sql_num_results > 0)
 						$public_key_to_1 = tk_decrypt($public_key, base64_decode($crypt1));
 						$public_key_to_2 = tk_decrypt($public_key, base64_decode($crypt2));
 						
-						$public_key_to = filter_sql($public_key_to_1 . $public_key_to_2);
+						$public_key_to = filter_public_key(filter_sql($public_key_to_1 . $public_key_to_2));
 
 						if(strlen($public_key) > 300 && strlen($public_key_to) > 300 && $public_key !== $public_key_to) // Filter to/from self public keys
 						{
 							// Public key not found, insert into final transaction history
 							$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from` , `public_key_to` , `crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
-								VALUES ($time_created, '$public_key', '" . filter_public_key($public_key_to) . "' , '$crypt1', '$crypt2', '$crypt3', '$hash_check', 'T')";
+								VALUES ($time_created, '$public_key', '$public_key_to' , '$crypt1', '$crypt2', '$crypt3', '$hash_check', 'T')";
 
 							if(mysql_query($sql) == FALSE)
 							{

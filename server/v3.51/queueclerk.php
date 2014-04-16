@@ -632,6 +632,9 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 
 	if($process_clone == FALSE)
 	{
+		// Decrease Timeout for process cloning
+		ini_set('default_socket_timeout', 1);
+		
 		// How many active peers do we have?
 		$active_peers = mysql_num_rows(mysql_query("SELECT join_peer_list FROM `active_peer_list`"));
 
@@ -648,6 +651,9 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 			clone_script("queueclerk.php?clone_id=$crc32_password_hash");
 			$scale_clones--;
 		}
+
+		// Reset Default Socket Timeout
+		ini_set('default_socket_timeout', 3);
 	}
 
 	// How does my transaction queue compare to others?
