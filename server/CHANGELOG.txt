@@ -1,10 +1,17 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 3.51 (Released 2014-4-16)
+============================================
+- Use shorter socket timeouts when cloning the Queue Clerk process
+- Increase transaction/generation broadcast time from 70 to 90 seconds to contact more peers
+- Use the server's default first contact list for broadcast to help further propagate transactions into the network
+- Tweak security filtering for invalid keys to be more efficient
+
+
 Timekoin Server - 3.5 (Released 2014-4-14)
 ============================================
 - Fix transactions crafted to decode wrong from stopping a normal valid transaction check when rebuilding the transaction history for new servers when the decoded data is harmless but self defeating
 - Remove last milestone for Currency Generation Timestamp enforcement
-
 
 Timekoin Server - 3.49 (Released 2014-3-12)
 ============================================
