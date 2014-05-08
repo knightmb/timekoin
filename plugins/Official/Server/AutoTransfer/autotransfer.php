@@ -94,7 +94,7 @@ if($_SESSION["valid_login"] == FALSE)
 					if($new_delay <= 0)
 					{
 						// Complete Transaction Task
-						if(db_cache_balance($tx_key2) >= $tx_amount) // Check for valid balance
+						if(check_crypt_balance($tx_key2) >= $tx_amount) // Check for valid balance
 						{
 							// Create Transaction
 							if(send_timekoins($tx_key1, $tx_key2, $tx_key3, $tx_amount, NULL) == TRUE)
@@ -129,7 +129,7 @@ if($_SESSION["valid_login"] == FALSE)
 					if($new_delay <= 0)
 					{
 						// Complete Transaction Task
-						if(db_cache_balance($tx_key2) >= $tx_amount) // Check for valid balance
+						if(check_crypt_balance($tx_key2) >= $tx_amount) // Check for valid balance
 						{
 							// Create Transaction
 							if(send_timekoins($tx_key1, $tx_key2, $tx_key3, $tx_amount, NULL) == TRUE)
@@ -152,7 +152,7 @@ if($_SESSION["valid_login"] == FALSE)
 					$tx_amount = find_string("---amount=", "---amount_match", $sql_row["field_data"]);
 					$amount_match = find_string("---amount_match=", "---end", $sql_row["field_data"]);
 
-					if(db_cache_balance($tx_key2) >= $amount_match) // Check for valid balance
+					if(check_crypt_balance($tx_key2) >= $amount_match) // Check for valid balance
 					{
 						// Create Transaction
 						if(send_timekoins($tx_key1, $tx_key2, $tx_key3, $tx_amount, NULL) == TRUE)
@@ -179,7 +179,7 @@ if($_SESSION["valid_login"] == FALSE)
 					// Check allowed 180 seconds before and 60 seconds after transaction cycle.
 					if((transaction_cycle(1) - time()) > 180 && (time() - transaction_cycle(0)) >= 60)
 					{
-						if(db_cache_balance($tx_key2) >= $amount_match) // Check for valid balance
+						if(check_crypt_balance($tx_key2) >= $amount_match) // Check for valid balance
 						{
 							// Create Transaction
 							if(send_timekoins($tx_key1, $tx_key2, $tx_key3, $tx_amount, NULL) == TRUE)
