@@ -192,7 +192,6 @@ INSERT INTO `options` (`field_name`, `field_data`) VALUES
 ('first_contact_server', '---ip=---domain=amaranthinetech.com---subfolder=timekoin---port=80---end'),
 ('first_contact_server', '---ip=---domain=wanip.org---subfolder=timekoin---port=80---end'),
 ('first_contact_server', '---ip=---domain=newdwpinc.homedns.org---subfolder=timekoin---port=1528---end'),
-('first_contact_server', '---ip=59.167.28.52---domain=---subfolder=timekoin---port=1528---end'),
 ('generate_currency', '0'),
 ('generating_peers_hash', '0'),
 ('generation_IP', ''),
