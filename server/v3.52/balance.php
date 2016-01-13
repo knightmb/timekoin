@@ -108,6 +108,7 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 	if($balance_index === FALSE)
 	{
 		// Create self first :)
+		write_log("Updating Balance Index For Self", "BA");
 		check_crypt_balance(my_public_key());
 	}	
 
@@ -132,7 +133,7 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 				if($balance_index === FALSE)
 				{
 					// No index balance, go ahead and create one
-					write_log("Updating Balance Index From Transaction Queue", "BA");
+					write_log("Updating Balance Index For Transaction Queue", "BA");
 					check_crypt_balance($sql_row["public_key"]);
 					$queue_index_created = TRUE;
 				}
@@ -144,22 +145,31 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 		}
 	}
 
+	// Normal, none transaction queue balance index query
 	if($queue_index_created == FALSE) // Only do one or the other at a time
 	{
 		// 1000 Transaction Cycles Back in time to index
 		$time_back = time() - 300000;
 
+		// Pick a Random Transaction from the Past
 		$public_key_from = mysql_result(mysql_query("SELECT public_key_to FROM `transaction_history` WHERE `timestamp` > $time_back AND `attribute` = 'T' GROUP BY `public_key_to` ORDER BY RAND() LIMIT 1"),0,0);
-		$public_key_hash = hash('md5', $public_key_from);
 
 		// Run a balance index if one does not already exist
-		$balance_index = mysql_result(mysql_query("SELECT block FROM `balance_index` WHERE `public_key_hash` = '$public_key_hash' AND `block` = $cache_block LIMIT 1"),0,0);
-
-		if($balance_index === FALSE)
+		if($public_key_from === FALSE)
 		{
-			// No index balance, go ahead and create one
-			write_log("Updating Balance Index From Transaction History", "BA");
-			check_crypt_balance($public_key_from);
+			write_log("No Recent Transactions Exist To Update Balance Index", "BA");
+		}
+		else
+		{
+			$public_key_hash = hash('md5', $public_key_from); // MD5 Conversion
+			$balance_index = mysql_result(mysql_query("SELECT block FROM `balance_index` WHERE `public_key_hash` = '$public_key_hash' AND `block` = $cache_block LIMIT 1"),0,0);
+
+			if($balance_index === FALSE)
+			{
+				// No index balance, go ahead and create one
+				write_log("Updating Balance Index From Transaction History", "BA");
+				check_crypt_balance($public_key_from);
+			}
 		}
 	}
 }

@@ -115,6 +115,7 @@ mysql_select_db(MYSQL_DATABASE);
 $context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
 ini_set('user_agent', 'Timekoin Server (Main) v' . TIMEKOIN_VERSION);
 ini_set('default_socket_timeout', 3); // Timeout for request in seconds
+$activity_log_max = 100000; // Maximum number of activity log entries to retain
 
 // CLI Mode selection
 $cli_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
@@ -225,6 +226,26 @@ while(1) // Begin Infinite Loop :)
 			mysql_query("DELETE FROM `ip_banlist` WHERE `ip_banlist`.`when` < " . (time() - 86400));
 		}
 	//*****************************************************************************************************
+	//*****************************************************************************************************		
+		// Trim old activity logs to prevent database from filling up too much space
+		// Retain last X number of activity logs
+		if(rand(1,500) == 100) // Randomize a little to save DB usage
+		{
+			$activity_log_count = mysql_result(mysql_query("SELECT COUNT(*) FROM `activity_logs`"),0);
+
+			if($activity_log_count > $activity_log_max)
+			{
+				// Trim the oldest records
+				mysql_query("DELETE FROM `activity_logs` ORDER BY `timestamp` ASC LIMIT " . ($activity_log_count - $activity_log_max) . "");
+
+				// Optimize Table to Reclaim Space
+				mysql_query("OPTIMIZE TABLE `activity_logs`");
+
+				// Log Activity Log Maintenance
+				write_log("Activity Log Purged of the Last [" . ($activity_log_count - $activity_log_max) . "] Oldest Records", "MA");
+			}
+		}
+	//*****************************************************************************************************		
 	//*****************************************************************************************************
 		// Check to make sure we are not behind a firewall with no Inbound ports
 		$sql_result = mysql_query("SELECT timestamp FROM `ip_activity` WHERE `attribute` = 'QU' OR `attribute` = 'TC' OR `attribute` = 'GP' LIMIT 1");
