@@ -5,7 +5,7 @@ define("TRANSACTION_EPOCH","1338576300"); // Epoch timestamp: 1338576300
 define("ARBITRARY_KEY","01110100011010010110110101100101"); // Space filler for non-encryption data
 define("SHA256TEST","8c49a2b56ebd8fc49a17956dc529943eb0d73c00ee6eafa5d8b3ba1274eb3ea4"); // Known SHA256 Test Result
 define("TIMEKOIN_VERSION","3.52"); // This Timekoin Software Version
-define("NEXT_VERSION","current_version47.txt"); // What file to check for future versions
+define("NEXT_VERSION","current_version48.txt"); // What file to check for future versions
 
 error_reporting(E_ERROR | E_CORE_ERROR | E_COMPILE_ERROR); // Disable most error reporting except for fatal errors
 ini_set('display_errors', FALSE);
