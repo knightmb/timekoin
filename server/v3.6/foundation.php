@@ -290,7 +290,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 			if($repair_block == TRUE)
 			{
 				write_log("Invalid Transaction Foundation Found, Starting Repair for #$rand_block", "FO");
-				
+
 				// Start by removing the transaction foundation block hash
 				$sql = "DELETE QUICK FROM `transaction_foundation` WHERE `transaction_foundation`.`block` = $rand_block LIMIT 1";
 
@@ -428,6 +428,17 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 							// Success
 							write_log("New Transaction Foundation #$i Complete", "FO");
 
+							// Check against Quantum Balance Index
+							$qbi_max_foundation = (intval($current_foundation_block / 500)) * 500;
+							if($i - 50 == $qbi_max_foundation || $i <= $qbi_max_foundation) // Build 50 Foundation Blocks ahead before rebulding QBI 
+							{
+								// Time to Clear the Quantum Balance Index Table and Rebuild with newer data
+								if(mysql_query("TRUNCATE TABLE `quantum_balance_index`") == TRUE)
+								{
+									write_log("Quantum Balance Index Cleared for New Rebuild", "FO");
+								}
+							}
+
 							// Wipe Balance Index table to reset index creation of public key balances
 							if(mysql_query("TRUNCATE TABLE `balance_index`") == FALSE)
 							{
@@ -440,8 +451,18 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 							{
 								// Break out of this loop in case there is a lot
 								// of history to catch up on. We don't want to tie
-								// up the server with building many transaction foundations
+								// up the server with building too many transaction foundations
 								// in a row.
+								break;
+							}
+						}
+						else
+						{
+							// In case of DB error, stop after 3 tries
+							$foundations_built++;
+
+							if($foundations_built > 3)
+							{
 								break;
 							}
 						}
