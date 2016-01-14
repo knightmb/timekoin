@@ -665,9 +665,8 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 		$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
 	}
 
-	if($block_start == 0 && $block_end == 0)
+	if($block_start == 0 && $block_end == 0)// Find every TimeKoin ever sent to and from this public Key
 	{
-		// Find every Time Koin sent to this public Key
 		$sql = "SELECT public_key_from, public_key_to, crypt_data3, attribute FROM `transaction_history` WHERE `public_key_from` = '$public_key' OR `public_key_to` = '$public_key' ";
 	}
 	else
@@ -749,8 +748,8 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 			$crypto_balance -= $transaction_amount_sent;
 		}		
 	}
-//
-// Unset variable to free up RAM
+
+	// Unset variable to free up RAM
 	unset($sql_result);
 
 	return $crypto_balance;
@@ -786,27 +785,66 @@ function check_crypt_balance($public_key)
 	$sql_result = mysql_query($sql);
 	$sql_row = mysql_fetch_array($sql_result);
 
-	if(empty($sql_row["block"]) == TRUE)
+	if(empty($sql_row["block"]) == TRUE)// No index exist yet, so after the balance check is complete, record the result for later use
 	{
-		// No index exist yet, so after the balance check is complete, record the result
-		// for later use
-		$crypto_balance = 0;
+		// Check if a Quantum Balance Index exist to shorten database access time
+		$pk_md5 = hash('md5', $public_key);
+		$sql2 = "SELECT max_foundation, balance FROM `quantum_balance_index` WHERE `public_key_hash` = '$pk_md5' LIMIT 1";
+		$sql_result2 = mysql_query($sql2);
+		$sql_row2 = mysql_fetch_array($sql_result2);
 
+		if(empty($sql_row2["max_foundation"]) == TRUE)// No Quantum Balance Index exist for this Public Key
+		{
+			// How many Transaction Foundations Should QBI Cover for Range?
+			// All Transaction Foundations up to the Last 500 
+			// So 761 would only be the first 500, 1256 would only be the first 1000, etc.
+			$qbi_max_foundation = (intval($current_foundation_block / 500)) * 500;
+
+			// Does this many Transaction Foundations even exist to index against?
+			$total_foundations = mysql_result(mysql_query("SELECT COUNT(*) FROM `transaction_foundation`"),0);
+
+			if($total_foundations > $qbi_max_foundation)
+			{
+				// Create time range
+				$qbi_end_time_range = $qbi_max_foundation * 500;
+				$qbi_balance = check_crypt_balance_range($public_key, 0, $qbi_end_time_range);
+
+				// Store QBI in database for more permanent future access
+				mysql_query("INSERT INTO `quantum_balance_index` (`public_key_hash` ,`max_foundation` ,`balance`)
+					VALUES ('$pk_md5', '$qbi_max_foundation', '$qbi_balance')");
+			}
+			else
+			{
+				write_log("Incomplete Transaction History Unable to Create Quantum Balance Index", "BA");
+			}
+		}
+		else
+		{
+			// Quantum Balance Index exist, use the balance recorded and the remaining time range afterwards that this QBI represents
+			$qbi_max_foundation = $sql_row2["max_foundation"];
+			$qbi_balance = $sql_row2["balance"];
+		}		
+		
+		// Use QBI to Decrease DB time to calculate Public Key Balance
 		// Create time range
+		$start_time_range = $qbi_max_foundation * 500;
 		$end_time_range = $previous_foundation_block * 500;
-		$index_balance1 = check_crypt_balance_range($public_key, 0, $end_time_range);
+		$index_balance1 = check_crypt_balance_range($public_key, $start_time_range, $end_time_range);
+
+		// Add in QBI Balance
+		$index_balance1 += $qbi_balance;
 
 		// Check balance between the last block and now
 		$start_time_range = $end_time_range;
 		$end_time_range = transaction_cycle(0, TRUE);
 		$index_balance2 = check_crypt_balance_range($public_key, $start_time_range, $end_time_range);
-
+		
 		// Store index in database for future access
 		mysql_query("INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`)
 		VALUES ('$previous_foundation_block', '$public_key_hash', '$index_balance1')");
 		return ($index_balance1 + $index_balance2);
 	}
-	else
+	else // More Recent Index Available
 	{
 		$crypto_balance = $sql_row["balance"];
 
