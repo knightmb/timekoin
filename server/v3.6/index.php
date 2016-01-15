@@ -1892,10 +1892,24 @@ if($_SESSION["valid_login"] == TRUE)
 			
 			if(election_cycle($i) == TRUE)
 			{
-				$time_election = '<font color="blue"><strong>' . tk_time_convert($current_generation_cycle - time());
+				$time_election = '<strong>IPv4 - <font color="blue">' . tk_time_convert($current_generation_cycle - time()) . '</font><br>';
 				break;
 			}
 		}
+
+		// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
+		$gen_peers_total = mysql_result(mysql_query("SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
+
+		for ($i = 0; $i < $max_cycles_ahead; $i++)
+		{
+			$current_generation_cycle = transaction_cycle($i);
+			
+			if(election_cycle($i, 2, $gen_peers_total) == TRUE)
+			{
+				$time_election.= 'IPv6 - <font color="blue">' . tk_time_convert($current_generation_cycle - time());
+				break;
+			}
+		}		
 
 		for ($i = 0; $i < $max_cycles_ahead; $i++)
 		{
@@ -1920,7 +1934,7 @@ if($_SESSION["valid_login"] == TRUE)
 			Timekoin will attempt to auto-detect the <font color="blue">Generation IP</font> when the field is left blank upon service starting.<br><br>
 			There also exist a setting in the system tab to auto-update the server IP if it changes frequently.<br><br>
 			You can manually update this field if the IP address detected is incorrect.<br><br>
-			Next Peer Election in<br>' . $time_election . '</strong></font><br><br>
+			Next Peer Election<br>' . $time_election . '</strong></font><br><br>
 			Currency Generation in<br>' . $time_generate . '</strong></font>';
 
 		if($_GET["firewall"] == "tool")
@@ -1975,28 +1989,40 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string = NULL;
 			$total_elections = 0;
 			$max_cycles_ahead = 576;
+			$total_ipv6_elections = 0;
+			// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
+			$gen_peers_total = mysql_result(mysql_query("SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
 
-
-			for ($i = 1; $i < $max_cycles_ahead; $i++)
+			for ($i = 1; $i < $max_cycles_ahead; $i++)// IPv4 Elections
 			{
 				$current_generation_cycle = transaction_cycle($i);
-				
-				$str = strval($current_generation_cycle);
-				$last3_gen = $str[strlen($str)-3];
 
-				$current_generation_block = transaction_cycle($i, TRUE);
-				TKRandom::seed($current_generation_block);
-				$tk_random_number = TKRandom::num(0, 9);
-
-				if($last3_gen + $tk_random_number > 16)
+				if(election_cycle($i) == TRUE)
 				{
 					$body_string.= '<br><font color="blue">Election Event</font> at ' . transaction_cycle($i) . ' - ' . unix_timestamp_to_human(transaction_cycle($i), $user_timezone);
 					$total_elections++;
 				}
 			}
 
-			$body_string = '<strong>Total Elections in the Next ' . $max_cycles_ahead . ' Transaction Cycles :</strong> <font color="blue"><strong>' . $total_elections . '</strong></font><br>' . $body_string . '<br><br>';
-						
+			$body_string.= '<hr>';
+
+			for ($i = 1; $i < $max_cycles_ahead; $i++)// IPv6 Elections
+			{
+				$current_generation_cycle = transaction_cycle($i);
+
+				if(election_cycle($i, 2, $gen_peers_total) == TRUE)
+				{
+					$body_string2.= '<br><font color="blue">Election Event</font> at ' . transaction_cycle($i) . ' - ' . unix_timestamp_to_human(transaction_cycle($i), $user_timezone);
+					$total_ipv6_elections++;
+				}
+			}
+
+			$body_string2 = '<strong>Total IPv6 Peer Elections in the Next ' . $max_cycles_ahead . ' Transaction Cycles :</strong> <font color="blue"><strong>' . $total_ipv6_elections . '</strong></font><br>' . $body_string2 . '<br><br>';
+
+			$body_string = '<strong>Total IPv4 Peer Elections in the Next ' . $max_cycles_ahead . ' Transaction Cycles :</strong> <font color="blue"><strong>' . $total_elections . '</strong></font><br>' . $body_string;
+			$body_string.= $body_string2;
+			
+
 			home_screen('Crypto Currency Generation', $text_bar, $body_string , $quick_info);
 			exit;
 		}
@@ -2030,7 +2056,6 @@ if($_SESSION["valid_login"] == TRUE)
 			home_screen('Crypto Currency Generation', $text_bar, $body_string , $quick_info);
 			exit;
 		}
-
 
 		home_screen('Crypto Currency Generation', $text_bar, $body_string , $quick_info);
 		exit;

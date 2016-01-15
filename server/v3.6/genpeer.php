@@ -137,24 +137,31 @@ $current_generation_cycle = transaction_cycle(0);
 if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle) > 35)
 {
 //***********************************************************************************
-	if(election_cycle() == TRUE)
+	if(election_cycle() == TRUE)// IPv4 Peers
 	{
-		// Find all transactions between the Previous Transaction Cycle and the Current		
+		// Find all election request between the Previous Transaction Cycle and the Current		
 		$sql = "SELECT * FROM `generating_peer_queue` WHERE `timestamp` < $current_generation_cycle ORDER BY `IP_Address` ASC";
-
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
 
 		if($sql_num_results > 0)
 		{
-			if($sql_num_results == 1)
+			if($sql_num_results == 1)// Lone IPv4 Address Public Key Won
 			{
 				// Winner by default
-				$sql_row = mysql_fetch_array($sql_result);
-				$public_key = $sql_row["public_key"];
-				$IP_Address = $sql_row["IP_Address"];
-				mysql_query("INSERT INTO `generating_peer_list` (`public_key` ,`join_peer_list` ,`last_generation`, `IP_Address`) VALUES ('$public_key', '$current_generation_cycle', '$current_generation_cycle', '$IP_Address')");
-				write_log("Generation Peer Elected for Public Key: " . base64_encode($public_key), "GP");
+				if(ipv6_test($sql_row["IP_Address"]) == FALSE)
+				{
+					$sql_row = mysql_fetch_array($sql_result);
+					$public_key = $sql_row["public_key"];
+					$IP_Address = $sql_row["IP_Address"];
+					mysql_query("INSERT INTO `generating_peer_list` (`public_key` ,`join_peer_list` ,`last_generation`, `IP_Address`) VALUES ('$public_key', '$current_generation_cycle', '$current_generation_cycle', '$IP_Address')");
+					write_log("Generation Peer Elected for Public Key: " . base64_encode($public_key), "GP");
+				}
+				else
+				{
+					// No one won, probably because it was only IPv6 Address in the Queue
+					write_log("No IPv4 Peers Participated in Election", "GP");
+				}
 			}
 			else
 			{
@@ -167,26 +174,54 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
 					$sql_row = mysql_fetch_array($sql_result);
-					$public_key = $sql_row["public_key"];
-			
-					$public_key_score = scorePublicKey($public_key);
-					write_log("Key Score: [$public_key_score] for Public Key: " . base64_encode($public_key), "GP");
+					
+					if(ipv6_test($sql_row["IP_Address"]) == FALSE)// IPv4 Only
+					{	
+						$public_key = $sql_row["public_key"];
+				
+						$public_key_score = scorePublicKey($public_key);
+						write_log("Key Score: [$public_key_score] for Public Key: " . base64_encode($public_key), "GP");
 
-					if($public_key_score > $highest_score)
-					{
-						$public_key_winner = $public_key;
-						$highest_score = $public_key_score;
-						$IP_Address = $sql_row["IP_Address"];
+						if($public_key_score > $highest_score)
+						{
+							$public_key_winner = $public_key;
+							$highest_score = $public_key_score;
+							$IP_Address = $sql_row["IP_Address"];
+						}
 					}
 				}
 
-				mysql_query("INSERT INTO `generating_peer_list` (`public_key` ,`join_peer_list` ,`last_generation`, `IP_Address`) VALUES ('$public_key_winner', '$current_generation_cycle', '$current_generation_cycle', '$IP_Address')");
+				if($public_key_score > 0)// Someone won
+				{
+					mysql_query("INSERT INTO `generating_peer_list` (`public_key` ,`join_peer_list` ,`last_generation`, `IP_Address`) VALUES ('$public_key_winner', '$current_generation_cycle', '$current_generation_cycle', '$IP_Address')");
+					write_log("Generation Peer Elected for Public Key: " . base64_encode($public_key_winner), "GP");
+				}
+				else
+				{
+					// No one won, probably because it was only IPv6 Address in the Queue
+					write_log("No IPv4 Peers Participated in Election", "GP");
+				}
 
-				write_log("Generation Peer Elected for Public Key: " . base64_encode($public_key_winner), "GP");
 			} // End if/then winner check
 
-			// Clear out queue for next round			
-			mysql_query("TRUNCATE TABLE `generating_peer_queue`");
+			// Clear out queue for next round of IPv4 Address only
+			$sql = "SELECT * FROM `generating_peer_queue`";
+			$sql_result = mysql_query($sql);
+			$sql_num_results = mysql_num_rows($sql_result);
+
+			for ($i = 0; $i < $sql_num_results; $i++)
+			{
+				$sql_row = mysql_fetch_array($sql_result);
+
+				ipv6_test($sql_row["IP_Address"]) == FALSE)// IPv4 Only
+				{
+					// Remove IPv4 Key From Queue
+					mysql_query("DELETE FROM `generating_peer_queue` WHERE `timestamp` = " . $sql_row["timestamp"] . " AND `public_key` = '" . $sql_row["public_key"] . "' AND `IP_Address` = '" . $sql_row["IP_Address"] . "' LIMIT 1";
+				}
+			}
+
+			// Optimize Table when Finished
+			mysql_query("OPTIMIZE TABLE `generating_peer_queue`");
 
 			// Wait after generation election for DB sanity reasons
 			sleep(1);
@@ -195,6 +230,103 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 	} // End if/then timing comparison check
 //***********************************************************************************
+//***********************************************************************************
+	// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
+	$gen_peers_total = mysql_result(mysql_query("SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
+
+	if(election_cycle(0, 2, $gen_peers_total) == TRUE)// IPv6 Peers
+	{
+		// Find all election request between the Previous Transaction Cycle and the Current		
+		$sql = "SELECT * FROM `generating_peer_queue` WHERE `timestamp` < $current_generation_cycle ORDER BY `IP_Address` ASC";
+
+		$sql_result = mysql_query($sql);
+		$sql_num_results = mysql_num_rows($sql_result);
+
+		if($sql_num_results > 0)
+		{
+			if($sql_num_results == 1)
+			{
+				// Winner by default
+				if(ipv6_test($sql_row["IP_Address"]) == TRUE)//Lone IPv6 Address Public Key Won
+				{
+					$sql_row = mysql_fetch_array($sql_result);
+					$public_key = $sql_row["public_key"];
+					$IP_Address = ipv6_compress($sql_row["IP_Address"]);
+					mysql_query("INSERT INTO `generating_peer_list` (`public_key` ,`join_peer_list` ,`last_generation`, `IP_Address`) VALUES ('$public_key', '$current_generation_cycle', '$current_generation_cycle', '$IP_Address')");
+					write_log("Generation Peer Elected for Public Key: " . base64_encode($public_key), "GP");
+				}
+				else
+				{
+					// No one won, probably because it was only IPv6 Address in the Queue
+					write_log("No IPv6 Peers Participated in Election", "GP");
+				}				
+			}
+			else
+			{
+				// More than 1 peer request, start a scoring of all public keys,
+				// the public key with the most points win
+				$highest_score = 0;
+				$public_key_winner = NULL;
+				write_log("Peer Election Score Key: " . scorePublicKey(NULL, TRUE), "GP");
+
+				for ($i = 0; $i < $sql_num_results; $i++)
+				{
+					$sql_row = mysql_fetch_array($sql_result);
+					
+					if(ipv6_test($sql_row["IP_Address"]) == TRUE)// IPv6 Only
+					{	
+						$public_key = $sql_row["public_key"];
+				
+						$public_key_score = scorePublicKey($public_key);
+						write_log("Key Score: [$public_key_score] for Public Key: " . base64_encode($public_key), "GP");
+
+						if($public_key_score > $highest_score)
+						{
+							$public_key_winner = $public_key;
+							$highest_score = $public_key_score;
+							$IP_Address = ipv6_compress($sql_row["IP_Address"]);
+						}
+					}
+				}
+
+				if($public_key_score > 0)// Someone won
+				{
+					mysql_query("INSERT INTO `generating_peer_list` (`public_key` ,`join_peer_list` ,`last_generation`, `IP_Address`) VALUES ('$public_key_winner', '$current_generation_cycle', '$current_generation_cycle', '$IP_Address')");
+					write_log("Generation Peer Elected for Public Key: " . base64_encode($public_key_winner), "GP");
+				}
+				else
+				{
+					// No one won, probably because it was only IPv4 Address in the Queue
+					write_log("No IPv6 Peers Participated in Election", "GP");
+				}
+			} // End if/then winner check
+
+			// Clear out queue for next round of IPv6 Address only
+			$sql = "SELECT * FROM `generating_peer_queue`";
+			$sql_result = mysql_query($sql);
+			$sql_num_results = mysql_num_rows($sql_result);
+
+			for ($i = 0; $i < $sql_num_results; $i++)
+			{
+				$sql_row = mysql_fetch_array($sql_result);
+
+				ipv6_test($sql_row["IP_Address"]) == TRUE)// IPv6 Only
+				{
+					// Remove IPv6 Key From Queue
+					mysql_query("DELETE FROM `generating_peer_queue` WHERE `timestamp` = " . $sql_row["timestamp"] . " AND `public_key` = '" . $sql_row["public_key"] . "' AND `IP_Address` = '" . $sql_row["IP_Address"] . "' LIMIT 1";
+				}
+			}
+
+			// Optimize Table when Finished
+			mysql_query("OPTIMIZE TABLE `generating_peer_queue`");
+
+			// Wait after generation election for DB sanity reasons
+			sleep(1);
+
+		}	//End if/then results check
+
+	} // End if/then timing comparison check
+//***********************************************************************************	
 // Store a hash of the current list of generating peers
 	$generating_hash = generation_peer_hash();
 
@@ -390,7 +522,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		}
 	}
 //***********************************************************************************
-	// Scan for new election request of generating peers
+	// Scan for new election request of IPv4 generating peers
 	if(election_cycle(1) == TRUE ||
 		election_cycle(2) == TRUE ||
 		election_cycle(3) == TRUE ||

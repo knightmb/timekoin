@@ -860,17 +860,18 @@ function check_crypt_balance($public_key)
 function peer_gen_amount($public_key)
 {
 	// 1 week = 604,800 seconds
-	$join_peer_list = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),0,"join_peer_list");
+	$join_peer_list1 = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),0,"join_peer_list");
+	$join_peer_list2 = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),1,"join_peer_list");	
 
-	if(empty($join_peer_list) == TRUE || $join_peer_list < TRANSACTION_EPOCH)
+	if(empty($join_peer_list1) == TRUE || $join_peer_list1 < TRANSACTION_EPOCH)
 	{
 		// Not found in the generating peer list
-		return 0;
+		$amount = 0;
 	}
 	else
 	{
 		// How many weeks has this public key been in the peer list
-		$peer_age = time() - $join_peer_list;
+		$peer_age = time() - $join_peer_list1;
 		$peer_age = intval($peer_age / 604800);
 
 		$amount = 0;
@@ -923,7 +924,68 @@ function peer_gen_amount($public_key)
 		}
 	}
 
-	return $amount;
+	if(empty($join_peer_list2) == TRUE || $join_peer_list2 < TRANSACTION_EPOCH)
+	{
+		// Not found in the generating peer list
+		$amount+= 0;
+	}
+	else
+	{
+		// How many weeks has this public key been in the peer list
+		$peer_age = time() - $join_peer_list2;
+		$peer_age = intval($peer_age / 604800);
+
+		$amount2 = 0;
+
+		switch($peer_age)
+		{
+			case 0:
+				$amount2 = 1;
+				break;
+
+			case 1:
+				$amount2 = 2;
+				break;
+
+			case ($peer_age >= 2 && $peer_age <= 3):
+				$amount2 = 3;
+				break;
+
+			case ($peer_age >= 4 && $peer_age <= 7):
+				$amount2 = 4;
+				break;
+
+			case ($peer_age >= 8 && $peer_age <= 15):
+				$amount2 = 5;
+				break;
+
+			case ($peer_age >= 16 && $peer_age <= 31):
+				$amount2 = 6;
+				break;
+
+			case ($peer_age >= 32 && $peer_age <= 63):
+				$amount2 = 7;
+				break;
+
+			case ($peer_age >= 64 && $peer_age <= 127):
+				$amount2 = 8;
+				break;
+
+			case ($peer_age >= 128 && $peer_age <= 255):
+				$amount2 = 9;
+				break;
+
+			case ($peer_age >= 256):
+				$amount2 = 10;
+				break;
+
+			default:
+				$amount2 = 1;
+				break;				
+		}
+	}
+
+	return $amount + $amount2;
 }
 //***********************************************************************************
 //***********************************************************************************
@@ -1047,7 +1109,7 @@ function tk_time_convert($time)
 }
 //***********************************************************************************
 //***********************************************************************************
-function election_cycle($when = 0, $ip_type = 1)
+function election_cycle($when = 0, $ip_type = 1, $gen_peers_total = 0)
 {
 	if($ip_type == 1)
 	{
@@ -1129,13 +1191,21 @@ function election_cycle($when = 0, $ip_type = 1)
 			$last3_gen-= 5;
 		}
 		// Transpose waveform 180 degrees from IPv4 Generation
-
 		TKRandom::seed($current_generation_block);
 		$tk_random_number = TKRandom::num(0, 9);
+		$ipv6_gen_peer_adapt = TKRandom::num(0, $gen_peers_total);
 
+		// The more IPv6 Peers that Generate, the less often Peer Elections happen
 		if($last3_gen + $tk_random_number > 16)
 		{
-			return TRUE;
+			if($ipv6_gen_peer_adapt < 25)
+			{
+				return TRUE;
+			}
+			else
+			{
+				return FALSE;
+			}
 		}
 		else
 		{
@@ -2776,6 +2846,18 @@ function ipv6_test($ip_address)
 }
 //***********************************************************************************
 //***********************************************************************************
+function ipv6_compress($ip_address)
+{
+	if(filter_var($ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
+	{
+		// IP Address is IPv6
+		return inet_ntop(inet_pton($ip_address)); // Return Compressed Shorthand
+	}
+
+	return FALSE;
+}
+//***********************************************************************************
+//***********************************************************************************
 function find_v4_gen_key($my_public_key)
 {
 	$sql = "SELECT IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
@@ -2790,50 +2872,6 @@ function find_v4_gen_key($my_public_key)
 		{
 			//IPv4 Address Associated with this Generating Public Key
 			return TRUE;
-		}
-	}
-
-	// No Matching Key with an IPv4 Address Found
-	return;
-}
-//***********************************************************************************
-//***********************************************************************************
-function find_v4_gen_IP($my_public_key)
-{
-	$sql = "SELECT IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
-
-	for ($i = 0; $i < $sql_num_results; $i++)
-	{
-		$sql_row = mysql_fetch_array($sql_result);
-
-		if(ipv6_test($sql_row["IP_Address"]) == FALSE)
-		{
-			// Return IPv4 Address Associated with this Generating Public Key
-			return $sql_row["IP_Address"];
-		}
-	}
-
-	// No Matching Key with an IPv4 Address Found
-	return;
-}
-//***********************************************************************************
-//***********************************************************************************
-function find_v4_gen_join($my_public_key)
-{
-	$sql = "SELECT join_peer_list, IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
-
-	for ($i = 0; $i < $sql_num_results; $i++)
-	{
-		$sql_row = mysql_fetch_array($sql_result);
-
-		if(ipv6_test($sql_row["IP_Address"]) == FALSE)
-		{
-			// Return IPv4 Address Associated with this Generating Public Key
-			return $sql_row["join_peer_list"];
 		}
 	}
 
@@ -2863,4 +2901,93 @@ function find_v6_gen_key($my_public_key)
 	return;
 }
 //***********************************************************************************
+//***********************************************************************************
+function find_v4_gen_IP($my_public_key)
+{
+	$sql = "SELECT IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
+	$sql_result = mysql_query($sql);
+	$sql_num_results = mysql_num_rows($sql_result);
+
+	for ($i = 0; $i < $sql_num_results; $i++)
+	{
+		$sql_row = mysql_fetch_array($sql_result);
+
+		if(ipv6_test($sql_row["IP_Address"]) == FALSE)
+		{
+			// Return IPv4 Address Associated with this Generating Public Key
+			return $sql_row["IP_Address"];
+		}
+	}
+
+	// No Matching Key with an IPv4 Address Found
+	return;
+}
+//***********************************************************************************
+//***********************************************************************************
+function find_v6_gen_IP($my_public_key)
+{
+	$sql = "SELECT IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
+	$sql_result = mysql_query($sql);
+	$sql_num_results = mysql_num_rows($sql_result);
+
+	for ($i = 0; $i < $sql_num_results; $i++)
+	{
+		$sql_row = mysql_fetch_array($sql_result);
+
+		if(ipv6_test($sql_row["IP_Address"]) == TRUE)
+		{
+			// Return IPv6 Address Associated with this Generating Public Key
+			return $sql_row["IP_Address"];
+		}
+	}
+
+	// No Matching Key with an IPv6 Address Found
+	return;
+}
+//***********************************************************************************
+//***********************************************************************************
+function find_v4_gen_join($my_public_key)
+{
+	$sql = "SELECT join_peer_list, IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
+	$sql_result = mysql_query($sql);
+	$sql_num_results = mysql_num_rows($sql_result);
+
+	for ($i = 0; $i < $sql_num_results; $i++)
+	{
+		$sql_row = mysql_fetch_array($sql_result);
+
+		if(ipv6_test($sql_row["IP_Address"]) == FALSE)
+		{
+			// Return IPv4 Address Associated with this Generating Public Key
+			return $sql_row["join_peer_list"];
+		}
+	}
+
+	// No Matching Key with an IPv4 Address Found
+	return;
+}
+//***********************************************************************************
+//***********************************************************************************
+function find_v6_gen_join($my_public_key)
+{
+	$sql = "SELECT join_peer_list, IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
+	$sql_result = mysql_query($sql);
+	$sql_num_results = mysql_num_rows($sql_result);
+
+	for ($i = 0; $i < $sql_num_results; $i++)
+	{
+		$sql_row = mysql_fetch_array($sql_result);
+
+		if(ipv6_test($sql_row["IP_Address"]) == TRUE)
+		{
+			// Return IPv6 Address Associated with this Generating Public Key
+			return $sql_row["join_peer_list"];
+		}
+	}
+
+	// No Matching Key with an IPv6 Address Found
+	return;
+}
+//***********************************************************************************
+
 ?>
