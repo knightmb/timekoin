@@ -157,7 +157,7 @@ if($_GET["action"] == "reverse_queue")
 
 						if($transaction_attribute == "G")
 						{
-							if($transaction_amount_sent_test > 10)
+							if($transaction_amount_sent_test > 20)
 							{
 								// Filter silly generation amounts :p
 								$valid_amount = FALSE;
@@ -440,7 +440,7 @@ if($_GET["action"] == "input_transaction")
 
 				if($transaction_attribute == "G")
 				{
-					if($transaction_amount_sent_test > 10)
+					if($transaction_amount_sent_test > 20)
 					{
 						// Filter silly generation amounts :p
 						$valid_amount = FALSE;
@@ -1041,7 +1041,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 
 							if($transaction_attribute == "G")
 							{
-								if($transaction_amount_sent_test > 10)
+								if($transaction_amount_sent_test > 20)
 								{
 									// Filter silly generation amounts :p
 									$valid_amount = FALSE;

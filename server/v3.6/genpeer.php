@@ -363,33 +363,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 	
 	if(rand(1,100) == 100 && $auto_update_generation_IP == 1) // Randomize to avoid spamming
 	{
-		$generation_IP = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,0);
-		$poll_IP = filter_sql(poll_peer(NULL, 'timekoin.net', NULL, 80, 46, "ipv4.php"));
-
-		if(empty($generation_IP) == TRUE) // IP Field Empty
-		{
-			if(empty($poll_IP) == FALSE)
-			{
-				if(mysql_query("UPDATE `options` SET `field_data` = '$poll_IP' WHERE `options`.`field_name` = 'generation_IP' LIMIT 1") == TRUE)
-				{
-					write_log("Generation IP Updated to ($poll_IP)", "GP");
-				}
-			}
-		}
-		else
-		{
-			// Check that existing IP still matches current IP and update if there is no match
-			if($generation_IP != $poll_IP)
-			{
-				if(empty($poll_IP) == FALSE)
-				{
-					if(mysql_query("UPDATE `options` SET `field_data` = '$poll_IP' WHERE `options`.`field_name` = 'generation_IP' LIMIT 1") == TRUE)
-					{
-						write_log("Generation IP Updated from ($generation_IP) to ($poll_IP)", "GP");
-					}
-				}
-			}
-		}
+		auto_update_IP_address();
 	}
 //***********************************************************************************	
 //***********************************************************************************
@@ -423,7 +397,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 			}
 			else
 			{
-				// Make sure both the response exist and that no connectoin error occurred
+				// Make sure both the response exist and that no connection error occurred
 				if(strlen($poll_peer) == 32)
 				{
 					$gen_list_hash_different++;
@@ -622,12 +596,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 						// Calculate public key half-crypt-hash
 						$arr1 = str_split($public_key, 181);
-
-
-
-
-
-
 						
 						if($network_mode == 3) // IPv6 Only Server
 						{
@@ -688,15 +656,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							$gateway_voucher = FALSE;
 						}
 
-
-
-
-
-
-
-
-
-
 						$domain_fail = FALSE; // Reset Variable
 						if(empty($peer_domain) == FALSE)
 						{
@@ -715,8 +674,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							}
 						}
 
-
-
 						if($gateway_voucher == TRUE)
 						{
 							// Gateway Peer can vouch for this Public Key Election Request
@@ -728,8 +685,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							// Do simple poll test from server
 							$simple_poll_fail = gen_simple_poll_test($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number);
 						}
-
-
 
 						// Does the public key half match what is encrypted in the 3rd crypt field from
 						// the same peer?
@@ -808,10 +763,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						// Calculate public key half-crypt-hash
 						$arr1 = str_split($public_key, 181);
 
-
-
-
-
 						if($network_mode == 3) // IPv6 Only Server
 						{
 							// Running IPv6 Only Mode, use gateway server to act as proxy poll check
@@ -871,12 +822,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							$gateway_voucher = FALSE;
 						}
 
-
-
-
-
-
-
 						$domain_fail = FALSE; // Reset Variable
 						if(empty($peer_domain) == FALSE)
 						{
@@ -895,10 +840,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							}							
 						}
 
-
-
-
-
 						if($gateway_voucher == TRUE)
 						{
 							// Gateway Peer can vouch for this Public Key Election Request
@@ -910,11 +851,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							// Do simple poll test from server
 							$simple_poll_fail = gen_simple_poll_test($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number);
 						}
-
-
-
-
-
 
 						// Does the public key half match what is encrypted in the 3rd crypt field from
 						// the same peer?
@@ -1068,11 +1004,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						// Calculate public key half-crypt-hash
 						$arr1 = str_split($public_key, 181);
 
-
-
-
-
-
 						if($network_mode == 2) // IPv4 Only Server
 						{
 							// Running IPv4 Only Mode, use gateway server to act as proxy poll check
@@ -1132,13 +1063,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							$gateway_voucher = FALSE;
 						}
 
-
-
-
-
-
-
-
 						$domain_fail = FALSE; // Reset Variable
 						if(empty($peer_domain) == FALSE)
 						{
@@ -1157,10 +1081,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							}
 						}
 
-
-
-
-
 						if($gateway_voucher == TRUE)
 						{
 							// Gateway Peer can vouch for this Public Key Election Request
@@ -1172,11 +1092,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							// Do simple poll test from server
 							$simple_poll_fail = gen_simple_poll_test($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number);
 						}
-
-
-
-
-
 
 						// Does the public key half match what is encrypted in the 3rd crypt field from
 						// the same peer?
@@ -1255,10 +1170,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						// Calculate public key half-crypt-hash
 						$arr1 = str_split($public_key, 181);
 
-
-
-
-
 						if($network_mode == 2) // IPv4 Only Server
 						{
 							// Running IPv4 Only Mode, use gateway server to act as proxy poll check
@@ -1318,10 +1229,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							$gateway_voucher = FALSE;
 						}
 
-
-
-
-
 						$domain_fail = FALSE; // Reset Variable
 						if(empty($peer_domain) == FALSE)
 						{
@@ -1340,10 +1247,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							}							
 						}
 
-
-
-
-
 						if($gateway_voucher == TRUE)
 						{
 							// Gateway Peer can vouch for this Public Key Election Request
@@ -1355,10 +1258,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							// Do simple poll test from server
 							$simple_poll_fail = gen_simple_poll_test($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number);
 						}
-
-
-
-
 
 						// Does the public key half match what is encrypted in the 3rd crypt field from
 						// the same peer?

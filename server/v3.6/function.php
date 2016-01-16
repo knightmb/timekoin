@@ -1725,6 +1725,67 @@ function is_domain_valid($domain)
 	return $result;
 }
 //***********************************************************************************
+function auto_update_IP_address()
+{
+	// IPv4 Update
+	$generation_IP = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,0);
+	$poll_IP = filter_sql(poll_peer(NULL, 'timekoin.net', NULL, 80, 46, "ipv4.php"));
+
+	if(empty($generation_IP) == TRUE) // IP Field Empty
+	{
+		if(empty($poll_IP) == FALSE && ipv6_test($poll_IP) == FALSE)
+		{
+			if(mysql_query("UPDATE `options` SET `field_data` = '$poll_IP' WHERE `options`.`field_name` = 'generation_IP' LIMIT 1") == TRUE)
+			{
+				write_log("Generation IPv4 Updated to ($poll_IP)", "GP");
+			}
+		}
+	}
+	else
+	{
+		// Check that existing IP still matches current IP and update if there is no match
+		if($generation_IP != $poll_IP)
+		{
+			if(empty($poll_IP) == FALSE && ipv6_test($poll_IP) == FALSE)
+			{
+				if(mysql_query("UPDATE `options` SET `field_data` = '$poll_IP' WHERE `options`.`field_name` = 'generation_IP' LIMIT 1") == TRUE)
+				{
+					write_log("Generation IPv4 Updated from ($generation_IP) to ($poll_IP)", "GP");
+				}
+			}
+		}
+	}
+
+	// IPv6 Update	
+	$generation_IP = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP_v6' LIMIT 1"),0,0);
+	$poll_IP = filter_sql(poll_peer(NULL, 'ipv6.timekoin.net', NULL, 80, 46, "ipv6.php"));
+
+	if(empty($generation_IP) == TRUE) // IP Field Empty
+	{
+		if(empty($poll_IP) == FALSE && ipv6_test($poll_IP) == TRUE)
+		{
+			if(mysql_query("UPDATE `options` SET `field_data` = '$poll_IP' WHERE `options`.`field_name` = 'generation_IP_v6' LIMIT 1") == TRUE)
+			{
+				write_log("Generation IPv6 Updated to ($poll_IP)", "GP");
+			}
+		}
+	}
+	else
+	{
+		// Check that existing IP still matches current IP and update if there is no match
+		if($generation_IP != $poll_IP)
+		{
+			if(empty($poll_IP) == FALSE && ipv6_test($poll_IP) == TRUE)
+			{
+				if(mysql_query("UPDATE `options` SET `field_data` = '$poll_IP' WHERE `options`.`field_name` = 'generation_IP_v6' LIMIT 1") == TRUE)
+				{
+					write_log("Generation IPv6 Updated from ($generation_IP) to ($poll_IP)", "GP");
+				}
+			}
+		}
+	}	
+}
+//***********************************************************************************
 function initialization_database()
 {
 	// Clear IP Activity and Banlist for next start
@@ -1779,26 +1840,6 @@ function initialization_database()
 		// Does not exist, create it
 		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('generation_IP_v6', '')");
 	}
-
-//**************************************
-	// Check for an empty generation IP address,
-	// if none exist, attempt to auto-detect one
-	// and fill in the field.
-	$poll_IP = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,0);
-	
-	if(empty($poll_IP) == TRUE)
-	{
-		ini_set('user_agent', 'Timekoin Server (Main) v' . TIMEKOIN_VERSION);
-		ini_set('default_socket_timeout', 3); // Timeout for request in seconds
-		
-		$poll_IP = filter_sql(poll_peer(NULL, 'timekoin.net', NULL, 80, 46, "ipv4.php"));
-
-		if(empty($poll_IP) == FALSE)
-		{
-			mysql_query("UPDATE `options` SET `field_data` = '$poll_IP' WHERE `options`.`field_name` = 'generation_IP' LIMIT 1");			
-		}
-	}
-//**************************************
 // Main Loop Status & Active Options Setup
 
 	// Truncate to Free RAM
