@@ -636,7 +636,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								if($poll_peer == TRUE)
 								{
 									// Gateway Peer can vouch for this Public Key Election Request
-									write_log("IPv4 Public Key Voucher by Active Gateway Peer[$gateway_domain:$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
+									write_log("IPv4 Public Key Voucher by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
 									$gateway_voucher = TRUE;
 									// Create Pass Voucher
 									$gen_key_crypt = $arr1[0];
@@ -644,7 +644,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								else
 								{
 									// Gateway Peer can NOT vouch for this Public Key Election Request
-									write_log("IPv4 Public Key REFUSED by Active Gateway Peer[$gateway_domain:$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
+									write_log("IPv4 Public Key REFUSED by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
 								}
 							}
 						}
@@ -802,7 +802,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								if($poll_peer == TRUE)
 								{
 									// Gateway Peer can vouch for this Public Key Election Request
-									write_log("IPv4 Public Key Voucher by Active Gateway Peer[$gateway_domain:$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
+									write_log("IPv4 Public Key Voucher by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
 									$gateway_voucher = TRUE;
 									// Create Pass Voucher
 									$gen_key_crypt = $arr1[0];
@@ -810,7 +810,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								else
 								{
 									// Gateway Peer can NOT vouch for this Public Key Election Request
-									write_log("IPv4 Public Key REFUSED by Active Gateway Peer[$gateway_domain:$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
+									write_log("IPv4 Public Key REFUSED by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
 								}
 							}
 						}
@@ -932,6 +932,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		election_cycle(5, 2, $gen_peers_total) == TRUE ||
 		election_cycle(6, 2, $gen_peers_total) == TRUE) // Don't queue election request until 1-6 cycles before election (30 minutes)
 	{
+		$network_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
+
 		$sql = "SELECT * FROM `transaction_queue` WHERE `attribute` = 'R'";
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
@@ -1043,7 +1045,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								if($poll_peer == TRUE)
 								{
 									// Gateway Peer can vouch for this Public Key Election Request
-									write_log("IPv6 Public Key Voucher by Active Gateway Peer[$gateway_domain:$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
+									write_log("IPv6 Public Key Voucher by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
 									$gateway_voucher = TRUE;
 									// Create Pass Voucher
 									$gen_key_crypt = $arr1[0];
@@ -1051,7 +1053,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								else
 								{
 									// Gateway Peer can NOT vouch for this Public Key Election Request
-									write_log("IPv6 Public Key REFUSED by Active Gateway Peer[$gateway_domain:$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
+									write_log("IPv6 Public Key REFUSED by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
 								}
 							}
 						}
@@ -1209,7 +1211,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								if($poll_peer == TRUE)
 								{
 									// Gateway Peer can vouch for this Public Key Election Request
-									write_log("IPv6 Public Key Voucher by Active Gateway Peer[$gateway_domain:$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
+									write_log("IPv6 Public Key Voucher by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
 									$gateway_voucher = TRUE;
 									// Create Pass Voucher
 									$gen_key_crypt = $arr1[0];
@@ -1217,7 +1219,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								else
 								{
 									// Gateway Peer can NOT vouch for this Public Key Election Request
-									write_log("IPv6 Public Key REFUSED by Active Gateway Peer[$gateway_domain:$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
+									write_log("IPv6 Public Key REFUSED by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
 								}
 							}
 						}

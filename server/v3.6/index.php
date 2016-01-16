@@ -1969,17 +1969,59 @@ if($_SESSION["valid_login"] == TRUE)
 			// Create context resource for our request
 			$context = stream_context_create (array ( 'http' => $contextData ));
 
-			$firewall_poll = filter_sql(file_get_contents('http://timekoin.com/utility/firewall.php', FALSE, $context, NULL, 1024));
+			$network_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
 
-			if(empty($firewall_poll) == TRUE)
+			if($network_mode == 1)
 			{
-				$firewall_poll = '<font color="red">No Response</font>';
+				// Do both IPv4 & IPv6 Firewall Testing
+				$firewall_poll = filter_sql(file_get_contents('http://timekoin.com/utility/firewall.php', FALSE, $context, NULL, 1024));
+				$firewall_poll_v6 = filter_sql(file_get_contents('http://ipv6.timekoin.net/utility/firewall.php', FALSE, $context, NULL, 1024));
+
+				if(empty($firewall_poll) == TRUE)
+				{
+					$firewall_poll = '<font color="red">No Response</font>';
+				}
+
+				if(empty($firewall_poll_v6) == TRUE)
+				{
+					$firewall_poll_v6 = '<font color="red">No Response</font>';
+				}				
+
+				$body_string = '<strong>IPv4 Test Response:</strong><br><br>
+				'. $firewall_poll . '<hr><strong>IPv6 Test Response:</strong><br><br>' . $firewall_poll_v6 .
+				'<br><br><FORM ACTION="index.php?menu=generation&amp;firewall=test" METHOD="post"><input type="submit" value="Check My Firewall Again"/></FORM>';				
 			}
 
-			$body_string = '<strong>Test Response:</strong><br><br>
-				'. $firewall_poll . '<br><br>
-				<FORM ACTION="index.php?menu=generation&amp;firewall=test" METHOD="post"><input type="submit" value="Check My Firewall Again"/></FORM>';
-						
+			if($network_mode == 2)
+			{
+				// IPv4 Firewall Testing
+				$firewall_poll = filter_sql(file_get_contents('http://timekoin.com/utility/firewall.php', FALSE, $context, NULL, 1024));
+
+				if(empty($firewall_poll) == TRUE)
+				{
+					$firewall_poll = '<font color="red">No Response</font>';
+				}
+
+				$body_string = '<strong>IPv4 Test Response:</strong><br><br>
+				'. $firewall_poll .
+				'<br><br><FORM ACTION="index.php?menu=generation&amp;firewall=test" METHOD="post"><input type="submit" value="Check My Firewall Again"/></FORM>';				
+			}
+
+			if($network_mode == 3)
+			{
+				// IPv6 Firewall Testing
+				$firewall_poll_v6 = filter_sql(file_get_contents('http://ipv6.timekoin.net/utility/firewall.php', FALSE, $context, NULL, 1024));
+
+				if(empty($firewall_poll_v6) == TRUE)
+				{
+					$firewall_poll_v6 = '<font color="red">No Response</font>';
+				}
+
+				$body_string = '<strong>IPv6 Test Response:</strong><br><br>
+				'. $firewall_poll_v6 .
+				'<br><br><FORM ACTION="index.php?menu=generation&amp;firewall=test" METHOD="post"><input type="submit" value="Check My Firewall Again"/></FORM>';				
+			}
+
 			home_screen('Crypto Currency Generation', $text_bar, $body_string , $quick_info);
 			exit;
 		}

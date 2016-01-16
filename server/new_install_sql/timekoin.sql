@@ -224,8 +224,8 @@ INSERT INTO `options` (`field_name`, `field_data`) VALUES
 
 CREATE TABLE IF NOT EXISTS `quantum_balance_index` (
   `public_key_hash` varchar(32) NOT NULL,
-  `max_foundation` int(11) NOT NULL,
-  `balance` bigint(20) NOT NULL,
+  `max_foundation` int(11) unsigned NOT NULL,
+  `balance` bigint(20) unsigned NOT NULL,
   KEY `qbi_index` (`public_key_hash`(4))
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 

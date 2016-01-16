@@ -1218,98 +1218,36 @@ function election_cycle($when = 0, $ip_type = 1, $gen_peers_total = 0)
 }
 //***********************************************************************************
 //***********************************************************************************
-function generation_cycle($when = 0, $ip_type = 1)
+function generation_cycle($when = 0)
 {
-	if($ip_type == 1)
-	{	
-		// IPv4 Generation Cycle
-		// Check if currency generation should take place now or
-		// so many cycles ahead in the future
-		if($when == 0)
-		{
-			// Check right now
-			$current_generation_cycle = transaction_cycle(0);
-			$current_generation_block = transaction_cycle(0, TRUE);
-		}
-		else
-		{
-			// Sometime further in the future
-			$current_generation_cycle = transaction_cycle($when);
-			$current_generation_block = transaction_cycle($when, TRUE);
-		}
-
-		$str = strval($current_generation_cycle);
-		$last3_gen = intval($str[strlen($str)-3]);
-
-		TKRandom::seed($current_generation_block);
-		$tk_random_number = TKRandom::num(0, 9);
-
-		if($last3_gen + $tk_random_number < 6)
-		{
-			return TRUE;
-		}
-		else
-		{
-			return FALSE;
-		}
-	}
-	else if($ip_type == 2)
+	// Check if currency generation should take place now or
+	// so many cycles ahead in the future
+	if($when == 0)
 	{
-		// IPv6 Generation Cycle
-		// Check if currency generation should take place now or
-		// so many cycles ahead in the future
-		if($when == 0)
-		{
-			// Check right now
-			$current_generation_cycle = transaction_cycle(0);
-			$current_generation_block = transaction_cycle(0, TRUE);
-		}
-		else
-		{
-			// Sometime further in the future
-			$current_generation_cycle = transaction_cycle($when);
-			$current_generation_block = transaction_cycle($when, TRUE);
-		}
+		// Check right now
+		$current_generation_cycle = transaction_cycle(0);
+		$current_generation_block = transaction_cycle(0, TRUE);
+	}
+	else
+	{
+		// Sometime further in the future
+		$current_generation_cycle = transaction_cycle($when);
+		$current_generation_block = transaction_cycle($when, TRUE);
+	}
 
-		$str = strval($current_generation_cycle);
-		$last3_gen = intval($str[strlen($str)-3]);
-		// Transpose waveform 180 degrees from IPv4 Generation
-		if($last3_gen == 0)
-		{
-			$last3_gen = 5;
-		}
-		else if($last3_gen == 1)
-		{
-			$last3_gen = 6;
-		}
-		else if($last3_gen == 2)
-		{
-			$last3_gen = 7;
-		}
-		else if($last3_gen == 3)
-		{
-			$last3_gen = 8;
-		}
-		else if($last3_gen == 4)
-		{
-			$last3_gen = 9;
-		}
-		else
-		{
-			$last3_gen-= 5;
-		}
-		// Transpose waveform 180 degrees from IPv4 Generation
-		TKRandom::seed($current_generation_block);
-		$tk_random_number = TKRandom::num(0, 9);
+	$str = strval($current_generation_cycle);
+	$last3_gen = intval($str[strlen($str)-3]);
 
-		if($last3_gen + $tk_random_number < 6)
-		{
-			return TRUE;
-		}
-		else
-		{
-			return FALSE;
-		}
+	TKRandom::seed($current_generation_block);
+	$tk_random_number = TKRandom::num(0, 9);
+
+	if($last3_gen + $tk_random_number < 6)
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
 	}
 
 	// No match to anything

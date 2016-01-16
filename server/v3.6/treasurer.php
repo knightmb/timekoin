@@ -428,7 +428,7 @@ if($sql_num_results > 0)
 								}
 
 								// Update the last generation timestamp
-								mysql_query("UPDATE `generating_peer_list` SET `last_generation` = '$current_transaction_cycle' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
+								mysql_query("UPDATE `generating_peer_list` SET `last_generation` = '$current_transaction_cycle' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 2");
 							}
 							else if($time_created != $transaction_timestamp)
 							{
