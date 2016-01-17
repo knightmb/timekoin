@@ -1820,6 +1820,7 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			$default_public_key_font = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
 			$my_public_key = my_public_key();
+			$ip_mode;
 
 			$body_string = $body_string . '<hr><strong>Current Generation List</strong>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Public Key</th><th>Joined</th><th>Last Generated</th></tr>';
@@ -1841,9 +1842,20 @@ if($_SESSION["valid_login"] == TRUE)
 					$public_key = '<p style="word-wrap:break-word; width:325px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($sql_row["public_key"]);
 				}
 
+				if(ipv6_test($sql_row["IP_Address"]) == TRUE)
+				{
+					//IPv6 Generating Peer
+					$ip_mode = '<font color="blue">IPv6<br></font>';
+				}
+				else
+				{
+					//IPv4 Generating Peer
+					$ip_mode = '<font color="green">IPv4<br></font>';
+				}
+
 				$body_string .= '<tr>
 				<td class="style2">' . $public_key . '</p></td>
-				<td class="style2"><p style="font-size:10px;">' . unix_timestamp_to_human($sql_row["join_peer_list"], $user_timezone) . '</p></td>
+				<td class="style2"><p style="font-size:10px;">' . $ip_mode . unix_timestamp_to_human($sql_row["join_peer_list"], $user_timezone) . '</p></td>
 				<td class="style2"><p style="font-size:10px;">' . tk_time_convert(time() - $sql_row["last_generation"]) . ' ago</p></td></tr>';
 			}
 
@@ -1854,6 +1866,7 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			$default_public_key_font = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
 			$my_public_key = my_public_key();
+			$ip_mode;
 
 			$body_string .= '<hr><strong>Election Queue List</strong>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Public Key</th><th>Join Queue</th></tr>';
@@ -1875,9 +1888,20 @@ if($_SESSION["valid_login"] == TRUE)
 					$public_key = '<p style="word-wrap:break-word; width:425px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($sql_row["public_key"]);
 				}
 
+				if(ipv6_test($sql_row["IP_Address"]) == TRUE)
+				{
+					//IPv6 Generating Peer
+					$ip_mode = '<font color="blue">IPv6<br></font>';
+				}
+				else
+				{
+					//IPv4 Generating Peer
+					$ip_mode = '<font color="green">IPv4<br></font>';
+				}
+
 				$body_string .= '<tr>
 				<td class="style2">' . $public_key . '</p></td>
-				<td class="style2"><p style="font-size:10px;">' . tk_time_convert(time() - $sql_row["timestamp"]) . ' ago</p></td></tr>';
+				<td class="style2"><p style="font-size:10px;">' . $ip_mode . tk_time_convert(time() - $sql_row["timestamp"]) . ' ago</p></td></tr>';
 			}
 
 			$body_string .= '</table></div>';

@@ -156,6 +156,7 @@ $current_generation_cycle = transaction_cycle(0);
 if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle) > 35)
 {
 //***********************************************************************************
+	// IPv4 Election
 	if(election_cycle() == TRUE)// IPv4 Peers
 	{
 		// Find all election request between the Previous Transaction Cycle and the Current		
@@ -167,10 +168,11 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		{
 			if($sql_num_results == 1)// Lone IPv4 Address Public Key Won
 			{
+				$sql_row = mysql_fetch_array($sql_result);
+
 				// Winner by default
 				if(ipv6_test($sql_row["IP_Address"]) == FALSE)
 				{
-					$sql_row = mysql_fetch_array($sql_result);
 					$public_key = $sql_row["public_key"];
 					$IP_Address = $sql_row["IP_Address"];
 					mysql_query("INSERT INTO `generating_peer_list` (`public_key` ,`join_peer_list` ,`last_generation`, `IP_Address`) VALUES ('$public_key', '$current_generation_cycle', '$current_generation_cycle', '$IP_Address')");
@@ -250,6 +252,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 	} // End if/then timing comparison check
 //***********************************************************************************
 //***********************************************************************************
+	// IPv6 Election
 	// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
 	$gen_peers_total = mysql_result(mysql_query("SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
 
@@ -257,7 +260,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 	{
 		// Find all election request between the Previous Transaction Cycle and the Current		
 		$sql = "SELECT * FROM `generating_peer_queue` WHERE `timestamp` < $current_generation_cycle ORDER BY `IP_Address` ASC";
-
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
 
@@ -265,10 +267,11 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		{
 			if($sql_num_results == 1)
 			{
+				$sql_row = mysql_fetch_array($sql_result);
+
 				// Winner by default
 				if(ipv6_test($sql_row["IP_Address"]) == TRUE)//Lone IPv6 Address Public Key Won
 				{
-					$sql_row = mysql_fetch_array($sql_result);
 					$public_key = $sql_row["public_key"];
 					$IP_Address = ipv6_compress($sql_row["IP_Address"]);
 					mysql_query("INSERT INTO `generating_peer_list` (`public_key` ,`join_peer_list` ,`last_generation`, `IP_Address`) VALUES ('$public_key', '$current_generation_cycle', '$current_generation_cycle', '$IP_Address')");
@@ -508,7 +511,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 	else
 	{
 		// Clear out any out of sync counts once the list is in sync
-		if(rand(1,5) == 4) // Randomize to avoid spamming the DB
+		if(rand(1,3) == 2) // Randomize to avoid spamming the DB
 		{
 			// Reset out of sync counter
 			mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'generation_peer_list_no_sync' LIMIT 1");
@@ -542,31 +545,31 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 				$crypt3 = $sql_row["crypt_data3"];
 
 				//Valid Public Key
-				$public_key_found_peer = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),0,"join_peer_list");
+				$public_key_found_peer = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,"join_peer_list");
 
 				if(empty($public_key_found_peer) == FALSE)
 				{
 					// Is this an existing IPv6 Address
-					$public_key_IP = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),0,"IP_Address");
+					$public_key_IP = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,"IP_Address");
 
 					if(ipv6_test($public_key_IP) == TRUE)
 					{
 						// This is a IPv6 Gen Peer, ignore it, try for a second Gen Peer that would be IPv4
-						$public_key_found_peer = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),1,"join_peer_list");
+						$public_key_found_peer = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),1,"join_peer_list");
 					}
 				}
 
-				$public_key_found_timestamp = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 1"),0,"timestamp");
+				$public_key_found_timestamp = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 2"),0,"timestamp");
 
 				if(empty($public_key_found_timestamp) == FALSE)
 				{
 					// Is this an existing IPv6 Address
-					$public_key_IP = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 1"),0,"IP_Address");
+					$public_key_IP = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 2"),0,"IP_Address");
 
 					if(ipv6_test($public_key_IP) == TRUE)
 					{
 						// This is a IPv6 Gen Peer, ignore it, try for a second Gen Peer that would be IPv4
-						$public_key_found_timestamp = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 1"),1,"timestamp");
+						$public_key_found_timestamp = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 2"),1,"timestamp");
 					}
 				}
 
@@ -951,31 +954,31 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 				$crypt3 = $sql_row["crypt_data3"];
 
 				//Valid Public Key
-				$public_key_found_peer = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),0,"join_peer_list");
+				$public_key_found_peer = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,"join_peer_list");
 
 				if(empty($public_key_found_peer) == FALSE)
 				{
 					// Is this an existing IPv4 Address
-					$public_key_IP = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),0,"IP_Address");
+					$public_key_IP = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,"IP_Address");
 
 					if(ipv6_test($public_key_IP) == FALSE)
 					{
 						// This is a IPv4 Gen Peer, ignore it, try for a second Gen Peer that would be IPv6
-						$public_key_found_peer = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),1,"join_peer_list");
+						$public_key_found_peer = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),1,"join_peer_list");
 					}
 				}
 
-				$public_key_found_timestamp = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 1"),0,"timestamp");
+				$public_key_found_timestamp = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 2"),0,"timestamp");
 
 				if(empty($public_key_found_timestamp) == FALSE)
 				{
 					// Is this an existing IPv4 Address
-					$public_key_IP = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 1"),0,"IP_Address");
+					$public_key_IP = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 2"),0,"IP_Address");
 
 					if(ipv6_test($public_key_IP) == FALSE)
 					{
 						// This is a IPv4 Gen Peer, ignore it, try for a second Gen Peer that would be IPv6
-						$public_key_found_timestamp = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 1"),1,"timestamp");
+						$public_key_found_timestamp = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 2"),1,"timestamp");
 					}
 				}
 

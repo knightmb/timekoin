@@ -91,6 +91,8 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 
 	if($sql_num_results > 0 )
 	{
+		$ip_mode;
+		
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
 			$sql_row = mysql_fetch_array($sql_result);
@@ -99,12 +101,23 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 
 			if(time() - $last_generation > 7200) // 2 Hours without generation gets the peer removed
 			{
-				$sql = "DELETE QUICK FROM `generating_peer_list` WHERE `generating_peer_list`.`public_key` = '$public_key'";
+				if(ipv6_test($sql_row["IP_Address"]) == TRUE)
+				{
+					//IPv6 Generating Peer
+					$ip_mode = 'IPv6 ';
+				}
+				else
+				{
+					//IPv4 Generating Peer
+					$ip_mode = 'IPv4 ';
+				}				
+				
+				$sql = "DELETE QUICK FROM `generating_peer_list` WHERE `generating_peer_list`.`public_key` = '$public_key' AND `generating_peer_list`.`last_generation` = $last_generation";
 				if(mysql_query($sql) == TRUE)
 				{
 					// Delete successful, flag to update hash
 					$peer_purge = TRUE;
-					write_log("Public Key Removed Due to 2 Hour Idle Limit:<br>" . base64_encode($public_key),"G");
+					write_log($ip_mode . "Public Key Removed Due to 2 Hour Idle Limit:<br>" . base64_encode($public_key),"G");
 				}
 			}
 		}
@@ -126,7 +139,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 		// Check to see if we are in the allowed generation peer list
 		$my_public_key = my_public_key();
 		$network_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
-		
+//***********************************************************************************		
 		if($network_mode == 1 || $network_mode == 2)// Generation IPv4 Enabled Check
 		{
 			// IPv4 Generation

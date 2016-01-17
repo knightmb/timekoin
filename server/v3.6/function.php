@@ -860,8 +860,9 @@ function check_crypt_balance($public_key)
 function peer_gen_amount($public_key)
 {
 	// 1 week = 604,800 seconds
-	$join_peer_list1 = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),0,"join_peer_list");
-	$join_peer_list2 = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),1,"join_peer_list");	
+	$join_peer_list1 = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,"join_peer_list");
+	$join_peer_list2 = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),1,"join_peer_list");	
+	$amount;
 
 	if(empty($join_peer_list1) == TRUE || $join_peer_list1 < TRANSACTION_EPOCH)
 	{
@@ -873,7 +874,6 @@ function peer_gen_amount($public_key)
 		// How many weeks has this public key been in the peer list
 		$peer_age = time() - $join_peer_list1;
 		$peer_age = intval($peer_age / 604800);
-
 		$amount = 0;
 
 		switch($peer_age)
@@ -934,7 +934,6 @@ function peer_gen_amount($public_key)
 		// How many weeks has this public key been in the peer list
 		$peer_age = time() - $join_peer_list2;
 		$peer_age = intval($peer_age / 604800);
-
 		$amount2 = 0;
 
 		switch($peer_age)
