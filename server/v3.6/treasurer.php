@@ -364,9 +364,16 @@ if($sql_num_results > 0)
 					{
 						// Check to make sure enough time has passed since this public key joined the network to allow currency generation
 						// Default is 1 Hour or 3600 seconds
-						$join_peer_list = mysql_result(mysql_query("SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),0,0);
+						$join_peer_list = mysql_result(mysql_query("SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,0);
+						$join_peer_list2 = mysql_result(mysql_query("SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),1,0);
 
-						if((time() - $join_peer_list) >= 3600) // It's been more than 3600 seconds since this public key joined the generating peer list
+						if(empty($join_peer_list2) == TRUE)
+						{
+							// Non-Gateway Peer
+							$join_peer_list2 = $join_peer_list;
+						}
+
+						if((time() - $join_peer_list) >= 3600 && (time() - $join_peer_list2) >= 3600) // It's been more than 3600 seconds since this public key joined the generating peer list
 						{
 							$time_created = $previous_transaction_cycle + 1; // Format timestamp for a 1 second after previous transaction cycle
 							$crypt1 = $sql_row["crypt_data1"];
@@ -419,7 +426,7 @@ if($sql_num_results > 0)
 								if(mysql_query($sql) == FALSE)
 								{
 									//Something didn't work
-									write_log("Generation Insert Failed for this Key: " . base64_encode($public_key), "G");
+									write_log("Generation Database Insert Failed for this Key: " . base64_encode($public_key), "G");
 									$record_failure_counter++;
 								}
 								else

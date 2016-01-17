@@ -1752,15 +1752,22 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$generate_currency_enabled = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generate_currency' LIMIT 1"),0,0);
 
-		if($generate_currency_enabled == "1")
+		if($generate_currency_enabled == TRUE)
 		{
 			$my_public_key = my_public_key();
-			$join_peer_list = mysql_result(mysql_query("SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$my_public_key' LIMIT 1"),0,0);
+			$join_peer_list_v4 = find_v4_gen_join($my_public_key);
+			$join_peer_list_v6 = find_v6_gen_join($my_public_key);
 			$last_generation = mysql_result(mysql_query("SELECT last_generation FROM `generating_peer_list` WHERE `public_key` = '$my_public_key' LIMIT 1"),0,0);
 			$my_generation_IP = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,0);
 			$my_generation_IP_v6 = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP_v6' LIMIT 1"),0,0);
+			$production_time;
+			$ipv4_status;
+			$ipv6_status;
 
 			$network_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
+			
+			$generate_currency = 'Generation <font color="green"><strong>Enabled</strong></font>';
+			$generate_rate = '@ <font color="green"><strong>' . peer_gen_amount($my_public_key) . '</strong></font> per Cycle';
 
 			if($network_mode == 1)
 			{
@@ -1769,6 +1776,89 @@ if($_SESSION["valid_login"] == TRUE)
 				IPv4 Generation IP <input type="text" name="gen_IP" size="15" maxlength="15" value="' . $my_generation_IP . '"/><br>
 				IPv6 Generation IP <input type="text" name="gen_IP_v6" size="34" maxlength="39" value="' . $my_generation_IP_v6 . '"/>
 				<input type="submit" name="IPChange" value="Save" /></FORM>' . $IP_save;
+
+				// Is IPv4 Elected Yet?
+				if(empty($join_peer_list_v4) == FALSE)
+				{
+					// Is it ready to generate currency?
+					if(time() - $join_peer_list_v4 < 3600)
+					{
+						// Can't generate yet
+						$ipv4_status = 1;
+					}
+					else
+					{
+						// Generating Now
+						$ipv4_status = 2;
+					}
+				}
+				else
+				{
+					// Not elected
+					$ipv4_status = FALSE;
+				}
+
+				switch($ipv4_status)
+				{
+					case 0:
+					$ipv4_status = '<font color="red"><strong>IPv4 Peer Not Elected Yet</strong></font><br>';
+					break;
+
+					case 1:
+					$ipv4_status = '<font color="blue">IPv4 Generation not allowed for ' . tk_time_convert(3600 - (time() - $join_peer_list_v4)) . '</font><br>';
+					break;
+
+					case 2:
+					$ipv4_status = 'IPv4 Production for ' . tk_time_convert(time() - $join_peer_list_v4) . '<br>';
+					break;					
+				}
+
+				// Is IPv6 Elected Yet?
+				if(empty($join_peer_list_v6) == FALSE)
+				{
+					// Is it ready to generate currency?
+					if(time() - $join_peer_list_v6 < 3600)
+					{
+						// Can't generate yet
+						$ipv6_status = 1;
+					}
+					else
+					{
+						// Generating Now
+						$ipv6_status = 2;
+					}
+				}
+				else
+				{
+					// Not elected
+					$ipv6_status = FALSE;
+				}
+
+				switch($ipv6_status)
+				{
+					case 0:
+					$ipv6_status = '<font color="red"><strong>IPv6 Peer Not Elected Yet</strong></font>';
+					break;
+
+					case 1:
+					$ipv6_status = '<font color="blue">IPv6 Generation not allowed for ' . tk_time_convert(3600 - (time() - $join_peer_list_v6)) . '</font>';
+					break;
+
+					case 2:
+					$ipv6_status = 'IPv6 Production for ' . tk_time_convert(time() - $join_peer_list_v6);
+					break;					
+				}
+
+				$production_time = $ipv4_status . $ipv6_status;
+
+				if(empty($join_peer_list_v4) == TRUE && empty($join_peer_list_v6) == TRUE)
+				{
+					$last_generation = tk_time_convert(0);
+				}
+				else
+				{
+					$last_generation = tk_time_convert(time() - $last_generation);
+				}
 			}
 			else if($network_mode == 2)
 			{
@@ -1776,6 +1866,53 @@ if($_SESSION["valid_login"] == TRUE)
 				$my_gen_IP_form = '<FORM ACTION="index.php?menu=generation&amp;IP=change" METHOD="post">
 				IPv4 Generation IP <input type="text" name="gen_IP" size="15" maxlength="15" value="' . $my_generation_IP . '"/>
 				<input type="submit" name="IPChange" value="Save" /></FORM>' . $IP_save;
+
+				// Is IPv4 Elected Yet?
+				if(empty($join_peer_list_v4) == FALSE)
+				{
+					// Is it ready to generate currency?
+					if(time() - $join_peer_list_v4 < 3600)
+					{
+						// Can't generate yet
+						$ipv4_status = 1;
+					}
+					else
+					{
+						// Generating Now
+						$ipv4_status = 2;
+					}
+				}
+				else
+				{
+					// Not elected
+					$ipv4_status = FALSE;
+				}
+
+				switch($ipv4_status)
+				{
+					case 0:
+					$ipv4_status = '<font color="red"><strong>IPv4 Peer Not Elected Yet</strong></font>';
+					break;
+
+					case 1:
+					$ipv4_status = '<font color="blue">IPv4 Generation not allowed for ' . tk_time_convert(3600 - (time() - $join_peer_list_v4)) . '</font>';
+					break;
+
+					case 2:
+					$ipv4_status = 'IPv4 Production for ' . tk_time_convert(time() - $join_peer_list_v4);
+					break;					
+				}
+
+				$production_time = $ipv4_status;
+
+				if(empty($join_peer_list_v4) == TRUE)
+				{
+					$last_generation = tk_time_convert(0);
+				}
+				else
+				{
+					$last_generation = tk_time_convert(time() - $last_generation);
+				}
 			}
 			else if($network_mode == 3)
 			{
@@ -1783,31 +1920,56 @@ if($_SESSION["valid_login"] == TRUE)
 				$my_gen_IP_form = '<FORM ACTION="index.php?menu=generation&amp;IP=change" METHOD="post">
 				IPv6 Generation IP <input type="text" name="gen_IP_v6" size="34" maxlength="39" value="' . $my_generation_IP_v6 . '"/>
 				<input type="submit" name="IPChange" value="Save" /></FORM>' . $IP_save;
+
+				// Is IPv6 Elected Yet?
+				if(empty($join_peer_list_v6) == FALSE)
+				{
+					// Is it ready to generate currency?
+					if(time() - $join_peer_list_v6 < 3600)
+					{
+						// Can't generate yet
+						$ipv6_status = 1;
+					}
+					else
+					{
+						// Generating Now
+						$ipv6_status = 2;
+					}
+				}
+				else
+				{
+					// Not elected
+					$ipv6_status = FALSE;
+				}
+
+				switch($ipv6_status)
+				{
+					case 0:
+					$ipv6_status = '<font color="red"><strong>IPv6 Peer Not Elected Yet</strong></font>';
+					break;
+
+					case 1:
+					$ipv6_status = '<font color="blue">IPv6 Generation not allowed for ' . tk_time_convert(3600 - (time() - $join_peer_list_v6)) . '</font>';
+					break;
+
+					case 2:
+					$ipv6_status = 'IPv6 Production for ' . tk_time_convert(time() - $join_peer_list_v6);
+					break;					
+				}
+
+				$production_time = $ipv6_status;
+
+				if(empty($join_peer_list_v6) == TRUE)
+				{
+					$last_generation = tk_time_convert(0);
+				}
+				else
+				{
+					$last_generation = tk_time_convert(time() - $last_generation);
+				}
 			}
 
-			if(time() - $join_peer_list < 3600)
-			{
-				// Can't generate yet
-				$generate_currency = 'Generation <font color="green"><strong>Enabled</strong></font>';
-				$generate_rate = '@ <font color="green"><strong>' . peer_gen_amount($my_public_key) . '</strong></font> per Cycle';
-				$continuous_production = '<font color="blue">Generation not allowed for ' . tk_time_convert(3600 - (time() - $join_peer_list)) . '</font>';
-			}
-			else if($join_peer_list === FALSE)
-			{
-				// Not elected to the generating peer list yet
-				$generate_currency = 'Generation <font color="green"><strong>Enabled</strong></font>';
-				$generate_rate = '@ <font color="green"><strong>' . peer_gen_amount($my_public_key) . '</strong></font> per Cycle';
-				$continuous_production = '<font color="red"><strong>This Peer Has Not<br> Been Elected Yet</strong></font>';
-			}
-			else
-			{
-				$production_time = tk_time_convert(time() - $join_peer_list);
-				$last_generation = tk_time_convert(time() - $last_generation);
-
-				$generate_currency = 'Generation <font color="green"><strong>Enabled</strong></font>';
-				$generate_rate = '@ <font color="green"><strong>' . peer_gen_amount($my_public_key) . '</strong></font> per Cycle';
-				$continuous_production = 'Continuous Production for ' . $production_time . '<br>Last Generated ' . $last_generation . ' ago';
-			}
+			$continuous_production = $production_time . '<br>Last Generated ' . $last_generation . ' ago';
 		}
 		else
 		{
@@ -1951,7 +2113,7 @@ if($_SESSION["valid_login"] == TRUE)
 		IPv4 Queue for Election: <font color="blue"><strong>' . $ipv4_counter_queue . '</strong></font></td><td>
 		IPv6 Generating Peers: <font color="green"><strong>' . $ipv6_counter . '</strong></font><br>
 		IPv6 Queue for Election: <font color="blue"><strong>' . $ipv6_counter_queue . '</strong></font></td></tr>
-		<tr><td align="right">' . $continuous_production . '</td><td>' . $generate_rate . '</td></tr>
+		<tr><td align="left">' . $continuous_production . '</td><td>' . $generate_rate . '</td></tr>
 		<tr><td colspan="3">' . $my_gen_IP_form . '</td></tr></table>';
 
 		$quick_info = 'You must remain online and have a valid Internet accessible server to generate currency.<br><br>

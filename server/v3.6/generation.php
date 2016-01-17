@@ -142,6 +142,9 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 //***********************************************************************************		
 		if($network_mode == 1 || $network_mode == 2)// Generation IPv4 Enabled Check
 		{
+			// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
+			$gen_peers_total = mysql_result(mysql_query("SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
+
 			// IPv4 Generation
 			$found_public_key = find_v4_gen_key($my_public_key);
 
@@ -160,7 +163,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 				// Use an election request to update all the peers to the new address.
 				$update_generation_IP = TRUE;
 			}
-			else if($key_generation_IP != $my_public_key)
+			else if($key_generation_IP != $my_public_key && $gen_peers_total > 0)
 			{
 				// Someone else is using my IP address to generate currency.
 				// Submit a delete request to have this key removed from the list.
@@ -362,7 +365,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 				// Use an election request to update all the peers to the new address.
 				$update_generation_IP = TRUE;
 			}
-			else if($key_generation_IP != $my_public_key)
+			else if($key_generation_IP != $my_public_key && $gen_peers_total > 0)
 			{
 				// Someone else is using my IP address to generate currency.
 				// Submit a delete request to have this key removed from the list.

@@ -481,11 +481,9 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 			}
 
 			//Check if this public key is already in our peer list
-			$public_key_match = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$gen_peer_public_key' LIMIT 1"),0,0);
-			//Check if a duplicate election time exist
-			$time_elected_match = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `join_peer_list` = '$gen_peer_join_peer_list' LIMIT 1"),0,1);
+			$public_key_match = mysql_result(mysql_query("SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$gen_peer_public_key' AND `join_peer_list` = '$gen_peer_join_peer_list' AND `IP_Address` = '$gen_peer_IP' LIMIT 1"),0,0);
 
-			if(empty($public_key_match) == TRUE && empty($time_elected_match) == TRUE)
+			if(empty($public_key_match) == TRUE)
 			{
 				// No match in database to this public key
 				if(strlen($gen_peer_public_key) > 256 && empty($gen_peer_public_key) == FALSE && $gen_peer_join_peer_list <= $current_generation_cycle && $gen_peer_join_peer_list > TRANSACTION_EPOCH)
@@ -581,160 +579,175 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 					// Check to make sure this public key isn't forged or made up to win the list
 					$transaction_info = tk_decrypt($public_key, base64_decode($crypt1));
 
-					if($transaction_info == $crypt2)
+					if($transaction_info == $crypt2)// Valid Crypt2 field check
 					{
 						// Check the IP/Domain field and poll the IP to see if
 						// there is a valid Timekoin server at the address.
 						$crypt3_data = filter_sql(tk_decrypt($public_key, base64_decode($crypt3)));
-						write_log("Decrypting IPv4 Election Request Data: [$crypt3_data] for Public Key: " . base64_encode($public_key),"GP");
 
 						$peer_ip = find_string("---ip=", "---domain", $crypt3_data);
 						$peer_domain = find_string("---domain=", "---subfolder", $crypt3_data);
 						$peer_subfolder = find_string("---subfolder=", "---port", $crypt3_data);
 						$peer_port_number = find_string("---port=", "---end", $crypt3_data);
 
-						// Check if IP is already in the queue or generation peer list
-						$IP_exist1 = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,0);
-						$IP_exist2 = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,0);
-
-						// Calculate public key half-crypt-hash
-						$arr1 = str_split($public_key, 181);
-						
-						if($network_mode == 3) // IPv6 Only Server
+						// Ignore IPv6 Address
+						if(ipv6_test($peer_ip) == TRUE)
 						{
-							// Running IPv6 Only Mode, use gateway server to act as proxy poll check
-							$gen_sql = "SELECT IP_Address, domain, subfolder, port_number FROM `active_peer_list` WHERE `failed_sent_heartbeat` = 65534 ORDER BY RAND() LIMIT 1";
-							$gen_sql_row = mysql_fetch_array(mysql_query($gen_sql));
+							// Bypass Checking Election Request
+							$ipv6_peer = TRUE;
+						}
+						else
+						{
+							write_log("IPv4 Decrypting Election Request Data: [$crypt3_data] for Public Key: " . base64_encode($public_key),"GP");
+							$ipv6_peer = FALSE;							
+						}
 
-							$gateway_IP = $gen_sql_row["IP_Address"];
-							$gateway_domain = $gen_sql_row["domain"];
-							$gateway_subfolder = $gen_sql_row["subfolder"];
-							$gateway_port_number = $gen_sql_row["port_number"];
-							$gateway_voucher = FALSE;
+						if($ipv6_peer == FALSE)//IPv4 Peer Test
+						{
+							// Check if IP is already in the queue or generation peer list
+							$IP_exist1 = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,0);
+							$IP_exist2 = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,0);
 
-							if($gateway_IP == "" && $gateway_domain == "")
+							// Calculate public key half-crypt-hash
+							$arr1 = str_split($public_key, 181);
+							
+							if($network_mode == 3) // IPv6 Only Server
 							{
-								// No gateway peers to act as a proxy poll check
-								write_log("No Active Gateway Peers To Reverse Verify Half-Crypt String for IPv4 Public Key: " . base64_encode($public_key), "GP");
-							}
-							else
-							{
-								// Create map with request parameters
-								$params = array ('gen_IP' => $peer_ip, 
-								'public_key' => base64_encode($public_key));
-								 
-								// Build Http query using params
-								$query = http_build_query($params);
-								 
-								// Create Http context details
-								$contextData = array ('method' => 'POST',
-								'header' => "Connection: close\r\n"."Content-Length: ".strlen($query)."\r\n",
-								'content'=> $query);
-								 
-								// Create context resource for our request
-								$context = stream_context_create(array('http' => $contextData));
+								// Running IPv6 Only Mode, use gateway server to act as proxy poll check
+								$gen_sql = "SELECT IP_Address, domain, subfolder, port_number FROM `active_peer_list` WHERE `failed_sent_heartbeat` = 65534 ORDER BY RAND() LIMIT 1";
+								$gen_sql_row = mysql_fetch_array(mysql_query($gen_sql));
 
-								$poll_peer = poll_peer($gateway_IP, $gateway_domain, $gateway_subfolder, $gateway_port_number, 5, "genpeer.php?action=elect_gen_peer_valid", $context);
+								$gateway_IP = $gen_sql_row["IP_Address"];
+								$gateway_domain = $gen_sql_row["domain"];
+								$gateway_subfolder = $gen_sql_row["subfolder"];
+								$gateway_port_number = $gen_sql_row["port_number"];
+								$gateway_voucher = FALSE;
 
-								if($poll_peer == TRUE)
+								if($gateway_IP == "" && $gateway_domain == "")
 								{
-									// Gateway Peer can vouch for this Public Key Election Request
-									write_log("IPv4 Public Key Voucher by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
-									$gateway_voucher = TRUE;
-									// Create Pass Voucher
-									$gen_key_crypt = $arr1[0];
+									// No gateway peers to act as a proxy poll check
+									write_log("No Active Gateway Peers To Reverse Verify Half-Crypt String for IPv4 Public Key: " . base64_encode($public_key), "GP");
 								}
 								else
 								{
-									// Gateway Peer can NOT vouch for this Public Key Election Request
-									write_log("IPv4 Public Key REFUSED by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
-								}
-							}
-						}
-						else
-						{
-							// Poll the IPv4 address that was encrypted to check for valid Timekoin server
-							$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 256, "genpeer.php?action=gen_key_crypt"));
-							$gen_key_crypt = tk_decrypt($public_key, $gen_key_crypt);
-							$gateway_voucher = FALSE;
-						}
+									// Create map with request parameters
+									$params = array ('gen_IP' => $peer_ip, 
+									'public_key' => base64_encode($public_key));
+									 
+									// Build Http query using params
+									$query = http_build_query($params);
+									 
+									// Create Http context details
+									$contextData = array ('method' => 'POST',
+									'header' => "Connection: close\r\n"."Content-Length: ".strlen($query)."\r\n",
+									'content'=> $query);
+									 
+									// Create context resource for our request
+									$context = stream_context_create(array('http' => $contextData));
 
-						$domain_fail = FALSE; // Reset Variable
-						if(empty($peer_domain) == FALSE)
-						{
-							// Check if the hostname and IP fields actually match
-							// and not made up or unrelated.
-							$dns_ip = gethostbyname($peer_domain);
-							
-							if($dns_ip != $peer_ip)
-							{
-								// No match between Domain IP and Encoded IP
-								$domain_fail = TRUE;
+									$poll_peer = poll_peer($gateway_IP, $gateway_domain, $gateway_subfolder, $gateway_port_number, 5, "genpeer.php?action=elect_gen_peer_valid", $context);
+
+									if($poll_peer == TRUE)
+									{
+										// Gateway Peer can vouch for this Public Key Election Request
+										write_log("IPv4 Public Key Voucher by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
+										$gateway_voucher = TRUE;
+										// Create Pass Voucher
+										$gen_key_crypt = $arr1[0];
+									}
+									else
+									{
+										// Gateway Peer can NOT vouch for this Public Key Election Request
+										write_log("IPv4 Public Key REFUSED by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
+									}
+								}
 							}
 							else
 							{
-								$domain_fail = FALSE;
+								// Poll the IPv4 address that was encrypted to check for valid Timekoin server
+								$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 256, "genpeer.php?action=gen_key_crypt"));
+								$gen_key_crypt = tk_decrypt($public_key, $gen_key_crypt);
+								$gateway_voucher = FALSE;
 							}
-						}
 
-						if($gateway_voucher == TRUE)
-						{
-							// Gateway Peer can vouch for this Public Key Election Request
-							// Create Pass Voucher
-							$simple_poll_fail = FALSE;
-						}
-						else
-						{
-							// Do simple poll test from server
-							$simple_poll_fail = gen_simple_poll_test($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number);
-						}
+							$domain_fail = FALSE; // Reset Variable
+							if(empty($peer_domain) == FALSE)
+							{
+								// Check if the hostname and IP fields actually match
+								// and not made up or unrelated.
+								$dns_ip = gethostbyname($peer_domain);
+								
+								if($dns_ip != $peer_ip)
+								{
+									// No match between Domain IP and Encoded IP
+									$domain_fail = TRUE;
+								}
+								else
+								{
+									$domain_fail = FALSE;
+								}
+							}
 
-						// Does the public key half match what is encrypted in the 3rd crypt field from
-						// the same peer?
-						if($arr1[0] == $gen_key_crypt && 
-							empty($peer_ip) == FALSE && 
-							empty($IP_exist1) == TRUE && 
-							empty($IP_exist2) == TRUE && 
-							$domain_fail == FALSE && 
-							$simple_poll_fail == FALSE &&
-							is_private_ip($peer_ip) == FALSE) // Filter private IPs
-						{
-							mysql_query("INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
-							write_log("IPv4 Generation Peer Queue List was updated with Public Key: " . base64_encode($public_key), "GP");
-						}
-						else if(my_public_key() == $public_key)
-						{
-							mysql_query("INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
-							write_log("IPv4 Generation Peer Queue List was updated with My Public Key", "GP");
-						}
-						else
-						{
-							// Log Error Reasons for Reverse Verification Issues
-							if($arr1[0] != $gen_key_crypt)
+							if($gateway_voucher == TRUE)
 							{
-								write_log("Could Not Reverse Verify Half-Crypt String for IPv4 Public Key: " . base64_encode($public_key), "GP");
+								// Gateway Peer can vouch for this Public Key Election Request
+								// Create Pass Voucher
+								$simple_poll_fail = FALSE;
 							}
-							else if(empty($peer_ip) == TRUE)
+							else
 							{
-								write_log("No IPv4 IP Address To Reverse Verify Public Key: " . base64_encode($public_key), "GP");
+								// Do simple poll test from server
+								$simple_poll_fail = gen_simple_poll_test($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number);
 							}
-							else if(empty($IP_exist1) == FALSE)
+
+							// Does the public key half match what is encrypted in the 3rd crypt field from
+							// the same peer?
+							if($arr1[0] == $gen_key_crypt && 
+								empty($peer_ip) == FALSE && 
+								empty($IP_exist1) == TRUE && 
+								empty($IP_exist2) == TRUE && 
+								$domain_fail == FALSE && 
+								$simple_poll_fail == FALSE &&
+								is_private_ip($peer_ip) == FALSE) // Filter private IPs
 							{
-								write_log("IPv4 Address ($peer_ip) Already Exist in the Generation List for Public Key: " . base64_encode($public_key), "GP");
+								mysql_query("INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
+								write_log("IPv4 Generation Peer Queue List was updated with Public Key: " . base64_encode($public_key), "GP");
 							}
-							else if(empty($IP_exist2) == FALSE)
+							else if(my_public_key() == $public_key)
 							{
-								write_log("IPv4 Address ($peer_ip) Already Exist in the Election Queue for Public Key: " . base64_encode($public_key), "GP");
+								mysql_query("INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
+								write_log("IPv4 Generation Peer Queue List was updated with My Public Key", "GP");
 							}
-							else if($domain_fail == TRUE)
+							else
 							{
-								write_log("IPv4 Domain ($peer_domain) IP ($dns_ip) & Encoded IP ($peer_ip) DO NOT MATCH for Public Key: " . base64_encode($public_key), "GP");
+								// Log Error Reasons for Reverse Verification Issues
+								if($arr1[0] != $gen_key_crypt)
+								{
+									write_log("Could Not Reverse Verify Half-Crypt String for IPv4 Public Key: " . base64_encode($public_key), "GP");
+								}
+								else if(empty($peer_ip) == TRUE)
+								{
+									write_log("No IPv4 IP Address To Reverse Verify Public Key: " . base64_encode($public_key), "GP");
+								}
+								else if(empty($IP_exist1) == FALSE)
+								{
+									write_log("IPv4 Address ($peer_ip) Already Exist in the Generation List for Public Key: " . base64_encode($public_key), "GP");
+								}
+								else if(empty($IP_exist2) == FALSE)
+								{
+									write_log("IPv4 Address ($peer_ip) Already Exist in the Election Queue for Public Key: " . base64_encode($public_key), "GP");
+								}
+								else if($domain_fail == TRUE)
+								{
+									write_log("IPv4 Domain ($peer_domain) IP ($dns_ip) & Encoded IP ($peer_ip) DO NOT MATCH for Public Key: " . base64_encode($public_key), "GP");
+								}
+								else if($simple_poll_fail == TRUE)
+								{
+									write_log("IPv4 Simple Poll Failure for Public Key: " . base64_encode($public_key), "GP");
+								}
 							}
-							else if($simple_poll_fail == TRUE)
-							{
-								write_log("IPv4 Simple Poll Failure for Public Key: " . base64_encode($public_key), "GP");
-							}
-						}
+
+						} //IPv4 Peer Test
 
 					} // Valid Crypt2 field check
 
@@ -747,12 +760,11 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 					// IP address from which it generates currency from.
 					$transaction_info = tk_decrypt($public_key, base64_decode($crypt1));
 
-					if($transaction_info == $crypt2)
+					if($transaction_info == $crypt2)// Valid Crypt2 field check
 					{
 						// Check the IP/Domain field and poll the IP to see if
 						// there is a valid Timekoin server at the address.
 						$crypt3_data = filter_sql(tk_decrypt($public_key, base64_decode($crypt3)));
-						write_log("IPv4 Decrypting Election Request Data: [$crypt3_data] for Public Key: " . base64_encode($public_key),"GP");
 
 						$peer_ip = find_string("---ip=", "---domain", $crypt3_data);
 						$peer_domain = find_string("---domain=", "---subfolder", $crypt3_data);
@@ -760,164 +772,180 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						$peer_port_number = find_string("---port=", "---end", $crypt3_data);
 						$delete_request = find_string("---end=", "---end2", $crypt3_data);						
 
-						// Check if IP is already in the generation peer list
-						$IP_exist1 = mysql_result(mysql_query("SELECT join_peer_list FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,1);
-
-						// Calculate public key half-crypt-hash
-						$arr1 = str_split($public_key, 181);
-
-						if($network_mode == 3) // IPv6 Only Server
+						// Ignore IPv6 Address
+						if(ipv6_test($peer_ip) == TRUE)
 						{
-							// Running IPv6 Only Mode, use gateway server to act as proxy poll check
-							$gen_sql = "SELECT IP_Address, domain, subfolder, port_number FROM `active_peer_list` WHERE `failed_sent_heartbeat` = 65534 ORDER BY RAND() LIMIT 1";
-							$gen_sql_row = mysql_fetch_array(mysql_query($gen_sql));
+							// Bypass Checking Election Request
+							$ipv6_peer = TRUE;
+						}
+						else
+						{
+							write_log("IPv4 Decrypting Election Request Data: [$crypt3_data] for Public Key: " . base64_encode($public_key),"GP");
+							$ipv6_peer = FALSE;							
+						}
 
-							$gateway_IP = $gen_sql_row["IP_Address"];
-							$gateway_domain = $gen_sql_row["domain"];
-							$gateway_subfolder = $gen_sql_row["subfolder"];
-							$gateway_port_number = $gen_sql_row["port_number"];
-							$gateway_voucher = FALSE;
+						if($ipv6_peer == FALSE)//IPv4 Peer Test
+						{
+							// Check if IP is already in the generation peer list
+							$IP_exist1 = mysql_result(mysql_query("SELECT join_peer_list FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,1);
 
-							if($gateway_IP == "" && $gateway_domain == "")
+							// Calculate public key half-crypt-hash
+							$arr1 = str_split($public_key, 181);
+
+							if($network_mode == 3) // IPv6 Only Server
 							{
-								// No gateway peers to act as a proxy poll check
-								write_log("No Active Gateway Peers To Reverse Verify Half-Crypt String for IPv4 Public Key: " . base64_encode($public_key), "GP");
-							}
-							else
-							{
-								// Create map with request parameters
-								$params = array ('gen_IP' => $peer_ip, 
-								'public_key' => base64_encode($public_key));
-								 
-								// Build Http query using params
-								$query = http_build_query($params);
-								 
-								// Create Http context details
-								$contextData = array ('method' => 'POST',
-								'header' => "Connection: close\r\n"."Content-Length: ".strlen($query)."\r\n",
-								'content'=> $query);
-								 
-								// Create context resource for our request
-								$context = stream_context_create(array('http' => $contextData));
+								// Running IPv6 Only Mode, use gateway server to act as proxy poll check
+								$gen_sql = "SELECT IP_Address, domain, subfolder, port_number FROM `active_peer_list` WHERE `failed_sent_heartbeat` = 65534 ORDER BY RAND() LIMIT 1";
+								$gen_sql_row = mysql_fetch_array(mysql_query($gen_sql));
 
-								$poll_peer = poll_peer($gateway_IP, $gateway_domain, $gateway_subfolder, $gateway_port_number, 5, "genpeer.php?action=elect_gen_peer_valid", $context);
+								$gateway_IP = $gen_sql_row["IP_Address"];
+								$gateway_domain = $gen_sql_row["domain"];
+								$gateway_subfolder = $gen_sql_row["subfolder"];
+								$gateway_port_number = $gen_sql_row["port_number"];
+								$gateway_voucher = FALSE;
 
-								if($poll_peer == TRUE)
+								if($gateway_IP == "" && $gateway_domain == "")
 								{
-									// Gateway Peer can vouch for this Public Key Election Request
-									write_log("IPv4 Public Key Voucher by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
-									$gateway_voucher = TRUE;
-									// Create Pass Voucher
-									$gen_key_crypt = $arr1[0];
+									// No gateway peers to act as a proxy poll check
+									write_log("No Active Gateway Peers To Reverse Verify Half-Crypt String for IPv4 Public Key: " . base64_encode($public_key), "GP");
 								}
 								else
 								{
-									// Gateway Peer can NOT vouch for this Public Key Election Request
-									write_log("IPv4 Public Key REFUSED by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
+									// Create map with request parameters
+									$params = array ('gen_IP' => $peer_ip, 
+									'public_key' => base64_encode($public_key));
+									 
+									// Build Http query using params
+									$query = http_build_query($params);
+									 
+									// Create Http context details
+									$contextData = array ('method' => 'POST',
+									'header' => "Connection: close\r\n"."Content-Length: ".strlen($query)."\r\n",
+									'content'=> $query);
+									 
+									// Create context resource for our request
+									$context = stream_context_create(array('http' => $contextData));
+
+									$poll_peer = poll_peer($gateway_IP, $gateway_domain, $gateway_subfolder, $gateway_port_number, 5, "genpeer.php?action=elect_gen_peer_valid", $context);
+
+									if($poll_peer == TRUE)
+									{
+										// Gateway Peer can vouch for this Public Key Election Request
+										write_log("IPv4 Public Key Voucher by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
+										$gateway_voucher = TRUE;
+										// Create Pass Voucher
+										$gen_key_crypt = $arr1[0];
+									}
+									else
+									{
+										// Gateway Peer can NOT vouch for this Public Key Election Request
+										write_log("IPv4 Public Key REFUSED by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
+									}
 								}
 							}
-						}
-						else
-						{
-							// Poll the IPv4 address that was encrypted to check for valid Timekoin server
-							$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 256, "genpeer.php?action=gen_key_crypt"));
-							$gen_key_crypt = tk_decrypt($public_key, $gen_key_crypt);
-							$gateway_voucher = FALSE;
-						}
-
-						$domain_fail = FALSE; // Reset Variable
-						if(empty($peer_domain) == FALSE)
-						{
-							// Check if the hostname and IP fields actually match
-							// and not made up or unrelated.
-							$dns_ip = gethostbyname($peer_domain);
-							
-							if($dns_ip != $peer_ip)
-							{
-								// No match between Domain IP and Encoded IP
-								$domain_fail = TRUE;
-							}
 							else
 							{
-								$domain_fail = FALSE;
-							}							
-						}
-
-						if($gateway_voucher == TRUE)
-						{
-							// Gateway Peer can vouch for this Public Key Election Request
-							// Create Pass Voucher
-							$simple_poll_fail = FALSE;
-						}
-						else
-						{
-							// Do simple poll test from server
-							$simple_poll_fail = gen_simple_poll_test($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number);
-						}
-
-						// Does the public key half match what is encrypted in the 3rd crypt field from
-						// the same peer?
-						if($arr1[0] == $gen_key_crypt && 
-							empty($peer_ip) == FALSE && 
-							empty($IP_exist1) == TRUE && 
-							$domain_fail == FALSE && 
-							$simple_poll_fail == FALSE &&
-							is_private_ip($peer_ip) == FALSE) // Filter private IPs
-						{
-							if($delete_request == "DELETE_IP")
-							{
-								// Delete my IP and any public key linked to it as it belongs to a previous unknown owner
-								mysql_query("DELETE FROM `generating_peer_list` WHERE `generating_peer_list`.`IP_Address` = '$peer_ip' LIMIT 1");
-								write_log("IPv4 DELETE IP Request ($peer_ip) was allowed for Public Key: " . base64_encode($public_key), "GP");
+								// Poll the IPv4 address that was encrypted to check for valid Timekoin server
+								$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 256, "genpeer.php?action=gen_key_crypt"));
+								$gen_key_crypt = tk_decrypt($public_key, $gen_key_crypt);
+								$gateway_voucher = FALSE;
 							}
-							else
+
+							$domain_fail = FALSE; // Reset Variable
+							if(empty($peer_domain) == FALSE)
 							{
-								// My server has moved to another IP, update the list
-								mysql_query("UPDATE `generating_peer_list` SET `IP_Address` = '$peer_ip' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
-								write_log("IPv4 New Generation Peer IP Address ($peer_ip) was updated for Public Key: " . base64_encode($public_key), "GP");
-							}
-						}
-						else if(my_public_key() == $public_key) // This is my own public key, automatic update
-						{
-							if(election_cycle(1) == TRUE) // Don't update myself until right before the peer election
-							{
-								if(empty($IP_exist1) == TRUE)// Check to make sure this isn't already in the database
+								// Check if the hostname and IP fields actually match
+								// and not made up or unrelated.
+								$dns_ip = gethostbyname($peer_domain);
+								
+								if($dns_ip != $peer_ip)
 								{
+									// No match between Domain IP and Encoded IP
+									$domain_fail = TRUE;
+								}
+								else
+								{
+									$domain_fail = FALSE;
+								}							
+							}
+
+							if($gateway_voucher == TRUE)
+							{
+								// Gateway Peer can vouch for this Public Key Election Request
+								// Create Pass Voucher
+								$simple_poll_fail = FALSE;
+							}
+							else
+							{
+								// Do simple poll test from server
+								$simple_poll_fail = gen_simple_poll_test($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number);
+							}
+
+							// Does the public key half match what is encrypted in the 3rd crypt field from
+							// the same peer?
+							if($arr1[0] == $gen_key_crypt && 
+								empty($peer_ip) == FALSE && 
+								empty($IP_exist1) == TRUE && 
+								$domain_fail == FALSE && 
+								$simple_poll_fail == FALSE &&
+								is_private_ip($peer_ip) == FALSE) // Filter private IPs
+							{
+								if($delete_request == "DELETE_IP")
+								{
+									// Delete my IP and any public key linked to it as it belongs to a previous unknown owner
+									mysql_query("DELETE FROM `generating_peer_list` WHERE `generating_peer_list`.`IP_Address` = '$peer_ip' LIMIT 1");
+									write_log("IPv4 DELETE IP Request ($peer_ip) was allowed for Public Key: " . base64_encode($public_key), "GP");
+								}
+								else
+								{
+									// My server has moved to another IP, update the list
 									mysql_query("UPDATE `generating_peer_list` SET `IP_Address` = '$peer_ip' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
-									write_log("IPv4 Generation Peer List was updated with My New IP Address ($peer_ip)", "GP");
+									write_log("IPv4 New Generation Peer IP Address ($peer_ip) was updated for Public Key: " . base64_encode($public_key), "GP");
 								}
 							}
-						}
-						else
-						{
-							// Log Error Reasons for Reverse Verification Issues
-							if($arr1[0] != $gen_key_crypt)
+							else if(my_public_key() == $public_key) // This is my own public key, automatic update
 							{
-								write_log("Could Not Reverse Verify Half-Crypt String for IPv4 Public Key: " . base64_encode($public_key), "GP");
+								if(election_cycle(1) == TRUE) // Don't update myself until right before the peer election
+								{
+									if(empty($IP_exist1) == TRUE)// Check to make sure this isn't already in the database
+									{
+										mysql_query("UPDATE `generating_peer_list` SET `IP_Address` = '$peer_ip' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
+										write_log("IPv4 Generation Peer List was updated with My New IP Address ($peer_ip)", "GP");
+									}
+								}
 							}
-							else if(empty($peer_ip) == TRUE)
+							else
 							{
-								write_log("No IPv4 IP Address To Reverse Verify Public Key: " . base64_encode($public_key), "GP");
+								// Log Error Reasons for Reverse Verification Issues
+								if($arr1[0] != $gen_key_crypt)
+								{
+									write_log("Could Not Reverse Verify Half-Crypt String for IPv4 Public Key: " . base64_encode($public_key), "GP");
+								}
+								else if(empty($peer_ip) == TRUE)
+								{
+									write_log("No IPv4 IP Address To Reverse Verify Public Key: " . base64_encode($public_key), "GP");
+								}
+								else if(empty($IP_exist1) == FALSE)
+								{
+									write_log("IPv4 Address ($peer_ip) Already Exist in the Generation List for Public Key: " . base64_encode($public_key), "GP");
+								}
+								else if($domain_fail == TRUE)
+								{
+									write_log("IPv4 Domain ($peer_domain) IP ($dns_ip) & Encoded IP ($peer_ip) DO NOT MATCH for Public Key: " . base64_encode($public_key), "GP");
+								}
+								else if($simple_poll_fail == TRUE)
+								{
+									write_log("IPv4 Simple Poll Failure for Public Key: " . base64_encode($public_key), "GP");
+								}							
 							}
-							else if(empty($IP_exist1) == FALSE)
-							{
-								write_log("IPv4 Address ($peer_ip) Already Exist in the Generation List for Public Key: " . base64_encode($public_key), "GP");
-							}
-							else if($domain_fail == TRUE)
-							{
-								write_log("IPv4 Domain ($peer_domain) IP ($dns_ip) & Encoded IP ($peer_ip) DO NOT MATCH for Public Key: " . base64_encode($public_key), "GP");
-							}
-							else if($simple_poll_fail == TRUE)
-							{
-								write_log("IPv4 Simple Poll Failure for Public Key: " . base64_encode($public_key), "GP");
-							}							
-						}						
+
+						} //IPv4 Peer Test
 
 					} // Valid Crypt2 field check
 
 				} // Update Generatin IP Check
 
-			} // End for loop
+			} // End for loop through Election Request
 
 		} // Empty results check
 
@@ -990,160 +1018,175 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 					// Check to make sure this public key isn't forged or made up to win the list
 					$transaction_info = tk_decrypt($public_key, base64_decode($crypt1));
 
-					if($transaction_info == $crypt2)
+					if($transaction_info == $crypt2)// Valid Crypt2 field check
 					{
 						// Check the IP/Domain field and poll the IP to see if
 						// there is a valid Timekoin server at the address.
 						$crypt3_data = filter_sql(tk_decrypt($public_key, base64_decode($crypt3)));
-						write_log("IPv6 Decrypting Election Request Data: [$crypt3_data] for Public Key: " . base64_encode($public_key),"GP");
 
 						$peer_ip = ipv6_compress(find_string("---ip=", "---domain", $crypt3_data));
 						$peer_domain = find_string("---domain=", "---subfolder", $crypt3_data);
 						$peer_subfolder = find_string("---subfolder=", "---port", $crypt3_data);
 						$peer_port_number = find_string("---port=", "---end", $crypt3_data);
 
-						// Check if IP is already in the queue or generation peer list
-						$IP_exist1 = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,0);
-						$IP_exist2 = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,0);
-
-						// Calculate public key half-crypt-hash
-						$arr1 = str_split($public_key, 181);
-
-						if($network_mode == 2) // IPv4 Only Server
+						// Ignore IPv4 Address
+						if(ipv6_test($peer_ip) == FALSE)
 						{
-							// Running IPv4 Only Mode, use gateway server to act as proxy poll check
-							$gen_sql = "SELECT IP_Address, domain, subfolder, port_number FROM `active_peer_list` WHERE `failed_sent_heartbeat` = 65534 ORDER BY RAND() LIMIT 1";
-							$gen_sql_row = mysql_fetch_array(mysql_query($gen_sql));
+							// Prevent further checking of IPv4 Address
+							$ipv6_peer = FALSE;
+						}
+						else
+						{
+							write_log("IPv6 Decrypting Election Request Data: [$crypt3_data] for Public Key: " . base64_encode($public_key),"GP");
+							$ipv6_peer = TRUE;							
+						}
 
-							$gateway_IP = $gen_sql_row["IP_Address"];
-							$gateway_domain = $gen_sql_row["domain"];
-							$gateway_subfolder = $gen_sql_row["subfolder"];
-							$gateway_port_number = $gen_sql_row["port_number"];
-							$gateway_voucher = FALSE;
+						if($ipv6_peer == TRUE)//IPv6 Peer Test
+						{
+							// Check if IP is already in the queue or generation peer list
+							$IP_exist1 = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,0);
+							$IP_exist2 = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,0);
 
-							if($gateway_IP == "" && $gateway_domain == "")
+							// Calculate public key half-crypt-hash
+							$arr1 = str_split($public_key, 181);
+
+							if($network_mode == 2) // IPv4 Only Server
 							{
-								// No gateway peers to act as a proxy poll check
-								write_log("No Active Gateway Peers To Reverse Verify Half-Crypt String for IPv6 Public Key: " . base64_encode($public_key), "GP");
-							}
-							else
-							{
-								// Create map with request parameters
-								$params = array ('gen_IP' => $peer_ip, 
-								'public_key' => base64_encode($public_key));
-								 
-								// Build Http query using params
-								$query = http_build_query($params);
-								 
-								// Create Http context details
-								$contextData = array ('method' => 'POST',
-								'header' => "Connection: close\r\n"."Content-Length: ".strlen($query)."\r\n",
-								'content'=> $query);
-								 
-								// Create context resource for our request
-								$context = stream_context_create(array('http' => $contextData));
+								// Running IPv4 Only Mode, use gateway server to act as proxy poll check
+								$gen_sql = "SELECT IP_Address, domain, subfolder, port_number FROM `active_peer_list` WHERE `failed_sent_heartbeat` = 65534 ORDER BY RAND() LIMIT 1";
+								$gen_sql_row = mysql_fetch_array(mysql_query($gen_sql));
 
-								$poll_peer = poll_peer($gateway_IP, $gateway_domain, $gateway_subfolder, $gateway_port_number, 5, "genpeer.php?action=elect_gen_peer_valid", $context);
+								$gateway_IP = $gen_sql_row["IP_Address"];
+								$gateway_domain = $gen_sql_row["domain"];
+								$gateway_subfolder = $gen_sql_row["subfolder"];
+								$gateway_port_number = $gen_sql_row["port_number"];
+								$gateway_voucher = FALSE;
 
-								if($poll_peer == TRUE)
+								if($gateway_IP == "" && $gateway_domain == "")
 								{
-									// Gateway Peer can vouch for this Public Key Election Request
-									write_log("IPv6 Public Key Voucher by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
-									$gateway_voucher = TRUE;
-									// Create Pass Voucher
-									$gen_key_crypt = $arr1[0];
+									// No gateway peers to act as a proxy poll check
+									write_log("No Active Gateway Peers To Reverse Verify Half-Crypt String for IPv6 Public Key: " . base64_encode($public_key), "GP");
 								}
 								else
 								{
-									// Gateway Peer can NOT vouch for this Public Key Election Request
-									write_log("IPv6 Public Key REFUSED by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
-								}
-							}
-						}
-						else
-						{
-							// Poll the IPv6 address that was encrypted to check for valid Timekoin server
-							$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 256, "genpeer.php?action=gen_key_crypt"));
-							$gen_key_crypt = tk_decrypt($public_key, $gen_key_crypt);
-							$gateway_voucher = FALSE;
-						}
+									// Create map with request parameters
+									$params = array ('gen_IP' => $peer_ip, 
+									'public_key' => base64_encode($public_key));
+									 
+									// Build Http query using params
+									$query = http_build_query($params);
+									 
+									// Create Http context details
+									$contextData = array ('method' => 'POST',
+									'header' => "Connection: close\r\n"."Content-Length: ".strlen($query)."\r\n",
+									'content'=> $query);
+									 
+									// Create context resource for our request
+									$context = stream_context_create(array('http' => $contextData));
 
-						$domain_fail = FALSE; // Reset Variable
-						if(empty($peer_domain) == FALSE)
-						{
-							// Check if the hostname and IP fields actually match
-							// and not made up or unrelated.
-							$dns_ip = gethostbyname($peer_domain);
-							
-							if($dns_ip != $peer_ip)
-							{
-								// No match between Domain IP and Encoded IP
-								$domain_fail = TRUE;
+									$poll_peer = poll_peer($gateway_IP, $gateway_domain, $gateway_subfolder, $gateway_port_number, 5, "genpeer.php?action=elect_gen_peer_valid", $context);
+
+									if($poll_peer == TRUE)
+									{
+										// Gateway Peer can vouch for this Public Key Election Request
+										write_log("IPv6 Public Key Voucher by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
+										$gateway_voucher = TRUE;
+										// Create Pass Voucher
+										$gen_key_crypt = $arr1[0];
+									}
+									else
+									{
+										// Gateway Peer can NOT vouch for this Public Key Election Request
+										write_log("IPv6 Public Key REFUSED by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
+									}
+								}
 							}
 							else
 							{
-								$domain_fail = FALSE;
+								// Poll the IPv6 address that was encrypted to check for valid Timekoin server
+								$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 256, "genpeer.php?action=gen_key_crypt"));
+								$gen_key_crypt = tk_decrypt($public_key, $gen_key_crypt);
+								$gateway_voucher = FALSE;
 							}
-						}
 
-						if($gateway_voucher == TRUE)
-						{
-							// Gateway Peer can vouch for this Public Key Election Request
-							// Create Pass Voucher
-							$simple_poll_fail = FALSE;
-						}
-						else
-						{
-							// Do simple poll test from server
-							$simple_poll_fail = gen_simple_poll_test($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number);
-						}
+							$domain_fail = FALSE; // Reset Variable
+							if(empty($peer_domain) == FALSE)
+							{
+								// Check if the hostname and IP fields actually match
+								// and not made up or unrelated.
+								$dns_ip = gethostbyname($peer_domain);
+								
+								if($dns_ip != $peer_ip)
+								{
+									// No match between Domain IP and Encoded IP
+									$domain_fail = TRUE;
+								}
+								else
+								{
+									$domain_fail = FALSE;
+								}
+							}
 
-						// Does the public key half match what is encrypted in the 3rd crypt field from
-						// the same peer?
-						if($arr1[0] == $gen_key_crypt && 
-							empty($peer_ip) == FALSE && 
-							empty($IP_exist1) == TRUE && 
-							empty($IP_exist2) == TRUE && 
-							$domain_fail == FALSE && 
-							$simple_poll_fail == FALSE &&
-							is_private_ip($peer_ip) == FALSE) // Filter private IPs
-						{
-							mysql_query("INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
-							write_log("IPv6 Generation Peer Queue List was updated with Public Key: " . base64_encode($public_key), "GP");
-						}
-						else if(my_public_key() == $public_key)
-						{
-							mysql_query("INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
-							write_log("IPv6 Generation Peer Queue List was updated with My Public Key", "GP");
-						}
-						else
-						{
-							// Log Error Reasons for Reverse Verification Issues
-							if($arr1[0] != $gen_key_crypt)
+							if($gateway_voucher == TRUE)
 							{
-								write_log("Could Not Reverse Verify Half-Crypt String for IPv6 Public Key: " . base64_encode($public_key), "GP");
+								// Gateway Peer can vouch for this Public Key Election Request
+								// Create Pass Voucher
+								$simple_poll_fail = FALSE;
 							}
-							else if(empty($peer_ip) == TRUE)
+							else
 							{
-								write_log("No IPv6 IP Address To Reverse Verify Public Key: " . base64_encode($public_key), "GP");
+								// Do simple poll test from server
+								$simple_poll_fail = gen_simple_poll_test($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number);
 							}
-							else if(empty($IP_exist1) == FALSE)
+
+							// Does the public key half match what is encrypted in the 3rd crypt field from
+							// the same peer?
+							if($arr1[0] == $gen_key_crypt && 
+								empty($peer_ip) == FALSE && 
+								empty($IP_exist1) == TRUE && 
+								empty($IP_exist2) == TRUE && 
+								$domain_fail == FALSE && 
+								$simple_poll_fail == FALSE &&
+								is_private_ip($peer_ip) == FALSE) // Filter private IPs
 							{
-								write_log("IPv6 Address ($peer_ip) Already Exist in the Generation List for Public Key: " . base64_encode($public_key), "GP");
+								mysql_query("INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
+								write_log("IPv6 Generation Peer Queue List was updated with Public Key: " . base64_encode($public_key), "GP");
 							}
-							else if(empty($IP_exist2) == FALSE)
+							else if(my_public_key() == $public_key)
 							{
-								write_log("IPv6 Address ($peer_ip) Already Exist in the Election Queue for Public Key: " . base64_encode($public_key), "GP");
+								mysql_query("INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
+								write_log("IPv6 Generation Peer Queue List was updated with My Public Key", "GP");
 							}
-							else if($domain_fail == TRUE)
+							else
 							{
-								write_log("IPv6 Domain ($peer_domain) IP ($dns_ip) & Encoded IP ($peer_ip) DO NOT MATCH for Public Key: " . base64_encode($public_key), "GP");
+								// Log Error Reasons for Reverse Verification Issues
+								if($arr1[0] != $gen_key_crypt)
+								{
+									write_log("Could Not Reverse Verify Half-Crypt String for IPv6 Public Key: " . base64_encode($public_key), "GP");
+								}
+								else if(empty($peer_ip) == TRUE)
+								{
+									write_log("No IPv6 IP Address To Reverse Verify Public Key: " . base64_encode($public_key), "GP");
+								}
+								else if(empty($IP_exist1) == FALSE)
+								{
+									write_log("IPv6 Address ($peer_ip) Already Exist in the Generation List for Public Key: " . base64_encode($public_key), "GP");
+								}
+								else if(empty($IP_exist2) == FALSE)
+								{
+									write_log("IPv6 Address ($peer_ip) Already Exist in the Election Queue for Public Key: " . base64_encode($public_key), "GP");
+								}
+								else if($domain_fail == TRUE)
+								{
+									write_log("IPv6 Domain ($peer_domain) IP ($dns_ip) & Encoded IP ($peer_ip) DO NOT MATCH for Public Key: " . base64_encode($public_key), "GP");
+								}
+								else if($simple_poll_fail == TRUE)
+								{
+									write_log("IPv6 Simple Poll Failure for Public Key: " . base64_encode($public_key), "GP");
+								}
 							}
-							else if($simple_poll_fail == TRUE)
-							{
-								write_log("IPv6 Simple Poll Failure for Public Key: " . base64_encode($public_key), "GP");
-							}
-						}
+
+						} //IPv6 Peer Test
 
 					} // Valid Crypt2 field check
 
@@ -1156,12 +1199,11 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 					// IP address from which it generates currency from.
 					$transaction_info = tk_decrypt($public_key, base64_decode($crypt1));
 
-					if($transaction_info == $crypt2)
+					if($transaction_info == $crypt2)// Valid Crypt2 field check
 					{
 						// Check the IP/Domain field and poll the IP to see if
 						// there is a valid Timekoin server at the address.
 						$crypt3_data = filter_sql(tk_decrypt($public_key, base64_decode($crypt3)));
-						write_log("Decrypting Election Request Data: [$crypt3_data] for Public Key: " . base64_encode($public_key),"GP");
 
 						$peer_ip = ipv6_compress(find_string("---ip=", "---domain", $crypt3_data));
 						$peer_domain = find_string("---domain=", "---subfolder", $crypt3_data);
@@ -1169,158 +1211,174 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						$peer_port_number = find_string("---port=", "---end", $crypt3_data);
 						$delete_request = find_string("---end=", "---end2", $crypt3_data);						
 
-						// Check if IP is already in the generation peer list
-						$IP_exist1 = mysql_result(mysql_query("SELECT join_peer_list FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,1);
-
-						// Calculate public key half-crypt-hash
-						$arr1 = str_split($public_key, 181);
-
-						if($network_mode == 2) // IPv4 Only Server
+						// Ignore IPv4 Address
+						if(ipv6_test($peer_ip) == FALSE)
 						{
-							// Running IPv4 Only Mode, use gateway server to act as proxy poll check
-							$gen_sql = "SELECT IP_Address, domain, subfolder, port_number FROM `active_peer_list` WHERE `failed_sent_heartbeat` = 65534 ORDER BY RAND() LIMIT 1";
-							$gen_sql_row = mysql_fetch_array(mysql_query($gen_sql));
+							// Prevent further checking of IPv4 Address
+							$ipv6_peer = FALSE;
+						}
+						else
+						{
+							write_log("IPv6 Decrypting Election Request Data: [$crypt3_data] for Public Key: " . base64_encode($public_key),"GP");
+							$ipv6_peer = TRUE;							
+						}
 
-							$gateway_IP = $gen_sql_row["IP_Address"];
-							$gateway_domain = $gen_sql_row["domain"];
-							$gateway_subfolder = $gen_sql_row["subfolder"];
-							$gateway_port_number = $gen_sql_row["port_number"];
-							$gateway_voucher = FALSE;
+						if($ipv6_peer == TRUE)//IPv6 Peer Test
+						{
+							// Check if IP is already in the generation peer list
+							$IP_exist1 = mysql_result(mysql_query("SELECT join_peer_list FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,1);
 
-							if($gateway_IP == "" && $gateway_domain == "")
+							// Calculate public key half-crypt-hash
+							$arr1 = str_split($public_key, 181);
+
+							if($network_mode == 2) // IPv4 Only Server
 							{
-								// No gateway peers to act as a proxy poll check
-								write_log("No Active Gateway Peers To Reverse Verify Half-Crypt String for IPv6 Public Key: " . base64_encode($public_key), "GP");
-							}
-							else
-							{
-								// Create map with request parameters
-								$params = array ('gen_IP' => $peer_ip, 
-								'public_key' => base64_encode($public_key));
-								 
-								// Build Http query using params
-								$query = http_build_query($params);
-								 
-								// Create Http context details
-								$contextData = array ('method' => 'POST',
-								'header' => "Connection: close\r\n"."Content-Length: ".strlen($query)."\r\n",
-								'content'=> $query);
-								 
-								// Create context resource for our request
-								$context = stream_context_create(array('http' => $contextData));
+								// Running IPv4 Only Mode, use gateway server to act as proxy poll check
+								$gen_sql = "SELECT IP_Address, domain, subfolder, port_number FROM `active_peer_list` WHERE `failed_sent_heartbeat` = 65534 ORDER BY RAND() LIMIT 1";
+								$gen_sql_row = mysql_fetch_array(mysql_query($gen_sql));
 
-								$poll_peer = poll_peer($gateway_IP, $gateway_domain, $gateway_subfolder, $gateway_port_number, 5, "genpeer.php?action=elect_gen_peer_valid", $context);
+								$gateway_IP = $gen_sql_row["IP_Address"];
+								$gateway_domain = $gen_sql_row["domain"];
+								$gateway_subfolder = $gen_sql_row["subfolder"];
+								$gateway_port_number = $gen_sql_row["port_number"];
+								$gateway_voucher = FALSE;
 
-								if($poll_peer == TRUE)
+								if($gateway_IP == "" && $gateway_domain == "")
 								{
-									// Gateway Peer can vouch for this Public Key Election Request
-									write_log("IPv6 Public Key Voucher by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
-									$gateway_voucher = TRUE;
-									// Create Pass Voucher
-									$gen_key_crypt = $arr1[0];
+									// No gateway peers to act as a proxy poll check
+									write_log("No Active Gateway Peers To Reverse Verify Half-Crypt String for IPv6 Public Key: " . base64_encode($public_key), "GP");
 								}
 								else
 								{
-									// Gateway Peer can NOT vouch for this Public Key Election Request
-									write_log("IPv6 Public Key REFUSED by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
+									// Create map with request parameters
+									$params = array ('gen_IP' => $peer_ip, 
+									'public_key' => base64_encode($public_key));
+									 
+									// Build Http query using params
+									$query = http_build_query($params);
+									 
+									// Create Http context details
+									$contextData = array ('method' => 'POST',
+									'header' => "Connection: close\r\n"."Content-Length: ".strlen($query)."\r\n",
+									'content'=> $query);
+									 
+									// Create context resource for our request
+									$context = stream_context_create(array('http' => $contextData));
+
+									$poll_peer = poll_peer($gateway_IP, $gateway_domain, $gateway_subfolder, $gateway_port_number, 5, "genpeer.php?action=elect_gen_peer_valid", $context);
+
+									if($poll_peer == TRUE)
+									{
+										// Gateway Peer can vouch for this Public Key Election Request
+										write_log("IPv6 Public Key Voucher by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
+										$gateway_voucher = TRUE;
+										// Create Pass Voucher
+										$gen_key_crypt = $arr1[0];
+									}
+									else
+									{
+										// Gateway Peer can NOT vouch for this Public Key Election Request
+										write_log("IPv6 Public Key REFUSED by Active Gateway Peer[$gateway_domain$gateway_IP:$gateway_port_number/$gateway_subfolder] for Public Key: " . base64_encode($public_key), "GP");
+									}
 								}
 							}
-						}
-						else
-						{
-							// Poll the IPv6 address that was encrypted to check for valid Timekoin server
-							$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 256, "genpeer.php?action=gen_key_crypt"));
-							$gen_key_crypt = tk_decrypt($public_key, $gen_key_crypt);
-							$gateway_voucher = FALSE;
-						}
-
-						$domain_fail = FALSE; // Reset Variable
-						if(empty($peer_domain) == FALSE)
-						{
-							// Check if the hostname and IP fields actually match
-							// and not made up or unrelated.
-							$dns_ip = gethostbyname($peer_domain);
-							
-							if($dns_ip != $peer_ip)
-							{
-								// No match between Domain IP and Encoded IP
-								$domain_fail = TRUE;
-							}
 							else
 							{
-								$domain_fail = FALSE;
-							}							
-						}
-
-						if($gateway_voucher == TRUE)
-						{
-							// Gateway Peer can vouch for this Public Key Election Request
-							// Create Pass Voucher
-							$simple_poll_fail = FALSE;
-						}
-						else
-						{
-							// Do simple poll test from server
-							$simple_poll_fail = gen_simple_poll_test($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number);
-						}
-
-						// Does the public key half match what is encrypted in the 3rd crypt field from
-						// the same peer?
-						if($arr1[0] == $gen_key_crypt && 
-							empty($peer_ip) == FALSE && 
-							empty($IP_exist1) == TRUE && 
-							$domain_fail == FALSE && 
-							$simple_poll_fail == FALSE &&
-							is_private_ip($peer_ip) == FALSE) // Filter private IPs
-						{
-							if($delete_request == "DELETE_IP")
-							{
-								// Delete my IP and any public key linked to it as it belongs to a previous unknown owner
-								mysql_query("DELETE FROM `generating_peer_list` WHERE `generating_peer_list`.`IP_Address` = '$peer_ip' LIMIT 1");
-								write_log("IPv6 DELETE IP Request ($peer_ip) was allowed for Public Key: " . base64_encode($public_key), "GP");
+								// Poll the IPv6 address that was encrypted to check for valid Timekoin server
+								$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 256, "genpeer.php?action=gen_key_crypt"));
+								$gen_key_crypt = tk_decrypt($public_key, $gen_key_crypt);
+								$gateway_voucher = FALSE;
 							}
-							else
+
+							$domain_fail = FALSE; // Reset Variable
+							if(empty($peer_domain) == FALSE)
 							{
-								// My server has moved to another IP, update the list
-								mysql_query("UPDATE `generating_peer_list` SET `IP_Address` = '$peer_ip' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
-								write_log("IPv6 New Generation Peer IP Address ($peer_ip) was updated for Public Key: " . base64_encode($public_key), "GP");
-							}
-						}
-						else if(my_public_key() == $public_key) // This is my own public key, automatic update
-						{
-							if(election_cycle(1) == TRUE) // Don't update myself until right before the peer election
-							{
-								if(empty($IP_exist1) == TRUE)// Check to make sure this isn't already in the database
+								// Check if the hostname and IP fields actually match
+								// and not made up or unrelated.
+								$dns_ip = gethostbyname($peer_domain);
+								
+								if($dns_ip != $peer_ip)
 								{
+									// No match between Domain IP and Encoded IP
+									$domain_fail = TRUE;
+								}
+								else
+								{
+									$domain_fail = FALSE;
+								}							
+							}
+
+							if($gateway_voucher == TRUE)
+							{
+								// Gateway Peer can vouch for this Public Key Election Request
+								// Create Pass Voucher
+								$simple_poll_fail = FALSE;
+							}
+							else
+							{
+								// Do simple poll test from server
+								$simple_poll_fail = gen_simple_poll_test($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number);
+							}
+
+							// Does the public key half match what is encrypted in the 3rd crypt field from
+							// the same peer?
+							if($arr1[0] == $gen_key_crypt && 
+								empty($peer_ip) == FALSE && 
+								empty($IP_exist1) == TRUE && 
+								$domain_fail == FALSE && 
+								$simple_poll_fail == FALSE &&
+								is_private_ip($peer_ip) == FALSE) // Filter private IPs
+							{
+								if($delete_request == "DELETE_IP")
+								{
+									// Delete my IP and any public key linked to it as it belongs to a previous unknown owner
+									mysql_query("DELETE FROM `generating_peer_list` WHERE `generating_peer_list`.`IP_Address` = '$peer_ip' LIMIT 1");
+									write_log("IPv6 DELETE IP Request ($peer_ip) was allowed for Public Key: " . base64_encode($public_key), "GP");
+								}
+								else
+								{
+									// My server has moved to another IP, update the list
 									mysql_query("UPDATE `generating_peer_list` SET `IP_Address` = '$peer_ip' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
-									write_log("IPv6 Generation Peer List was updated with My New IP Address ($peer_ip)", "GP");
+									write_log("IPv6 New Generation Peer IP Address ($peer_ip) was updated for Public Key: " . base64_encode($public_key), "GP");
 								}
 							}
-						}
-						else
-						{
-							// Log Error Reasons for Reverse Verification Issues
-							if($arr1[0] != $gen_key_crypt)
+							else if(my_public_key() == $public_key) // This is my own public key, automatic update
 							{
-								write_log("Could Not Reverse Verify Half-Crypt String for IPv6 Public Key: " . base64_encode($public_key), "GP");
+								if(election_cycle(1) == TRUE) // Don't update myself until right before the peer election
+								{
+									if(empty($IP_exist1) == TRUE)// Check to make sure this isn't already in the database
+									{
+										mysql_query("UPDATE `generating_peer_list` SET `IP_Address` = '$peer_ip' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
+										write_log("IPv6 Generation Peer List was updated with My New IP Address ($peer_ip)", "GP");
+									}
+								}
 							}
-							else if(empty($peer_ip) == TRUE)
+							else
 							{
-								write_log("No IPv6 IP Address To Reverse Verify Public Key: " . base64_encode($public_key), "GP");
+								// Log Error Reasons for Reverse Verification Issues
+								if($arr1[0] != $gen_key_crypt)
+								{
+									write_log("Could Not Reverse Verify Half-Crypt String for IPv6 Public Key: " . base64_encode($public_key), "GP");
+								}
+								else if(empty($peer_ip) == TRUE)
+								{
+									write_log("No IPv6 IP Address To Reverse Verify Public Key: " . base64_encode($public_key), "GP");
+								}
+								else if(empty($IP_exist1) == FALSE)
+								{
+									write_log("IPv6 Address ($peer_ip) Already Exist in the Generation List for Public Key: " . base64_encode($public_key), "GP");
+								}
+								else if($domain_fail == TRUE)
+								{
+									write_log("IPv6 Domain ($peer_domain) IP ($dns_ip) & Encoded IP ($peer_ip) DO NOT MATCH for Public Key: " . base64_encode($public_key), "GP");
+								}
+								else if($simple_poll_fail == TRUE)
+								{
+									write_log("IPv6 Simple Poll Failure for Public Key: " . base64_encode($public_key), "GP");
+								}							
 							}
-							else if(empty($IP_exist1) == FALSE)
-							{
-								write_log("IPv6 Address ($peer_ip) Already Exist in the Generation List for Public Key: " . base64_encode($public_key), "GP");
-							}
-							else if($domain_fail == TRUE)
-							{
-								write_log("IPv6 Domain ($peer_domain) IP ($dns_ip) & Encoded IP ($peer_ip) DO NOT MATCH for Public Key: " . base64_encode($public_key), "GP");
-							}
-							else if($simple_poll_fail == TRUE)
-							{
-								write_log("IPv6 Simple Poll Failure for Public Key: " . base64_encode($public_key), "GP");
-							}							
-						}						
+
+						} //IPv6 Peer Test
 
 					} // Valid Crypt2 field check
 
