@@ -589,6 +589,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						$peer_domain = find_string("---domain=", "---subfolder", $crypt3_data);
 						$peer_subfolder = find_string("---subfolder=", "---port", $crypt3_data);
 						$peer_port_number = find_string("---port=", "---end", $crypt3_data);
+						$delete_request = find_string("---end=", "---end2", $crypt3_data);						
 
 						// Ignore IPv6 Address
 						if(ipv6_test($peer_ip) == TRUE)
@@ -698,6 +699,23 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							{
 								// Do simple poll test from server
 								$simple_poll_fail = gen_simple_poll_test($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number);
+							}
+
+							// Does the public key half match what is encrypted in the 3rd crypt field from
+							// the same peer? This is to process the DELETE_IP request
+							if($arr1[0] == $gen_key_crypt && 
+								empty($peer_ip) == FALSE && 
+								empty($IP_exist2) == TRUE && 
+								$domain_fail == FALSE && 
+								$simple_poll_fail == FALSE &&
+								is_private_ip($peer_ip) == FALSE) // Filter private IPs
+							{
+								if($delete_request == "DELETE_IP")
+								{
+									// Delete the IPv4 and any public key linked to it as it belongs to a previous unknown owner
+									mysql_query("DELETE FROM `generating_peer_list` WHERE `generating_peer_list`.`IP_Address` = '$peer_ip' LIMIT 1");
+									write_log("IPv4 DELETE IP Request ($peer_ip) was allowed for Public Key: " . base64_encode($public_key), "GP");
+								}
 							}
 
 							// Does the public key half match what is encrypted in the 3rd crypt field from
@@ -1028,6 +1046,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						$peer_domain = find_string("---domain=", "---subfolder", $crypt3_data);
 						$peer_subfolder = find_string("---subfolder=", "---port", $crypt3_data);
 						$peer_port_number = find_string("---port=", "---end", $crypt3_data);
+						$delete_request = find_string("---end=", "---end2", $crypt3_data);						
 
 						// Ignore IPv4 Address
 						if(ipv6_test($peer_ip) == FALSE)
@@ -1140,6 +1159,23 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							}
 
 							// Does the public key half match what is encrypted in the 3rd crypt field from
+							// the same peer? This is to process the DELETE_IP request
+							if($arr1[0] == $gen_key_crypt && 
+								empty($peer_ip) == FALSE && 
+								empty($IP_exist2) == TRUE && 
+								$domain_fail == FALSE && 
+								$simple_poll_fail == FALSE &&
+								is_private_ip($peer_ip) == FALSE) // Filter private IPs
+							{
+								if($delete_request == "DELETE_IP")
+								{
+									// Delete the IPv6 and any public key linked to it as it belongs to a previous unknown owner
+									mysql_query("DELETE FROM `generating_peer_list` WHERE `generating_peer_list`.`IP_Address` = '$peer_ip' LIMIT 1");
+									write_log("IPv6 DELETE IP Request ($peer_ip) was allowed for Public Key: " . base64_encode($public_key), "GP");
+								}
+							}
+
+							// Does the public key half match what is encrypted in the 3rd crypt field from
 							// the same peer?
 							if($arr1[0] == $gen_key_crypt && 
 								empty($peer_ip) == FALSE && 
@@ -1209,7 +1245,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						$peer_domain = find_string("---domain=", "---subfolder", $crypt3_data);
 						$peer_subfolder = find_string("---subfolder=", "---port", $crypt3_data);
 						$peer_port_number = find_string("---port=", "---end", $crypt3_data);
-						$delete_request = find_string("---end=", "---end2", $crypt3_data);						
+						$delete_request = find_string("---end=", "---end2", $crypt3_data);
 
 						// Ignore IPv4 Address
 						if(ipv6_test($peer_ip) == FALSE)
