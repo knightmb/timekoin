@@ -1,10 +1,18 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 3.6 (Released 2016-1-18)
+============================================
+- Quantum Balance Index support for Database
+- IPv6 Peers can now generate currency
+- Auto IP Update feature updated to support both IPv4 and IPv6 servers
+- GUI updated for IPv6 Peer Currency Generation support
+- Fix Generation Peer Manager was not purging occupied IP address + Key Combo in Generation List while Peer Election is running if Peer has taken over an IP address belong to a previous peer
+
+
 Timekoin Server - 3.52 (Released 2016-1-13)
 ============================================
 - Add activity log trimming that retains the most recent 100,000 entries to avoid excessive database space usage
 - Update to log when balance index is complete or when no recent transactions exist to index a balance for
-
 
 Timekoin Server - 3.51 (Released 2014-4-16)
 ============================================
