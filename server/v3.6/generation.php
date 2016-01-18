@@ -307,6 +307,17 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 					$found_public_key_my_queue = mysql_result(mysql_query("SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'G' LIMIT 1"),0,0);
 					$found_public_key_trans_queue = mysql_result(mysql_query("SELECT timestamp FROM `transaction_queue` WHERE `public_key` = '$my_public_key' AND `attribute` = 'G' LIMIT 1"),0,0);
 					$join_peer_list = find_v4_gen_join($my_public_key);
+					$join_peer_list2 = find_v6_gen_join($my_public_key);
+
+					if(empty($join_peer_list2) == FALSE)//Check other possible IPv6 Generation Key
+					{
+						// Is this Key + IP ready to generate also?
+						if(time() - $join_peer_list2 < 3600)
+						{
+							// Key is not ready yet, stop currency creation
+							$join_peer_list = time();
+						}
+					}
 
 					if(empty($found_public_key_my_queue) == TRUE && empty($found_public_key_trans_queue) == TRUE && (time() - $join_peer_list) >= 3600)
 					{
@@ -509,6 +520,17 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 					$found_public_key_my_queue = mysql_result(mysql_query("SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'G' LIMIT 1"),0,0);
 					$found_public_key_trans_queue = mysql_result(mysql_query("SELECT timestamp FROM `transaction_queue` WHERE `public_key` = '$my_public_key' AND `attribute` = 'G' LIMIT 1"),0,0);
 					$join_peer_list = find_v6_gen_join($my_public_key);
+					$join_peer_list2 = find_v4_gen_join($my_public_key);
+
+					if(empty($join_peer_list2) == FALSE)//Check other possible IPv4 Generation Key
+					{
+						// Is this Key + IP ready to generate also?
+						if(time() - $join_peer_list2 < 3600)
+						{
+							// Key is not ready yet, stop currency creation
+							$join_peer_list = time();
+						}
+					}
 
 					if(empty($found_public_key_my_queue) == TRUE && empty($found_public_key_trans_queue) == TRUE && (time() - $join_peer_list) >= 3600)
 					{

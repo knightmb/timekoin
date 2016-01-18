@@ -424,10 +424,12 @@ function options_screen2()
 	</select>
 	</td><td></td>
 	<tr><td colspan="2"><hr></td></tr></table></FORM>
-	<table border="0"><tr><td style="width:415px" align="right"><FORM ACTION="index.php?menu=options&amp;hashcode=manage" METHOD="post"><input type="submit" name="Submit3" value="Manage Hash Code Access" /></FORM></td>
+	<table border="0"><tr>
+	<td style="width:215px" align="left"><FORM ACTION="index.php?menu=options&amp;db_update=home" METHOD="post"><input type="submit" name="Submit4" value="Database Update" /></FORM></td>
+	<td style="width:215px" align="right"><FORM ACTION="index.php?menu=options&amp;hashcode=manage" METHOD="post"><input type="submit" name="Submit3" value="Manage Hash Code Access" /></FORM></td>
 	<td style="width:215px" valign="bottom" align="right"><FORM ACTION="index.php?menu=options&amp;upgrade=check" METHOD="post"><input type="submit" name="Submit3" value="Check for Updates" /></FORM></td></tr>
-	<tr><td colspan="2"><hr></td></tr>
-	<tr><td align="right"><FORM ACTION="index.php?menu=options&amp;manage=tabs" METHOD="post"><input type="submit" name="Submit4" value="Menu Tabs" /></FORM></td>
+	<tr><td colspan="3"><hr></td></tr>
+	<tr><td align="right" colspan="2"><FORM ACTION="index.php?menu=options&amp;manage=tabs" METHOD="post"><input type="submit" name="Submit4" value="Menu Tabs" /></FORM></td>
 	<td align="right"><FORM ACTION="index.php?menu=options&amp;manage=plugins" METHOD="post"><input type="submit" name="Submit5" value="Manage Plugins" /></FORM></td></tr>
 	</table>
 	';
@@ -574,6 +576,30 @@ function options_screen6()
 	<FORM ENCTYPE="multipart/form-data" METHOD="POST" ACTION="index.php?menu=options&amp;plugin=install">
 	<INPUT NAME="plugin_file" TYPE="file" SIZE=32><br><br>
 	<input type="submit" name="SubmitNew" value="Install New Plugin" onclick="return confirm(\'Always Use Caution When Installing Plugins From Untrusted Sources.\');" /></FORM>';
+} 
+//***********************************************************
+//***********************************************************
+function options_screen7()
+{
+	$qbi_index = mysql_result(mysql_query("SELECT COUNT(*) FROM `quantum_balance_index` LIMIT 1"),0);
+
+	if($qbi_index > 0)
+	{
+		//QBI Exist
+		$qbi_exist = '<strong><font color="green">INSTALLED</font></strong><br>';
+	}
+	else
+	{
+		$qbi_exist = '<strong><font color="red">NOT INSTALLED</font></strong><br>';
+	}
+
+	return '<table border="1"><tr>
+	<td style="width:250px" align="right"><FORM ACTION="index.php?menu=options&amp;db_update=home&amp;install=1" METHOD="post">' . $qbi_exist . '
+	Username: <input type="text" name="root_username" size="16" value="root" /><br>
+	Password: <input type="password" name="root_password" size="16" value="" /><br><br>
+	<input type="submit" name="submit" value="Install Quantum Database Index" /></FORM></td>
+	</tr>
+	</table>';
 } 
 //***********************************************************
 //***********************************************************

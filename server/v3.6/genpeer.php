@@ -178,11 +178,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 					mysql_query("INSERT INTO `generating_peer_list` (`public_key` ,`join_peer_list` ,`last_generation`, `IP_Address`) VALUES ('$public_key', '$current_generation_cycle', '$current_generation_cycle', '$IP_Address')");
 					write_log("IPv4 Generation Peer Elected for Public Key: " . base64_encode($public_key), "GP");
 				}
-				else
-				{
-					// No one won, probably because it was only IPv6 Address in the Queue
-					write_log("No IPv4 Peers Participated in Election", "GP");
-				}
 			}
 			else
 			{
@@ -216,11 +211,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 				{
 					mysql_query("INSERT INTO `generating_peer_list` (`public_key` ,`join_peer_list` ,`last_generation`, `IP_Address`) VALUES ('$public_key_winner', '$current_generation_cycle', '$current_generation_cycle', '$IP_Address')");
 					write_log("IPv4 Generation Peer Elected for Public Key: " . base64_encode($public_key_winner), "GP");
-				}
-				else
-				{
-					// No one won, probably because it was only IPv6 Address in the Queue
-					write_log("No IPv4 Peers Participated in Election", "GP");
 				}
 
 			} // End if/then winner check
@@ -277,11 +267,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 					mysql_query("INSERT INTO `generating_peer_list` (`public_key` ,`join_peer_list` ,`last_generation`, `IP_Address`) VALUES ('$public_key', '$current_generation_cycle', '$current_generation_cycle', '$IP_Address')");
 					write_log("IPv6 Generation Peer Elected for Public Key: " . base64_encode($public_key), "GP");
 				}
-				else
-				{
-					// No one won, probably because it was only IPv6 Address in the Queue
-					write_log("No IPv6 Peers Participated in Election", "GP");
-				}				
 			}
 			else
 			{
@@ -316,11 +301,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 					mysql_query("INSERT INTO `generating_peer_list` (`public_key` ,`join_peer_list` ,`last_generation`, `IP_Address`) VALUES ('$public_key_winner', '$current_generation_cycle', '$current_generation_cycle', '$IP_Address')");
 					write_log("IPv6 Generation Peer Elected for Public Key: " . base64_encode($public_key_winner), "GP");
 				}
-				else
-				{
-					// No one won, probably because it was only IPv4 Address in the Queue
-					write_log("No IPv6 Peers Participated in Election", "GP");
-				}
+
 			} // End if/then winner check
 
 			// Clear out queue for next round of IPv6 Address only

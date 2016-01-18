@@ -1661,6 +1661,62 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 		}
 
+		if($_GET["db_update"] == "home")
+		{
+			if($_GET["install"] == "1")
+			{
+				$text_bar = '<strong><font color="blue">Administrator Username & Password for Database Server Needed to Update</font></strong>';
+				$quick_info = 'Update your Timekoin Database to use new features.<br><br><strong><font color="red">WARNING:</font></strong><br>
+				Always make sure you are connected to the server via SSL or Local Network to avoid sending any username or password info in the clear over the Internet.';
+
+				$admin_username = $_POST["root_username"];
+				$admin_password = $_POST["root_password"];
+
+				$sql = "CREATE TABLE IF NOT EXISTS `quantum_balance_index` (
+				  `public_key_hash` varchar(32) NOT NULL,
+				  `max_foundation` int(11) unsigned NOT NULL,
+				  `balance` bigint(20) unsigned NOT NULL,
+				  KEY `qbi_index` (`public_key_hash`(4))
+				) ENGINE=MyISAM DEFAULT CHARSET=utf8;";
+
+				if(mysql_connect(MYSQL_IP,$admin_username,$admin_password) == FALSE)
+				{
+					$body_text = '<font color="red"><strong>Could Not Connect To Database</strong></font>';
+				}
+				
+				if(mysql_select_db(MYSQL_DATABASE) == FALSE)
+				{
+					$body_text = '<font color="red"><strong>Could Not Select Database</strong></font>';
+				}
+
+				if(mysql_query($sql) == TRUE)
+				{
+					// Insert Place holder data for later checking
+					mysql_query("INSERT INTO `quantum_balance_index` (`public_key_hash` ,`max_foundation` ,`balance`)VALUES ('', '1', '')");
+
+					$body_text = '<font color="green"><strong>Quantum Database Index Install Complete!</strong></font>';
+				}
+				else
+				{
+					$body_text = '<font color="red"><strong>FAILED: Quantum Database Index Install</strong></font>';
+				}
+
+				$body_text.= '<br><br><FORM ACTION="index.php?menu=options&amp;db_update=home" METHOD="post"><input type="submit" name="submit" value="Database Update" /></FORM>';
+
+				home_screen("Database Update", $text_bar, $body_text , $quick_info);
+				exit;
+			}
+			else
+			{
+				$text_bar = '<strong><font color="blue">Administrator Username & Password for Database Server Needed to Update</font></strong>';
+				$quick_info = 'Update your Timekoin Database to use new features.<br><br><strong><font color="red">WARNING:</font></strong><br>
+				Always make sure you are connected to the server via SSL or Local Network to avoid sending any username or password info in the clear over the Internet.';
+
+				home_screen("Database Update", $text_bar, options_screen7() , $quick_info);
+				exit;
+			}
+		}
+
 		if($_GET["upgrade"] == "check" || $_GET["upgrade"] == "doupgrade")
 		{
 			$quick_info = 'This will check with the Timekoin website for any software updates that can be installed.';
@@ -2108,7 +2164,7 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 		}
 
-		$text_bar = '<table cellspacing="10" border="0"><tr><td valign="top" width="230">' . $generate_currency . '</td>
+		$text_bar = '<table cellspacing="10" border="0"><tr><td valign="top" width="270">' . $generate_currency . '</td>
 		<td>IPv4 Generating Peers: <font color="green"><strong>' . $ipv4_counter . '</strong></font><br>
 		IPv4 Queue for Election: <font color="blue"><strong>' . $ipv4_counter_queue . '</strong></font></td><td>
 		IPv6 Generating Peers: <font color="green"><strong>' . $ipv6_counter . '</strong></font><br>

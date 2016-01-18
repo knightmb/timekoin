@@ -373,7 +373,7 @@ if($sql_num_results > 0)
 							$join_peer_list2 = $join_peer_list;
 						}
 
-						if((time() - $join_peer_list) >= 3600 && (time() - $join_peer_list2) >= 3600) // It's been more than 3600 seconds since this public key joined the generating peer list
+						if((time() - $join_peer_list) >= 3600 && (time() - $join_peer_list2) >= 3600) // It's been more than 3600 seconds since this public key(s) joined the generating peer list
 						{
 							$time_created = $previous_transaction_cycle + 1; // Format timestamp for a 1 second after previous transaction cycle
 							$crypt1 = $sql_row["crypt_data1"];
