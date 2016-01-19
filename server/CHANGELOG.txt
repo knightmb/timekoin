@@ -6,7 +6,7 @@ Timekoin Server - 3.6 (Released 2016-1-18)
 - IPv6 Peers can now generate currency
 - Auto IP Update feature updated to support both IPv4 and IPv6 servers
 - GUI updated for IPv6 Peer Currency Generation support
-- Fix Generation Peer Manager was not purging occupied IP address + Key Combo in Generation List while Peer Election is running if Peer has taken over an IP address belong to a previous peer
+- Fix Generation Peer Manager was not purging occupied IP address + Key Combo in Generation List while Peer Election is running if Peer has taken over an IP address belonging to a previous peer
 
 
 Timekoin Server - 3.52 (Released 2016-1-13)
