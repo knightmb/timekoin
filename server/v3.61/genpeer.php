@@ -166,6 +166,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 		if($sql_num_results > 0)
 		{
+			$public_key_score = NULL;
+			
 			if($sql_num_results == 1)// Lone IPv4 Address Public Key Won
 			{
 				$sql_row = mysql_fetch_array($sql_result);
@@ -255,6 +257,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 		if($sql_num_results > 0)
 		{
+			$public_key_score = NULL;			
+			
 			if($sql_num_results == 1)
 			{
 				$sql_row = mysql_fetch_array($sql_result);
