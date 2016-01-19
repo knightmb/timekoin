@@ -1,5 +1,10 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 3.61 (Released 2016-1-18)
+============================================
+- Bug fix in Generation Peer Manager to clear key scores to prevent cross contamination of data between IPv4 Peer Elections & IPv6 Peer Elections
+
+
 Timekoin Server - 3.6 (Released 2016-1-18)
 ============================================
 - Quantum Balance Index support for Database
@@ -7,7 +12,6 @@ Timekoin Server - 3.6 (Released 2016-1-18)
 - Auto IP Update feature updated to support both IPv4 and IPv6 servers
 - GUI updated for IPv6 Peer Currency Generation support
 - Fix Generation Peer Manager was not purging occupied IP address + Key Combo in Generation List while Peer Election is running if Peer has taken over an IP address belonging to a previous peer
-
 
 Timekoin Server - 3.52 (Released 2016-1-13)
 ============================================
