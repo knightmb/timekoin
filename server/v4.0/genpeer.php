@@ -459,10 +459,10 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 			$gen_peer_public_key = filter_sql(base64_decode($gen_peer_public_key));
 
-			if(empty($gen_peer_last_generation) == TRUE)
+			// Compress IPv6 Address to avoid match confusion in Database
+			if(ipv6_test($gen_peer_IP) == TRUE)
 			{
-				// Old format compatible
-				$gen_peer_last_generation = filter_sql(find_string("-----last$match_number=", "-----END$match_number", $poll_peer));
+				$gen_peer_IP = ipv6_compress($gen_peer_IP);
 			}
 
 			//Check if this public key is already in our peer list

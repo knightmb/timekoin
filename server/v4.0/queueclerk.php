@@ -884,43 +884,34 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 					break;
 				}
 
-				if(strlen($current_hash) == 64)
-				{
-					// Old Queue System Check
-					//Check if this transaction is already in our queue
-					$hash_match = mysql_result(mysql_query("SELECT timestamp FROM `transaction_queue` WHERE `hash` = '$current_hash' LIMIT 1"),0,0);
-				}
-				else
-				{
-					// New Queue System Check
-					$queue_hash_test = NULL;
-					$hash_match = NULL;					
-					
-					mysql_data_seek($sql_result2, 0); // Reset pointer back to beginning of data
+				// New Queue System Check
+				$queue_hash_test = NULL;
+				$hash_match = NULL;					
+				
+				mysql_data_seek($sql_result2, 0); // Reset pointer back to beginning of data
 
-					if($sql_num_results2 > 0)
+				if($sql_num_results2 > 0)
+				{
+					for ($i2 = 0; $i2 < $sql_num_results2; $i2++)
 					{
-						for ($i2 = 0; $i2 < $sql_num_results2; $i2++)
+						$sql_row2 = mysql_fetch_array($sql_result2);
+
+						$queue_hash_test = $sql_row2["timestamp"] . $sql_row2["public_key"] . $sql_row2["crypt_data1"] . 
+						$sql_row2["crypt_data2"] . $sql_row2["crypt_data3"] . $sql_row2["hash"] . $sql_row2["attribute"];		
+
+						if(hash('md5', $queue_hash_test) == $current_hash)
 						{
-							$sql_row2 = mysql_fetch_array($sql_result2);
-
-							$queue_hash_test = $sql_row2["timestamp"] . $sql_row2["public_key"] . $sql_row2["crypt_data1"] . 
-							$sql_row2["crypt_data2"] . $sql_row2["crypt_data3"] . $sql_row2["hash"] . $sql_row2["attribute"];		
-
-							if(hash('md5', $queue_hash_test) == $current_hash)
-							{
-								// This Transaction Already Exist in the Queue
-								$hash_match = TRUE;
-								break;
-							}
-
-							// No match, move on to next record
-							$queue_hash_test = NULL;
+							// This Transaction Already Exist in the Queue
+							$hash_match = TRUE;
+							break;
 						}
 
-						// No match found, empty string
-						$hash_match = NULL;
+						// No match, move on to next record
+						$queue_hash_test = NULL;
 					}
+
+					// No match found, empty string
+					$hash_match = NULL;
 				}
 
 				if(empty($hash_match) == TRUE)

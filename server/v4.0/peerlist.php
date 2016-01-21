@@ -540,6 +540,12 @@ if($active_peers == 0 && $new_peers == 0)
 		$peer_subfolder = find_string("---subfolder=", "---port", $sql_row["field_data"]);
 		$peer_port_number = find_string("---port=", "---end", $sql_row["field_data"]);
 
+		// Compress IPv6 Address
+		if(ipv6_test($peer_ip) == TRUE)
+		{
+			$peer_ip = ipv6_compress($peer_ip);
+		}		
+
 		// Insert into database as first contact server(s)
 		$sql = "INSERT INTO `active_peer_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`last_heartbeat`, `join_peer_list`, `failed_sent_heartbeat`)
 		VALUES ('$peer_ip', '$peer_domain', '$peer_subfolder', '$peer_port_number', " . time() . ", " . time() . ", 65535)";
@@ -568,6 +574,12 @@ if($active_peers < $max_active_peers)
 		$poll_failures = $sql_row["poll_failures"];
 		$duplicate_peer = FALSE;
 		$invalid_peer = FALSE;
+
+		// Compress IPv6 Address
+		if(ipv6_test($ip_address) == TRUE)
+		{
+			$ip_address = ipv6_compress($ip_address);
+		}
 
 		// Check to make sure that this peer is not already in our active peer list
 		$duplicate_check1 = mysql_result(mysql_query("SELECT last_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' LIMIT 1"),0,0);
@@ -803,6 +815,12 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 		$subfolder = $sql_row["subfolder"];
 		$port_number = $sql_row["port_number"];
 
+		// Compress IPv6 Address
+		if(ipv6_test($ip_address) == TRUE)
+		{
+			$ip_address = ipv6_compress($ip_address);
+		}
+
 		$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 10000, "peerlist.php?action=new_peers"));
 
 		$peer_counter = 1; // Reset peer counter
@@ -819,6 +837,12 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 			$peer_domain = find_string("-----domain$peer_counter=", "-----subfolder$peer_counter", $poll_peer);
 			$peer_subfolder = find_string("-----subfolder$peer_counter=", "-----port_number$peer_counter", $poll_peer);
 			$peer_port_number = find_string("-----port_number$peer_counter=", "-----", $poll_peer);
+
+			// Compress IPv6 Address
+			if(ipv6_test($peer_IP) == TRUE)
+			{
+				$peer_IP = ipv6_compress($peer_IP);
+			}
 
 			if(is_domain_valid($peer_domain) == FALSE)
 			{
@@ -1009,6 +1033,12 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 		$port_number = $sql_row["port_number"];
 		$last_heartbeat = $sql_row["last_heartbeat"];
 		$join_peer_list = $sql_row["join_peer_list"];
+
+		// Compress IPv6 Address
+		if(ipv6_test($ip_address) == TRUE)
+		{
+			$ip_address = ipv6_compress($ip_address);
+		}
 
 		// Choose the type polling done
 		$poll_type = rand(1,7);
@@ -1203,7 +1233,13 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 		$subfolder = $sql_row["subfolder"];
 		$port_number = $sql_row["port_number"];
 		$poll_failures = $sql_row["poll_failures"];
-		
+
+		// Compress IPv6 Address
+		if(ipv6_test($ip_address) == TRUE)
+		{
+			$ip_address = ipv6_compress($ip_address);
+		}
+
 		$poll_type = rand(1,2);
 
 		// 1=CRC32
