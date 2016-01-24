@@ -233,6 +233,13 @@ CREATE TABLE IF NOT EXISTS `quantum_balance_index` (
   KEY `qbi_index` (`public_key_hash`(4))
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
+--
+-- Dumping data for table `quantum_balance_index`
+--
+
+INSERT INTO `quantum_balance_index` (`public_key_hash`, `max_foundation`, `balance`) VALUES
+('', 1, 0);
+
 -- --------------------------------------------------------
 
 --
