@@ -98,7 +98,6 @@ if($_GET["action"] == "begin_main")
 			}
 		}
 		// Finish Starting Plugin Services
-
 		header("Location: index.php?menu=system&code=1");
 		exit;
 	}

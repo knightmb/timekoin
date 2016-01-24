@@ -678,7 +678,7 @@ if($active_peers < $max_active_peers)
 
 			if($poll_peer == $hash_solution)
 			{
-				//Got a response from an active Timekoin server
+				// Got a response from an active Timekoin server
 				// Ask to be added to the other server's peerlist
 				$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 10, "peerlist.php?action=join");
 
