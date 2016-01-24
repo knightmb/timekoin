@@ -163,10 +163,24 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		$sql = "SELECT * FROM `generating_peer_queue` WHERE `timestamp` < $current_generation_cycle ORDER BY `IP_Address` ASC";
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
-
-		if($sql_num_results > 0)
+		$ipv4_peers_ready = FALSE;
+		
+		// Check to see if any IPv4 Public Keys remain to check
+		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$public_key_score = NULL;
+			$sql_row = mysql_fetch_array($sql_result);
+			
+			if(ipv6_test($sql_row["IP_Address"]) == FALSE)// IPv4 Only
+			{	
+				$ipv4_peers_ready = TRUE;
+				break;
+			}
+		}
+
+		if($ipv4_peers_ready == TRUE)
+		{
+			$public_key_score = NULL;// Reset Public Key Score
+			mysql_data_seek($sql_result, 0);// Reset pointer back to beginning of data
 			
 			if($sql_num_results == 1)// Lone IPv4 Address Public Key Won
 			{
@@ -254,11 +268,25 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		$sql = "SELECT * FROM `generating_peer_queue` WHERE `timestamp` < $current_generation_cycle ORDER BY `IP_Address` ASC";
 		$sql_result = mysql_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
-
-		if($sql_num_results > 0)
+		$ipv6_peers_ready = FALSE;
+		
+		// Check to see if any IPv6 Public Keys remain to check
+		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$public_key_score = NULL;			
+			$sql_row = mysql_fetch_array($sql_result);
 			
+			if(ipv6_test($sql_row["IP_Address"]) == TRUE)// IPv6 Only
+			{	
+				$ipv6_peers_ready = TRUE;
+				break;
+			}
+		}
+
+		if($ipv6_peers_ready == TRUE)
+		{
+			$public_key_score = NULL;// Reset Public Key Score
+			mysql_data_seek($sql_result, 0);// Reset pointer back to beginning of data
+
 			if($sql_num_results == 1)
 			{
 				$sql_row = mysql_fetch_array($sql_result);

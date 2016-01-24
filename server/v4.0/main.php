@@ -7,13 +7,13 @@ if($_GET["action"] == "begin_main")
 	if(mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD) == FALSE)
 	{
 		// Database connect error
-		$datbase_error = TRUE;
+		$database_error = TRUE;
 	}
 
 	if(mysql_select_db(MYSQL_DATABASE) == FALSE)
 	{
 		// Database select error
-		$datbase_error = TRUE;
+		$database_error = TRUE;
 	}
 
 	// Check for banned IP address
@@ -28,7 +28,7 @@ if($_GET["action"] == "begin_main")
 	// Check for active heartbeat
 	$main_heartbeat_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
 
-	if($main_heartbeat_active == FALSE && $datbase_error == FALSE)
+	if($main_heartbeat_active == FALSE && $database_error == FALSE)
 	{
 		// Database Initialization
 		initialization_database();
@@ -136,7 +136,7 @@ while(1) // Begin Infinite Loop :)
 	// Are we to remain active?
 	$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
 
-	if($loop_active === FALSE) // Databaes Error
+	if($loop_active === FALSE) // Database Error
 	{
 		// Database Error, try to re-establish a connection after 5 seconds
 		mysql_close($mysql_link);
@@ -145,12 +145,12 @@ while(1) // Begin Infinite Loop :)
 		mysql_select_db(MYSQL_DATABASE);
 
 		// Keep track of errors in case this can't be recovered from
-		$datbase_error = TRUE;
+		$database_error = TRUE;
 		$database_error_counter++;
 	}
 	else
 	{
-		$datbase_error = 0;
+		$database_error = 0;
 		$database_error_counter = 0;
 	}
 
@@ -449,7 +449,7 @@ while(1) // Begin Infinite Loop :)
 	else
 	{
 		// Something is not working right, delay to avoid fast infinite loop
-		if($datbase_error == TRUE && $database_error_counter < 6)
+		if($database_error == TRUE && $database_error_counter < 6)
 		{
 			// Wait 5 seconds for database to come back online
 			sleep(5);

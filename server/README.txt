@@ -75,7 +75,7 @@ this new web folder. Make sure your directory structure stays intact so that the
 permissions to run properly (depends on if the setup is for Linux, Windows, Mac,
 etc.) All files need at least “read” access, but this next list of files need
 execute permissions to allow them to run with the web server permissions (no
-admin or root needed). For those using Linux/Unix, apache permissions would be
+admin or root needed). For those using Linux/Unix, Apache permissions would be
 an example. Every OS is different, so some may work with just
 read access and others may require execute access to function properly depending
 on the security settings chosen by the user of the OS.
