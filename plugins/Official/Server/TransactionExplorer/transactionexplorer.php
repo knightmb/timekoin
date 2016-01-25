@@ -112,7 +112,7 @@ if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 				}
 		
 				$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
-				$trans_send_to_results_string.= 'Received [<font color="green"><strong>' . $transaction_amount_sent . '</strong></font>] From Public Key ' . unix_timestamp_to_human($timestamp, $user_timezone) . '<p style="word-wrap:break-word; font-size:11px;">' . base64_encode($public_key_from) . '</p><hr>';
+				$trans_send_to_results_string.= 'Received [<font color="green"><strong>' . $transaction_amount_sent . '</strong></font>] From Public Key ' . unix_timestamp_to_human($timestamp, $user_timezone) . '<p style="word-wrap:break-word; font-size:10px;">' . base64_encode($public_key_from) . '</p><hr>';
 				$trans_send_to_results_counter+= $transaction_amount_sent;
 				$trans_send_from_results_total++;
 			}
@@ -133,7 +133,7 @@ if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 				}
 
 				$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
-				$trans_send_from_results_string.= 'Sent [<font color="green"><strong>' . $transaction_amount_sent . '</strong></font>] To Public Key ' . unix_timestamp_to_human($timestamp, $user_timezone) . '<p style="word-wrap:break-word; font-size:11px;">' . base64_encode($public_key_to) . '</p><hr>';
+				$trans_send_from_results_string.= 'Sent [<font color="green"><strong>' . $transaction_amount_sent . '</strong></font>] To Public Key ' . unix_timestamp_to_human($timestamp, $user_timezone) . '<p style="word-wrap:break-word; font-size:10px;">' . base64_encode($public_key_to) . '</p><hr>';
 				$trans_send_from_results_counter+= $transaction_amount_sent;
 				$trans_send_to_results_total++;
 			}
