@@ -2126,7 +2126,7 @@ if($_SESSION["valid_login"] == TRUE)
 		}
 
 		// Next Election Calculator
-		$max_cycles_ahead = 999;
+		$max_cycles_ahead = 9999;
 
 		for ($i = 0; $i < $max_cycles_ahead; $i++)
 		{

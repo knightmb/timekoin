@@ -350,7 +350,7 @@ if($_GET["action"] == "input_transaction")
 	if(($next_transaction_cycle - time()) > 180 && (time() - $current_transaction_cycle) > 15)
 	{
 		$transaction_timestamp = intval($_POST["timestamp"]);
-		$transaction_public_key = filter_sql($_POST["public_key"]);
+		$transaction_public_key = $_POST["public_key"];
 		$transaction_crypt1 = filter_sql($_POST["crypt_data1"]);
 		$transaction_crypt2 = filter_sql($_POST["crypt_data2"]);
 		$transaction_crypt3 = filter_sql($_POST["crypt_data3"]);
