@@ -7,6 +7,30 @@ set_time_limit(99); // How many seconds to wait until timeout
 session_name("timekoin"); // Continue Session Name, Default: [timekoin]
 session_start(); // Continue Session
 
+function tk_online()
+{
+	$time_resolution = 10; // How many sleep cycle divisions of the AUTOCHECK interval
+	$sleep_counter = intval(AUTOCHECK / $time_resolution);
+
+	while($time_resolution > 0)
+	{
+		// Are we to remain active?
+		$timekoin_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
+
+		if($timekoin_active == FALSE)
+		{
+			// User has shutdown system
+			return FALSE;
+		}
+
+		$time_resolution--;
+		sleep($sleep_counter);
+	}
+
+	mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'autotransfer.php' LIMIT 1");
+	return TRUE; // Still Online
+}
+
 // Server does not login to start this plugin
 if($_SESSION["valid_login"] == FALSE)
 {
@@ -42,19 +66,15 @@ if($_SESSION["valid_login"] == FALSE)
 	{
 		set_time_limit(999); // Reset Timeout
 
-		// Are we to remain active?
-		$timekoin_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,"field_data");
+		// Idle State
+		mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'autotransfer.php' LIMIT 1");
 
-		if($timekoin_active == FALSE)
+		// Are we to remain active?
+		if(tk_online() == FALSE)
 		{
-			// User has shutdown system
+			// Shutdown System
 			mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'autotransfer.php' LIMIT 1");
 			exit;
-		}
-		else
-		{
-			// Working State - Do Something
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'autotransfer.php' LIMIT 1");
 		}
 
 		$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'auto_currency_transfer_%' ORDER BY `options`.`field_name` ASC";
@@ -194,15 +214,12 @@ if($_SESSION["valid_login"] == FALSE)
 
 		} // Looping through all task
 
-		// Idle State
-		mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'autotransfer.php' LIMIT 1");
-		sleep(AUTOCHECK);
-
 	} // Infinite Loop :)
+
 	exit;
 }
 
-// Normal User Interaction
+// Normal GUI User Interaction
 if($_SESSION["valid_login"] == TRUE)
 {
 	include '../templates.php';// Path to files already used by Timekoin
@@ -293,91 +310,89 @@ if($_SESSION["valid_login"] == TRUE)
 			// Easy Key Not Found
 			$missing_easy_key = '<font color="red">Easy Key Not Found</font>';
 		}		
-		
-$body_string = $missing_field . $missing_easy_key . '
-<FORM ACTION="autotransfer.php?task=save_new" METHOD="post">
-<table border="0"><tr><td align="right">
-<strong>Task Name:</strong></td><td><input type="text" size="20" name="taskname" /></td></tr>
-<tr><td align="right">
-<strong>Type:</strong></td><td><select name="type">
-<option value="onedelay">One Time Countdown Delay</option>
-<option value="repeatdelay">Repeating Countdown Delay</option>
-<option value="oneamount">One Time Amount Equal or Greater Than --></option>
-<option value="repeatamount">Repeating Amount Equal or Greater Than --></option>
-</select><input type="text" size="10" name="amount_match" /></td></tr>
-<tr><td>
-<strong><font color="blue">From Private Key:</font></strong><br>
-<input type="checkbox" name="use_private" value="1">Use Server<br>Private & Public Key</td><td>
-<textarea name="fromprivatekey" rows="6" cols="62"></textarea>
-</td></tr>
-<tr><td>
-<strong><font color="blue">From Public Key:</font></strong></td><td>
-<textarea name="frompublickey" rows="6" cols="62"></textarea>
-</td></tr>
-<tr><td colspan="2"><hr></td></tr>
-<tr><td>
-<strong><font color="green">To Public Key:</font></strong><br><br>
-<strong>Easy Key:</strong><input type="text" size="16" name="easy_key"></td><td>
-<textarea name="topublickey" rows="6" cols="62"></textarea>
-</td></tr>
-<tr><td align="right">
-<strong><font color="green">Amount:</font></strong></td><td><input type="text" size="16" name="amount" /></td></tr>
-<td align="right">
-<strong>Delay:</strong></td><td>
-<select name="delay_days">
-<option value="0">Days</option>
-<option value="1">1 Day</option>
-<option value="2">2 Days</option>
-<option value="3">3 Days</option>
-<option value="4">4 Days</option>
-<option value="5">5 Days</option>
-<option value="6">6 Days</option>
-<option value="7">7 Days</option>
-</select>
-<select name="delay_hours">
-<option value="0">Hours</option>
-<option value="1">1 Hour</option>
-<option value="2">2 Hours</option>
-<option value="3">3 Hours</option>
-<option value="4">4 Hours</option>
-<option value="5">5 Hours</option>
-<option value="6">6 Hours</option>
-<option value="7">7 Hours</option>
-<option value="8">8 Hours</option>
-<option value="9">9 Hours</option>
-<option value="10">10 Hours</option>
-<option value="11">11 Hours</option>
-<option value="12">12 Hours</option>
-<option value="13">13 Hours</option>
-<option value="14">14 Hours</option>
-<option value="15">15 Hours</option>
-<option value="16">16 Hours</option>
-<option value="17">17 Hours</option>
-<option value="18">18 Hours</option>
-<option value="19">19 Hours</option>
-<option value="20">20 Hours</option>
-<option value="21">21 Hours</option>
-<option value="22">22 Hours</option>
-<option value="23">23 Hours</option>
-</select>
-<select name="delay_minutes">
-<option value="0">Minutes</option>
-<option value="5">5 Minutes</option>
-<option value="10">10 Minutes</option>
-<option value="15">15 Minutes</option>
-<option value="20">20 Minutes</option>
-<option value="25">25 Minutes</option>
-<option value="30">30 Minutes</option>
-<option value="35">35 Minutes</option>
-<option value="40">40 Minutes</option>
-<option value="45">45 Minutes</option>
-<option value="50">50 Minutes</option>
-<option value="55">55 Minutes</option>
-</select>
-</td></tr>
-<tr><td><input type="submit" name="Submit" value="Save Task" /></td><td></td></tr></table>
-</FORM>';
-
+	$body_string = $missing_field . $missing_easy_key . '
+	<FORM ACTION="autotransfer.php?task=save_new" METHOD="post">
+	<table border="0"><tr><td align="right">
+	<strong>Task Name:</strong></td><td><input type="text" size="20" name="taskname" /></td></tr>
+	<tr><td align="right">
+	<strong>Type:</strong></td><td><select name="type">
+	<option value="onedelay">One Time Countdown Delay</option>
+	<option value="repeatdelay">Repeating Countdown Delay</option>
+	<option value="oneamount">One Time Amount Equal or Greater Than --></option>
+	<option value="repeatamount">Repeating Amount Equal or Greater Than --></option>
+	</select><input type="text" size="10" name="amount_match" /></td></tr>
+	<tr><td>
+	<strong><font color="blue">From Private Key:</font></strong><br>
+	<input type="checkbox" name="use_private" value="1">Use Server<br>Private & Public Key</td><td>
+	<textarea name="fromprivatekey" rows="6" cols="62"></textarea>
+	</td></tr>
+	<tr><td>
+	<strong><font color="blue">From Public Key:</font></strong></td><td>
+	<textarea name="frompublickey" rows="6" cols="62"></textarea>
+	</td></tr>
+	<tr><td colspan="2"><hr></td></tr>
+	<tr><td>
+	<strong><font color="green">To Public Key:</font></strong><br><br>
+	<strong>Easy Key:</strong><input type="text" size="16" name="easy_key"></td><td>
+	<textarea name="topublickey" rows="6" cols="62"></textarea>
+	</td></tr>
+	<tr><td align="right">
+	<strong><font color="green">Amount:</font></strong></td><td><input type="text" size="16" name="amount" /></td></tr>
+	<td align="right">
+	<strong>Delay:</strong></td><td>
+	<select name="delay_days">
+	<option value="0">Days</option>
+	<option value="1">1 Day</option>
+	<option value="2">2 Days</option>
+	<option value="3">3 Days</option>
+	<option value="4">4 Days</option>
+	<option value="5">5 Days</option>
+	<option value="6">6 Days</option>
+	<option value="7">7 Days</option>
+	</select>
+	<select name="delay_hours">
+	<option value="0">Hours</option>
+	<option value="1">1 Hour</option>
+	<option value="2">2 Hours</option>
+	<option value="3">3 Hours</option>
+	<option value="4">4 Hours</option>
+	<option value="5">5 Hours</option>
+	<option value="6">6 Hours</option>
+	<option value="7">7 Hours</option>
+	<option value="8">8 Hours</option>
+	<option value="9">9 Hours</option>
+	<option value="10">10 Hours</option>
+	<option value="11">11 Hours</option>
+	<option value="12">12 Hours</option>
+	<option value="13">13 Hours</option>
+	<option value="14">14 Hours</option>
+	<option value="15">15 Hours</option>
+	<option value="16">16 Hours</option>
+	<option value="17">17 Hours</option>
+	<option value="18">18 Hours</option>
+	<option value="19">19 Hours</option>
+	<option value="20">20 Hours</option>
+	<option value="21">21 Hours</option>
+	<option value="22">22 Hours</option>
+	<option value="23">23 Hours</option>
+	</select>
+	<select name="delay_minutes">
+	<option value="0">Minutes</option>
+	<option value="5">5 Minutes</option>
+	<option value="10">10 Minutes</option>
+	<option value="15">15 Minutes</option>
+	<option value="20">20 Minutes</option>
+	<option value="25">25 Minutes</option>
+	<option value="30">30 Minutes</option>
+	<option value="35">35 Minutes</option>
+	<option value="40">40 Minutes</option>
+	<option value="45">45 Minutes</option>
+	<option value="50">50 Minutes</option>
+	<option value="55">55 Minutes</option>
+	</select>
+	</td></tr>
+	<tr><td><input type="submit" name="Submit" value="Save Task" /></td><td></td></tr></table>
+	</FORM>';
 	$quick_info = 'Auto Transfer task are scanned every minute.<br><br>
 	<strong>One Time Delay</strong> transfers countdown and self-disable after doing one transaction.<br><br>
 	<strong>Repeating Delay</strong> transfers will reset after doing one transaction and begin another countdown.<br><br>
@@ -630,17 +645,14 @@ function autotx_home()
 		<input type="hidden" name="tx_record_name" value="' . $tx_record_name . '"></FORM></td></tr>
 		<tr><td colspan="8"><hr></td></tr>';
 	}
-
-return '<table border="0" cellpadding="2" cellspacing="10"><tr><td valign="bottom" align="center" colspan="8"><strong>Auto Currency Transfer Task List</strong>
-</td></tr>
-<tr><td align="center"><strong>Name</strong></td><td align="center"><strong>Type</strong></td><td align="center"><strong>Conditions</strong></td>
-<td align="center"><strong>Key From</strong></td><td align="center"><strong>Key To</strong></td><td align="center"><strong>Transfer<br>Amount</strong></td>
-<td align="center"><strong>Status</strong></td><td></td></tr>' . $plugin_output . '
-<tr><td align="right" colspan="8"><FORM ACTION="autotransfer.php?task=new" METHOD="post"><input type="submit" name="SubmitNew" value="Create New Task" /></FORM></td></tr>
-</table>';
-
+	return '<table border="0" cellpadding="2" cellspacing="10"><tr><td valign="bottom" align="center" colspan="8"><strong>Auto Currency Transfer Task List</strong>
+	</td></tr>
+	<tr><td align="center"><strong>Name</strong></td><td align="center"><strong>Type</strong></td><td align="center"><strong>Conditions</strong></td>
+	<td align="center"><strong>Key From</strong></td><td align="center"><strong>Key To</strong></td><td align="center"><strong>Transfer<br>Amount</strong></td>
+	<td align="center"><strong>Status</strong></td><td></td></tr>' . $plugin_output . '
+	<tr><td align="right" colspan="8"><FORM ACTION="autotransfer.php?task=new" METHOD="post"><input type="submit" name="SubmitNew" value="Create New Task" /></FORM></td></tr>
+	</table>';
 }
-
 	if($_GET["font"] == "public_key")
 	{
 		if(empty($_POST["font_size"]) == FALSE)
