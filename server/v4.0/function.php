@@ -39,16 +39,22 @@ function filter_sql($string)
 }
 //***********************************************************************************
 //***********************************************************************************
-function log_ip($attribute, $multiple = 1)
+function log_ip($attribute, $multiple = 1, $super_peer_check = FALSE)
 {
-	if($attribute == "TC")
+	if($_SERVER['REMOTE_ADDR'] == "::1" || $_SERVER['REMOTE_ADDR'] == "127.0.0.1")
+	{
+		// Ignore Local Machine Address
+		return;
+	}
+	
+	if($super_peer_check == TRUE)
 	{
 		// Is Super Peer Enabled?
 		$super_peer_mode = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'super_peer' LIMIT 1"),0,0);
 
 		if($super_peer_mode > 0)
 		{
-			// Only count 1 in 4 IP for Transaction Clerk to avoid
+			// Only count 1 in 4 IP for Super Peer Transaction Clerk to avoid
 			// accidental banning of peers accessing high volume data.
 			if(rand(1,4) != 4)
 			{

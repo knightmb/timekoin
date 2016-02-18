@@ -90,7 +90,7 @@ if($_GET["action"] == "transaction_data" && $_GET["block_number"] >= 0)
 	}
 
 	// Log inbound IP activity
-	log_ip("TC", scale_trigger(500));
+	log_ip("TC", scale_trigger(500), TRUE);
 	exit;
 }
 //***********************************************************************************
