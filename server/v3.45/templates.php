@@ -314,6 +314,23 @@ function options_screen2()
 	{
 		$super_peer = 500;
 	}
+	
+	 // START WARMACH ADDED ******************************************        
+	    $UI_SSL = '';
+	    if(empty($UI_SSL_db) == FALSE && $UI_SSL_db = 1)
+		{
+			$UI_SSL = 'checked';
+		}   
+	
+		if($super_peer == 1)
+		{
+			$super_peer = 500;
+		}
+	    // END WARMACH ADDED ******************************************    
+	
+	    // START WARMACH ADDED ******************************************    
+	    //  Added HTML line below to include checkbox named "UI_SSL"
+	    // END WARMACH ADDED ******************************************  
 
 	return '<FORM ACTION="index.php?menu=options&amp;refresh=change" METHOD="post">
 	<table border="0"><tr><td style="width:415px" valign="bottom" align="right"><strong>Refresh Rates (seconds) for Realtime Pages [0 = disable]</strong><br><br>
@@ -321,7 +338,8 @@ function options_screen2()
 	<tr><td valign="bottom" align="right">
 	Home: <input type="text" name="home_update" size="2" value="' . $home_update . '" /><br>
 	Peerlist: <input type="text" name="peerlist_update" size="2" value="' . $peerlist_update . '" /><br>
-	Transaction Queue: <input type="text" name="queue_update" size="2" value="' . $queue_update . '" /></td><td></td></tr>
+	Transaction Queue: <input type="text" name="queue_update" size="2" value="' . $queue_update . '" /><br>
+        Require SSL for UI: <input type="checkbox" name="UI_SSL" value="1" ' . $UI_SSL . ' /></td><td></td></tr>
 	<tr><td></td><td></td></tr>
 	<tr><td align="right"><strong>Super Peer Limit (10 - 500)</strong><br><input type="text" name="super_peer_limit" size="3" value="' . $super_peer . '" /><br></td>
 	<td><input type="submit" name="Submit2" value="Save Options" /></td></tr>
