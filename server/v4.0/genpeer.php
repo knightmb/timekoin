@@ -10,22 +10,21 @@ if(GENPEER_DISABLED == TRUE || TIMEKOIN_DISABLED == TRUE)
 }
 //***********************************************************************************
 //***********************************************************************************
-// Open persistent connection to database
-mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD);
-mysql_select_db(MYSQL_DATABASE);
-
 // Check for banned IP address
 if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 {
 	// Sorry, your IP address has been banned :(
 	exit;
 }
+
+// Open persistent connection to database
+$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 //***********************************************************************************
 //***********************************************************************************
 // Answer generation hash poll
 if($_GET["action"] == "gen_hash")
 {
-	echo mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generating_peers_hash' LIMIT 1"),0,0);
+	echo mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generating_peers_hash' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
 	log_ip("GP", 1);
@@ -36,7 +35,7 @@ if($_GET["action"] == "gen_hash")
 // Answer generation hash poll
 if($_GET["action"] == "gen_key_crypt")
 {
-	echo mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_key_crypt' LIMIT 1"),0,0);
+	echo mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_key_crypt' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
 	log_ip("GP", 1);
@@ -49,15 +48,15 @@ if($_GET["action"] == "gen_peer_list")
 {
 	$sql = "SELECT * FROM `generating_peer_list` ORDER BY RAND() LIMIT 150";
 
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 	$queue_number = 1;
 
 	if($sql_num_results > 0)
 	{
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_array($sql_result);
+			$sql_row = mysqli_fetch_array($sql_result);
 
 			echo "-----public_key$queue_number=" , base64_encode($sql_row["public_key"]) , "-----join$queue_number=" , $sql_row["join_peer_list"] , "-----last$queue_number=" , $sql_row["last_generation"] , "-----ip$queue_number=" , $sql_row["IP_Address"] , "-----END$queue_number";
 
@@ -77,7 +76,7 @@ if($_GET["action"] == "elect_gen_peer_valid")
 	$gen_IP = filter_sql($_POST["gen_IP"]);
 	$gen_public_key = base64_decode(filter_sql($_POST["public_key"]));
 
-	$peer_valid = mysql_result(mysql_query("SELECT timestamp FROM `generating_peer_queue` WHERE `public_key` = '$gen_public_key' AND `IP_Address` = '$gen_IP' LIMIT 1"),0,0);
+	$peer_valid = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `generating_peer_queue` WHERE `public_key` = '$gen_public_key' AND `IP_Address` = '$gen_IP' LIMIT 1"),0,0);
 
 	if($peer_valid > 1)
 	{
@@ -94,15 +93,15 @@ if($_GET["action"] == "elect_gen_peer_valid")
 log_ip("GP", scale_trigger(4));
 //***********************************************************************************
 // First time run check
-$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,0);
-$last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'genpeer_last_heartbeat' LIMIT 1"),0,0);
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,0);
+$last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'genpeer_last_heartbeat' LIMIT 1"),0,0);
 
-if($loop_active === FALSE && $last_heartbeat == 1)
+if($loop_active == "" && $last_heartbeat == 1)
 {
 	// Create record to begin loop
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('genpeer_heartbeat_active', '0')");
+	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('genpeer_heartbeat_active', '0')");
 	// Update timestamp for starting
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'genpeer_last_heartbeat' LIMIT 1");
+	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'genpeer_last_heartbeat' LIMIT 1");
 }
 else
 {
@@ -118,7 +117,7 @@ while(1) // Begin Infinite Loop
 {
 set_time_limit(300);	
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,"field_data");
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,"field_data");
 
 // Check script status
 if($loop_active === FALSE)
@@ -129,16 +128,16 @@ if($loop_active === FALSE)
 else if($loop_active == 0)
 {
 	// Set the working status of 1
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
+	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
 }
 else if($loop_active == 2) // Wake from sleep
 {
 	// Set the working status of 1
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
+	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
 }
 else if($loop_active == 3) // Shutdown
 {
-	mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active'");
+	mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active'");
 	exit;
 }
 else
@@ -161,14 +160,14 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 	{
 		// Find all election request between the Previous Transaction Cycle and the Current		
 		$sql = "SELECT * FROM `generating_peer_queue` WHERE `timestamp` < $current_generation_cycle ORDER BY `IP_Address` ASC";
-		$sql_result = mysql_query($sql);
-		$sql_num_results = mysql_num_rows($sql_result);
+		$sql_result = mysqli_query($db_connect, $sql);
+		$sql_num_results = mysqli_num_rows($sql_result);
 		$ipv4_peers_ready = FALSE;
 		
 		// Check to see if any IPv4 Public Keys remain to check
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_array($sql_result);
+			$sql_row = mysqli_fetch_array($sql_result);
 			
 			if(ipv6_test($sql_row["IP_Address"]) == FALSE)// IPv4 Only
 			{	
@@ -184,14 +183,14 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 			
 			if($sql_num_results == 1)// Lone IPv4 Address Public Key Won
 			{
-				$sql_row = mysql_fetch_array($sql_result);
+				$sql_row = mysqli_fetch_array($sql_result);
 
 				// Winner by default
 				if(ipv6_test($sql_row["IP_Address"]) == FALSE)
 				{
 					$public_key = $sql_row["public_key"];
 					$IP_Address = $sql_row["IP_Address"];
-					mysql_query("INSERT INTO `generating_peer_list` (`public_key` ,`join_peer_list` ,`last_generation`, `IP_Address`) VALUES ('$public_key', '$current_generation_cycle', '$current_generation_cycle', '$IP_Address')");
+					mysqli_query($db_connect, "INSERT INTO `generating_peer_list` (`public_key` ,`join_peer_list` ,`last_generation`, `IP_Address`) VALUES ('$public_key', '$current_generation_cycle', '$current_generation_cycle', '$IP_Address')");
 					write_log("IPv4 Generation Peer Elected for Public Key: " . base64_encode($public_key), "GP");
 				}
 			}
@@ -205,7 +204,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
-					$sql_row = mysql_fetch_array($sql_result);
+					$sql_row = mysqli_fetch_array($sql_result);
 					
 					if(ipv6_test($sql_row["IP_Address"]) == FALSE)// IPv4 Only
 					{	
@@ -225,7 +224,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 				if($public_key_score > 0)// Someone won
 				{
-					mysql_query("INSERT INTO `generating_peer_list` (`public_key` ,`join_peer_list` ,`last_generation`, `IP_Address`) VALUES ('$public_key_winner', '$current_generation_cycle', '$current_generation_cycle', '$IP_Address')");
+					mysqli_query($db_connect, "INSERT INTO `generating_peer_list` (`public_key` ,`join_peer_list` ,`last_generation`, `IP_Address`) VALUES ('$public_key_winner', '$current_generation_cycle', '$current_generation_cycle', '$IP_Address')");
 					write_log("IPv4 Generation Peer Elected for Public Key: " . base64_encode($public_key_winner), "GP");
 				}
 
@@ -233,22 +232,22 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 			// Clear out queue for next round of IPv4 Address only
 			$sql = "SELECT * FROM `generating_peer_queue`";
-			$sql_result = mysql_query($sql);
-			$sql_num_results = mysql_num_rows($sql_result);
+			$sql_result = mysqli_query($db_connect, $sql);
+			$sql_num_results = mysqli_num_rows($sql_result);
 
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
-				$sql_row = mysql_fetch_array($sql_result);
+				$sql_row = mysqli_fetch_array($sql_result);
 
 				if(ipv6_test($sql_row["IP_Address"]) == FALSE)// IPv4 Only
 				{
 					// Remove IPv4 Key From Queue
-					mysql_query("DELETE FROM `generating_peer_queue` WHERE `timestamp` = " . $sql_row["timestamp"] . " AND `public_key` = '" . $sql_row["public_key"] . "' AND `IP_Address` = '" . $sql_row["IP_Address"] . "' LIMIT 1");
+					mysqli_query($db_connect, "DELETE FROM `generating_peer_queue` WHERE `timestamp` = " . $sql_row["timestamp"] . " AND `public_key` = '" . $sql_row["public_key"] . "' AND `IP_Address` = '" . $sql_row["IP_Address"] . "' LIMIT 1");
 				}
 			}
 
 			// Optimize Table when Finished
-			mysql_query("OPTIMIZE TABLE `generating_peer_queue`");
+			mysqli_query($db_connect, "OPTIMIZE TABLE `generating_peer_queue`");
 
 			// Wait after generation election for DB sanity reasons
 			sleep(1);
@@ -260,20 +259,20 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 //***********************************************************************************
 	// IPv6 Election
 	// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
-	$gen_peers_total = mysql_result(mysql_query("SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
+	$gen_peers_total = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
 
 	if(election_cycle(0, 2, $gen_peers_total) == TRUE)// IPv6 Peers
 	{
 		// Find all election request between the Previous Transaction Cycle and the Current		
 		$sql = "SELECT * FROM `generating_peer_queue` WHERE `timestamp` < $current_generation_cycle ORDER BY `IP_Address` ASC";
-		$sql_result = mysql_query($sql);
-		$sql_num_results = mysql_num_rows($sql_result);
+		$sql_result = mysqli_query($db_connect, $sql);
+		$sql_num_results = mysqli_num_rows($sql_result);
 		$ipv6_peers_ready = FALSE;
 		
 		// Check to see if any IPv6 Public Keys remain to check
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_array($sql_result);
+			$sql_row = mysqli_fetch_array($sql_result);
 			
 			if(ipv6_test($sql_row["IP_Address"]) == TRUE)// IPv6 Only
 			{	
@@ -289,14 +288,14 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 			if($sql_num_results == 1)
 			{
-				$sql_row = mysql_fetch_array($sql_result);
+				$sql_row = mysqli_fetch_array($sql_result);
 
 				// Winner by default
 				if(ipv6_test($sql_row["IP_Address"]) == TRUE)//Lone IPv6 Address Public Key Won
 				{
 					$public_key = $sql_row["public_key"];
 					$IP_Address = ipv6_compress($sql_row["IP_Address"]);
-					mysql_query("INSERT INTO `generating_peer_list` (`public_key` ,`join_peer_list` ,`last_generation`, `IP_Address`) VALUES ('$public_key', '$current_generation_cycle', '$current_generation_cycle', '$IP_Address')");
+					mysqli_query($db_connect, "INSERT INTO `generating_peer_list` (`public_key` ,`join_peer_list` ,`last_generation`, `IP_Address`) VALUES ('$public_key', '$current_generation_cycle', '$current_generation_cycle', '$IP_Address')");
 					write_log("IPv6 Generation Peer Elected for Public Key: " . base64_encode($public_key), "GP");
 				}
 			}
@@ -310,7 +309,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
-					$sql_row = mysql_fetch_array($sql_result);
+					$sql_row = mysqli_fetch_array($sql_result);
 					
 					if(ipv6_test($sql_row["IP_Address"]) == TRUE)// IPv6 Only
 					{	
@@ -330,7 +329,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 				if($public_key_score > 0)// Someone won
 				{
-					mysql_query("INSERT INTO `generating_peer_list` (`public_key` ,`join_peer_list` ,`last_generation`, `IP_Address`) VALUES ('$public_key_winner', '$current_generation_cycle', '$current_generation_cycle', '$IP_Address')");
+					mysqli_query($db_connect, "INSERT INTO `generating_peer_list` (`public_key` ,`join_peer_list` ,`last_generation`, `IP_Address`) VALUES ('$public_key_winner', '$current_generation_cycle', '$current_generation_cycle', '$IP_Address')");
 					write_log("IPv6 Generation Peer Elected for Public Key: " . base64_encode($public_key_winner), "GP");
 				}
 
@@ -338,22 +337,22 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 			// Clear out queue for next round of IPv6 Address only
 			$sql = "SELECT * FROM `generating_peer_queue`";
-			$sql_result = mysql_query($sql);
-			$sql_num_results = mysql_num_rows($sql_result);
+			$sql_result = mysqli_query($db_connect, $sql);
+			$sql_num_results = mysqli_num_rows($sql_result);
 
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
-				$sql_row = mysql_fetch_array($sql_result);
+				$sql_row = mysqli_fetch_array($sql_result);
 
 				if(ipv6_test($sql_row["IP_Address"]) == TRUE)// IPv6 Only
 				{
 					// Remove IPv6 Key From Queue
-					mysql_query("DELETE FROM `generating_peer_queue` WHERE `timestamp` = " . $sql_row["timestamp"] . " AND `public_key` = '" . $sql_row["public_key"] . "' AND `IP_Address` = '" . $sql_row["IP_Address"] . "' LIMIT 1");
+					mysqli_query($db_connect, "DELETE FROM `generating_peer_queue` WHERE `timestamp` = " . $sql_row["timestamp"] . " AND `public_key` = '" . $sql_row["public_key"] . "' AND `IP_Address` = '" . $sql_row["IP_Address"] . "' LIMIT 1");
 				}
 			}
 
 			// Optimize Table when Finished
-			mysql_query("OPTIMIZE TABLE `generating_peer_queue`");
+			mysqli_query($db_connect, "OPTIMIZE TABLE `generating_peer_queue`");
 
 			// Wait after generation election for DB sanity reasons
 			sleep(1);
@@ -365,17 +364,17 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 // Store a hash of the current list of generating peers
 	$generating_hash = generation_peer_hash();
 
-	$generation_peer_hash = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generating_peers_hash' LIMIT 1"),0,0);
+	$generation_peer_hash = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generating_peers_hash' LIMIT 1"),0,0);
 
 	if($generating_hash !== $generation_peer_hash)
 	{
 		// Store in database for quick reference from database
-		mysql_query("UPDATE `options` SET `field_data` = '$generating_hash' WHERE `options`.`field_name` = 'generating_peers_hash' LIMIT 1");
+		mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$generating_hash' WHERE `options`.`field_name` = 'generating_peers_hash' LIMIT 1");
 	}
 //***********************************************************************************
 //***********************************************************************************
 // Generation IP Auto Update Detection
-	$auto_update_generation_IP = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,0));
+	$auto_update_generation_IP = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,0));
 	
 	if(rand(1,100) == 100 && $auto_update_generation_IP == 1) // Randomize to avoid spamming
 	{
@@ -386,8 +385,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 	// How does my generation peer list compare to others?
 	// Ask all of my active peers
 	$sql = perm_peer_mode();
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 
 	$gen_list_hash_match = 0;
 	$gen_list_hash_different = 0;
@@ -398,7 +397,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_array($sql_result);
+			$sql_row = mysqli_fetch_array($sql_result);
 
 			$ip_address = $sql_row["IP_Address"];
 			$domain = $sql_row["domain"];
@@ -434,21 +433,21 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 	{
 		//50% over more of the active peers have a different gen list, start comparing your
 		//gen list with one that is different
-		$generation_peer_list_no_sync = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'generation_peer_list_no_sync' LIMIT 1"),0,"field_data"));
+		$generation_peer_list_no_sync = intval(mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'generation_peer_list_no_sync' LIMIT 1"),0,"field_data"));
 		if($generation_peer_list_no_sync > 20)
 		{
 			// Our generation peer list is out of sync for a long time, clear list to start over
-			mysql_query("TRUNCATE TABLE `generating_peer_list`");
+			mysqli_query($db_connect, "TRUNCATE TABLE `generating_peer_list`");
 
 			// Reset out of sync counter
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'generation_peer_list_no_sync' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'generation_peer_list_no_sync' LIMIT 1");
 
 			write_log("Generation Peer List has Become Stale, Attemping to Purge and Rebuild.", "GP");
 		}
 		else
 		{
 			$generation_peer_list_no_sync++;
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '$generation_peer_list_no_sync' WHERE `main_loop_status`.`field_name` = 'generation_peer_list_no_sync' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$generation_peer_list_no_sync' WHERE `main_loop_status`.`field_name` = 'generation_peer_list_no_sync' LIMIT 1");
 		}
 
 		$i = rand(1, $gen_list_hash_different); // Select Random Peer from Disagree List
@@ -494,7 +493,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 			}
 
 			//Check if this public key is already in our peer list
-			$public_key_match = mysql_result(mysql_query("SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$gen_peer_public_key' AND `join_peer_list` = '$gen_peer_join_peer_list' AND `IP_Address` = '$gen_peer_IP' LIMIT 1"),0,0);
+			$public_key_match = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$gen_peer_public_key' AND `join_peer_list` = '$gen_peer_join_peer_list' AND `IP_Address` = '$gen_peer_IP' LIMIT 1"),0,0);
 
 			if(empty($public_key_match) == TRUE)
 			{
@@ -503,7 +502,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 				{
 					$sql = "INSERT INTO `generating_peer_list` (`public_key`,`join_peer_list`,`last_generation`,`IP_Address`)
 					VALUES ('$gen_peer_public_key', '$gen_peer_join_peer_list', '$gen_peer_last_generation', '$gen_peer_IP')";
-					mysql_query($sql);
+					mysqli_query($db_connect, $sql);
 				}
 			}
 
@@ -516,7 +515,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		$generating_hash = generation_peer_hash();
 
 		// Store in database for quick reference from database
-		mysql_query("UPDATE `options` SET `field_data` = '$generating_hash' WHERE `options`.`field_name` = 'generating_peers_hash' LIMIT 1");
+		mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$generating_hash' WHERE `options`.`field_name` = 'generating_peers_hash' LIMIT 1");
 
 	} // End Compare Tallies
 	else
@@ -525,7 +524,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		if(rand(1,3) == 2) // Randomize to avoid spamming the DB
 		{
 			// Reset out of sync counter
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'generation_peer_list_no_sync' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'generation_peer_list_no_sync' LIMIT 1");
 		}
 	}
 //***********************************************************************************
@@ -537,17 +536,17 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		election_cycle(5) == TRUE ||
 		election_cycle(6) == TRUE) // Don't queue election request until 1-6 cycles before election (30 minutes)
 	{
-		$network_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
+		$network_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
 
 		$sql = "SELECT * FROM `transaction_queue` WHERE `attribute` = 'R'";
-		$sql_result = mysql_query($sql);
-		$sql_num_results = mysql_num_rows($sql_result);
+		$sql_result = mysqli_query($db_connect, $sql);
+		$sql_num_results = mysqli_num_rows($sql_result);
 
 		if($sql_num_results > 0)
 		{
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
-				$sql_row = mysql_fetch_array($sql_result);
+				$sql_row = mysqli_fetch_array($sql_result);
 
 				$public_key = $sql_row["public_key"];
 				$timestamp = $sql_row["timestamp"];
@@ -556,31 +555,31 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 				$crypt3 = $sql_row["crypt_data3"];
 
 				//Valid Public Key
-				$public_key_found_peer = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,"join_peer_list");
+				$public_key_found_peer = mysql_result(mysqli_query($db_connect, "SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,"join_peer_list");
 
 				if(empty($public_key_found_peer) == FALSE)
 				{
 					// Is this an existing IPv6 Address
-					$public_key_IP = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,"IP_Address");
+					$public_key_IP = mysql_result(mysqli_query($db_connect, "SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,"IP_Address");
 
 					if(ipv6_test($public_key_IP) == TRUE)
 					{
 						// This is a IPv6 Gen Peer, ignore it, try for a second Gen Peer that would be IPv4
-						$public_key_found_peer = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),1,"join_peer_list");
+						$public_key_found_peer = mysql_result(mysqli_query($db_connect, "SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),1,"join_peer_list");
 					}
 				}
 
-				$public_key_found_timestamp = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 2"),0,"timestamp");
+				$public_key_found_timestamp = mysql_result(mysqli_query($db_connect, "SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 2"),0,"timestamp");
 
 				if(empty($public_key_found_timestamp) == FALSE)
 				{
 					// Is this an existing IPv6 Address
-					$public_key_IP = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 2"),0,"IP_Address");
+					$public_key_IP = mysql_result(mysqli_query($db_connect, "SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 2"),0,"IP_Address");
 
 					if(ipv6_test($public_key_IP) == TRUE)
 					{
 						// This is a IPv6 Gen Peer, ignore it, try for a second Gen Peer that would be IPv4
-						$public_key_found_timestamp = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 2"),1,"timestamp");
+						$public_key_found_timestamp = mysql_result(mysqli_query($db_connect, "SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 2"),1,"timestamp");
 					}
 				}
 
@@ -619,8 +618,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						if($ipv6_peer == FALSE)//IPv4 Peer Test
 						{
 							// Check if IP is already in the queue or generation peer list
-							$IP_exist1 = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,0);
-							$IP_exist2 = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,0);
+							$IP_exist1 = mysql_result(mysqli_query($db_connect, "SELECT * FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,0);
+							$IP_exist2 = mysql_result(mysqli_query($db_connect, "SELECT * FROM `generating_peer_queue` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,0);
 
 							// Calculate public key half-crypt-hash
 							$arr1 = str_split($public_key, 181);
@@ -629,7 +628,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							{
 								// Running IPv6 Only Mode, use gateway server to act as proxy poll check
 								$gen_sql = "SELECT IP_Address, domain, subfolder, port_number FROM `active_peer_list` WHERE `failed_sent_heartbeat` = 65534 ORDER BY RAND() LIMIT 1";
-								$gen_sql_row = mysql_fetch_array(mysql_query($gen_sql));
+								$gen_sql_row = mysqli_fetch_array(mysqli_query($db_connect, $gen_sql));
 
 								$gateway_IP = $gen_sql_row["IP_Address"];
 								$gateway_domain = $gen_sql_row["domain"];
@@ -726,7 +725,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								if($delete_request == "DELETE_IP")
 								{
 									// Delete the IPv4 and any public key linked to it as it belongs to a previous unknown owner
-									mysql_query("DELETE FROM `generating_peer_list` WHERE `generating_peer_list`.`IP_Address` = '$peer_ip' LIMIT 1");
+									mysqli_query($db_connect, "DELETE FROM `generating_peer_list` WHERE `generating_peer_list`.`IP_Address` = '$peer_ip' LIMIT 1");
 									write_log("IPv4 DELETE IP Request ($peer_ip) was allowed for Public Key: " . base64_encode($public_key), "GP");
 								}
 							}
@@ -741,12 +740,12 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								$simple_poll_fail == FALSE &&
 								is_private_ip($peer_ip) == FALSE) // Filter private IPs
 							{
-								mysql_query("INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
+								mysqli_query($db_connect, "INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
 								write_log("IPv4 Generation Peer Queue List was updated with Public Key: " . base64_encode($public_key), "GP");
 							}
 							else if(my_public_key() == $public_key)
 							{
-								mysql_query("INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
+								mysqli_query($db_connect, "INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
 								write_log("IPv4 Generation Peer Queue List was updated with My Public Key", "GP");
 							}
 							else
@@ -818,7 +817,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						if($ipv6_peer == FALSE)//IPv4 Peer Test
 						{
 							// Check if IP is already in the generation peer list
-							$IP_exist1 = mysql_result(mysql_query("SELECT join_peer_list FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,1);
+							$IP_exist1 = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,1);
 
 							// Calculate public key half-crypt-hash
 							$arr1 = str_split($public_key, 181);
@@ -827,7 +826,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							{
 								// Running IPv6 Only Mode, use gateway server to act as proxy poll check
 								$gen_sql = "SELECT IP_Address, domain, subfolder, port_number FROM `active_peer_list` WHERE `failed_sent_heartbeat` = 65534 ORDER BY RAND() LIMIT 1";
-								$gen_sql_row = mysql_fetch_array(mysql_query($gen_sql));
+								$gen_sql_row = mysqli_fetch_array(mysqli_query($db_connect, $gen_sql));
 
 								$gateway_IP = $gen_sql_row["IP_Address"];
 								$gateway_domain = $gen_sql_row["domain"];
@@ -924,13 +923,13 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								if($delete_request == "DELETE_IP")
 								{
 									// Delete my IP and any public key linked to it as it belongs to a previous unknown owner
-									mysql_query("DELETE FROM `generating_peer_list` WHERE `generating_peer_list`.`IP_Address` = '$peer_ip' LIMIT 1");
+									mysqli_query($db_connect, "DELETE FROM `generating_peer_list` WHERE `generating_peer_list`.`IP_Address` = '$peer_ip' LIMIT 1");
 									write_log("IPv4 DELETE IP Request ($peer_ip) was allowed for Public Key: " . base64_encode($public_key), "GP");
 								}
 								else
 								{
 									// My server has moved to another IP, update the list
-									mysql_query("UPDATE `generating_peer_list` SET `IP_Address` = '$peer_ip' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
+									mysqli_query($db_connect, "UPDATE `generating_peer_list` SET `IP_Address` = '$peer_ip' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
 									write_log("IPv4 New Generation Peer IP Address ($peer_ip) was updated for Public Key: " . base64_encode($public_key), "GP");
 								}
 							}
@@ -940,7 +939,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								{
 									if(empty($IP_exist1) == TRUE)// Check to make sure this isn't already in the database
 									{
-										mysql_query("UPDATE `generating_peer_list` SET `IP_Address` = '$peer_ip' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
+										mysqli_query($db_connect, "UPDATE `generating_peer_list` SET `IP_Address` = '$peer_ip' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
 										write_log("IPv4 Generation Peer List was updated with My New IP Address ($peer_ip)", "GP");
 									}
 								}
@@ -985,7 +984,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 	// Scan for new election request of IPv6 generating peers
 
 	// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
-	$gen_peers_total = mysql_result(mysql_query("SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
+	$gen_peers_total = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
 
 	if(election_cycle(1, 2, $gen_peers_total) == TRUE ||
 		election_cycle(2, 2, $gen_peers_total) == TRUE ||
@@ -994,17 +993,17 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		election_cycle(5, 2, $gen_peers_total) == TRUE ||
 		election_cycle(6, 2, $gen_peers_total) == TRUE) // Don't queue election request until 1-6 cycles before election (30 minutes)
 	{
-		$network_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
+		$network_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
 
 		$sql = "SELECT * FROM `transaction_queue` WHERE `attribute` = 'R'";
-		$sql_result = mysql_query($sql);
-		$sql_num_results = mysql_num_rows($sql_result);
+		$sql_result = mysqli_query($db_connect, $sql);
+		$sql_num_results = mysqli_num_rows($sql_result);
 
 		if($sql_num_results > 0)
 		{
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
-				$sql_row = mysql_fetch_array($sql_result);
+				$sql_row = mysqli_fetch_array($sql_result);
 
 				$public_key = $sql_row["public_key"];
 				$timestamp = $sql_row["timestamp"];
@@ -1013,31 +1012,31 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 				$crypt3 = $sql_row["crypt_data3"];
 
 				//Valid Public Key
-				$public_key_found_peer = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,"join_peer_list");
+				$public_key_found_peer = mysql_result(mysqli_query($db_connect, "SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,"join_peer_list");
 
 				if(empty($public_key_found_peer) == FALSE)
 				{
 					// Is this an existing IPv4 Address
-					$public_key_IP = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,"IP_Address");
+					$public_key_IP = mysql_result(mysqli_query($db_connect, "SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,"IP_Address");
 
 					if(ipv6_test($public_key_IP) == FALSE)
 					{
 						// This is a IPv4 Gen Peer, ignore it, try for a second Gen Peer that would be IPv6
-						$public_key_found_peer = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),1,"join_peer_list");
+						$public_key_found_peer = mysql_result(mysqli_query($db_connect, "SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),1,"join_peer_list");
 					}
 				}
 
-				$public_key_found_timestamp = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 2"),0,"timestamp");
+				$public_key_found_timestamp = mysql_result(mysqli_query($db_connect, "SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 2"),0,"timestamp");
 
 				if(empty($public_key_found_timestamp) == FALSE)
 				{
 					// Is this an existing IPv4 Address
-					$public_key_IP = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 2"),0,"IP_Address");
+					$public_key_IP = mysql_result(mysqli_query($db_connect, "SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 2"),0,"IP_Address");
 
 					if(ipv6_test($public_key_IP) == FALSE)
 					{
 						// This is a IPv4 Gen Peer, ignore it, try for a second Gen Peer that would be IPv6
-						$public_key_found_timestamp = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 2"),1,"timestamp");
+						$public_key_found_timestamp = mysql_result(mysqli_query($db_connect, "SELECT * FROM `generating_peer_queue` WHERE `public_key` = '$public_key' LIMIT 2"),1,"timestamp");
 					}
 				}
 
@@ -1076,8 +1075,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						if($ipv6_peer == TRUE)//IPv6 Peer Test
 						{
 							// Check if IP is already in the queue or generation peer list
-							$IP_exist1 = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,0);
-							$IP_exist2 = mysql_result(mysql_query("SELECT * FROM `generating_peer_queue` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,0);
+							$IP_exist1 = mysql_result(mysqli_query($db_connect, "SELECT * FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,0);
+							$IP_exist2 = mysql_result(mysqli_query($db_connect, "SELECT * FROM `generating_peer_queue` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,0);
 
 							// Calculate public key half-crypt-hash
 							$arr1 = str_split($public_key, 181);
@@ -1086,7 +1085,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							{
 								// Running IPv4 Only Mode, use gateway server to act as proxy poll check
 								$gen_sql = "SELECT IP_Address, domain, subfolder, port_number FROM `active_peer_list` WHERE `failed_sent_heartbeat` = 65534 ORDER BY RAND() LIMIT 1";
-								$gen_sql_row = mysql_fetch_array(mysql_query($gen_sql));
+								$gen_sql_row = mysqli_fetch_array(mysqli_query($db_connect, $gen_sql));
 
 								$gateway_IP = $gen_sql_row["IP_Address"];
 								$gateway_domain = $gen_sql_row["domain"];
@@ -1183,7 +1182,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								if($delete_request == "DELETE_IP")
 								{
 									// Delete the IPv6 and any public key linked to it as it belongs to a previous unknown owner
-									mysql_query("DELETE FROM `generating_peer_list` WHERE `generating_peer_list`.`IP_Address` = '$peer_ip' LIMIT 1");
+									mysqli_query($db_connect, "DELETE FROM `generating_peer_list` WHERE `generating_peer_list`.`IP_Address` = '$peer_ip' LIMIT 1");
 									write_log("IPv6 DELETE IP Request ($peer_ip) was allowed for Public Key: " . base64_encode($public_key), "GP");
 								}
 							}
@@ -1198,12 +1197,12 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								$simple_poll_fail == FALSE &&
 								is_private_ip($peer_ip) == FALSE) // Filter private IPs
 							{
-								mysql_query("INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
+								mysqli_query($db_connect, "INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
 								write_log("IPv6 Generation Peer Queue List was updated with Public Key: " . base64_encode($public_key), "GP");
 							}
 							else if(my_public_key() == $public_key)
 							{
-								mysql_query("INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
+								mysqli_query($db_connect, "INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
 								write_log("IPv6 Generation Peer Queue List was updated with My Public Key", "GP");
 							}
 							else
@@ -1275,7 +1274,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						if($ipv6_peer == TRUE)//IPv6 Peer Test
 						{
 							// Check if IP is already in the generation peer list
-							$IP_exist1 = mysql_result(mysql_query("SELECT join_peer_list FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,1);
+							$IP_exist1 = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,1);
 
 							// Calculate public key half-crypt-hash
 							$arr1 = str_split($public_key, 181);
@@ -1284,7 +1283,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							{
 								// Running IPv4 Only Mode, use gateway server to act as proxy poll check
 								$gen_sql = "SELECT IP_Address, domain, subfolder, port_number FROM `active_peer_list` WHERE `failed_sent_heartbeat` = 65534 ORDER BY RAND() LIMIT 1";
-								$gen_sql_row = mysql_fetch_array(mysql_query($gen_sql));
+								$gen_sql_row = mysqli_fetch_array(mysqli_query($db_connect, $gen_sql));
 
 								$gateway_IP = $gen_sql_row["IP_Address"];
 								$gateway_domain = $gen_sql_row["domain"];
@@ -1381,13 +1380,13 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								if($delete_request == "DELETE_IP")
 								{
 									// Delete my IP and any public key linked to it as it belongs to a previous unknown owner
-									mysql_query("DELETE FROM `generating_peer_list` WHERE `generating_peer_list`.`IP_Address` = '$peer_ip' LIMIT 1");
+									mysqli_query($db_connect, "DELETE FROM `generating_peer_list` WHERE `generating_peer_list`.`IP_Address` = '$peer_ip' LIMIT 1");
 									write_log("IPv6 DELETE IP Request ($peer_ip) was allowed for Public Key: " . base64_encode($public_key), "GP");
 								}
 								else
 								{
 									// My server has moved to another IP, update the list
-									mysql_query("UPDATE `generating_peer_list` SET `IP_Address` = '$peer_ip' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
+									mysqli_query($db_connect, "UPDATE `generating_peer_list` SET `IP_Address` = '$peer_ip' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
 									write_log("IPv6 New Generation Peer IP Address ($peer_ip) was updated for Public Key: " . base64_encode($public_key), "GP");
 								}
 							}
@@ -1397,7 +1396,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								{
 									if(empty($IP_exist1) == TRUE)// Check to make sure this isn't already in the database
 									{
-										mysql_query("UPDATE `generating_peer_list` SET `IP_Address` = '$peer_ip' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
+										mysqli_query($db_connect, "UPDATE `generating_peer_list` SET `IP_Address` = '$peer_ip' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
 										write_log("IPv6 Generation Peer List was updated with My New IP Address ($peer_ip)", "GP");
 									}
 								}
@@ -1443,21 +1442,21 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 //***********************************************************************************
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,0);
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,0);
 
 // Check script status
 if($loop_active == 3)
 {
 	// Time to exit
-	mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active'");
+	mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active'");
 	exit;
 }
 
 // Script finished, set standby status to 2
-mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
+mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
 
 // Record when this script finished
-mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'genpeer_last_heartbeat' LIMIT 1");
+mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'genpeer_last_heartbeat' LIMIT 1");
 
 //***********************************************************************************
 sleep(10);

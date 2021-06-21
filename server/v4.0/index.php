@@ -8,11 +8,6 @@ session_start();
 
 if($_SESSION["valid_login"] == FALSE && $_GET["action"] != "login")
 {
-	//$db_connect = mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD);
-	//$db_select = mysql_select_db(MYSQL_DATABASE);
-	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-	//$db_select = mysqli_select_db(MYSQL_DATABASE);
-
 	// Check for banned IP address
 	if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 	{
@@ -46,13 +41,7 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 			login_screen('Could Not Connect To Database');
 			exit;
 		}
-/*		
-		if(mysqli_select_db(MYSQL_DATABASE) == FALSE)
-		{
-			login_screen('Could Not Select Database');
-			exit;
-		}
-*/
+
 		// Check for banned IP address
 		if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 		{
@@ -60,8 +49,6 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 			exit ("Your IP Has Been Banned");
 		}
 
-		//$username_hash = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'username' LIMIT 1"),0,0);
-		//$password_hash = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,0);
 		$username_hash = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'username' LIMIT 1"),0,0);
 		$password_hash = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,0);
 
@@ -71,7 +58,6 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 			if(hash('sha256', $http_password) == $password_hash)
 			{
 				// Check for new system startup
-				//$fresh_system = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` LIMIT 1"),0,0);
 				$fresh_system = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` LIMIT 1"),0,0);
 
 				if($fresh_system === FALSE)
@@ -104,19 +90,11 @@ if($_SESSION["valid_login"] == TRUE)
 //****************************************************************************
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	
-	//if(mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD) == FALSE)
 	if($db_connect == FALSE)
 	{
 		home_screen('ERROR', '<font color="red"><strong>Could Not Connect To Database</strong></font>', '', '');
 		exit;
 	}
-/*	
-	if(mysqli_select_db(MYSQL_DATABASE) == FALSE)
-	{
-		home_screen('ERROR','<font color="red"><strong>Could Not Select Database</strong></font>', '', '');
-		exit;
-	}
-*/	
 //****************************************************************************
 // Global Variables
 	$user_timezone = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,0);
@@ -510,7 +488,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_array($sql_result);
+			$sql_row = mysqli_fetch_array($sql_result);
 
 			$plugin_file = find_string("---file=", "---enable", $sql_row["field_data"]);		
 			$plugin_enable = intval(find_string("---enable=", "---show", $sql_row["field_data"]));
@@ -663,7 +641,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
-				$sql_row = mysql_fetch_array($sql_result);
+				$sql_row = mysqli_fetch_array($sql_result);
 				
 				$ip_address = $sql_row["IP_Address"];
 				$domain = $sql_row["domain"];
@@ -766,7 +744,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
-				$sql_row = mysql_fetch_array($sql_result);
+				$sql_row = mysqli_fetch_array($sql_result);
 				
 				$ip_address = $sql_row["IP_Address"];
 				$domain = $sql_row["domain"];
@@ -825,7 +803,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
-					$sql_row = mysql_fetch_array($sql_result);
+					$sql_row = mysqli_fetch_array($sql_result);
 
 					$peer_ip = find_string("---ip=", "---domain", $sql_row["field_data"]);
 					$peer_domain = find_string("---domain=", "---subfolder", $sql_row["field_data"]);
@@ -850,7 +828,7 @@ if($_SESSION["valid_login"] == TRUE)
 				// Manually edit this peer
 				$sql = "SELECT * FROM `active_peer_list` WHERE `IP_Address` = '" . $_POST["ip"] ."' AND `domain` = '" . $_POST["domain"] ."' LIMIT 1";
 				$sql_result = mysqli_query($db_connect, $sql);
-				$sql_row = mysql_fetch_array($sql_result);
+				$sql_row = mysqli_fetch_array($sql_result);
 
 				if($sql_row["join_peer_list"] == 0)
 				{
@@ -914,7 +892,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
-				$sql_row = mysql_fetch_array($sql_result);
+				$sql_row = mysqli_fetch_array($sql_result);
 
 				if($_GET["show"] != "reserve")
 				{
@@ -1784,7 +1762,7 @@ if($_SESSION["valid_login"] == TRUE)
 		// Count separate IPv4 & IPv6 Peers
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_array($sql_result);
+			$sql_row = mysqli_fetch_array($sql_result);
 
 			if(ipv6_test($sql_row["IP_Address"]) == TRUE)
 			{
@@ -1805,7 +1783,7 @@ if($_SESSION["valid_login"] == TRUE)
 		// Count separate IPv4 & IPv6 Peers
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_array($sql_result);
+			$sql_row = mysqli_fetch_array($sql_result);
 
 			if(ipv6_test($sql_row["IP_Address"]) == TRUE)
 			{
@@ -2060,7 +2038,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
-				$sql_row = mysql_fetch_array($sql_result);
+				$sql_row = mysqli_fetch_array($sql_result);
 
 				if($my_public_key == $sql_row["public_key"])
 				{
@@ -2106,7 +2084,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
-				$sql_row = mysql_fetch_array($sql_result);
+				$sql_row = mysqli_fetch_array($sql_result);
 
 				if($my_public_key == $sql_row["public_key"])
 				{
@@ -2564,7 +2542,7 @@ if($_SESSION["valid_login"] == TRUE)
 					// Build row with icons
 					for ($i = 0; $i < $sql_num_results; $i++)
 					{
-						$sql_row = mysql_fetch_array($sql_result);
+						$sql_row = mysqli_fetch_array($sql_result);
 
 						if($koin_kounter >= $row_count_limit)
 						{
@@ -2637,7 +2615,7 @@ if($_SESSION["valid_login"] == TRUE)
 			// Examine Transaction Details
 			$sql = "SELECT * FROM `transaction_history` WHERE `timestamp` = '" . $_POST["timestamp"] . "' AND `hash` = '" . $_POST["hash"] . "'";
 			$sql_result = mysqli_query($db_connect, $sql);			
-			$sql_row = mysql_fetch_array($sql_result);
+			$sql_row = mysqli_fetch_array($sql_result);
 
 			$crypt1_data = tk_decrypt($sql_row["public_key_from"], base64_decode($sql_row["crypt_data1"]));
 			$crypt2_data = tk_decrypt($sql_row["public_key_from"], base64_decode($sql_row["crypt_data2"]));
@@ -2823,7 +2801,7 @@ if($_SESSION["valid_login"] == TRUE)
 						break;
 					}					
 					
-					$sql_row = mysql_fetch_array($sql_result);
+					$sql_row = mysqli_fetch_array($sql_result);
 					
 					if($sql_row["attribute"] == $filter_results || $filter_results == "ALL")
 					{
@@ -2886,7 +2864,7 @@ if($_SESSION["valid_login"] == TRUE)
 						break;
 					}
 
-					$sql_row = mysql_fetch_array($sql_result);
+					$sql_row = mysqli_fetch_array($sql_result);
 
 					if($sql_row["attribute"] == "T")
 					{
@@ -2968,7 +2946,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_array($sql_result);
+			$sql_row = mysqli_fetch_array($sql_result);
 			$crypt1 = $sql_row["crypt_data1"];
 			$crypt2 = $sql_row["crypt_data2"];
 			$crypt3 = $sql_row["crypt_data3"];
@@ -3127,7 +3105,7 @@ if($_SESSION["valid_login"] == TRUE)
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Check Database Results</th></tr><tr><td>';
 
 			$db_check = mysqli_query($db_connect, "CHECK TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
-			$db_check_info = mysql_fetch_array($db_check);
+			$db_check_info = mysqli_fetch_array($db_check);
 			$db_check_count = 0;
 			
 			while(empty($db_check_info["$db_check_count"]) == FALSE)
@@ -3138,7 +3116,7 @@ if($_SESSION["valid_login"] == TRUE)
 				if(empty($db_check_info["$db_check_count"]) == TRUE)
 				{
 					// Move to next array
-					$db_check_info = mysql_fetch_array($db_check);
+					$db_check_info = mysqli_fetch_array($db_check);
 					$db_check_count = 0;
 					$body_string .= "</td></tr><tr><td>";
 				}
@@ -3158,7 +3136,7 @@ if($_SESSION["valid_login"] == TRUE)
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Repair Database Results</th></tr><tr><td>';
 
 			$db_check = mysqli_query($db_connect, "REPAIR TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
-			$db_check_info = mysql_fetch_array($db_check);
+			$db_check_info = mysqli_fetch_array($db_check);
 			$db_check_count = 0;
 			
 			while(empty($db_check_info["$db_check_count"]) == FALSE)
@@ -3169,7 +3147,7 @@ if($_SESSION["valid_login"] == TRUE)
 				if(empty($db_check_info["$db_check_count"]) == TRUE)
 				{
 					// Move to next array
-					$db_check_info = mysql_fetch_array($db_check);
+					$db_check_info = mysqli_fetch_array($db_check);
 					$db_check_count = 0;
 					$body_string .= "</td></tr><tr><td>";
 				}
@@ -3189,7 +3167,7 @@ if($_SESSION["valid_login"] == TRUE)
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Optimize Database Results</th></tr><tr><td>';
 
 			$db_check = mysqli_query($db_connect, "OPTIMIZE TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
-			$db_check_info = mysql_fetch_array($db_check);
+			$db_check_info = mysqli_fetch_array($db_check);
 			$db_check_count = 0;
 			
 			while(empty($db_check_info["$db_check_count"]) == FALSE)
@@ -3200,7 +3178,7 @@ if($_SESSION["valid_login"] == TRUE)
 				if(empty($db_check_info["$db_check_count"]) == TRUE)
 				{
 					// Move to next array
-					$db_check_info = mysql_fetch_array($db_check);
+					$db_check_info = mysqli_fetch_array($db_check);
 					$db_check_count = 0;
 					$body_string .= "</td></tr><tr><td>";
 				}
@@ -3358,7 +3336,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
-				$sql_row = mysql_fetch_array($sql_result);
+				$sql_row = mysqli_fetch_array($sql_result);
 
 				$body_string .= '<tr>
 				<td class="style2"><p style="width:162px;">[ ' . $sql_row["timestamp"] . ' ]<br>' . unix_timestamp_to_human($sql_row["timestamp"], $user_timezone) . '</p></td>

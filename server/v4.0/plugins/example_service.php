@@ -28,16 +28,15 @@ include '../function.php';// Path to files already used by Timekoin
 include '../configuration.php';// Path to files already used by Timekoin
 
 // Make DB Connection
-mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD);
-mysql_select_db(MYSQL_DATABASE);
+$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
 // Avoid stacking this many times
-$already_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'example_service.php' LIMIT 1"),0,0);
+$already_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'example_service.php' LIMIT 1"),0,0);
 
 if($already_active === FALSE)
 {
 	// Creating Status State - Timekoin Looks for the filename
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('example_service.php', '0')"); // Offline
+	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('example_service.php', '0')"); // Offline
 }
 else
 {
@@ -48,22 +47,22 @@ else
 while(1) // Begin Infinite Loop :)
 {
 	// Are we to remain active?
-	$timekoin_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
+	$timekoin_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
 
 	if($timekoin_active == FALSE)
 	{
 		// Begin Shutdown
-		mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'example_service.php' LIMIT 1");
+		mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'example_service.php' LIMIT 1");
 		sleep(5); // Sleep X amount of seconds
 
 		// User has shutdown system
-		mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'example_service.php' LIMIT 1");
+		mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'example_service.php' LIMIT 1");
 		exit;
 	}
 	else
 	{
 		// Working State - Do Something
-		mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'example_service.php' LIMIT 1");
+		mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'example_service.php' LIMIT 1");
 	}
 
 	// Write an entry to the log every X amount of seconds
@@ -71,7 +70,7 @@ while(1) // Begin Infinite Loop :)
 	sleep(5); // Sleep X amount of seconds
 
 	// Idle State
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'example_service.php' LIMIT 1");
+	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'example_service.php' LIMIT 1");
 	sleep(10); // Sleep X amount of seconds
 }
 

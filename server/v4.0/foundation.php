@@ -10,16 +10,15 @@ if(FOUNDATION_DISABLED == TRUE || TIMEKOIN_DISABLED == TRUE)
 }
 //***********************************************************************************
 //***********************************************************************************
-// Open connection to database
-mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD);
-mysql_select_db(MYSQL_DATABASE);
-
 // Check for banned IP address
 if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 {
 	// Sorry, your IP address has been banned :(
 	exit;
 }
+
+// Open persistent connection to database
+$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 //***********************************************************************************
 //***********************************************************************************
 // Answer block hash poll
@@ -27,7 +26,7 @@ if($_GET["action"] == "block_hash" && $_GET["block_number"] >= 0)
 {
 	$block_number = intval($_GET["block_number"]);
 
-	echo mysql_result(mysql_query("SELECT hash FROM `transaction_foundation` WHERE `block` = $block_number LIMIT 1"),0,0);
+	echo mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_foundation` WHERE `block` = $block_number LIMIT 1"),0,0);
 
 	// Log inbound IP activity
 	log_ip("FO", 1);
@@ -39,15 +38,15 @@ if($_GET["action"] == "block_hash" && $_GET["block_number"] >= 0)
 log_ip("FO", scale_trigger(4));
 //***********************************************************************************
 // First time run check
-$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,0);
-$last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_last_heartbeat' LIMIT 1"),0,0);
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,0);
+$last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_last_heartbeat' LIMIT 1"),0,0);
 
-if($loop_active === FALSE && $last_heartbeat == 1)
+if($loop_active == "" && $last_heartbeat == 1)
 {
 	// Create record to begin loop
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('foundation_heartbeat_active', '0')");
+	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('foundation_heartbeat_active', '0')");
 	// Update timestamp for starting
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'foundation_last_heartbeat' LIMIT 1");
+	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'foundation_last_heartbeat' LIMIT 1");
 }
 else
 {
@@ -63,10 +62,10 @@ while(1) // Begin Infinite Loop
 {
 set_time_limit(300);	
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,0);
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,0);
 
 // Check script status
-if($loop_active === FALSE)
+if($loop_active == "")
 {
 	// Time to exit
 	exit;
@@ -74,16 +73,16 @@ if($loop_active === FALSE)
 else if($loop_active == 0)
 {
 	// Set the working status of 1
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
+	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
 }
 else if($loop_active == 2) // Wake from sleep
 {
 	// Set the working status of 1
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
+	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
 }
 else if($loop_active == 3) // Shutdown
 {
-	mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active'");
+	mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active'");
 	exit;
 }
 else
@@ -99,8 +98,8 @@ $current_generation_cycle = transaction_cycle(0);
 $current_generation_block = transaction_cycle(0, TRUE);
 $next_generation_cycle = transaction_cycle(1);
 
-$record_count = mysql_result(mysql_query("SELECT COUNT(*) FROM `transaction_history`"),0);
-$treasurer_status = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,0));
+$record_count = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_history`"),0);
+$treasurer_status = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,0));
 
 if($record_count < 500)
 {
@@ -109,7 +108,7 @@ if($record_count < 500)
 }
 else
 {
-	$foundation_task = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_block_check' LIMIT 1"),0,0);
+	$foundation_task = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_block_check' LIMIT 1"),0,0);
 }
 
 // Can we work on the transactions in the database?
@@ -122,8 +121,8 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 	// Does my current history hash match all my peers?
 	// Ask all of my active peers
 	$sql = perm_peer_mode();
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 
 	$foundation_hash_match = 0;
 	$foundation_hash_different = 0;
@@ -143,13 +142,13 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 			$rand_block = rand(0,$previous_foundation_block);
 		}
 		
-		$current_foundation_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_foundation` WHERE `block` = $rand_block LIMIT 1"),0,0);
+		$current_foundation_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_foundation` WHERE `block` = $rand_block LIMIT 1"),0,0);
 
 		// Make sure we even have a hash to compare against
 		if(empty($current_foundation_hash) == FALSE)
 		{
 			// How frequent the transaction foundation checks are set by the user
-			$trans_history_check = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'trans_history_check' LIMIT 1"),0,0));
+			$trans_history_check = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'trans_history_check' LIMIT 1"),0,0));
 			$rand_freq = 99; // Rare - Default if no user set value
 
 			if($trans_history_check == 1)
@@ -184,14 +183,14 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 					$time2 = transaction_cycle(0 - $current_generation_block + $foundation_time_end);
 
 					$sql = "SELECT timestamp, public_key_from, public_key_to, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` <= $time2 ORDER BY `timestamp`, `hash` ASC";
-					$sql_result2 = mysql_query($sql);
-					$sql_num_results2 = mysql_num_rows($sql_result2);
+					$sql_result2 = mysqli_query($db_connect, $sql);
+					$sql_num_results2 = mysqli_num_rows($sql_result2);
 
 					$hash = $sql_num_results2;
 
 					for ($f = 0; $f < $sql_num_results2; $f++)
 					{
-						$sql_row2 = mysql_fetch_array($sql_result2);
+						$sql_row2 = mysqli_fetch_array($sql_result2);
 
 						// Valid key lenth check?
 						if($sql_row2["attribute"] == "T" || $sql_row2["attribute"] == "G")
@@ -226,7 +225,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 				// Check foundation hash with peers
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
-					$sql_row = mysql_fetch_array($sql_result);
+					$sql_row = mysqli_fetch_array($sql_result);
 
 					$ip_address = $sql_row["IP_Address"];
 					$domain = $sql_row["domain"];
@@ -294,7 +293,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 				// Start by removing the transaction foundation block hash
 				$sql = "DELETE QUICK FROM `transaction_foundation` WHERE `transaction_foundation`.`block` = $rand_block LIMIT 1";
 
-				if(mysql_query($sql) == TRUE)
+				if(mysqli_query($db_connect, $sql) == TRUE)
 				{
 					// Now wipe the range of transactions for this block
 					$foundation_time_start = $rand_block * 500;
@@ -314,17 +313,17 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 
 					$sql = "DELETE QUICK FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` <= $time2";
 
-					if(mysql_query($sql) == TRUE)
+					if(mysqli_query($db_connect, $sql) == TRUE)
 					{
 						// Schedule a block check starting at the first block the problem occurs
 						$sql = "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `field_name` = 'foundation_block_check' LIMIT 1";
 
-						if(mysql_query($sql) == TRUE)
+						if(mysqli_query($db_connect, $sql) == TRUE)
 						{
-							mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'block_check_start' LIMIT 1");
-							mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'block_check_back' LIMIT 1");
-							mysql_query("UPDATE `main_loop_status` SET `field_data` = '$foundation_time_start' WHERE `main_loop_status`.`field_name` = 'foundation_block_check_start' LIMIT 1");
-							mysql_query("UPDATE `main_loop_status` SET `field_data` = '$foundation_time_end' WHERE `main_loop_status`.`field_name` = 'foundation_block_check_end' LIMIT 1");
+							mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'block_check_start' LIMIT 1");
+							mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'block_check_back' LIMIT 1");
+							mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$foundation_time_start' WHERE `main_loop_status`.`field_name` = 'foundation_block_check_start' LIMIT 1");
+							mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$foundation_time_end' WHERE `main_loop_status`.`field_name` = 'foundation_block_check_end' LIMIT 1");
 						}
 					}
 				}
@@ -336,7 +335,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 } // End number of results check
 //***********************************************************************************
 // How many foundation blocks exist?
-	$foundation_blocks = mysql_result(mysql_query("SELECT COUNT(*) FROM `transaction_foundation`"),0);
+	$foundation_blocks = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_foundation`"),0);
 
 	// How does it compare to the current foundation cycle?
 	if($foundation_blocks == $current_foundation_block)
@@ -351,11 +350,11 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 		{
 			// Numbers don't match, what do we have?
 			$sql = "SELECT * FROM `transaction_foundation` ORDER BY `transaction_foundation`.`block` ASC";
-			$sql_result = mysql_query($sql);
+			$sql_result = mysqli_query($db_connect, $sql);
 
 			for ($i = 0; $i < $current_foundation_block; $i++)
 			{
-				$sql_row = mysql_fetch_array($sql_result);
+				$sql_row = mysqli_fetch_array($sql_result);
 				$block = $sql_row["block"];
 				$hash = $sql_row["hash"];
 
@@ -383,7 +382,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 				{
 					// Don't do a history walk if the transclerk is currently working on the
 					// transaction database
-					$transclerk_block_check = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'block_check_start' LIMIT 1"),0,"field_data");				
+					$transclerk_block_check = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'block_check_start' LIMIT 1"),0,"field_data");				
 
 					if($transclerk_block_check < ($i + 1) * 500 && $transclerk_block_check != "0")
 					{
@@ -408,14 +407,14 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 						$time2 = transaction_cycle(0 - $current_generation_block + $foundation_time_end);
 
 						$sql = "SELECT timestamp, public_key_from, public_key_to, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` <= $time2 ORDER BY `timestamp`, `hash` ASC";
-						$sql_result2 = mysql_query($sql);
-						$sql_num_results2 = mysql_num_rows($sql_result2);
+						$sql_result2 = mysqli_query($db_connect, $sql);
+						$sql_num_results2 = mysqli_num_rows($sql_result2);
 
 						$hash = $sql_num_results2;
 
 						for ($f = 0; $f < $sql_num_results2; $f++)
 						{
-							$sql_row2 = mysql_fetch_array($sql_result2);
+							$sql_row2 = mysqli_fetch_array($sql_result2);
 							$hash .= $sql_row2["timestamp"] . $sql_row2["public_key_from"] . $sql_row2["public_key_to"] . $sql_row2["hash"] . $sql_row2["attribute"];
 						}	
 
@@ -423,7 +422,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 
 						$sql = "INSERT INTO `transaction_foundation` (`block` ,`hash`)VALUES ('$i', '$hash')";
 
-						if(mysql_query($sql) == TRUE)
+						if(mysqli_query($db_connect, $sql) == TRUE)
 						{
 							// Success
 							write_log("New Transaction Foundation #$i Complete", "FO");
@@ -433,14 +432,14 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 							if($i - 50 == $qbi_max_foundation || $i <= $qbi_max_foundation) // Build 50 Foundation Blocks ahead before rebulding QBI 
 							{
 								// Time to Clear the Quantum Balance Index Table and Rebuild with newer data
-								if(mysql_query("TRUNCATE TABLE `quantum_balance_index`") == TRUE)
+								if(mysqli_query($db_connect, "TRUNCATE TABLE `quantum_balance_index`") == TRUE)
 								{
 									write_log("Quantum Balance Index Cleared for New Rebuild", "FO");
 								}
 							}
 
 							// Wipe Balance Index table to reset index creation of public key balances
-							if(mysql_query("TRUNCATE TABLE `balance_index`") == FALSE)
+							if(mysqli_query($db_connect, "TRUNCATE TABLE `balance_index`") == FALSE)
 							{
 								write_log("FAILED to Clear Balance Index Table after Transaction Foundation #$i was Created", "FO");
 							}
@@ -475,7 +474,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 						// Schedule a block check at the location -1 in hopes that it will be cleared up for the next loop
 						$sql = "UPDATE `main_loop_status` SET `field_data` = '" . ($do_history_walk - 1) . "' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1";
 
-						if(mysql_query($sql) == TRUE)
+						if(mysqli_query($db_connect, $sql) == TRUE)
 						{
 							// Break out of this loop to prevent confusing block checks in the database
 							break;
@@ -499,21 +498,21 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 
 //***********************************************************************************
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,"field_data");
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,"field_data");
 
 // Check script status
 if($loop_active == 3)
 {
 	// Time to exit
-	mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active'");
+	mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active'");
 	exit;
 }
 
 // Script finished, set standby status to 2
-mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
+mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
 
 // Record when this script finished
-mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'foundation_last_heartbeat' LIMIT 1");
+mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'foundation_last_heartbeat' LIMIT 1");
 
 //***********************************************************************************
 sleep(10);

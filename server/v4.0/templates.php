@@ -108,6 +108,7 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0, $
 			break;			
 	}
 
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	$standard_settings_number = intval(mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'standard_tabs_settings' LIMIT 1"),0,"field_data"));
 
 	$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' ORDER BY `options`.`field_name` ASC";
@@ -117,7 +118,7 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0, $
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		$sql_row = mysqli_fetch_array($sql_result);
 
 		$plugin_file = find_string("---file=", "---enable", $sql_row["field_data"]);		
 		$plugin_tab = find_string("---tab=", "---service", $sql_row["field_data"]);
@@ -298,6 +299,7 @@ function options_screen()
 //***********************************************************
 function options_screen2()
 {
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	$home_update = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
 	$peerlist_update = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_peerlist' LIMIT 1"),0,"field_data");
 	$queue_update = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_queue' LIMIT 1"),0,"field_data");
@@ -454,6 +456,7 @@ function options_screen3()
 //***********************************************************
 function options_screen4()
 {
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	$standard_settings_number = intval(mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'standard_tabs_settings' LIMIT 1"),0,"field_data"));
 		
 	if(check_standard_tab_settings($standard_settings_number, 1) == TRUE) { $tab_peerlist_enable = "CHECKED"; }else{ $tab_peerlist_disable = "CHECKED"; }
@@ -475,7 +478,7 @@ function options_screen4()
 	
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		$sql_row = mysqli_fetch_array($sql_result);
 
 		$plugin_file = find_string("---file=", "---enable", $sql_row["field_data"]);		
 		$plugin_name = find_string("---name=", "---tab", $sql_row["field_data"]);
@@ -525,6 +528,7 @@ function options_screen4()
 //***********************************************************
 function options_screen5()
 {
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' ORDER BY `options`.`field_name` ASC";
 	$sql_result = mysqli_query($db_connect, $sql);
 	$sql_num_results = mysqli_num_rows($sql_result);
@@ -532,7 +536,7 @@ function options_screen5()
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		$sql_row = mysqli_fetch_array($sql_result);
 		$plugin_file = find_string("---file=", "---enable", $sql_row["field_data"]);
 		$plugin_enable = intval(find_string("---enable=", "---show", $sql_row["field_data"]));
 		$plugin_name = find_string("---name=", "---tab", $sql_row["field_data"]);
@@ -581,6 +585,7 @@ function options_screen6()
 //***********************************************************
 function options_screen7()
 {
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	$qbi_index = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `quantum_balance_index` LIMIT 1"),0);
 
 	if($qbi_index > 0)
@@ -605,6 +610,7 @@ function options_screen7()
 //***********************************************************
 function system_screen()
 {
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	$max = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,0);
 	$new = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'max_new_peers' LIMIT 1"),0,0);
 	$domain = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,0);
@@ -892,6 +898,8 @@ function send_receive_body($fill_in_key, $amount, $cancel = FALSE, $easy_key, $m
 //***********************************************************
 function tools_bar($walk_history)
 {
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+
 	if(empty($walk_history) == TRUE)
 	{
 		$default_walk = foundation_cycle(0, TRUE) * 500;

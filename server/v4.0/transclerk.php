@@ -10,22 +10,21 @@ if(TRANSCLERK_DISABLED == TRUE || TIMEKOIN_DISABLED == TRUE)
 }
 //***********************************************************************************
 //***********************************************************************************
-// Open persistent connection to database
-mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD);
-mysql_select_db(MYSQL_DATABASE);
-
 // Check for banned IP address
 if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 {
 	// Sorry, your IP address has been banned :(
 	exit;
 }
+
+// Open persistent connection to database
+$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 //***********************************************************************************
 //***********************************************************************************
 // Answer transaction history hash poll
 if($_GET["action"] == "history_hash")
 {
-	echo mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'transaction_history_hash' LIMIT 1"),0,0);
+	echo mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'transaction_history_hash' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
 	log_ip("TC", 1);
@@ -36,7 +35,7 @@ if($_GET["action"] == "history_hash")
 // Answer super peer poll
 if($_GET["action"] == "super_peer")
 {
-	echo mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'super_peer' LIMIT 1"),0,0);
+	echo mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'super_peer' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
 	log_ip("TC", scale_trigger(200));
@@ -51,7 +50,7 @@ if($_GET["action"] == "block_hash" && $_GET["block_number"] >= 0)
 
 	$block_number = TRANSACTION_EPOCH + ($block_number * 300) + 300;
 
-	echo mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` = $block_number LIMIT 1"),0,0);
+	echo mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_history` WHERE `timestamp` = $block_number LIMIT 1"),0,0);
 
 	// Log inbound IP activity
 	log_ip("TC", scale_trigger(500));
@@ -71,15 +70,15 @@ if($_GET["action"] == "transaction_data" && $_GET["block_number"] >= 0)
 
 	$sql = "SELECT * FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2";
 
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 	$c = 1;
 
 	if($sql_num_results > 0)
 	{
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_array($sql_result);
+			$sql_row = mysqli_fetch_array($sql_result);
 			
 			echo "-----timestamp$c=" , $sql_row["timestamp"] , "-----public_key_from$c=" , base64_encode($sql_row["public_key_from"]) , "-----public_key_to$c=" , base64_encode($sql_row["public_key_to"]);
 			echo "-----crypt1data$c=" , $sql_row["crypt_data1"] , "-----crypt2data$c=" , $sql_row["crypt_data2"] , "-----crypt3data$c=" , $sql_row["crypt_data3"] , "-----hash$c=" , $sql_row["hash"];
@@ -99,15 +98,15 @@ if($_GET["action"] == "transaction_data" && $_GET["block_number"] >= 0)
 	log_ip("TC", scale_trigger(4));
 //***********************************************************************************
 // First time run check
-$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,0);
-$last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_last_heartbeat' LIMIT 1"),0,0);
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,0);
+$last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_last_heartbeat' LIMIT 1"),0,0);
 
-if($loop_active === FALSE && $last_heartbeat == 1)
+if($loop_active == "" && $last_heartbeat == 1)
 {
 	// Create record to begin loop
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('transclerk_heartbeat_active', '0')");
+	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('transclerk_heartbeat_active', '0')");
 	// Update timestamp for starting
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'transclerk_last_heartbeat' LIMIT 1");
+	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'transclerk_last_heartbeat' LIMIT 1");
 }
 else
 {
@@ -121,9 +120,10 @@ ini_set('user_agent', 'Timekoin Server (Transclerk) v' . TIMEKOIN_VERSION);
 
 while(1) // Begin Infinite Loop
 {
+
 set_time_limit(300);
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,0);
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,0);
 
 // Check script status
 if($loop_active === FALSE)
@@ -134,16 +134,16 @@ if($loop_active === FALSE)
 else if($loop_active == 0)
 {
 	// Set the working status of 1
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
+	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
 }
 else if($loop_active == 2) // Wake from sleep
 {
 	// Set the working status of 1
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
+	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
 }
 else if($loop_active == 3) // Shutdown
 {
-	mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active'");
+	mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active'");
 	exit;
 }
 else
@@ -157,15 +157,15 @@ $current_generation_cycle = transaction_cycle(0);
 $next_generation_cycle = transaction_cycle(1);
 $current_generation_block = transaction_cycle(0, TRUE);
 
-$foundation_active = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,0));
-$treasurer_status = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,0));
+$foundation_active = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,0));
+$treasurer_status = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,0));
 
 // Can we work on the transactions in the database?
 // Not allowed 30 seconds before and 30 seconds after transaction cycle.
 if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle) > 30 && $foundation_active == 2 && $treasurer_status == 2)
 {
 	// Check if the transaction history is blank or not (either from reset or new setup)
-	$trans_record_count = mysql_result(mysql_query("SELECT COUNT(*) FROM `transaction_history`"),0);
+	$trans_record_count = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_history`"),0);
 	$generation_arbitrary = ARBITRARY_KEY;
 //***********************************************************************************
 	if($trans_record_count == 0 && $trans_record_count !== FALSE) //New or blank transaction history
@@ -174,7 +174,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 		$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from` ,`public_key_to` ,`crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
 	VALUES ('" . TRANSACTION_EPOCH . "', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', 'B')";
 	
-		if(mysql_query($sql) == TRUE)
+		if(mysqli_query($db_connect, $sql) == TRUE)
 		{
 			// Lock Treasurer script to prevent transaction processing during the initial phase
 			activate(TREASURER, 0);
@@ -184,7 +184,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 	if($trans_record_count > 0 && $trans_record_count < 4) // Write out some test hashes and compare to verify sha256 accuracy
 	{
 		// Beginning transaction should be in, check to make sure
-		$beginning_transaction = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `public_key_from` = '$generation_arbitrary' AND `hash` = '$generation_arbitrary' LIMIT 1"),0,0);
+		$beginning_transaction = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `public_key_from` = '$generation_arbitrary' AND `hash` = '$generation_arbitrary' LIMIT 1"),0,0);
 
 		if($beginning_transaction == TRANSACTION_EPOCH)
 		{
@@ -200,13 +200,13 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				// Build Hash
 				$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $first_generation_cycle AND `timestamp` < $second_generation_cycle";
 
-				$sql_result = mysql_query($sql);
-				$sql_num_results = mysql_num_rows($sql_result);
+				$sql_result = mysqli_query($db_connect, $sql);
+				$sql_num_results = mysqli_num_rows($sql_result);
 				$hash = 0;
 
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
-					$sql_row = mysql_fetch_array($sql_result);
+					$sql_row = mysqli_fetch_array($sql_result);
 					$hash .= $sql_row["hash"];
 				}
 
@@ -216,7 +216,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from` ,`public_key_to` ,`crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
 				VALUES ('$second_generation_cycle', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$hash', 'H')";
 		
-				mysql_query($sql);
+				mysqli_query($db_connect, $sql);
 
 				$current_generation_block--;
 				$cycles++;
@@ -224,7 +224,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 			$current_generation_block++;
 			$second_generation_cycle = transaction_cycle((0 - $current_generation_block + 1));
-			$hash_check = mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` = '$second_generation_cycle' AND `attribute` = 'H' LIMIT 1"),0,0);
+			$hash_check = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_history` WHERE `timestamp` = '$second_generation_cycle' AND `attribute` = 'H' LIMIT 1"),0,0);
 
 			// Now let's check the results to make sure they match what should be expected
 			if($hash_check == SHA256TEST)
@@ -235,7 +235,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				
 				// Start a transaction history rebuild from this since a new database is going to be far
 				// behind the history of the other active peers
-				mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'block_check_start' LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'block_check_start' LIMIT 1");
 			}
 			else
 			{
@@ -250,9 +250,9 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 	{	
 	//***********************************************************************************		
 	// Update transaction history hash
-		$current_history_hash = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'transaction_history_hash' LIMIT 1"),0,0);
-		$transaction_history_block_check = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transaction_history_block_check' LIMIT 1"),0,0));
-		$foundation_block_check = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_block_check' LIMIT 1"),0,0));
+		$current_history_hash = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'transaction_history_hash' LIMIT 1"),0,0);
+		$transaction_history_block_check = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transaction_history_block_check' LIMIT 1"),0,0));
+		$foundation_block_check = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_block_check' LIMIT 1"),0,0));
 
 		if($transaction_history_block_check != 0 || $foundation_block_check == 1)
 		{
@@ -267,7 +267,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			}
 			else
 			{
-				$foundation_block_check_start = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_block_check_start' LIMIT 1"),0,0));
+				$foundation_block_check_start = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_block_check_start' LIMIT 1"),0,0));
 				write_log("Resuming History Check from Transaction Cycle #$foundation_block_check_start", "TC");
 
 				// Change hash to mismatch on purpose
@@ -275,7 +275,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			}
 
 			// Update database with Verbose Error hash
-			mysql_query("UPDATE `options` SET `field_data` = '$current_history_hash' WHERE `field_name` = 'transaction_history_hash' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$current_history_hash' WHERE `field_name` = 'transaction_history_hash' LIMIT 1");
 		}
 		else
 		{
@@ -288,7 +288,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				$current_history_hash = $history_hash;
 				
 				// Update database with new hash
-				mysql_query("UPDATE `options` SET `field_data` = '$history_hash' WHERE `field_name` = 'transaction_history_hash' LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$history_hash' WHERE `field_name` = 'transaction_history_hash' LIMIT 1");
 			}
 		}
 //***********************************************************************************	
@@ -297,8 +297,8 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 	// Ask all of my active peers
 	$sql = perm_peer_mode();
 
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 
 	$trans_list_hash_match = 0;
 	$trans_list_hash_different = 0;
@@ -312,7 +312,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 		
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_array($sql_result);
+			$sql_row = mysqli_fetch_array($sql_result);
 
 			$ip_address = $sql_row["IP_Address"];
 			$domain = $sql_row["domain"];
@@ -370,8 +370,8 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 	{
 		//More than 50% of the active peers have a different transaction history list, start comparing your
 		//transaction list with one that is different
-		$hash_check_counter = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_start_blocks' LIMIT 1"),0,0));
-		$peer_transaction_performance = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_performance' LIMIT 1"),0,0));
+		$hash_check_counter = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_start_blocks' LIMIT 1"),0,0));
+		$peer_transaction_performance = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_performance' LIMIT 1"),0,0));
 
 		//Scale the amount of transaction cycles to check based on the last peer performance reading
 		if($peer_transaction_performance <= 10)
@@ -411,7 +411,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 		if($error_check_active == FALSE)
 		{
-			$hash_number = intval(mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'block_check_start' LIMIT 1"),0,"field_data"));
+			$hash_number = intval(mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'block_check_start' LIMIT 1"),0,"field_data"));
 
 			if($hash_number == 0)
 			{
@@ -427,22 +427,22 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			if($foundation_block_check == 1)
 			{
 				// Start from the block that the foundation begins
-				$foundation_block_check_start = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_block_check_start' LIMIT 1"),0,0);
-				$foundation_block_check_end = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_block_check_end' LIMIT 1"),0,0);
+				$foundation_block_check_start = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_block_check_start' LIMIT 1"),0,0);
+				$foundation_block_check_end = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_block_check_end' LIMIT 1"),0,0);
 
 				if($foundation_block_check_start > $foundation_block_check_end)
 				{
 					// Check is finished
-					mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'foundation_block_check' LIMIT 1");
-					mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'foundation_block_check_start' LIMIT 1");
-					mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'foundation_block_check_end' LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'foundation_block_check' LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'foundation_block_check_start' LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'foundation_block_check_end' LIMIT 1");
 
 					// Reset any previous block checks that were in progress
-					mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'block_check_start' LIMIT 1");
-					mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1");					
+					mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'block_check_start' LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1");					
 
 					// Reset block back counter
-					mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'block_check_back' LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'block_check_back' LIMIT 1");
 
 					// Foundation Data Repair Complete
 					write_log("Foundation Data Repair Complete", "TC");
@@ -472,10 +472,10 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			{
 				// Reached the end, delete the most current block to allow an auto-recorrect
 				$sql = "DELETE QUICK FROM `transaction_history` WHERE `timestamp` >= $current_generation_cycle AND `timestamp` < $next_generation_cycle";
-				mysql_query($sql);
+				mysqli_query($db_connect, $sql);
 				
 				// How many times have this checked reached the end and still not fixed the transaction history?
-				$hash_number_back_database = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'block_check_back' LIMIT 1"),0,0);
+				$hash_number_back_database = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'block_check_back' LIMIT 1"),0,0);
 				
 				$hash_number_back = $hash_number_back_database * 10;
 
@@ -497,14 +497,14 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 					// More than 30 blocks back, start from the beginning of the current
 					// transaction foundation as something might be wrong deeper in the history
 					$hash_number = $foundation_to_cycles;
-					mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'block_check_back' LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'block_check_back' LIMIT 1");
 				}
 				else
 				{
 					// Increment back counter in case this was not far back enough
 					// and it reaches this point again
 					$hash_number_back_database++;
-					mysql_query("UPDATE `main_loop_status` SET `field_data` = '$hash_number_back_database' WHERE `main_loop_status`.`field_name` = 'block_check_back' LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$hash_number_back_database' WHERE `main_loop_status`.`field_name` = 'block_check_back' LIMIT 1");
 				}
 
 				$hash_check_counter = 1;  // Reset to check another 1 block forward
@@ -524,13 +524,13 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 			$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
 
-			$sql_result = mysql_query($sql);
-			$sql_num_results = mysql_num_rows($sql_result);
+			$sql_result = mysqli_query($db_connect, $sql);
+			$sql_num_results = mysqli_num_rows($sql_result);
 			$my_hash = 0;
 
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
-				$sql_row = mysql_fetch_array($sql_result);
+				$sql_row = mysqli_fetch_array($sql_result);
 				$my_hash .= $sql_row["hash"];
 			}		
 
@@ -583,7 +583,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				// inserted in place
 				$sql = "DELETE QUICK FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2";
 
-				if(mysql_query($sql) == FALSE)
+				if(mysqli_query($db_connect, $sql) == FALSE)
 				{
 					//Something didn't work, database error?
 					write_log("Error removing corrupted transaction data WHERE timestamp >= $time1 AND timestamp < $time2", "TC");
@@ -600,7 +600,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 					// Check for blank data ahead (Super Peer Mode)
 					$time1_ahead = transaction_cycle(0 - $current_generation_block + 1 + $hash_number);
 					$time2_ahead = transaction_cycle(0 - $current_generation_block + 2 + $hash_number);
-					$no_cycles_ahead = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE timestamp >= $time1_ahead AND timestamp < $time2_ahead AND `attribute` = 'H'"),0,0);
+					$no_cycles_ahead = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE timestamp >= $time1_ahead AND timestamp < $time2_ahead AND `attribute` = 'H'"),0,0);
 
 					if(empty($no_cycles_ahead) == TRUE) // No data ahead, lots of blank space
 					{
@@ -616,7 +616,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 						if($poll_peer >= 1)// This is a super peer that will allow mass downloading of transactions
 						{
 							// How far behind in the transaction history are we?
-							$total_trans_hash = mysql_result(mysql_query("SELECT COUNT(attribute) FROM `transaction_history` WHERE `attribute` = 'H'"),0);
+							$total_trans_hash = mysql_result(mysqli_query($db_connect, "SELECT COUNT(attribute) FROM `transaction_history` WHERE `attribute` = 'H'"),0);
 
 							if(transaction_cycle(0, TRUE) - $total_trans_hash > 500)
 							{
@@ -713,7 +713,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 														$internal_public_key_to == $transaction_public_key_to)
 													{
 														// Continue with duplicate record test
-														$found_duplicate = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+														$found_duplicate = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
 													}
 													else
 													{
@@ -729,7 +729,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 													if($one_hash_limit == 1)// First Transaction Hash
 													{
 														// First Hash in Transaction Cycle Data
-														$found_duplicate = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+														$found_duplicate = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
 													}
 													else
 													{
@@ -760,7 +760,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 													{
 														// Max query size reached, write to database
 														// Do mass record insert
-														if(mysql_query("INSERT INTO `transaction_history` (`timestamp`,`public_key_from`,`public_key_to`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`) VALUES " . $super_peer_insert) == TRUE)
+														if(mysqli_query($db_connect, "INSERT INTO `transaction_history` (`timestamp`,`public_key_from`,`public_key_to`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`) VALUES " . $super_peer_insert) == TRUE)
 														{
 															write_log("Wrote $super_peer_record_count Records From SUPER Peer: $ip_address$domain:$port_number/$subfolder", "TC");
 														}
@@ -786,7 +786,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 										} // End while loop
 
 										// Jump ahead transaction cycle checking start position for next cycle
-										mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . ($super_transaction_cycle - 1) . "' WHERE `main_loop_status`.`field_name` = 'block_check_start' LIMIT 1");										
+										mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . ($super_transaction_cycle - 1) . "' WHERE `main_loop_status`.`field_name` = 'block_check_start' LIMIT 1");										
 										
 										$super_transaction_cycle++;
 
@@ -795,7 +795,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 									// Do mass record insert if query is finished
 									if(empty($super_peer_insert) == FALSE)
 									{
-										if(mysql_query("INSERT INTO `transaction_history` (`timestamp`,`public_key_from`,`public_key_to`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`) VALUES " . $super_peer_insert) == TRUE)
+										if(mysqli_query($db_connect, "INSERT INTO `transaction_history` (`timestamp`,`public_key_from`,`public_key_to`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`) VALUES " . $super_peer_insert) == TRUE)
 										{
 											write_log("Wrote $super_peer_record_count Records From SUPER Peer: $ip_address$domain:$port_number/$subfolder", "TC");
 										}
@@ -880,7 +880,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 									$internal_public_key_to == $transaction_public_key_to)
 								{
 									// Continue with duplicate record test
-									$found_duplicate = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+									$found_duplicate = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
 								}
 								else
 								{
@@ -895,7 +895,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 								if($one_hash_limit == 1)
 								{
 									// First Hash in Transaction Cycle Data
-									$found_duplicate = mysql_result(mysql_query("SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+									$found_duplicate = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
 								}
 								else
 								{
@@ -922,7 +922,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 									// Insert Spooling Finished, write to database
 									$sql = "INSERT INTO `transaction_history` (`timestamp`,`public_key_from`,`public_key_to`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`) VALUES " . $norm_record_insert;
 
-									if(mysql_query($sql) == TRUE)
+									if(mysqli_query($db_connect, $sql) == TRUE)
 									{
 										// Flag for a re-check afterwards
 										$double_check_block = TRUE;
@@ -945,7 +945,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 						// Still something left to insert
 						$sql = "INSERT INTO `transaction_history` (`timestamp`,`public_key_from`,`public_key_to`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`) VALUES " . $norm_record_insert;
 
-						if(mysql_query($sql) == TRUE)
+						if(mysqli_query($db_connect, $sql) == TRUE)
 						{
 							// Flag for a re-check afterwards
 							$double_check_block = TRUE;
@@ -960,17 +960,17 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 					// Double check the new hash against the last block transanstion(s) in case of tampering
 					$time3 = transaction_cycle(0 - $current_generation_block + 1 + $hash_number);
 					$time4 = transaction_cycle(0 - $current_generation_block + 2 + $hash_number);
-					$double_check_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time3 AND `timestamp` < $time4 AND `attribute` = 'H' LIMIT 1"),0,0);
+					$double_check_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time3 AND `timestamp` < $time4 AND `attribute` = 'H' LIMIT 1"),0,0);
 
 					// Build Hash from previous transaction block data
 					$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
-					$sql_result = mysql_query($sql);
-					$sql_num_results = mysql_num_rows($sql_result);
+					$sql_result = mysqli_query($db_connect, $sql);
+					$sql_num_results = mysqli_num_rows($sql_result);
 					$build_hash = 0;
 
 					for ($i = 0; $i < $sql_num_results; $i++)
 					{
-						$sql_row = mysql_fetch_array($sql_result);
+						$sql_row = mysqli_fetch_array($sql_result);
 						$build_hash .= $sql_row["hash"];
 					}
 
@@ -1015,7 +1015,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				// Wipe this block and hope that a future check
 				// will have the peer conflict resolved by polling different peers
 				$sql = "DELETE QUICK FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2";
-				mysql_query($sql);
+				mysqli_query($db_connect, $sql);
 
 				write_log("Too Much Peer Conflict for Transaction Cycle #$block_number.<br>This cycle will remain empty until repaired with valid data.", "TC");
 
@@ -1040,8 +1040,8 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 //***********************************************************************************
 		// Store peer performance data for later tuning
 		$peer_performance = (time() - $peer_performance);
-		mysql_query("UPDATE `main_loop_status` SET `field_data` = '$peer_performance' WHERE `main_loop_status`.`field_name` = 'peer_transaction_performance' LIMIT 1");
-		mysql_query("UPDATE `main_loop_status` SET `field_data` = '$new_peer_poll_blocks' WHERE `main_loop_status`.`field_name` = 'peer_transaction_start_blocks' LIMIT 1");
+		mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$peer_performance' WHERE `main_loop_status`.`field_name` = 'peer_transaction_performance' LIMIT 1");
+		mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$new_peer_poll_blocks' WHERE `main_loop_status`.`field_name` = 'peer_transaction_start_blocks' LIMIT 1");
 
 		if($sync_block == $hash_check_counter)
 		{
@@ -1068,7 +1068,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			// the server will know where to start from on the next cycle
 			if($foundation_block_check == 1)
 			{
-				mysql_query("UPDATE `main_loop_status` SET `field_data` = '$hash_number' WHERE `main_loop_status`.`field_name` = 'foundation_block_check_start' LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$hash_number' WHERE `main_loop_status`.`field_name` = 'foundation_block_check_start' LIMIT 1");
 				write_log("Foundation Repair Complete at Transaction #" . ($hash_number - 1), "TC");
 
 				// Reset Transction Hash Count Cache
@@ -1076,7 +1076,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			}
 			else
 			{
-				mysql_query("UPDATE `main_loop_status` SET `field_data` = '$hash_number' WHERE `main_loop_status`.`field_name` = 'block_check_start' LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$hash_number' WHERE `main_loop_status`.`field_name` = 'block_check_start' LIMIT 1");
 			}
 		}
 
@@ -1087,10 +1087,10 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			$history_hash = transaction_history_hash();
 
 			// Update database with new hash
-			mysql_query("UPDATE `options` SET `field_data` = '$history_hash' WHERE `field_name` = 'transaction_history_hash' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$history_hash' WHERE `field_name` = 'transaction_history_hash' LIMIT 1");
 
 			// Reset error block
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1");
 
 			if($transaction_repair_made == TRUE)
 			{
@@ -1115,16 +1115,16 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 	else
 	{
 		// Entire Transaction History in sync, reset block check start to 0
-		$block_check_start = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'block_check_start' LIMIT 1"),0,0);
+		$block_check_start = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'block_check_start' LIMIT 1"),0,0);
 
 		if($block_check_start > 0)
 		{
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'block_check_start' LIMIT 1");
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'block_check_back' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'block_check_start' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'block_check_back' LIMIT 1");
 
 			// Reset Performance Data
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '10' WHERE `main_loop_status`.`field_name` = 'peer_transaction_performance' LIMIT 1");
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'peer_transaction_start_blocks' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '10' WHERE `main_loop_status`.`field_name` = 'peer_transaction_performance' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'peer_transaction_start_blocks' LIMIT 1");
 		}
 
 		if(rand(1,10) == 10) // Randomize to avoid spamming checks all the time
@@ -1142,15 +1142,15 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 			$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
 
-			$sql_result = mysql_query($sql);
-			$sql_num_results = mysql_num_rows($sql_result);
+			$sql_result = mysqli_query($db_connect, $sql);
+			$sql_num_results = mysqli_num_rows($sql_result);
 			$random_hash_build = 0;
 
 			if($sql_num_results > 0)
 			{
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
-					$sql_row = mysql_fetch_array($sql_result);
+					$sql_row = mysqli_fetch_array($sql_result);
 					$random_hash_build.= $sql_row["hash"];
 				}
 			}
@@ -1158,8 +1158,8 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			$random_hash_build = hash('sha256', $random_hash_build);
 
 			$sql = perm_peer_mode();
-			$sql_result = mysql_query($sql);
-			$sql_num_results = mysql_num_rows($sql_result);
+			$sql_result = mysqli_query($db_connect, $sql);
+			$sql_num_results = mysqli_num_rows($sql_result);
 
 			$target_number = intval((3 / 5) * $sql_num_results); // 3/5 of peers must disagree to trigger check
 			$peer_disagree = 0;
@@ -1169,7 +1169,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			{
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
-					$sql_row = mysql_fetch_array($sql_result);
+					$sql_row = mysqli_fetch_array($sql_result);
 					$ip_address = $sql_row["IP_Address"];
 					$domain = $sql_row["domain"];
 					$subfolder = $sql_row["subfolder"];
@@ -1187,7 +1187,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 							{
 								// Something is wrong, transaction history has an error.
 								// Schedule a check in case the peer has an error and not us.
-								mysql_query("UPDATE `main_loop_status` SET `field_data` = '$random_block' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1");
+								mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$random_block' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1");
 								write_log("These Peers $peer_disagree_list Report that My Transaction Block #$random_block is Wrong.<br>Will Double Check with other Peers before making any changes.", "TC");
 								break;
 							}
@@ -1211,21 +1211,21 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 //***********************************************************************************
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,0);
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,0);
 
 // Check script status
 if($loop_active == 3)
 {
 	// Time to exit
-	mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active'");
+	mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active'");
 	exit;
 }
 
 // Script finished, set standby status to 2
-mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
+mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
 
 // Record when this script finished
-mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'transclerk_last_heartbeat' LIMIT 1");
+mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'transclerk_last_heartbeat' LIMIT 1");
 
 //**********
 // Start working right away when getting

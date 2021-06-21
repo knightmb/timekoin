@@ -10,30 +10,30 @@ if(GENERATION_DISABLED == TRUE || TIMEKOIN_DISABLED == TRUE)
 }
 //***********************************************************************************
 //***********************************************************************************
-mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD);
-mysql_select_db(MYSQL_DATABASE);
-
 // Check for banned IP address
 if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 {
 	// Sorry, your IP address has been banned :(
 	exit ("Your IP Has Been Banned");
 }
+
+// Open persistent connection to database
+$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 //***********************************************************************************
 // External Flood Protection
 log_ip("GE", scale_trigger(4));
 //***********************************************************************************
 
 // First time run check
-$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,0);
-$last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_last_heartbeat' LIMIT 1"),0,0);
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,0);
+$last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_last_heartbeat' LIMIT 1"),0,0);
 
-if($loop_active === FALSE && $last_heartbeat == 1)
+if($loop_active == "" && $last_heartbeat == 1)
 {
 	// Create record to begin loop
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('generation_heartbeat_active', '0')");
+	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('generation_heartbeat_active', '0')");
 	// Update timestamp for starting
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'generation_last_heartbeat' LIMIT 1");
+	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'generation_last_heartbeat' LIMIT 1");
 }
 else
 {
@@ -46,10 +46,10 @@ while(1) // Begin Infinite Loop
 {
 set_time_limit(300);	
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,0);
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,0);
 
 // Check script status
-if($loop_active === FALSE)
+if($loop_active == "")
 {
 	// Time to exit
 	exit;
@@ -57,16 +57,16 @@ if($loop_active === FALSE)
 else if($loop_active == 0)
 {
 	// Set the working status of 1
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
+	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
 }
 else if($loop_active == 2) // Wake from sleep
 {
 	// Set the working status of 1
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
+	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
 }
 else if($loop_active == 3) // Shutdown
 {
-	mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active'");
+	mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active'");
 	exit;
 }
 else
@@ -86,8 +86,8 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 	// Generation Peer Check	
 	$peer_purge = FALSE;
 	$sql = "SELECT * FROM `generating_peer_list`";
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 
 	if($sql_num_results > 0 )
 	{
@@ -95,7 +95,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 		
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_array($sql_result);
+			$sql_row = mysqli_fetch_array($sql_result);
 			$public_key = $sql_row["public_key"];
 			$last_generation = $sql_row["last_generation"];
 
@@ -113,7 +113,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 				}				
 				
 				$sql = "DELETE QUICK FROM `generating_peer_list` WHERE `generating_peer_list`.`public_key` = '$public_key' AND `generating_peer_list`.`last_generation` = $last_generation";
-				if(mysql_query($sql) == TRUE)
+				if(mysqli_query($db_connect, $sql) == TRUE)
 				{
 					// Delete successful, flag to update hash
 					$peer_purge = TRUE;
@@ -126,24 +126,24 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 		{
 			// Update peer list hash to avoid a race condition
 			$generating_hash = generation_peer_hash();
-			mysql_query("UPDATE `options` SET `field_data` = '$generating_hash' WHERE `options`.`field_name` = 'generating_peers_hash' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$generating_hash' WHERE `options`.`field_name` = 'generating_peers_hash' LIMIT 1");
 		} // End peer purge check
 
 	} // End results check
 	//***********************************************************************************	
 	// Generation Check
-	$generation_option = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generate_currency' LIMIT 1"),0,0));
+	$generation_option = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generate_currency' LIMIT 1"),0,0));
 
 	if($generation_option == TRUE) // Generation Enabled
 	{
 		// Check to see if we are in the allowed generation peer list
 		$my_public_key = my_public_key();
-		$network_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
+		$network_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
 //***********************************************************************************		
 		if($network_mode == 1 || $network_mode == 2)// Generation IPv4 Enabled Check
 		{
 			// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
-			$gen_peers_total = mysql_result(mysql_query("SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
+			$gen_peers_total = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
 
 			// IPv4 Generation
 			$found_public_key = find_v4_gen_key($my_public_key);
@@ -152,10 +152,10 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 			$my_peer_generation_IP = find_v4_gen_IP($my_public_key);
 
 			// My Own IPv4 Address
-			$my_generation_IP = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,0);
+			$my_generation_IP = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,0);
 
 			// What Public Key is using my IPv4 Address?			
-			$key_generation_IP = mysql_result(mysql_query("SELECT public_key FROM `generating_peer_list` WHERE `IP_Address` = '$my_generation_IP' LIMIT 1"),0,0);
+			$key_generation_IP = mysql_result(mysqli_query($db_connect, "SELECT public_key FROM `generating_peer_list` WHERE `IP_Address` = '$my_generation_IP' LIMIT 1"),0,0);
 
 			if($my_generation_IP != $my_peer_generation_IP && empty($found_public_key) == FALSE)
 			{
@@ -187,7 +187,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 					election_cycle(6) == TRUE) // Check 1-6 cycles ahead (30 minutes)
 				{			
 					// Check to see if this request is already in my transaction queue.
-					$found_public_trans_queue = mysql_result(mysql_query("SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'R' LIMIT 1"),0,0);				
+					$found_public_trans_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'R' LIMIT 1"),0,0);				
 
 					if(empty($found_public_trans_queue) == TRUE)
 					{
@@ -197,7 +197,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						$generation_request = ARBITRARY_KEY . rand(1, 999999);
 
 						// Update Reverse Crypto Testing Data
-						$generation_key_crypt = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_key_crypt' LIMIT 1"),0,0);
+						$generation_key_crypt = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_key_crypt' LIMIT 1"),0,0);
 
 						if(empty($generation_key_crypt) == TRUE)
 						{
@@ -210,7 +210,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 							$encryptedPublicKey = base64_encode($encryptedPublicKey);
 							
 							// Update in the database.
-							mysql_query("UPDATE `options` SET `field_data` = '$encryptedPublicKey' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
+							mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$encryptedPublicKey' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
 						}
 
 						// Crypt3 field will contain the IP address/Domain/etc of where the election request originates from.
@@ -229,7 +229,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						$encryptedData64_1 = base64_encode($encryptedData1);
 						$duplicate_hash_check = hash('sha256', $encryptedData64_1 . $generation_request . $encryptedData64_3);
 
-						mysql_query("INSERT INTO `my_transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
+						mysqli_query($db_connect, "INSERT INTO `my_transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
 						VALUES ('" . time() . "', '$my_public_key', '$encryptedData64_1', '$generation_request' , '$encryptedData64_3', '$duplicate_hash_check' , 'R')");
 
 					} // End duplicate request check
@@ -248,7 +248,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 					election_cycle(6) == TRUE) // Check 1-6 cycles ahead (30 minutes)
 				{
 					// Check to see if this request is already in my transaction queue
-					$found_public_trans_queue = mysql_result(mysql_query("SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'R' LIMIT 1"),0,0);				
+					$found_public_trans_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'R' LIMIT 1"),0,0);				
 
 					if(empty($found_public_trans_queue) == TRUE)
 					{
@@ -258,7 +258,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						$generation_request = ARBITRARY_KEY . rand(1, 999999);
 
 						// Update Reverse Crypto Testing Data
-						$generation_key_crypt = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_key_crypt' LIMIT 1"),0,0);
+						$generation_key_crypt = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_key_crypt' LIMIT 1"),0,0);
 
 						if(empty($generation_key_crypt) == TRUE)
 						{
@@ -271,7 +271,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 							$encryptedPublicKey = base64_encode($encryptedPublicKey);
 							
 							// Update in the database.
-							mysql_query("UPDATE `options` SET `field_data` = '$encryptedPublicKey' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
+							mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$encryptedPublicKey' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
 						}
 
 						// Crypt3 field will contain the IP address/Domain/etc of where the election request originates from.
@@ -289,7 +289,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						$encryptedData64_1 = base64_encode($encryptedData1);
 						$duplicate_hash_check = hash('sha256', $encryptedData64_1 . $generation_request . $encryptedData64_3);
 
-						mysql_query("INSERT INTO `my_transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
+						mysqli_query($db_connect, "INSERT INTO `my_transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
 						VALUES ('" . time() . "', '$my_public_key', '$encryptedData64_1', '$generation_request' , '$encryptedData64_3', '$duplicate_hash_check' , 'R')");
 					} // End duplicate request check
 				} // End Election cycle available check
@@ -304,8 +304,8 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 
 					// Server public key is listed as a qualified generation server.
 					// Has the server submitted it's currency generation to the transaction queue?
-					$found_public_key_my_queue = mysql_result(mysql_query("SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'G' LIMIT 1"),0,0);
-					$found_public_key_trans_queue = mysql_result(mysql_query("SELECT timestamp FROM `transaction_queue` WHERE `public_key` = '$my_public_key' AND `attribute` = 'G' LIMIT 1"),0,0);
+					$found_public_key_my_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'G' LIMIT 1"),0,0);
+					$found_public_key_trans_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_queue` WHERE `public_key` = '$my_public_key' AND `attribute` = 'G' LIMIT 1"),0,0);
 					$join_peer_list = find_v4_gen_join($my_public_key);
 					$join_peer_list2 = find_v6_gen_join($my_public_key);
 
@@ -344,7 +344,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						$sql = "INSERT INTO `my_transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
 						VALUES ('" . $creation_time . "', '$my_public_key', '$encryptedData64_1', '$encryptedData64_2' , '$encryptedData64_3', '$duplicate_hash_check' , 'G')";
 						
-						mysql_query($sql);
+						mysqli_query($db_connect, $sql);
 					}
 
 				} // Future generation allowed check
@@ -356,7 +356,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 		if($network_mode == 1 || $network_mode == 3)// Generation IPv6 Enabled Check
 		{
 			// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
-			$gen_peers_total = mysql_result(mysql_query("SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
+			$gen_peers_total = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
 
 			// IPv6 Generation
 			$found_public_key = find_v6_gen_key($my_public_key);
@@ -365,10 +365,10 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 			$my_peer_generation_IP = find_v6_gen_IP($my_public_key);
 
 			// My Own IPv6 Address
-			$my_generation_IP = ipv6_compress(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP_v6' LIMIT 1"),0,0));
+			$my_generation_IP = ipv6_compress(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP_v6' LIMIT 1"),0,0));
 
 			// What Public Key is using my IPv6 Address?			
-			$key_generation_IP = mysql_result(mysql_query("SELECT public_key FROM `generating_peer_list` WHERE `IP_Address` = '$my_generation_IP' LIMIT 1"),0,0);
+			$key_generation_IP = mysql_result(mysqli_query($db_connect, "SELECT public_key FROM `generating_peer_list` WHERE `IP_Address` = '$my_generation_IP' LIMIT 1"),0,0);
 
 			if($my_generation_IP != $my_peer_generation_IP && empty($found_public_key) == FALSE)
 			{
@@ -400,7 +400,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 					election_cycle(6, 2, $gen_peers_total) == TRUE) // Check 1-6 cycles ahead (30 minutes)
 				{			
 					// Check to see if this request is already in my transaction queue.
-					$found_public_trans_queue = mysql_result(mysql_query("SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'R' LIMIT 1"),0,0);				
+					$found_public_trans_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'R' LIMIT 1"),0,0);				
 
 					if(empty($found_public_trans_queue) == TRUE)
 					{
@@ -410,7 +410,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						$generation_request = ARBITRARY_KEY . rand(1, 999999);
 
 						// Update Reverse Crypto Testing Data
-						$generation_key_crypt = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_key_crypt' LIMIT 1"),0,0);
+						$generation_key_crypt = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_key_crypt' LIMIT 1"),0,0);
 
 						if(empty($generation_key_crypt) == TRUE)
 						{
@@ -423,7 +423,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 							$encryptedPublicKey = base64_encode($encryptedPublicKey);
 							
 							// Update in the database.
-							mysql_query("UPDATE `options` SET `field_data` = '$encryptedPublicKey' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
+							mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$encryptedPublicKey' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
 						}
 
 						// Crypt3 field will contain the IP address/Domain/etc of where the election request originates from.
@@ -442,7 +442,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						$encryptedData64_1 = base64_encode($encryptedData1);
 						$duplicate_hash_check = hash('sha256', $encryptedData64_1 . $generation_request . $encryptedData64_3);
 
-						mysql_query("INSERT INTO `my_transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
+						mysqli_query($db_connect, "INSERT INTO `my_transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
 						VALUES ('" . time() . "', '$my_public_key', '$encryptedData64_1', '$generation_request' , '$encryptedData64_3', '$duplicate_hash_check' , 'R')");
 
 					} // End duplicate request check
@@ -461,7 +461,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 					election_cycle(6, 2, $gen_peers_total) == TRUE) // Check 1-6 cycles ahead (30 minutes)
 				{
 					// Check to see if this request is already in my transaction queue
-					$found_public_trans_queue = mysql_result(mysql_query("SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'R' LIMIT 1"),0,0);				
+					$found_public_trans_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'R' LIMIT 1"),0,0);				
 
 					if(empty($found_public_trans_queue) == TRUE)
 					{
@@ -471,7 +471,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						$generation_request = ARBITRARY_KEY . rand(1, 999999);
 
 						// Update Reverse Crypto Testing Data
-						$generation_key_crypt = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_key_crypt' LIMIT 1"),0,0);
+						$generation_key_crypt = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_key_crypt' LIMIT 1"),0,0);
 
 						if(empty($generation_key_crypt) == TRUE)
 						{
@@ -484,7 +484,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 							$encryptedPublicKey = base64_encode($encryptedPublicKey);
 							
 							// Update in the database.
-							mysql_query("UPDATE `options` SET `field_data` = '$encryptedPublicKey' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
+							mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$encryptedPublicKey' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
 						}
 
 						// Crypt3 field will contain the IP address/Domain/etc of where the election request originates from.
@@ -502,7 +502,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						$encryptedData64_1 = base64_encode($encryptedData1);
 						$duplicate_hash_check = hash('sha256', $encryptedData64_1 . $generation_request . $encryptedData64_3);
 
-						mysql_query("INSERT INTO `my_transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
+						mysqli_query($db_connect, "INSERT INTO `my_transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
 						VALUES ('" . time() . "', '$my_public_key', '$encryptedData64_1', '$generation_request' , '$encryptedData64_3', '$duplicate_hash_check' , 'R')");
 					} // End duplicate request check
 				} // End Election cycle available check
@@ -517,8 +517,8 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 
 					// Server public key is listed as a qualified generation server.
 					// Has the server submitted it's currency generation to the transaction queue?
-					$found_public_key_my_queue = mysql_result(mysql_query("SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'G' LIMIT 1"),0,0);
-					$found_public_key_trans_queue = mysql_result(mysql_query("SELECT timestamp FROM `transaction_queue` WHERE `public_key` = '$my_public_key' AND `attribute` = 'G' LIMIT 1"),0,0);
+					$found_public_key_my_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'G' LIMIT 1"),0,0);
+					$found_public_key_trans_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_queue` WHERE `public_key` = '$my_public_key' AND `attribute` = 'G' LIMIT 1"),0,0);
 					$join_peer_list = find_v6_gen_join($my_public_key);
 					$join_peer_list2 = find_v4_gen_join($my_public_key);
 
@@ -557,7 +557,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						$sql = "INSERT INTO `my_transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
 						VALUES ('" . $creation_time . "', '$my_public_key', '$encryptedData64_1', '$encryptedData64_2' , '$encryptedData64_3', '$duplicate_hash_check' , 'G')";
 						
-						mysql_query($sql);
+						mysqli_query($db_connect, $sql);
 					}
 
 				} // Future generation allowed check
@@ -571,21 +571,21 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 } // End Time allowed check
 //***********************************************************************************
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,0);
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,0);
 
 // Check script status
 if($loop_active == 3)
 {
 	// Time to exit
-	mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active'");
+	mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active'");
 	exit;
 }
 
 // Script finished, set standby status to 2
-mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
+mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
 
 // Record when this script finished
-mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'generation_last_heartbeat' LIMIT 1");
+mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'generation_last_heartbeat' LIMIT 1");
 
 //***********************************************************************************
 sleep(10);

@@ -11,19 +11,18 @@ if(API_DISABLED == TRUE || TIMEKOIN_DISABLED == TRUE)
 }
 //***********************************************************************************
 //***********************************************************************************
-// Open persistent connection to database
-mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD);
-mysql_select_db(MYSQL_DATABASE);
-
 // Check for banned IP address
 if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 {
 	// Sorry, your IP address has been banned :(
 	exit;
 }
+
+// Open persistent connection to database
+$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 //***********************************************************************************
 $hash_code = filter_sql(substr($_GET["hash"], 0, 256)); // Limit to 256 Characters
-$hash_code = mysql_result(mysql_query("SELECT field_name FROM `options` WHERE `field_name` LIKE 'hashcode%' AND `field_data` = '$hash_code' LIMIT 1"),0,0);
+$hash_code = mysql_result(mysqli_query($db_connect, "SELECT field_name FROM `options` WHERE `field_name` LIKE 'hashcode%' AND `field_data` = '$hash_code' LIMIT 1"),0,0);
 
 if(empty($hash_code) == TRUE)
 {
@@ -34,7 +33,7 @@ if(empty($hash_code) == TRUE)
 }
 else
 {
-	$hash_permissions = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = '$hash_code" . "_permissions' LIMIT 1"),0,0);
+	$hash_permissions = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = '$hash_code" . "_permissions' LIMIT 1"),0,0);
 }
 //***********************************************************************************
 // Answer if Hashcode is valid for any reason
@@ -56,22 +55,22 @@ if($_GET["action"] == "tk_start_stop")
 		if($active == 1) // Start Timekoin Server
 		{
 			write_log("Main Process Sent START Command from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
-			$main_heartbeat_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
+			$main_heartbeat_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
 
 			if($main_heartbeat_active == FALSE)
 			{
 				// Database Initialization
 				initialization_database();
 
-				mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'main_last_heartbeat' LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'main_last_heartbeat' LIMIT 1");
 
 				// Set loop at active now
-				mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1");
 
 				activate(TIMEKOINSYSTEM, 1); // In case this was disabled from a emergency stop call in the server GUI
 
 				// CLI Mode selection
-				$cli_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
+				$cli_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
 
 				// Start main system script
 				if($cli_mode == TRUE)
@@ -89,19 +88,19 @@ if($_GET["action"] == "tk_start_stop")
 				// Use uPNP to map inbound ports for Windows systems
 				if(getenv("OS") == "Windows_NT" && file_exists("utils\upnpc.exe") == TRUE)
 				{
-					$server_port_number = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,0);
+					$server_port_number = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,0);
 					$server_IP = gethostbyname(trim(`hostname`));
 					pclose(popen("start /B utils\upnpc.exe -e Timekoin -a $server_IP $server_port_number $server_port_number TCP", "r"));
 				}
 
 				// Start any plugins
 				$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' ORDER BY `options`.`field_name` ASC";
-				$sql_result = mysql_query($sql);
-				$sql_num_results = mysql_num_rows($sql_result);
+				$sql_result = mysqli_query($db_connect, $sql);
+				$sql_num_results = mysqli_num_rows($sql_result);
 
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
-					$sql_row = mysql_fetch_array($sql_result);
+					$sql_row = mysqli_fetch_array($sql_result);
 
 					$plugin_file = find_string("---file=", "---enable", $sql_row["field_data"]);		
 					$plugin_enable = intval(find_string("---enable=", "---show", $sql_row["field_data"]));
@@ -140,8 +139,8 @@ if($_GET["action"] == "tk_start_stop")
 		if($active == 2) // Stop Timekoin Server
 		{
 			write_log("Main Process Sent STOP Command from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
-			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
-			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,0);
+			$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,0);
 
 			// Use uPNP to delete inbound ports for Windows systems
 			if(getenv("OS") == "Windows_NT" && file_exists("utils\upnpc.exe") == TRUE)
@@ -157,20 +156,20 @@ if($_GET["action"] == "tk_start_stop")
 					// Main stop was unexpected
 					$sql = "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1";
 					
-					if(mysql_query($sql) == TRUE)
+					if(mysqli_query($db_connect, $sql) == TRUE)
 					{
 						// Clear transaction queue to avoid unnecessary peer confusion
-						mysql_query("TRUNCATE TABLE `transaction_queue`");
+						mysqli_query($db_connect, "TRUNCATE TABLE `transaction_queue`");
 
 						// Clear Status for other Scripts
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active' LIMIT 1");						
+						mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active' LIMIT 1");						
 
 						// Stop all other script activity
 						activate(FOUNDATION_DISABLED, 0);
@@ -194,20 +193,20 @@ if($_GET["action"] == "tk_start_stop")
 					// Set database to flag main to stop
 					$sql = "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1";
 					
-					if(mysql_query($sql) == TRUE)
+					if(mysqli_query($db_connect, $sql) == TRUE)
 					{
 						// Clear transaction queue to avoid unnecessary peer confusion
-						mysql_query("TRUNCATE TABLE `transaction_queue`");
+						mysqli_query($db_connect, "TRUNCATE TABLE `transaction_queue`");
 
 						// Flag other process to stop
-						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
-						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
-						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
-						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
-						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
-						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
-						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
-						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active' LIMIT 1");
 						
 						// Stop all other script activity
 						activate(FOUNDATION_DISABLED, 0);
@@ -239,22 +238,22 @@ if($_GET["action"] == "tk_start_stop")
 		{
 			write_log("Watchdog Sent START Command from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
 			// Check last heartbeat and make sure it was more than X seconds ago
-			$watchdog_heartbeat_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,0);
+			$watchdog_heartbeat_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,0);
 
 			if($watchdog_heartbeat_active == FALSE) // Not running currently
 			{
 				if($watchdog_heartbeat_active === FALSE) // No record exist yet, need to create one
 				{
-					mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('watchdog_heartbeat_active', '0')");
+					mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('watchdog_heartbeat_active', '0')");
 				}
 				
-				mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'watchdog_last_heartbeat' LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'watchdog_last_heartbeat' LIMIT 1");
 
 				// Set loop at active now
-				mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'watchdog_heartbeat_active' LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'watchdog_heartbeat_active' LIMIT 1");
 
 				// CLI Mode selection
-				$cli_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
+				$cli_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
 
 				// Start main system script
 				if($cli_mode == TRUE)
@@ -281,8 +280,8 @@ if($_GET["action"] == "tk_start_stop")
 		if($active == 4) // Stop Watchdog
 		{
 			write_log("Watchdog Sent STOP Command from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
-			$watchdog_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,0);
-			$watchdog_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_last_heartbeat' LIMIT 1"),0,0);
+			$watchdog_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,0);
+			$watchdog_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_last_heartbeat' LIMIT 1"),0,0);
 
 			if($watchdog_loop_active > 0)
 			{
@@ -292,7 +291,7 @@ if($_GET["action"] == "tk_start_stop")
 					// Watchdog stop was unexpected
 					$sql = "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'watchdog_heartbeat_active' LIMIT 1";
 					
-					if(mysql_query($sql) == TRUE)
+					if(mysqli_query($db_connect, $sql) == TRUE)
 					{
 						echo 1;
 					}
@@ -306,7 +305,7 @@ if($_GET["action"] == "tk_start_stop")
 					// Set database to flag watchdog to stop
 					$sql = "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'watchdog_heartbeat_active' LIMIT 1";
 					
-					if(mysql_query($sql) == TRUE)
+					if(mysqli_query($db_connect, $sql) == TRUE)
 					{
 						echo 1;
 					}
@@ -340,8 +339,8 @@ if($_GET["action"] == "tk_process_status")
 		if($process == 1)
 		{
 			// Main Program Process
-			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
-			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,0);
+			$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,0);
 			write_log("Main Process Status Check from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
 
 			if($script_loop_active > 0)
@@ -365,8 +364,8 @@ if($_GET["action"] == "tk_process_status")
 		if($process == 2)
 		{
 			// Treasurer Processor
-			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,0);
-			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_last_heartbeat' LIMIT 1"),0,0);
+			$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_last_heartbeat' LIMIT 1"),0,0);
 			write_log("Treasurer Processor Status Check from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
 
 			if($script_loop_active > 0)
@@ -390,8 +389,8 @@ if($_GET["action"] == "tk_process_status")
 		if($process == 3)
 		{
 			// Peer Processor
-			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,0);
-			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_last_heartbeat' LIMIT 1"),0,0);
+			$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_last_heartbeat' LIMIT 1"),0,0);
 			write_log("Peer Processor Status Check from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
 
 			if($script_loop_active > 0)
@@ -415,8 +414,8 @@ if($_GET["action"] == "tk_process_status")
 		if($process == 4)
 		{
 			// Transaction Queue Clerk
-			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,0);
-			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_last_heartbeat' LIMIT 1"),0,0);
+			$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_last_heartbeat' LIMIT 1"),0,0);
 			write_log("Transaction Queue Clerk Status Check from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
 
 			if($script_loop_active > 0)
@@ -440,8 +439,8 @@ if($_GET["action"] == "tk_process_status")
 		if($process == 5)
 		{
 			// Generation Peer Manager
-			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,0);
-			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'genpeer_last_heartbeat' LIMIT 1"),0,0);
+			$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'genpeer_last_heartbeat' LIMIT 1"),0,0);
 			write_log("Generation Peer Manager Status Check from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
 
 			if($script_loop_active > 0)
@@ -465,8 +464,8 @@ if($_GET["action"] == "tk_process_status")
 		if($process == 6)
 		{
 			// Generation Processor
-			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,0);
-			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_last_heartbeat' LIMIT 1"),0,0);
+			$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_last_heartbeat' LIMIT 1"),0,0);
 			write_log("Generation Processor Status Check from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
 
 			if($script_loop_active > 0)
@@ -490,8 +489,8 @@ if($_GET["action"] == "tk_process_status")
 		if($process == 7)
 		{
 			// Transaction Clerk
-			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,0);
-			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_last_heartbeat' LIMIT 1"),0,0);
+			$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_last_heartbeat' LIMIT 1"),0,0);
 			write_log("Transaction Clerk Status Check from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
 
 			if($script_loop_active > 0)
@@ -515,8 +514,8 @@ if($_GET["action"] == "tk_process_status")
 		if($process == 8)
 		{
 			// Foundation Manager
-			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,0);
-			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_last_heartbeat' LIMIT 1"),0,0);
+			$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_last_heartbeat' LIMIT 1"),0,0);
 			write_log("Foundation Manager Status Check from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
 
 			if($script_loop_active > 0)
@@ -540,8 +539,8 @@ if($_GET["action"] == "tk_process_status")
 		if($process == 9)
 		{
 			// Balance Indexer
-			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'balance_heartbeat_active' LIMIT 1"),0,0);
-			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'balance_last_heartbeat' LIMIT 1"),0,0);
+			$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'balance_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'balance_last_heartbeat' LIMIT 1"),0,0);
 			write_log("Balance Indexer Status Check from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
 
 			if($script_loop_active > 0)
@@ -565,8 +564,8 @@ if($_GET["action"] == "tk_process_status")
 		if($process == 10)
 		{
 			// Watchdog
-			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,0);
-			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_last_heartbeat' LIMIT 1"),0,0);
+			$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_last_heartbeat' LIMIT 1"),0,0);
 			write_log("Watchdog Status Check from IP: " . $_SERVER['REMOTE_ADDR'],"AP");
 
 			if($script_loop_active > 0)
@@ -603,7 +602,7 @@ if($_GET["action"] == "pk_valid")
 		$public_key = substr($_POST["public_key"], 0, 500); // In case someone is trying to flood this function
 		$public_key = filter_sql(base64_decode($public_key));
 
-		$valid_key_test = mysql_result(mysql_query("SELECT public_key_from FROM `transaction_history` WHERE `public_key_from` = '$public_key' OR `public_key_to` = '$public_key' LIMIT 1"),0,0);
+		$valid_key_test = mysql_result(mysqli_query($db_connect, "SELECT public_key_from FROM `transaction_history` WHERE `public_key_from` = '$public_key' OR `public_key_to` = '$public_key' LIMIT 1"),0,0);
 
 		if(empty($valid_key_test) == FALSE)
 		{
@@ -678,7 +677,7 @@ if($_GET["action"] == "send_tk")
 				if($transaction_hash == $crypt_hash_check)
 				{
 					// Hash check good, check for duplicate transaction already in queue
-					$hash_match = mysql_result(mysql_query("SELECT timestamp FROM `transaction_queue` WHERE `timestamp`= $transaction_timestamp AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+					$hash_match = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_queue` WHERE `timestamp`= $transaction_timestamp AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
 				}
 				else
 				{
@@ -738,8 +737,8 @@ if($_GET["action"] == "send_tk")
 			{
 				// Check for 100 public key limit in the transaction queue
 				$sql = "SELECT * FROM `transaction_queue` WHERE `public_key` = '$transaction_public_key'";
-				$sql_result = mysql_query($sql);
-				$sql_num_results = mysql_num_rows($sql_result);
+				$sql_result = mysqli_query($db_connect, $sql);
+				$sql_num_results = mysqli_num_rows($sql_result);
 
 				if($sql_num_results < 100)
 				{						
@@ -747,7 +746,7 @@ if($_GET["action"] == "send_tk")
 					$sql = "INSERT INTO `my_transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
 					VALUES ('$transaction_timestamp', '$transaction_public_key', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
 					
-					if(mysql_query($sql) == TRUE)
+					if(mysqli_query($db_connect, $sql) == TRUE)
 					{
 						// Give confirmation of transaction insert accept
 						echo "OK";
@@ -790,8 +789,8 @@ if($_GET["action"] == "pk_history")
 		{
 			// Find the last X transactions sent to this public key
 			$sql = "SELECT timestamp, public_key_from, crypt_data3  FROM `transaction_history` WHERE `public_key_to` = '$public_key' ORDER BY `transaction_history`.`timestamp` DESC";
-			$sql_result = mysql_query($sql);
-			$sql_num_results = mysql_num_rows($sql_result);
+			$sql_result = mysqli_query($db_connect, $sql);
+			$sql_num_results = mysqli_num_rows($sql_result);
 			$counter = 1;
 			$result_limit = 0;
 
@@ -803,7 +802,7 @@ if($_GET["action"] == "pk_history")
 					break;
 				}					
 				
-				$sql_row = mysql_fetch_array($sql_result);
+				$sql_row = mysqli_fetch_array($sql_result);
 				$crypt3 = $sql_row["crypt_data3"];
 				$transaction_info = tk_decrypt($sql_row["public_key_from"], base64_decode($crypt3));
 				$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
@@ -834,8 +833,8 @@ if($_GET["action"] == "pk_history")
 		{
 			// Find the last X transactions sent to this public key
 			$sql = "SELECT timestamp, public_key_to, crypt_data3  FROM `transaction_history` WHERE `public_key_from` = '$public_key' ORDER BY `transaction_history`.`timestamp` DESC";
-			$sql_result = mysql_query($sql);
-			$sql_num_results = mysql_num_rows($sql_result);
+			$sql_result = mysqli_query($db_connect, $sql);
+			$sql_num_results = mysqli_num_rows($sql_result);
 			$counter = 1;
 			$result_limit = 0;
 
@@ -847,7 +846,7 @@ if($_GET["action"] == "pk_history")
 					break;
 				}					
 				
-				$sql_row = mysql_fetch_array($sql_result);
+				$sql_row = mysqli_fetch_array($sql_result);
 				$crypt3 = $sql_row["crypt_data3"];
 				$transaction_info = tk_decrypt($public_key, base64_decode($crypt3));
 				$transaction_amount = find_string("AMOUNT=", "---TIME", $transaction_info);
@@ -916,15 +915,15 @@ if($_GET["action"] == "tk_trans_total")
 			$amount = 0;
 
 			$sql = "SELECT * FROM `transaction_history` WHERE `timestamp` >= '$start_transaction_cycle' AND `timestamp` < '$end_transaction_cycle'";
-			$sql_result = mysql_query($sql);
-			$sql_num_results = mysql_num_rows($sql_result);
+			$sql_result = mysqli_query($db_connect, $sql);
+			$sql_num_results = mysqli_num_rows($sql_result);
 
 			if($sql_num_results > 1)
 			{
 				// Build row with icons
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
-					$sql_row = mysql_fetch_array($sql_result);
+					$sql_row = mysqli_fetch_array($sql_result);
 
 					if($sql_row["attribute"] == 'G' || $sql_row["attribute"] == 'T')
 					{
@@ -973,8 +972,8 @@ if($_GET["action"] == "pk_recv")
 		// Find every TimeKoin sent to this public Key
 		$sql = "SELECT crypt_data3, attribute FROM `transaction_history` WHERE `public_key_to` = '$public_key'";
 
-		$sql_result = mysql_query($sql);
-		$sql_num_results = mysql_num_rows($sql_result);
+		$sql_result = mysqli_query($db_connect, $sql);
+		$sql_num_results = mysqli_num_rows($sql_result);
 		$crypto_balance = 0;
 		$transaction_info;
 
@@ -1033,8 +1032,8 @@ if($_GET["action"] == "pk_sent")
 		// Find every Time Koin sent to this public Key
 		$sql = "SELECT crypt_data3, attribute FROM `transaction_history` WHERE `public_key_from` = '$public_key'";
 
-		$sql_result = mysql_query($sql);
-		$sql_num_results = mysql_num_rows($sql_result);
+		$sql_result = mysqli_query($db_connect, $sql);
+		$sql_num_results = mysqli_num_rows($sql_result);
 		$crypto_balance = 0;
 		$transaction_info;
 
@@ -1093,8 +1092,8 @@ if($_GET["action"] == "pk_gen_total")
 		// Find every Time Koin sent to this public Key
 		$sql = "SELECT public_key_from, public_key_to, crypt_data3, attribute FROM `transaction_history` WHERE `public_key_from` = '$public_key'";
 
-		$sql_result = mysql_query($sql);
-		$sql_num_results = mysql_num_rows($sql_result);
+		$sql_result = mysqli_query($db_connect, $sql);
+		$sql_num_results = mysqli_num_rows($sql_result);
 		$crypto_balance = 0;
 		$transaction_info;
 

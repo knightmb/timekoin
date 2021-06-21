@@ -10,16 +10,15 @@ if(PEERLIST_DISABLED == TRUE || TIMEKOIN_DISABLED == TRUE)
 }
 //***********************************************************************************
 //***********************************************************************************
-// Open connection to database
-mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD);
-mysql_select_db(MYSQL_DATABASE);
-
 // Check for banned IP address
 if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 {
 	// Sorry, your IP address has been banned :(
 	exit;
 }
+
+// Open persistent connection to database
+$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 //***********************************************************************************
 //***********************************************************************************
 // Answer poll challenge/ping
@@ -30,16 +29,16 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 	// Check if Ambient Peer Restart is enabled (randomize to avoid DB spamming)
 	if(rand(1,50) == 50)
 	{
-		$allow_ambient_peer_restart = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'allow_ambient_peer_restart' LIMIT 1"),0,0);
+		$allow_ambient_peer_restart = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'allow_ambient_peer_restart' LIMIT 1"),0,0);
 
 		if($allow_ambient_peer_restart == 1)
 		{
 			// CLI Mode selection
-			$cli_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
+			$cli_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
 
 			// Check to make sure Timekoin has not be stopped for any unknown reason
-			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
-			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,0);
+			$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,0);
 
 			if($script_loop_active > 0)
 			{
@@ -49,17 +48,17 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 					// Main stop was unexpected
 					write_log("Main Timekoin Processor has Stop, going to try an Ambient Peer Restart", "MA");
 
-					mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'main_last_heartbeat' LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'main_last_heartbeat' LIMIT 1");
 
 					// Set loop at active now
-					mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1");
 					
 					// Clear IP Activity and Banlist for next start
-					mysql_query("TRUNCATE TABLE `ip_activity`");
-					mysql_query("TRUNCATE TABLE `ip_banlist`");
+					mysqli_query($db_connect, "TRUNCATE TABLE `ip_activity`");
+					mysqli_query($db_connect, "TRUNCATE TABLE `ip_banlist`");
 
 					// Record when started
-					mysql_query("UPDATE `options` SET `field_data` = '" . time() . "' WHERE `options`.`field_name` = 'timekoin_start_time' LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . time() . "' WHERE `options`.`field_name` = 'timekoin_start_time' LIMIT 1");
 
 					if($cli_mode == TRUE)
 					{
@@ -74,8 +73,8 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 			}
 
 			// Check watchdog script to make sure it is still running
-			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,0);
-			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_last_heartbeat' LIMIT 1"),0,0);
+			$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_last_heartbeat' LIMIT 1"),0,0);
 
 			if($script_loop_active > 0)
 			{
@@ -85,10 +84,10 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 					// Watchdog stop was unexpected
 					write_log("Watchdog has Stop, going to try an Ambient Peer Restart", "MA");
 
-					mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'watchdog_last_heartbeat' LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'watchdog_last_heartbeat' LIMIT 1");
 
 					// Set loop at active now
-					mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'watchdog_heartbeat_active' LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'watchdog_heartbeat_active' LIMIT 1");
 
 
 					if($cli_mode == TRUE)
@@ -125,7 +124,7 @@ if($_GET["action"] == "polltime")
 // Answer network mode polling
 if($_GET["action"] == "gateway")
 {
-	echo intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));	
+	echo intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));	
 	
 	// Log inbound IP activity
 	log_ip("PL", 1);
@@ -144,12 +143,12 @@ if($_GET["action"] == "poll_failure")
 	if(empty($domain) == TRUE)
 	{
 		// No Domain, IP Only
-		echo mysql_result(mysql_query("SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip' AND `subfolder` = '$subfolder' AND `port_number` = $port LIMIT 1"),0,0);
+		echo mysql_result(mysqli_query($db_connect, "SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip' AND `subfolder` = '$subfolder' AND `port_number` = $port LIMIT 1"),0,0);
 	}
 	else
 	{
 		// Domain
-		echo mysql_result(mysql_query("SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port LIMIT 1"),0,0);
+		echo mysql_result(mysqli_query($db_connect, "SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port LIMIT 1"),0,0);
 	}
 
 	log_ip("PL", 1);
@@ -160,22 +159,22 @@ if($_GET["action"] == "poll_failure")
 // Answer a request to see our new/active peer list (Random 10 from new peer list, Random 5 from active peer list)
 if($_GET["action"] == "new_peers")
 {
-	$allow_lan_peers = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,0));
-	$peer_failure_grade = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,0);
+	$allow_lan_peers = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,0));
+	$peer_failure_grade = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,0);
 
 	// Only show peers that have less than 1/2 poll failure score limit
 	$peer_failure_grade = intval($peer_failure_grade / 2);
 
 	$sql = "SELECT * FROM `new_peers_list` WHERE `poll_failures` < $peer_failure_grade ORDER BY RAND() LIMIT 10";
 
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 
 	$peer_counter = 1;
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		$sql_row = mysqli_fetch_array($sql_result);
 
 		$ip_address = $sql_row["IP_Address"];
 		$domain = $sql_row["domain"];
@@ -192,12 +191,12 @@ if($_GET["action"] == "new_peers")
 
 	$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND() LIMIT 5";
 
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		$sql_row = mysqli_fetch_array($sql_result);
 
 		$ip_address = $sql_row["IP_Address"];
 		$domain = $sql_row["domain"];
@@ -221,11 +220,11 @@ if($_GET["action"] == "new_peers")
 // Answer join request
 if($_GET["action"] == "join")
 {
-	$max_active_peers = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,0);
+	$max_active_peers = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,0);
 
 	// How many active peers do we have?
 	$sql = "SELECT last_heartbeat FROM `active_peer_list`";
-	$active_peers = mysql_num_rows(mysql_query($sql));
+	$active_peers = mysqli_num_rows(mysqli_query($db_connect, $sql));
 
 	if($active_peers >= $max_active_peers)
 	{
@@ -247,11 +246,11 @@ if($_GET["action"] == "join")
 // Answer exchange request
 if($_GET["action"] == "exchange")
 {
-	$max_active_peers = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,0);
+	$max_active_peers = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,0);
 
 	// How many active peers do we have?
 	$sql = "SELECT last_heartbeat FROM `active_peer_list`";
-	$active_peers = mysql_num_rows(mysql_query($sql));
+	$active_peers = mysqli_num_rows(mysqli_query($db_connect, $sql));
 
 	if($active_peers >= $max_active_peers)
 	{
@@ -266,9 +265,9 @@ if($_GET["action"] == "exchange")
 		$my_server_domain = my_domain();
 		$my_server_subfolder = my_subfolder();
 		$my_server_port_number = my_port_number();
-		$allow_lan_peers = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,0));
-		$network_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
-		$self_key = hash('crc32', mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,0));
+		$allow_lan_peers = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,0));
+		$network_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
+		$self_key = hash('crc32', mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,0));
 
 		if($self_key == $_GET["selfkey"])
 		{
@@ -294,8 +293,8 @@ if($_GET["action"] == "exchange")
 		}
 
 		// Check to make sure that this peer is not already in our active peer list
-		$duplicate_check1 = mysql_result(mysql_query("SELECT last_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' LIMIT 1"),0,0);
-		$duplicate_check2 = mysql_result(mysql_query("SELECT domain FROM `active_peer_list` WHERE `domain` LIKE '$domain' LIMIT 1"),0,0);
+		$duplicate_check1 = mysql_result(mysqli_query($db_connect, "SELECT last_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' LIMIT 1"),0,0);
+		$duplicate_check2 = mysql_result(mysqli_query($db_connect, "SELECT domain FROM `active_peer_list` WHERE `domain` LIKE '$domain' LIMIT 1"),0,0);
 
 		if(empty($ip_address) == TRUE)
 		{
@@ -412,7 +411,7 @@ if($_GET["action"] == "exchange")
 				$sql = "INSERT INTO `active_peer_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`last_heartbeat` ,`join_peer_list` ,`failed_sent_heartbeat`)
 		VALUES ('$ip_address', '$domain', '$subfolder', '$port_number', '" . time() . "', '" . time() . "', '0')";
 
-				if(mysql_query($sql) == TRUE)
+				if(mysqli_query($db_connect, $sql) == TRUE)
 				{
 					// Exchange was saved, now output our peer information
 					echo "-----status=OK-----domain=$my_server_domain-----subfolder=$my_server_subfolder-----port_number=$my_server_port_number-----";
@@ -447,15 +446,15 @@ if($_GET["action"] == "exchange")
 	log_ip("PL", scale_trigger(4));
 //***********************************************************************************
 // First time run check
-$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,0);
-$last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_last_heartbeat' LIMIT 1"),0,0);
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,0);
+$last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_last_heartbeat' LIMIT 1"),0,0);
 
-if($loop_active === FALSE && $last_heartbeat == 1)
+if($loop_active == "" && $last_heartbeat == 1)
 {
 	// Create record to begin loop
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('peerlist_heartbeat_active', '0')");
+	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('peerlist_heartbeat_active', '0')");
 	// Update timestamp for starting
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'peerlist_last_heartbeat' LIMIT 1");
+	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'peerlist_last_heartbeat' LIMIT 1");
 }
 else
 {
@@ -471,7 +470,7 @@ while(1) // Begin Infinite Loop
 {
 set_time_limit(300);
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,0);
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,0);
 
 // Check script status
 if($loop_active === FALSE)
@@ -482,16 +481,16 @@ if($loop_active === FALSE)
 else if($loop_active == 0)
 {
 	// Set the working status of 1
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
+	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
 }
 else if($loop_active == 2) // Wake from sleep
 {
 	// Set the working status of 1
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
+	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
 }
 else if($loop_active == 3) // Shutdown
 {
-	mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active'");
+	mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active'");
 	exit;
 }
 else
@@ -501,17 +500,17 @@ else
 }
 //***********************************************************************************
 //***********************************************************************************
-$max_active_peers = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,0);
-$max_new_peers = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'max_new_peers' LIMIT 1"),0,0);
-$allow_lan_peers = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,0));
-$network_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
+$max_active_peers = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,0);
+$max_new_peers = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'max_new_peers' LIMIT 1"),0,0);
+$allow_lan_peers = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,0));
+$network_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
 
 // How many active peers do we have?
 $sql = "SELECT join_peer_list FROM `active_peer_list`";
-$active_peers = mysql_num_rows(mysql_query($sql));
+$active_peers = mysqli_num_rows(mysqli_query($db_connect, $sql));
 
 $sql = "SELECT poll_failures FROM `new_peers_list`";
-$new_peers = mysql_num_rows(mysql_query($sql));
+$new_peers = mysqli_num_rows(mysqli_query($db_connect, $sql));
 
 $my_server_domain = my_domain();
 $my_server_subfolder = my_subfolder();
@@ -526,14 +525,14 @@ if($active_peers == 0 && $new_peers == 0)
 	$first_contact_limit = intval($max_active_peers * 0.75);
 	
 	$sql = "SELECT field_data FROM `options` WHERE `field_name` = 'first_contact_server' ORDER BY RAND() LIMIT $first_contact_limit";
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 
 	// First Contact Server Format
 	//---ip=192.168.0.1---domain=timekoin.com---subfolder=timekoin---port=80---end
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		$sql_row = mysqli_fetch_array($sql_result);
 		
 		$peer_ip = find_string("---ip=", "---domain", $sql_row["field_data"]);
 		$peer_domain = find_string("---domain=", "---subfolder", $sql_row["field_data"]);
@@ -550,7 +549,7 @@ if($active_peers == 0 && $new_peers == 0)
 		$sql = "INSERT INTO `active_peer_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`last_heartbeat`, `join_peer_list`, `failed_sent_heartbeat`)
 		VALUES ('$peer_ip', '$peer_domain', '$peer_subfolder', '$peer_port_number', " . time() . ", " . time() . ", 65535)";
 
-		mysql_query($sql);
+		mysqli_query($db_connect, $sql);
 	}	
 }
 
@@ -558,15 +557,15 @@ if($active_peers < $max_active_peers)
 {
 	//Start polling peers from the new peers list
 	$sql = "SELECT * FROM `new_peers_list` ORDER BY RAND() LIMIT 10";
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 
 	// Peer difference
 	$peer_difference_count = $max_active_peers - $active_peers;
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		$sql_row = mysqli_fetch_array($sql_result);
 		$ip_address = $sql_row["IP_Address"];
 		$domain = $sql_row["domain"];
 		$subfolder = $sql_row["subfolder"];
@@ -582,8 +581,8 @@ if($active_peers < $max_active_peers)
 		}
 
 		// Check to make sure that this peer is not already in our active peer list
-		$duplicate_check1 = mysql_result(mysql_query("SELECT last_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' LIMIT 1"),0,0);
-		$duplicate_check2 = mysql_result(mysql_query("SELECT domain FROM `active_peer_list` WHERE `domain` LIKE '$domain' LIMIT 1"),0,0);
+		$duplicate_check1 = mysql_result(mysqli_query($db_connect, "SELECT last_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' LIMIT 1"),0,0);
+		$duplicate_check2 = mysql_result(mysqli_query($db_connect, "SELECT domain FROM `active_peer_list` WHERE `domain` LIKE '$domain' LIMIT 1"),0,0);
 
 		if(empty($ip_address) == TRUE) // Check Domain
 		{
@@ -685,7 +684,7 @@ if($active_peers < $max_active_peers)
 				if($poll_peer == "OK")
 				{
 					// Generate Self-key to prevent self-connects on purpose or by accident
-					$self_key = hash('crc32', mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,0));
+					$self_key = hash('crc32', mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,0));
 					// Add this peer to the active list
 					$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 512, "peerlist.php?action=exchange&domain=$my_server_domain&subfolder=$my_server_subfolder&port_number=$my_server_port_number&selfkey=$self_key");
 
@@ -716,7 +715,7 @@ if($active_peers < $max_active_peers)
 							$sql = "INSERT INTO `active_peer_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`last_heartbeat` ,`join_peer_list` ,`failed_sent_heartbeat`)
 					VALUES ('$ip_address', '$domain', '$subfolder', '$port_number', '" . time() . "', '" . time() . "', '0');";		
 
-							if(mysql_query($sql) == TRUE)
+							if(mysqli_query($db_connect, $sql) == TRUE)
 							{
 								// Subtract 1 from the peer difference count
 								$peer_difference_count--;
@@ -732,7 +731,7 @@ if($active_peers < $max_active_peers)
 								write_log("Someone is Spoofing Peer $exchange_domain with Domain [$domain]", "PL");
 								
 								// Remove Spoof Reserve Peer
-								mysql_query("DELETE FROM `new_peers_list` WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+								mysqli_query($db_connect, "DELETE FROM `new_peers_list` WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 							}
 						}
 					}
@@ -741,7 +740,7 @@ if($active_peers < $max_active_peers)
 						// Server is full already, add more failure points that will get it eventually removed from the
 						// reserve peer list so fresh reserve peers can take its place
 						$poll_failures+= 10;
-						mysql_query("UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+						mysqli_query($db_connect, "UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 					}
 				}
 				else if($poll_peer == "FULL")
@@ -749,20 +748,20 @@ if($active_peers < $max_active_peers)
 					// Server is full already, add more failure points that will get it eventually removed from the
 					// reserve peer list so fresh reserve peers can take its place
 					$poll_failures+= 10;
-					mysql_query("UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 				}
 				else
 				{
 					// Server is either is not responding, record polling failure
 					$poll_failures++;
-					mysql_query("UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 				}
 			}
 			else
 			{
 				//No response, record polling failure for future reference
 				$poll_failures++;
-				mysql_query("UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 			}
 
 		} // End Duplicate Peer Check
@@ -770,7 +769,7 @@ if($active_peers < $max_active_peers)
 		{
 			// Active response will remove poll failures
 			$poll_failures--;
-			mysql_query("UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 		}
 
 		// Check to see if enough peers have been added
@@ -789,7 +788,7 @@ if($active_peers < $max_active_peers)
 // Add more peers to the new peers list to satisfy new peer limit
 // How many new peers do we have now?
 $sql = "SELECT * FROM `new_peers_list`";
-$new_peers_numbers = mysql_num_rows(mysql_query($sql));
+$new_peers_numbers = mysqli_num_rows(mysqli_query($db_connect, $sql));
 
 if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to avoid spamming for new peers
 {
@@ -801,14 +800,14 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 
 	// Add more possible peers to the new peer list by polling what the active peers have
 	$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND() LIMIT 10";
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 
 	$new_peer_difference = $max_new_peers - $new_peers_numbers;
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		$sql_row = mysqli_fetch_array($sql_result);
 		
 		$ip_address = $sql_row["IP_Address"];
 		$domain = $sql_row["domain"];
@@ -863,8 +862,8 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 			else
 			{
 				// Check to make sure that this peer is not already in our new peer list
-				$duplicate_check1 = mysql_result(mysql_query("SELECT IP_Address FROM `new_peers_list` WHERE `IP_Address` = '$peer_IP' LIMIT 1"),0,0);
-				$duplicate_check2 = mysql_result(mysql_query("SELECT domain FROM `new_peers_list` WHERE `domain` LIKE '$peer_domain' LIMIT 1"),0,0);
+				$duplicate_check1 = mysql_result(mysqli_query($db_connect, "SELECT IP_Address FROM `new_peers_list` WHERE `IP_Address` = '$peer_IP' LIMIT 1"),0,0);
+				$duplicate_check2 = mysql_result(mysqli_query($db_connect, "SELECT domain FROM `new_peers_list` WHERE `domain` LIKE '$peer_domain' LIMIT 1"),0,0);
 
 				if(empty($peer_IP) == TRUE)
 				{
@@ -979,7 +978,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 					$sql = "INSERT INTO `new_peers_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`poll_failures`)
 			VALUES ('$peer_IP', '$peer_domain', '$peer_subfolder', '$peer_port_number', '0')";
 
-					if(mysql_query($sql) == TRUE)
+					if(mysqli_query($db_connect, $sql) == TRUE)
 					{
 						// Subtract one from total left to find
 						$new_peer_difference--;
@@ -1010,22 +1009,22 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 //***********************************************************************************
 // Send a heartbeat to all active peers in our list to make sure they are still online
 	$sql = "SELECT * FROM `active_peer_list`";
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 	
 	// Grab random Transaction Foundation Hash
 	$rand_block = rand(0,foundation_cycle(0, TRUE) - 5); // Range from Start to Last 5 Foundation Hash
-	$random_foundation_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_foundation` WHERE `block` = $rand_block LIMIT 1"),0,0);
+	$random_foundation_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_foundation` WHERE `block` = $rand_block LIMIT 1"),0,0);
 	
 	// Grab random Transaction Hash
 	$rand_block2 = rand(transaction_cycle((0 - transaction_cycle(0, TRUE)), TRUE), transaction_cycle(-1000, TRUE)); // Range from Start to Last 1000 Transaction Hash
 	$rand_block2 = transaction_cycle(0 - $rand_block2);
-	$random_transaction_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` = $rand_block2 LIMIT 1"),0,0);
+	$random_transaction_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_history` WHERE `timestamp` = $rand_block2 LIMIT 1"),0,0);
 	$rand_block2 = ($rand_block2 - TRANSACTION_EPOCH - 300) / 300;
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		$sql_row = mysqli_fetch_array($sql_result);
 
 		$ip_address = $sql_row["IP_Address"];
 		$domain = $sql_row["domain"];
@@ -1063,7 +1062,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -1);
 				
 				//Update Heartbeat Time
-				mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 			}		
 			else
 			{
@@ -1083,13 +1082,13 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 			else
 			{
 				// Still active... Update Heartbeat Time
-				mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -1);
 
 				if($poll_peer == 1)
 				{
 					// This is a gateway peer, change it status over to gateway peer
-					mysql_query("UPDATE `active_peer_list` SET `failed_sent_heartbeat` = '65534' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `active_peer_list` SET `failed_sent_heartbeat` = '65534' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 				}
 			}			
 		}
@@ -1105,7 +1104,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 			else
 			{
 				// Score still active... Update Heartbeat Time
-				mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -2);
 			}			
 		}
@@ -1122,14 +1121,14 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 					// so that it easy to keep the correct join time and also
 					// tag this peer as full for the peerlist
 					$join_peer_list-= 1000000000;
-					mysql_query("UPDATE `active_peer_list` SET `join_peer_list` = '$join_peer_list' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `active_peer_list` SET `join_peer_list` = '$join_peer_list' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 				}
 
 				//Got a response from an active Timekoin server (-1 to failure score)
 				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -1);
 				
 				//Update Heartbeat Time
-				mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 			}
 			else if($poll_peer == "OK")
 			{
@@ -1139,14 +1138,14 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 					// so that it easy to keep the correct join time and also
 					// tag this peer as full for the peerlist
 					$join_peer_list+= 1000000000;
-					mysql_query("UPDATE `active_peer_list` SET `join_peer_list` = '$join_peer_list' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `active_peer_list` SET `join_peer_list` = '$join_peer_list' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 				}					
 
 				//Got a response from an active Timekoin server (-1 to failure score)
 				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -1);
 				
 				//Update Heartbeat Time
-				mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 			}
 		}
 		else if($poll_type == 6)
@@ -1169,7 +1168,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 						//Got a response from an active Timekoin server (-2 to failure score)
 						modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -2);
 						//Update Heartbeat Time
-						mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+						mysqli_query($db_connect, "UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 					}
 					else
 					{
@@ -1199,7 +1198,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 						//Got a response from an active Timekoin server (-3 to failure score)
 						modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -3);
 						//Update Heartbeat Time
-						mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+						mysqli_query($db_connect, "UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 					}
 					else
 					{
@@ -1213,20 +1212,20 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 	} // End for Loop
 
 	// Remove all active peers that are offline for more than 5 minutes or have a high failure score
-	$peer_failure_grade = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,0);
-	mysql_query("DELETE QUICK FROM `active_peer_list` WHERE `last_heartbeat` < " . (time() - 300) . " AND `join_peer_list` != 0");
-	mysql_query("DELETE QUICK FROM `active_peer_list` WHERE `failed_sent_heartbeat` >= $peer_failure_grade AND `failed_sent_heartbeat` < 60000 AND `join_peer_list` != 0");
+	$peer_failure_grade = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,0);
+	mysqli_query($db_connect, "DELETE QUICK FROM `active_peer_list` WHERE `last_heartbeat` < " . (time() - 300) . " AND `join_peer_list` != 0");
+	mysqli_query($db_connect, "DELETE QUICK FROM `active_peer_list` WHERE `failed_sent_heartbeat` >= $peer_failure_grade AND `failed_sent_heartbeat` < 60000 AND `join_peer_list` != 0");
 
 //***********************************************************************************
 //***********************************************************************************
 // Send a heartbeat to all reserve peers in our list to make sure they are still online
 	$sql = "SELECT * FROM `new_peers_list`";
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		$sql_row = mysqli_fetch_array($sql_result);
 
 		$ip_address = $sql_row["IP_Address"];
 		$domain = $sql_row["domain"];
@@ -1256,13 +1255,13 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 			{
 				//Got a response from an active Timekoin server
 				$poll_failures--;
-				mysql_query("UPDATE `new_peers_list` SET `poll_failures` = $poll_failures WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `new_peers_list` SET `poll_failures` = $poll_failures WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 			}		
 			else
 			{
 				//No response, record polling failure for future reference
 				$poll_failures++;
-				mysql_query("UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 			}
 		}
 		else
@@ -1274,38 +1273,38 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 			{
 				//Server is full, ramp up failure points to get it purged quicker
 				$poll_failures+= 10;
-				mysql_query("UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 			}
 			else if($poll_peer == "OK")
 			{
 				//Got a response from an active Timekoin server that is not full to capacity yet
 				$poll_failures-= 5;
-				mysql_query("UPDATE `new_peers_list` SET `poll_failures` = $poll_failures WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `new_peers_list` SET `poll_failures` = $poll_failures WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 			}
 		}
 	} // End for Loop
 
 	// Clean up reserve peer list by removing those that have passed the server set failure score limit
-	$peer_failure_grade = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,0);
-	mysql_query("DELETE QUICK FROM `new_peers_list` WHERE `poll_failures` > $peer_failure_grade");
+	$peer_failure_grade = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,0);
+	mysqli_query($db_connect, "DELETE QUICK FROM `new_peers_list` WHERE `poll_failures` > $peer_failure_grade");
 
 //***********************************************************************************	
 //***********************************************************************************
-$loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,0);
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,0);
 
 // Check script status
 if($loop_active == 3)
 {
 	// Time to exit
-	mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active'");
+	mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active'");
 	exit;
 }
 	
 // Script finished, set standby status to 2
-mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
+mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
 
 // Record when this script finished
-mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'peerlist_last_heartbeat' LIMIT 1");
+mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'peerlist_last_heartbeat' LIMIT 1");
 
 //***********************************************************************************
 sleep(10);
