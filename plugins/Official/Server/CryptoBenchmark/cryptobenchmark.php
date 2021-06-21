@@ -15,10 +15,6 @@ set_time_limit(999); // How many seconds to wait until timeout
 session_name("timekoin"); // Continue Session Name, Default: [timekoin]
 session_start(); // Continue Session or Start a New Session
 
-// Make DB Connection
-mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD);
-mysql_select_db(MYSQL_DATABASE);
-
 if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 {
 	// What is the name of the section?

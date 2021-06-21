@@ -16,8 +16,7 @@ session_name("timekoin"); // Continue Session Name, Default: [timekoin]
 session_start(); // Continue Session or Start a New Session
 
 // Make DB Connection
-mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD);
-mysql_select_db(MYSQL_DATABASE);
+$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
 if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 {
@@ -35,7 +34,7 @@ if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 
 	if($_GET["action"] == "run_history")
 	{
-		$user_timezone = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,0);
+		$user_timezone = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,0);
 		$start_scan_time = time();
 		$public_key = $_POST["public_key"];
 
@@ -55,8 +54,8 @@ if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 
 		$sql = "SELECT timestamp, public_key_from, public_key_to, crypt_data3, attribute FROM `transaction_history` WHERE `public_key_from` = '$public_key' OR `public_key_to` = '$public_key' ";
 
-		$sql_result = mysql_query($sql);
-		$sql_num_results = mysql_num_rows($sql_result);
+		$sql_result = mysqli_query($db_connect, $sql);
+		$sql_num_results = mysqli_num_rows($sql_result);
 		$transaction_info;
 		$gen_results_string;
 		$gen_currency_counter = 0;
@@ -69,9 +68,11 @@ if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 		$trans_send_from_results_counter = 0;
 		$trans_send_from_results_total = 0;
 
+		$trans_generate_results_counter = 0;
+
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_row($sql_result);
+			$sql_row = mysqli_fetch_row($sql_result);
 
 			$timestamp = $sql_row[0];
 			$public_key_from = $sql_row[1];
@@ -96,6 +97,7 @@ if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 				$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 				$gen_results_string.= 'Currency Generated [<font color="green">' . $transaction_amount_sent . '</font>] ' . unix_timestamp_to_human($timestamp, $user_timezone) . '<br>';
 				$gen_currency_counter+= $transaction_amount_sent;
+				$trans_generate_results_counter++;
 			}
 
 			if($attribute == "T" && $public_key_to == $public_key) // Everything given to this public key
@@ -149,7 +151,7 @@ if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 		$body_string.= '<strong>Public Key Balance: [<font color="green">' . ($gen_currency_counter + $trans_send_to_results_counter - $trans_send_from_results_counter) . "</font> TK]</strong>";
 		$body_string.= '<br><strong>Total Currency Sent From This Public Key: [<font color="green">' . $trans_send_from_results_counter . '</font> TK] via [<font color="blue">' . $trans_send_to_results_total . '</font>] Transactions</strong>';
 		$body_string.= '<br><strong>Total Currency Sent To This Public Key: [<font color="green">' . $trans_send_to_results_counter . '</font> TK] via [<font color="blue">' . $trans_send_from_results_total . '</font>] Transactions</strong>';
-		$body_string.= '<br><strong>Total Currency Generated: [<font color="green">' . $gen_currency_counter . "</font> TK]</strong>";
+		$body_string.= '<br><strong>Total Currency Generated: [<font color="green">' . $gen_currency_counter . '</font> TK] via [<font color="blue">' . $trans_generate_results_counter . '</font>] Generating Events</strong>';
 		$body_string.= '<br><strong>Processing Time: <font color="blue">' . (time() - $start_scan_time) . "</font> seconds</strong>";
 		$body_string.=	$trans_send_from_results_string . $trans_send_to_results_string . $gen_results_string;
 	}

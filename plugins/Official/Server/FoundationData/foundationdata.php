@@ -16,8 +16,7 @@ session_name("timekoin"); // Continue Session Name, Default: [timekoin]
 session_start(); // Continue Session or Start a New Session
 
 // Make DB Connection
-mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD);
-mysql_select_db(MYSQL_DATABASE);
+$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
 if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 {
@@ -46,14 +45,14 @@ if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 			$time2 = transaction_cycle(0 - $current_generation_block + $foundation_time_end);
 
 			$sql = "SELECT timestamp, public_key_from, public_key_to, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` <= $time2 ORDER BY `timestamp`, `hash` ASC";
-			$sql_result2 = mysql_query($sql);
-			$sql_num_results2 = mysql_num_rows($sql_result2);
+			$sql_result2 = mysqli_query($db_connect, $sql);
+			$sql_num_results2 = mysqli_num_rows($sql_result2);
 
 			$hash = $sql_num_results2;
 
 			for ($f = 0; $f < $sql_num_results2; $f++)
 			{
-				$sql_row2 = mysql_fetch_array($sql_result2);
+				$sql_row2 = mysqli_fetch_array($sql_result2);
 				$hash .= $sql_row2["timestamp"] . $sql_row2["public_key_from"] . $sql_row2["public_key_to"] . $sql_row2["hash"] . $sql_row2["attribute"];
 			}	
 	

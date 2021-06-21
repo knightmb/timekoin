@@ -946,7 +946,7 @@ function tools_bar($walk_history)
 }
 //***********************************************************
 //***********************************************************
-function backup_body($private_key, $public_key, $cancel_private = FALSE, $cancel_public = FALSE)
+function backup_body($private_key = "", $public_key = "", $cancel_private = FALSE, $cancel_public = FALSE)
 {
 	if($cancel_private == TRUE)
 	{

@@ -187,8 +187,6 @@ INSERT INTO `options` (`field_name`, `field_data`) VALUES
 ('default_timezone', ''),
 ('first_contact_server', '---ip=---domain=timekoin.net---subfolder=timekoin---port=80---end'),
 ('first_contact_server', '---ip=104.131.103.109---domain=---subfolder=timekoin---port=1528---end'),
-('first_contact_server', '---ip=104.131.103.216---domain=---subfolder=timekoin---port=1528---end'),
-('first_contact_server', '---ip=2604:a880:800:10::15b:a001---domain=---subfolder=timekoin---port=1528---end'),
 ('first_contact_server', '---ip=2604:a880:800:10::15a:f001---domain=---subfolder=timekoin---port=1528---end'),
 ('generate_currency', '0'),
 ('generating_peers_hash', '0'),

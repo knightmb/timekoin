@@ -16,8 +16,7 @@ session_name("timekoin"); // Continue Session Name, Default: [timekoin]
 session_start(); // Continue Session or Start a New Session
 
 // Make DB Connection
-mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD);
-mysql_select_db(MYSQL_DATABASE);
+$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
 if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 {
@@ -38,12 +37,12 @@ if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 
 		// Group all public keys every used
 		$sql = "SELECT * FROM `transaction_history` WHERE `attribute` = 'T' GROUP BY `public_key_from` LIMIT " . $_POST["limit1"] . ", " . $_POST["limit2"];
-		$sql_result = mysql_query($sql);
-		$sql_num_results = mysql_num_rows($sql_result);
+		$sql_result = mysqli_query($db_connect, $sql);
+		$sql_num_results = mysqli_num_rows($sql_result);
 
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_array($sql_result);			
+			$sql_row = mysqli_fetch_array($sql_result);			
 			
 			$body_string.= '<hr><strong>Scanning Public Key:</strong><br><p style="word-wrap:break-word; font-size:12px;">' . 
 				base64_encode($sql_row["public_key_from"]) . '</p>';
@@ -51,14 +50,14 @@ if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 			$body_string.= '<br><strong>Ghost Self Transaction Test:</strong> ';
 
 			$sql2 = "SELECT * FROM `transaction_history` WHERE `public_key_from` = '" . $sql_row["public_key_from"] . "'";
-			$sql_result2 = mysql_query($sql2);
-			$sql_num_results2 = mysql_num_rows($sql_result2);
+			$sql_result2 = mysqli_query($db_connect, $sql2);
+			$sql_num_results2 = mysqli_num_rows($sql_result2);
 
 			$body_string.= 'Scanning [' . $sql_num_results2 . '] Transactions<br>';
 
 			for ($i2 = 0; $i2 < $sql_num_results2; $i2++)
 			{
-				$sql_row2 = mysql_fetch_array($sql_result2);
+				$sql_row2 = mysqli_fetch_array($sql_result2);
 
 				$body_string.= '#' . ($i2 + 1) . ' ';
 

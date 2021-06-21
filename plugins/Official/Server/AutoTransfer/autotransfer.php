@@ -9,13 +9,16 @@ session_start(); // Continue Session
 
 function tk_online()
 {
+	// Make DB Connection
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+
 	$time_resolution = 10; // How many sleep cycle divisions of the AUTOCHECK interval
 	$sleep_counter = intval(AUTOCHECK / $time_resolution);
 
 	while($time_resolution > 0)
 	{
 		// Are we to remain active?
-		$timekoin_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
+		$timekoin_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
 
 		if($timekoin_active == FALSE)
 		{
@@ -27,7 +30,7 @@ function tk_online()
 		sleep($sleep_counter);
 	}
 
-	mysql_query("UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'autotransfer.php' LIMIT 1");
+	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'autotransfer.php' LIMIT 1");
 	return TRUE; // Still Online
 }
 
@@ -45,16 +48,15 @@ if($_SESSION["valid_login"] == FALSE)
 	include '../configuration.php';// Path to files already used by Timekoin
 
 	// Make DB Connection
-	mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD);
-	mysql_select_db(MYSQL_DATABASE);
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
 	// Avoid stacking this many times
-	$already_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'autotransfer.php' LIMIT 1"),0,"field_data");
+	$already_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'autotransfer.php' LIMIT 1"),0,"field_data");
 
-	if($already_active === FALSE)
+	if($already_active == "")
 	{
 		// Creating Status State - Timekoin Looks for the filename
-		mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('autotransfer.php', '0')"); // Offline
+		mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('autotransfer.php', '0')"); // Offline
 	}
 	else if($already_active > 0)
 	{
@@ -67,38 +69,38 @@ if($_SESSION["valid_login"] == FALSE)
 		set_time_limit(999); // Reset Timeout
 
 		// Idle State
-		mysql_query("UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'autotransfer.php' LIMIT 1");
+		mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'autotransfer.php' LIMIT 1");
 
 		// Are we to remain active?
 		if(tk_online() == FALSE)
 		{
 			// Shutdown System
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'autotransfer.php' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'autotransfer.php' LIMIT 1");
 			exit;
 		}
 
 		$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'auto_currency_transfer_%' ORDER BY `options`.`field_name` ASC";
-		$sql_result = mysql_query($sql);
-		$sql_num_results = mysql_num_rows($sql_result);
+		$sql_result = mysqli_query($db_connect, $sql);
+		$sql_num_results = mysqli_num_rows($sql_result);
 
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_array($sql_result);
+			$sql_row = mysqli_fetch_array($sql_result);
 			$tx_record_name = $sql_row["field_name"];
 			$tx_name = find_string("---name=", "---enable", $sql_row["field_data"]);
 			$tx_enable = intval(find_string("---enable=", "---type", $sql_row["field_data"]));
 			$tx_type = find_string("---type=", "---key1", $sql_row["field_data"]);
 			$tx_key1 = find_string("---key1=", "---key2", $sql_row["field_data"]); // Private Key From
 			$tx_key2 = find_string("---key2=", "---key3", $sql_row["field_data"]); // Public Key From
-			$tx_key1 = mysql_result(mysql_query("SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key1' LIMIT 1"),0,0);
-			$tx_key2 = mysql_result(mysql_query("SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key2' LIMIT 1"),0,0);
+			$tx_key1 = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key1' LIMIT 1"),0,0);
+			$tx_key2 = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key2' LIMIT 1"),0,0);
 
 			if($tx_enable == TRUE)
 			{
 				if($tx_type == "onedelay")
 				{
 					$tx_key3 = find_string("---key3=", "---delay", $sql_row["field_data"]);
-					$tx_key3 = mysql_result(mysql_query("SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key3' LIMIT 1"),0,0);
+					$tx_key3 = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key3' LIMIT 1"),0,0);
 					$tx_delay = find_string("---delay=", "---amount", $sql_row["field_data"]);
 					$tx_amount = find_string("---amount=", "---end", $sql_row["field_data"]);
 
@@ -109,7 +111,7 @@ if($_SESSION["valid_login"] == FALSE)
 					$new_string = str_replace("---delay=$tx_delay", "---delay=$new_delay", $sql_row["field_data"]);
 
 					// Update DB
-					mysql_query("UPDATE `options` SET `field_data` = '$new_string' WHERE `options`.`field_name` = '$tx_record_name' LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$new_string' WHERE `options`.`field_name` = '$tx_record_name' LIMIT 1");
 
 					if($new_delay <= 0)
 					{
@@ -122,7 +124,7 @@ if($_SESSION["valid_login"] == FALSE)
 								// Successful Queue for Transaction
 								$new_string = str_replace("---enable=1", "---enable=0", $new_string);
 								// Update DB to Disable Task to Avoid Looping Transactions
-								mysql_query("UPDATE `options` SET `field_data` = '$new_string' WHERE `options`.`field_name` = '$tx_record_name' LIMIT 1");
+								mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$new_string' WHERE `options`.`field_name` = '$tx_record_name' LIMIT 1");
 								write_log("Auto Transfer Task ($tx_name) Has Completed.", "T");
 							}
 						}
@@ -132,7 +134,7 @@ if($_SESSION["valid_login"] == FALSE)
 				if($tx_type == "repeatdelay")
 				{
 					$tx_key3 = find_string("---key3=", "---delay_start", $sql_row["field_data"]);
-					$tx_key3 = mysql_result(mysql_query("SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key3' LIMIT 1"),0,0);
+					$tx_key3 = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key3' LIMIT 1"),0,0);
 					$tx_delay = find_string("---delay=", "---amount", $sql_row["field_data"]);
 					$tx_start_delay = find_string("---delay_start=", "---delay", $sql_row["field_data"]);
 					$tx_amount = find_string("---amount=", "---end", $sql_row["field_data"]);
@@ -144,7 +146,7 @@ if($_SESSION["valid_login"] == FALSE)
 					$new_string = str_replace("---delay=$tx_delay", "---delay=$new_delay", $sql_row["field_data"]);
 
 					// Update DB
-					mysql_query("UPDATE `options` SET `field_data` = '$new_string' WHERE `options`.`field_name` = '$tx_record_name' LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$new_string' WHERE `options`.`field_name` = '$tx_record_name' LIMIT 1");
 
 					if($new_delay <= 0)
 					{
@@ -158,7 +160,7 @@ if($_SESSION["valid_login"] == FALSE)
 								$new_string = str_replace("---delay=0", "---delay=$tx_start_delay", $new_string);
 								
 								// Update DB to Reset Countdown
-								mysql_query("UPDATE `options` SET `field_data` = '$new_string' WHERE `options`.`field_name` = '$tx_record_name' LIMIT 1");
+								mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$new_string' WHERE `options`.`field_name` = '$tx_record_name' LIMIT 1");
 								write_log("Auto Transfer Task ($tx_name) Has Completed.", "T");
 							}
 						}
@@ -168,7 +170,7 @@ if($_SESSION["valid_login"] == FALSE)
 				if($tx_type == "oneamount")
 				{
 					$tx_key3 = find_string("---key3=", "---amount", $sql_row["field_data"]);
-					$tx_key3 = mysql_result(mysql_query("SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key3' LIMIT 1"),0,0);
+					$tx_key3 = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key3' LIMIT 1"),0,0);
 					$tx_amount = find_string("---amount=", "---amount_match", $sql_row["field_data"]);
 					$amount_match = find_string("---amount_match=", "---end", $sql_row["field_data"]);
 
@@ -182,7 +184,7 @@ if($_SESSION["valid_login"] == FALSE)
 							$new_string = str_replace("---enable=1", "---enable=0", $new_string);
 
 							// Update DB to Disable Task When Finished
-							mysql_query("UPDATE `options` SET `field_data` = '$new_string' WHERE `options`.`field_name` = '$tx_record_name' LIMIT 1");
+							mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$new_string' WHERE `options`.`field_name` = '$tx_record_name' LIMIT 1");
 							write_log("Auto Transfer Task ($tx_name) Has Completed.", "T");							
 						}
 					}
@@ -191,7 +193,7 @@ if($_SESSION["valid_login"] == FALSE)
 				if($tx_type == "repeatamount")
 				{
 					$tx_key3 = find_string("---key3=", "---amount", $sql_row["field_data"]);
-					$tx_key3 = mysql_result(mysql_query("SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key3' LIMIT 1"),0,0);
+					$tx_key3 = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key3' LIMIT 1"),0,0);
 					$tx_amount = find_string("---amount=", "---amount_match", $sql_row["field_data"]);
 					$amount_match = find_string("---amount_match=", "---end", $sql_row["field_data"]);
 
@@ -227,40 +229,39 @@ if($_SESSION["valid_login"] == TRUE)
 	include '../configuration.php';// Path to files already used by Timekoin
 
 	// Make DB Connection
-	mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD);
-	mysql_select_db(MYSQL_DATABASE);
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
 	if($_GET["task"] == "disable")
 	{
 		// Disable selected task, search for script file name in database
 		$tx_record_name = $_POST["tx_record_name"];
-		$taskname_data = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = '$tx_record_name' LIMIT 1"),0,0);
+		$taskname_data = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = '$tx_record_name' LIMIT 1"),0,0);
 
 		// Rewrite String to Disable plugin
 		$new_string = str_replace("enable=1", "enable=0", $taskname_data);
 	
 		// Update String in Database
-		mysql_query("UPDATE `options` SET `field_data` = '$new_string' WHERE `options`.`field_name` = '$tx_record_name' LIMIT 1");
+		mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$new_string' WHERE `options`.`field_name` = '$tx_record_name' LIMIT 1");
 	}
 
 	if($_GET["task"] == "enable")
 	{
 		// Enable selected task, search for script file name in database
 		$tx_record_name = $_POST["tx_record_name"];
-		$taskname_data = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = '$tx_record_name' LIMIT 1"),0,0);
+		$taskname_data = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = '$tx_record_name' LIMIT 1"),0,0);
 
 		// Rewrite String to Enable plugin
 		$new_string = str_replace("enable=0", "enable=1", $taskname_data);
 	
 		// Update String in Database
-		mysql_query("UPDATE `options` SET `field_data` = '$new_string' WHERE `options`.`field_name` = '$tx_record_name' LIMIT 1");
+		mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$new_string' WHERE `options`.`field_name` = '$tx_record_name' LIMIT 1");
 	}
 
 	if($_GET["task"] == "delete_task")
 	{
 		// Enable selected task, search for script file name in database
 		$tx_record_name = $_POST["tx_record_name"];
-		$taskname_data = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = '$tx_record_name' LIMIT 1"),0,0);
+		$taskname_data = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = '$tx_record_name' LIMIT 1"),0,0);
 
 		// Grab Keys being used in this task
 		$tx_key1 = find_string("---key1=", "---key2", $taskname_data);
@@ -288,12 +289,12 @@ if($_SESSION["valid_login"] == TRUE)
 		}
 
 		// Delete Keys
-		mysql_query("DELETE FROM `my_keys` WHERE `my_keys`.`field_name` = '$tx_key1'");
-		mysql_query("DELETE FROM `my_keys` WHERE `my_keys`.`field_name` = '$tx_key2'");
-		mysql_query("DELETE FROM `my_keys` WHERE `my_keys`.`field_name` = '$tx_key3'");
+		mysqli_query($db_connect, "DELETE FROM `my_keys` WHERE `my_keys`.`field_name` = '$tx_key1'");
+		mysqli_query($db_connect, "DELETE FROM `my_keys` WHERE `my_keys`.`field_name` = '$tx_key2'");
+		mysqli_query($db_connect, "DELETE FROM `my_keys` WHERE `my_keys`.`field_name` = '$tx_key3'");
 
 		// Delete Task
-		mysql_query("DELETE FROM `options` WHERE `options`.`field_name` = '$tx_record_name'");
+		mysqli_query($db_connect, "DELETE FROM `options` WHERE `options`.`field_name` = '$tx_record_name'");
 	}
 
 	if($_GET["task"] == "new")
@@ -456,18 +457,18 @@ if($_SESSION["valid_login"] == TRUE)
 
 		// Find Empty Record Location
 		$record_number = 1;
-		$record_check = mysql_result(mysql_query("SELECT field_name FROM `options` WHERE `field_name` = 'auto_currency_transfer_1' LIMIT 1"),0,0);
+		$record_check = mysql_result(mysqli_query($db_connect, "SELECT field_name FROM `options` WHERE `field_name` = 'auto_currency_transfer_1' LIMIT 1"),0,0);
 		
 		while(empty($record_check) == FALSE)
 		{
 			$record_number++;
-			$record_check = mysql_result(mysql_query("SELECT field_name FROM `options` WHERE `field_name` = 'auto_currency_transfer_$record_number' LIMIT 1"),0,0);
+			$record_check = mysql_result(mysqli_query($db_connect, "SELECT field_name FROM `options` WHERE `field_name` = 'auto_currency_transfer_$record_number' LIMIT 1"),0,0);
 		}
 
 		// Find unused keys record name
 		$sql = "SELECT field_name FROM `my_keys` WHERE `field_name` LIKE 'auto_tx_%' ORDER BY `my_keys`.`field_name` ASC";
-		$sql_result = mysql_query($sql);
-		$sql_num_results = mysql_num_rows($sql_result);
+		$sql_result = mysqli_query($db_connect, $sql);
+		$sql_num_results = mysqli_num_rows($sql_result);
 		
 		if($sql_num_results >= 99) { header("Location: autotransfer.php"); exit; } // 99 Record Limit Reached, Can't Add anymore
 
@@ -481,7 +482,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		while(1)
 		{
-			$sql_row = mysql_fetch_array($sql_result);
+			$sql_row = mysqli_fetch_array($sql_result);
 			if($counter < 10) { $counter = "0" . $counter; }
 
 			if($sql_row["field_name"] != "auto_tx_$counter" && $found2 == TRUE)
@@ -541,13 +542,13 @@ if($_SESSION["valid_login"] == TRUE)
 			('auto_currency_transfer_$record_number', '---name=$taskname---enable=0---type=$type---key1=$autotx1---key2=$autotx2---key3=$autotx3---amount=$amount---amount_match=$amount_match---end')";
 		}		
 
-		if(mysql_query($sql) == TRUE)
+		if(mysqli_query($db_connect, $sql) == TRUE)
 		{
 			// Option Record Insert Complete, now store keys
 			$sql = "INSERT INTO `my_keys` (`field_name`, `field_data`) VALUES 
 			('$autotx1', '$fromprivatekey'), ('$autotx2', '$frompublickey'), ('$autotx3', '$topublickey')";
 
-			mysql_query($sql);
+			mysqli_query($db_connect, $sql);
 		}
 
 		header("Location: autotransfer.php");
@@ -556,27 +557,30 @@ if($_SESSION["valid_login"] == TRUE)
 
 function autotx_home()
 {
-	$default_public_key_font = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
+	// Make DB Connection
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+	
+	$default_public_key_font = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
 
 	$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'auto_currency_transfer_%' ORDER BY `options`.`field_name` ASC";
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 	$plugin_output;
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		$sql_row = mysqli_fetch_array($sql_result);
 		$tx_record_name = $sql_row["field_name"];
 		$tx_name = find_string("---name=", "---enable", $sql_row["field_data"]);
 		$tx_enable = intval(find_string("---enable=", "---type", $sql_row["field_data"]));
 		$tx_type = find_string("---type=", "---key1", $sql_row["field_data"]);
 		$tx_key2 = find_string("---key2=", "---key3", $sql_row["field_data"]);
-		$tx_key2 = base64_encode(mysql_result(mysql_query("SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key2' LIMIT 1"),0,0));
+		$tx_key2 = base64_encode(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key2' LIMIT 1"),0,0));
 
 		if($tx_type == "onedelay")
 		{
 			$tx_key3 = find_string("---key3=", "---delay", $sql_row["field_data"]);
-			$tx_key3 = base64_encode(mysql_result(mysql_query("SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key3' LIMIT 1"),0,0));
+			$tx_key3 = base64_encode(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key3' LIMIT 1"),0,0));
 			$tx_delay = find_string("---delay=", "---amount", $sql_row["field_data"]);
 			$tx_amount = find_string("---amount=", "---end", $sql_row["field_data"]);
 			$tx_type = "One Time<br>Delay";
@@ -593,7 +597,7 @@ function autotx_home()
 		if($tx_type == "repeatdelay")
 		{
 			$tx_key3 = find_string("---key3=", "---delay_start", $sql_row["field_data"]);
-			$tx_key3 = base64_encode(mysql_result(mysql_query("SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key3' LIMIT 1"),0,0));
+			$tx_key3 = base64_encode(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key3' LIMIT 1"),0,0));
 			$tx_delay = find_string("---delay=", "---amount", $sql_row["field_data"]);
 			$tx_amount = find_string("---amount=", "---end", $sql_row["field_data"]);
 			$tx_type = "Repeating<br>Delay";
@@ -603,7 +607,7 @@ function autotx_home()
 		if($tx_type == "oneamount")
 		{
 			$tx_key3 = find_string("---key3=", "---amount", $sql_row["field_data"]);
-			$tx_key3 = base64_encode(mysql_result(mysql_query("SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key3' LIMIT 1"),0,0));
+			$tx_key3 = base64_encode(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key3' LIMIT 1"),0,0));
 			$tx_amount = find_string("---amount=", "---amount_match", $sql_row["field_data"]);
 			$amount_match = find_string("---amount_match=", "---end", $sql_row["field_data"]);
 
@@ -621,7 +625,7 @@ function autotx_home()
 		if($tx_type == "repeatamount")
 		{
 			$tx_key3 = find_string("---key3=", "---amount", $sql_row["field_data"]);
-			$tx_key3 = base64_encode(mysql_result(mysql_query("SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key3' LIMIT 1"),0,0));
+			$tx_key3 = base64_encode(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key3' LIMIT 1"),0,0));
 			$tx_amount = find_string("---amount=", "---amount_match", $sql_row["field_data"]);
 			$amount_match = find_string("---amount_match=", "---end", $sql_row["field_data"]);
 			$tx_type = "Repeating<br>Amount Match";
@@ -659,7 +663,7 @@ function autotx_home()
 		{
 			// Save value in database
 			$sql = "UPDATE `options` SET `field_data` = '" . $_POST["font_size"] . "' WHERE `options`.`field_name` = 'public_key_font_size' LIMIT 1";
-			mysql_query($sql);
+			mysqli_query($db_connect, $sql);
 
 			header("Location: autotransfer.php");
 			exit;
@@ -667,7 +671,7 @@ function autotx_home()
 	}
 	else
 	{
-		$default_public_key_font = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
+		$default_public_key_font = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
 	}
 
 	$text_bar = '<FORM ACTION="autotransfer.php?font=public_key" METHOD="post">
