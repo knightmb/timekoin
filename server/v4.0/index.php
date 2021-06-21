@@ -8,8 +8,10 @@ session_start();
 
 if($_SESSION["valid_login"] == FALSE && $_GET["action"] != "login")
 {
-	$db_connect = mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD);
-	$db_select = mysql_select_db(MYSQL_DATABASE);
+	//$db_connect = mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD);
+	//$db_select = mysql_select_db(MYSQL_DATABASE);
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+	//$db_select = mysqli_select_db(MYSQL_DATABASE);
 
 	// Check for banned IP address
 	if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
@@ -37,18 +39,20 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 
 	if(empty($http_username) == FALSE && empty($http_password) == FALSE)
 	{
-		if(mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD) == FALSE)
+		$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+		
+		if($db_connect == FALSE)
 		{
 			login_screen('Could Not Connect To Database');
 			exit;
 		}
-		
-		if(mysql_select_db(MYSQL_DATABASE) == FALSE)
+/*		
+		if(mysqli_select_db(MYSQL_DATABASE) == FALSE)
 		{
 			login_screen('Could Not Select Database');
 			exit;
 		}
-
+*/
 		// Check for banned IP address
 		if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 		{
@@ -56,8 +60,10 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 			exit ("Your IP Has Been Banned");
 		}
 
-		$username_hash = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'username' LIMIT 1"),0,0);
-		$password_hash = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,0);
+		//$username_hash = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'username' LIMIT 1"),0,0);
+		//$password_hash = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,0);
+		$username_hash = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'username' LIMIT 1"),0,0);
+		$password_hash = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,0);
 
 		if(hash('sha256', $http_username) == $username_hash)
 		{
@@ -65,7 +71,8 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 			if(hash('sha256', $http_password) == $password_hash)
 			{
 				// Check for new system startup
-				$fresh_system = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` LIMIT 1"),0,0);
+				//$fresh_system = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` LIMIT 1"),0,0);
+				$fresh_system = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` LIMIT 1"),0,0);
 
 				if($fresh_system === FALSE)
 				{
@@ -95,20 +102,24 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 if($_SESSION["valid_login"] == TRUE)
 {
 //****************************************************************************
-	if(mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD) == FALSE)
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+	
+	//if(mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD) == FALSE)
+	if($db_connect == FALSE)
 	{
 		home_screen('ERROR', '<font color="red"><strong>Could Not Connect To Database</strong></font>', '', '');
 		exit;
 	}
-	
-	if(mysql_select_db(MYSQL_DATABASE) == FALSE)
+/*	
+	if(mysqli_select_db(MYSQL_DATABASE) == FALSE)
 	{
 		home_screen('ERROR','<font color="red"><strong>Could Not Select Database</strong></font>', '', '');
 		exit;
 	}
+*/	
 //****************************************************************************
 // Global Variables
-	$user_timezone = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,0);
+	$user_timezone = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,0);
 //*********************************
 // Home Menu
 	if($_GET["menu"] == "home" || empty($_GET["menu"]) == TRUE)
@@ -118,10 +129,10 @@ if($_SESSION["valid_login"] == TRUE)
 		$body_string = '<table border="0" cellspacing="10" cellpadding="2" bgcolor="#FFFFFF"><tr><td></td>
 			<td align="center"><strong>Process</strong></td><td align="left"><strong>Status</strong></td></tr>';
 
-		$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
-		$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,0);
+		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
+		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,0);
 
-		$cli_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
+		$cli_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
 
 		if($cli_mode == 1)
 		{
@@ -154,8 +165,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<td><strong>Main Program Offline</strong></td></tr>';
 		}
 
-		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'treasurer_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,"field_data");
+		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'treasurer_last_heartbeat' LIMIT 1"),0,"field_data");
 
 		if($script_loop_active == 1)
 		{
@@ -188,8 +199,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
-		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peerlist_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,"field_data");
+		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'peerlist_last_heartbeat' LIMIT 1"),0,"field_data");
 
 		if($script_loop_active == 1)
 		{
@@ -222,8 +233,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
-		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'queueclerk_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,"field_data");
+		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'queueclerk_last_heartbeat' LIMIT 1"),0,"field_data");
 
 		if($script_loop_active == 1)
 		{
@@ -256,8 +267,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
-		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'genpeer_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,"field_data");
+		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'genpeer_last_heartbeat' LIMIT 1"),0,"field_data");
 
 		if($script_loop_active == 1)
 		{
@@ -290,8 +301,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
-		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'generation_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,"field_data");
+		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'generation_last_heartbeat' LIMIT 1"),0,"field_data");
 
 		if($script_loop_active == 1)
 		{
@@ -325,8 +336,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
-		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'transclerk_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,"field_data");
+		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'transclerk_last_heartbeat' LIMIT 1"),0,"field_data");
 
 		if($script_loop_active == 1)
 		{
@@ -360,8 +371,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
-		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,"field_data");
+		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_last_heartbeat' LIMIT 1"),0,"field_data");
 
 		if($script_loop_active == 1)
 		{
@@ -395,8 +406,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
-		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'balance_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'balance_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'balance_heartbeat_active' LIMIT 1"),0,"field_data");
+		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'balance_last_heartbeat' LIMIT 1"),0,"field_data");
 
 		if($script_loop_active == 1)
 		{
@@ -430,8 +441,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
-		$script_loop_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,"field_data");
+		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_last_heartbeat' LIMIT 1"),0,"field_data");
 
 		if($script_loop_active > 0)
 		{
@@ -457,7 +468,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$display_balance = db_cache_balance($my_public_key);
 
-		$firewall_blocked = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'firewall_blocked_peer' LIMIT 1"),0,"field_data");
+		$firewall_blocked = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'firewall_blocked_peer' LIMIT 1"),0,"field_data");
 
 		if($firewall_blocked == TRUE)
 		{
@@ -468,7 +479,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$firewall_blocked = NULL;
 		}
 
-		$time_sync_error = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'time_sync_error' LIMIT 1"),0,"field_data");
+		$time_sync_error = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'time_sync_error' LIMIT 1"),0,"field_data");
 
 		if($time_sync_error == TRUE)
 		{
@@ -479,7 +490,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$time_sync_error = NULL;
 		}
 
-		$update_available = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'update_available' LIMIT 1"),0,"field_data");
+		$update_available = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'update_available' LIMIT 1"),0,"field_data");
 
 		if($update_available == TRUE)
 		{
@@ -492,8 +503,8 @@ if($_SESSION["valid_login"] == TRUE)
 
 		// Check for Plugin Services Active
 		$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' ORDER BY `options`.`field_name` ASC";
-		$sql_result = mysql_query($sql);
-		$sql_num_results = mysql_num_rows($sql_result);
+		$sql_result = mysqli_query($db_connect, $sql);
+		$sql_num_results = mysqli_num_rows($sql_result);
 
 		$plugin_service_output = '<tr><td colspan="3"><hr></td></tr>';
 
@@ -511,7 +522,7 @@ if($_SESSION["valid_login"] == TRUE)
 				$plugins_active_bar = TRUE;
 				
 				// Does Plugin Service Report Any Status?
-				$plugin_active = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = '$plugin_file' LIMIT 1"),0,"field_data");
+				$plugin_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = '$plugin_file' LIMIT 1"),0,"field_data");
 
 				if($plugin_active === FALSE)
 				{
@@ -562,7 +573,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$quick_info = 'Check the Status of any Timekoin Server process.';
 
-		$home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
+		$home_update = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
 
 		home_screen("Realtime Server Status", $text_bar, $body_string, $quick_info , $home_update);
 		exit;
@@ -574,7 +585,7 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			// Manually remove this peer
 			$sql = "DELETE FROM `active_peer_list` WHERE `active_peer_list`.`IP_Address` = '" . $_POST["ip"] . "' AND `active_peer_list`.`domain` = '" . $_POST["domain"] . "' LIMIT 1";
-			mysql_query($sql);
+			mysqli_query($db_connect, $sql);
 		}
 
 		if($_GET["save"] == "peer" && empty($_POST["edit_port"]) == FALSE)
@@ -592,7 +603,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$sql = "UPDATE `active_peer_list` SET `last_heartbeat` = " . time() . " ,`join_peer_list` = $join_peer_list , `failed_sent_heartbeat` = '0',
 				`IP_Address` = '" . $_POST["edit_ip"] . "', `domain` = '" . $_POST["edit_domain"] . "', `subfolder` = '" . $_POST["edit_subfolder"] . "', `port_number` = '" . $_POST["edit_port"] . "'
 				WHERE `active_peer_list`.`IP_Address` = '" . $_POST["update_ip"] . "' AND `active_peer_list`.`domain` = '" . $_POST["update_domain"] . "' LIMIT 1";
-			mysql_query($sql);
+			mysqli_query($db_connect, $sql);
 		}
 
 		if($_GET["save"] == "newpeer" && empty($_POST["edit_port"]) == FALSE)
@@ -600,7 +611,7 @@ if($_SESSION["valid_login"] == TRUE)
 			// Manually insert new peer
 			$sql = "INSERT INTO `active_peer_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`last_heartbeat` ,`join_peer_list` ,`failed_sent_heartbeat`)
 				VALUES ('" . $_POST["edit_ip"] . "', '" . $_POST["edit_domain"] . "', '" . $_POST["edit_subfolder"] . "', '" . $_POST["edit_port"] . "', " . time() . " , " . time() . " , '0')";
-			mysql_query($sql);
+			mysqli_query($db_connect, $sql);
 
 			ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
 			ini_set('default_socket_timeout', 3); // Timeout for request in seconds
@@ -616,7 +627,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			if($field_numbers > 0)
 			{
-				mysql_query("DELETE FROM `options` WHERE `options`.`field_name` = 'first_contact_server'");
+				mysqli_query($db_connect, "DELETE FROM `options` WHERE `options`.`field_name` = 'first_contact_server'");
 
 				while($field_numbers > 0)
 				{
@@ -628,7 +639,7 @@ if($_SESSION["valid_login"] == TRUE)
 							"---subfolder=" . $_POST["first_contact_subfolder$field_numbers"] . 
 							"---port=" . $_POST["first_contact_port$field_numbers"] . "---end')";
 
-						mysql_query($sql);
+						mysqli_query($db_connect, $sql);
 					}
 					
 					$field_numbers--;
@@ -645,8 +656,8 @@ if($_SESSION["valid_login"] == TRUE)
 
 			// Polling what the active peers have
 			$sql = "SELECT * FROM `active_peer_list`";
-			$sql_result = mysql_query($sql);
-			$sql_num_results = mysql_num_rows($sql_result);
+			$sql_result = mysqli_query($db_connect, $sql);
+			$sql_num_results = mysqli_num_rows($sql_result);
 			$response_counter = 0;
 			$variance_total = 0;
 
@@ -750,8 +761,8 @@ if($_SESSION["valid_login"] == TRUE)
 
 			// Polling what the active peers have
 			$sql = "SELECT * FROM `active_peer_list`";
-			$sql_result = mysql_query($sql);
-			$sql_num_results = mysql_num_rows($sql_result);
+			$sql_result = mysqli_query($db_connect, $sql);
+			$sql_num_results = mysqli_num_rows($sql_result);
 
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
@@ -805,8 +816,8 @@ if($_SESSION["valid_login"] == TRUE)
 			else if($_GET["type"] == "firstcontact")
 			{
 				$sql = "SELECT *  FROM `options` WHERE `field_name` = 'first_contact_server'";
-				$sql_result = mysql_query($sql);
-				$sql_num_results = mysql_num_rows($sql_result) + 2;
+				$sql_result = mysqli_query($db_connect, $sql);
+				$sql_num_results = mysqli_num_rows($sql_result) + 2;
 				$counter = 1;
 				$body_string .= '<FORM ACTION="index.php?menu=peerlist&amp;save=firstcontact" METHOD="post">
 					<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
@@ -838,7 +849,7 @@ if($_SESSION["valid_login"] == TRUE)
 			{
 				// Manually edit this peer
 				$sql = "SELECT * FROM `active_peer_list` WHERE `IP_Address` = '" . $_POST["ip"] ."' AND `domain` = '" . $_POST["domain"] ."' LIMIT 1";
-				$sql_result = mysql_query($sql);
+				$sql_result = mysqli_query($db_connect, $sql);
 				$sql_row = mysql_fetch_array($sql_result);
 
 				if($sql_row["join_peer_list"] == 0)
@@ -865,10 +876,10 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 
 			$sql = "SELECT * FROM `active_peer_list`";
-			$active_peers = mysql_num_rows(mysql_query($sql));
+			$active_peers = mysqli_num_rows(mysqli_query($db_connect, $sql));
 
 			$sql = "SELECT * FROM `new_peers_list`";
-			$new_peers = mysql_num_rows(mysql_query($sql));
+			$new_peers = mysqli_num_rows(mysqli_query($db_connect, $sql));
 
 			$peer_number_bar = '<strong>Active Peers: <font color="green">' . $active_peers . '</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Peers in Reserve: <font color="blue">' . $new_peers . '</font></strong>';
 
@@ -898,8 +909,8 @@ if($_SESSION["valid_login"] == TRUE)
 				$sql = "SELECT * FROM `active_peer_list`";
 			}
 
-			$sql_result = mysql_query($sql);
-			$sql_num_results = mysql_num_rows($sql_result);
+			$sql_result = mysqli_query($db_connect, $sql);
+			$sql_num_results = mysqli_num_rows($sql_result);
 
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
@@ -957,7 +968,7 @@ if($_SESSION["valid_login"] == TRUE)
 					$peer_domain_to_IP = $sql_row["IP_Address"];
 				}
 				
-				$gen_peer_exist = mysql_result(mysql_query("SELECT IP_Address FROM `generating_peer_list` WHERE `IP_Address` = '$peer_domain_to_IP' LIMIT 1"),0,0);				
+				$gen_peer_exist = mysql_result(mysqli_query($db_connect, "SELECT IP_Address FROM `generating_peer_list` WHERE `IP_Address` = '$peer_domain_to_IP' LIMIT 1"),0,0);				
 
 				if(empty($gen_peer_exist) == FALSE)
 				{
@@ -1021,16 +1032,16 @@ if($_SESSION["valid_login"] == TRUE)
 
 			
 			$sql = "SELECT * FROM `new_peers_list`";
-			$new_peers = mysql_num_rows(mysql_query($sql));
+			$new_peers = mysqli_num_rows(mysqli_query($db_connect, $sql));
 
 			if($_GET["show"] == "reserve")
 			{
 				$sql = "SELECT * FROM `active_peer_list`";
-				$sql_num_results = mysql_num_rows(mysql_query($sql));
+				$sql_num_results = mysqli_num_rows(mysqli_query($db_connect, $sql));
 			}
 
-			$peer_transaction_start_blocks = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_start_blocks' LIMIT 1"),0,"field_data");
-			$peer_transaction_performance = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_performance' LIMIT 1"),0,"field_data");
+			$peer_transaction_start_blocks = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_start_blocks' LIMIT 1"),0,"field_data");
+			$peer_transaction_performance = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_performance' LIMIT 1"),0,"field_data");
 
 			$peer_number_bar = '<table border="0" cellspacing="0" cellpadding="0"><tr><td style="width:125px"><strong>Active Peers: <font color="green">' . $sql_num_results . '</font></strong></td>
 			<td style="width:175px"><strong>Peers in Reserve: <font color="blue">' . $new_peers . '</font></strong></td>
@@ -1048,7 +1059,7 @@ if($_SESSION["valid_login"] == TRUE)
 			<br><br><strong>Group Response</strong> is a sample average of all peers and how long it took the group to respond to a 10 second task.
 			<br>Less than 10 seconds increases peer speed by +1 and longer than 10 seconds decreases peer speed by -1.';
 
-			$peerlist_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_peerlist' LIMIT 1"),0,"field_data");
+			$peerlist_update = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_peerlist' LIMIT 1"),0,"field_data");
 
 			if($_GET["show"] == "reserve")
 			{
@@ -1066,30 +1077,30 @@ if($_SESSION["valid_login"] == TRUE)
 	{
 		if($_GET["server_settings"] == "change")
 		{
-			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["network_mode"] . "' WHERE `options`.`field_name` = 'network_mode' LIMIT 1");
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["network_mode"] . "' WHERE `main_loop_status`.`field_name` = 'network_mode' LIMIT 1");
-			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["max_peers"] . "' WHERE `options`.`field_name` = 'max_active_peers' LIMIT 1");
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["max_peers"] . "' WHERE `main_loop_status`.`field_name` = 'max_active_peers' LIMIT 1");
-			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["max_new_peers"] . "' WHERE `options`.`field_name` = 'max_new_peers' LIMIT 1");
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["max_new_peers"] . "' WHERE `main_loop_status`.`field_name` = 'max_new_peers' LIMIT 1");
-			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["cli_port"] . "' WHERE `options`.`field_name` = 'cli_port' LIMIT 1");
-			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["cli_mode"] . "' WHERE `options`.`field_name` = 'cli_mode' LIMIT 1");
-			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["domain"] . "' WHERE `options`.`field_name` = 'server_domain' LIMIT 1");
-			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["subfolder"] . "' WHERE `options`.`field_name` = 'server_subfolder' LIMIT 1");
-			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["max_request"] . "' WHERE `options`.`field_name` = 'server_request_max' LIMIT 1");
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["max_request"] . "' WHERE `main_loop_status`.`field_name` = 'server_request_max' LIMIT 1");
-			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["allow_LAN"] . "' WHERE `options`.`field_name` = 'allow_LAN_peers' LIMIT 1");
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["allow_LAN"] . "' WHERE `main_loop_status`.`field_name` = 'allow_LAN_peers' LIMIT 1");
-			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["allow_ambient"] . "' WHERE `options`.`field_name` = 'allow_ambient_peer_restart' LIMIT 1");
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["allow_ambient"] . "' WHERE `main_loop_status`.`field_name` = 'allow_ambient_peer_restart' LIMIT 1");
-			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["trans_history_check"] . "' WHERE `options`.`field_name` = 'trans_history_check' LIMIT 1");
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["trans_history_check"] . "' WHERE `main_loop_status`.`field_name` = 'trans_history_check' LIMIT 1");
-			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["super_peer"] . "' WHERE `options`.`field_name` = 'super_peer' LIMIT 1");
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["super_peer"] . "' WHERE `main_loop_status`.`field_name` = 'super_peer' LIMIT 1");
-			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["perm_peer_priority"] . "' WHERE `options`.`field_name` = 'perm_peer_priority' LIMIT 1");
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["perm_peer_priority"] . "' WHERE `main_loop_status`.`field_name` = 'perm_peer_priority' LIMIT 1");			
-			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["auto_update_IP"] . "' WHERE `options`.`field_name` = 'auto_update_generation_IP' LIMIT 1");
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '" . $_POST["auto_update_IP"] . "' WHERE `main_loop_status`.`field_name` = 'auto_update_generation_IP' LIMIT 1");			
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["network_mode"] . "' WHERE `options`.`field_name` = 'network_mode' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["network_mode"] . "' WHERE `main_loop_status`.`field_name` = 'network_mode' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["max_peers"] . "' WHERE `options`.`field_name` = 'max_active_peers' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["max_peers"] . "' WHERE `main_loop_status`.`field_name` = 'max_active_peers' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["max_new_peers"] . "' WHERE `options`.`field_name` = 'max_new_peers' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["max_new_peers"] . "' WHERE `main_loop_status`.`field_name` = 'max_new_peers' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["cli_port"] . "' WHERE `options`.`field_name` = 'cli_port' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["cli_mode"] . "' WHERE `options`.`field_name` = 'cli_mode' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["domain"] . "' WHERE `options`.`field_name` = 'server_domain' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["subfolder"] . "' WHERE `options`.`field_name` = 'server_subfolder' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["max_request"] . "' WHERE `options`.`field_name` = 'server_request_max' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["max_request"] . "' WHERE `main_loop_status`.`field_name` = 'server_request_max' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["allow_LAN"] . "' WHERE `options`.`field_name` = 'allow_LAN_peers' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["allow_LAN"] . "' WHERE `main_loop_status`.`field_name` = 'allow_LAN_peers' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["allow_ambient"] . "' WHERE `options`.`field_name` = 'allow_ambient_peer_restart' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["allow_ambient"] . "' WHERE `main_loop_status`.`field_name` = 'allow_ambient_peer_restart' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["trans_history_check"] . "' WHERE `options`.`field_name` = 'trans_history_check' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["trans_history_check"] . "' WHERE `main_loop_status`.`field_name` = 'trans_history_check' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["super_peer"] . "' WHERE `options`.`field_name` = 'super_peer' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["super_peer"] . "' WHERE `main_loop_status`.`field_name` = 'super_peer' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["perm_peer_priority"] . "' WHERE `options`.`field_name` = 'perm_peer_priority' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["perm_peer_priority"] . "' WHERE `main_loop_status`.`field_name` = 'perm_peer_priority' LIMIT 1");			
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["auto_update_IP"] . "' WHERE `options`.`field_name` = 'auto_update_generation_IP' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["auto_update_IP"] . "' WHERE `main_loop_status`.`field_name` = 'auto_update_generation_IP' LIMIT 1");			
 
 			if($_POST["port"] < 1 || $_POST["port"] > 65535)
 			{
@@ -1111,14 +1122,14 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 			}			
 
-			mysql_query("UPDATE `options` SET `field_data` = '$port' WHERE `options`.`field_name` = 'server_port_number' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$port' WHERE `options`.`field_name` = 'server_port_number' LIMIT 1");
 			$server_code .= '<br><font color="blue"><strong>System Settings Updated...</strong></font><br><br>';
 		}
 
 		if($_GET["stop"] == "watchdog")
 		{
-			$watchdog_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,0);
-			$watchdog_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_last_heartbeat' LIMIT 1"),0,0);
+			$watchdog_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,0);
+			$watchdog_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_last_heartbeat' LIMIT 1"),0,0);
 
 			if($watchdog_loop_active > 0)
 			{
@@ -1128,7 +1139,7 @@ if($_SESSION["valid_login"] == TRUE)
 					// Watchdog stop was unexpected
 					$sql = "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'watchdog_heartbeat_active' LIMIT 1";
 					
-					if(mysql_query($sql) == TRUE)
+					if(mysqli_query($db_connect, $sql) == TRUE)
 					{
 						$server_code = '<font color="red"><strong>Watchdog was already Stopped...</strong></font>';
 					}
@@ -1138,7 +1149,7 @@ if($_SESSION["valid_login"] == TRUE)
 					// Set database to flag watchdog to stop
 					$sql = "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'watchdog_heartbeat_active' LIMIT 1";
 					
-					if(mysql_query($sql) == TRUE)
+					if(mysqli_query($db_connect, $sql) == TRUE)
 					{
 						$server_code = '<font color="blue"><strong>Watchdog Stopping...</strong></font>';
 					}
@@ -1152,8 +1163,8 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["stop"] == "main")
 		{
-			$script_loop_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
-			$script_last_heartbeat = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,0);
+			$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
+			$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_last_heartbeat' LIMIT 1"),0,0);
 
 			// Use uPNP to delete inbound ports for Windows systems
 			if(getenv("OS") == "Windows_NT" && file_exists("utils\upnpc.exe") == TRUE)
@@ -1169,21 +1180,21 @@ if($_SESSION["valid_login"] == TRUE)
 					// Main stop was unexpected
 					$sql = "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1";
 					
-					if(mysql_query($sql) == TRUE)
+					if(mysqli_query($db_connect, $sql) == TRUE)
 					{
 						$server_code = '<font color="red"><strong>Timekoin was already Stopped...</strong></font>';
 						// Clear transaction queue to avoid unnecessary peer confusion
-						mysql_query("TRUNCATE TABLE `transaction_queue`");
+						mysqli_query($db_connect, "TRUNCATE TABLE `transaction_queue`");
 
 						// Clear Status for other Scripts
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
-						mysql_query("DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active' LIMIT 1");						
+						mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active' LIMIT 1");						
 
 						// Stop all other script activity
 						activate(TIMEKOINSYSTEM, 0);
@@ -1194,20 +1205,20 @@ if($_SESSION["valid_login"] == TRUE)
 					// Set database to flag main to stop
 					$sql = "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1";
 					
-					if(mysql_query($sql) == TRUE)
+					if(mysqli_query($db_connect, $sql) == TRUE)
 					{
 						// Clear transaction queue to avoid unnecessary peer confusion
-						mysql_query("TRUNCATE TABLE `transaction_queue`");
+						mysqli_query($db_connect, "TRUNCATE TABLE `transaction_queue`");
 
 						// Flag other process to stop
-						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
-						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
-						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
-						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
-						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
-						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
-						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
-						mysql_query("UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'foundation_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'generation_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'queueclerk_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
+						mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active' LIMIT 1");
 						// Stop all other script activity
 						activate(TIMEKOINSYSTEM, 0);
 
@@ -1220,7 +1231,7 @@ if($_SESSION["valid_login"] == TRUE)
 			{
 				$server_code = '<font color="red"><strong>Timekoin was already Stopped...</strong></font>';
 				// Clear transaction queue to avoid unnecessary peer confusion
-				mysql_query("TRUNCATE TABLE `transaction_queue`");
+				mysqli_query($db_connect, "TRUNCATE TABLE `transaction_queue`");
 
 				// Stop all other script activity
 				activate(TIMEKOINSYSTEM, 0);				
@@ -1278,7 +1289,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 						$sql = "UPDATE `options` SET `field_data` = '$username_hash' WHERE `options`.`field_name` = 'username' LIMIT 1";
 
-						if(mysql_query($sql) == TRUE)
+						if(mysqli_query($db_connect, $sql) == TRUE)
 						{
 							// Update success, now change the session username
 							$_SESSION["login_username"] = $_POST["confirm_username"];
@@ -1290,7 +1301,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			if(empty($_POST["current_password"]) == FALSE && empty($_POST["new_password"]) == FALSE && empty($_POST["confirm_password"]) == FALSE)
 			{
-				$password_hash = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,"field_data");
+				$password_hash = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,"field_data");
 				$current_password_hash = hash('sha256', $_POST["current_password"]);
 				$new_password_hash = hash('sha256', $_POST["new_password"]);
 
@@ -1303,7 +1314,7 @@ if($_SESSION["valid_login"] == TRUE)
 						// Write new hash to database for username and change the session username
 						$sql = "UPDATE `options` SET `field_data` = '$new_password_hash' WHERE `options`.`field_name` = 'password' LIMIT 1";
 
-						if(mysql_query($sql) == TRUE)
+						if(mysqli_query($db_connect, $sql) == TRUE)
 						{
 							$password_change = TRUE;
 						}
@@ -1334,22 +1345,22 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["refresh"] == "change")
 		{
-			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["home_update"] . "' WHERE `options`.`field_name` = 'refresh_realtime_home' LIMIT 1");
-			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["peerlist_update"] . "' WHERE `options`.`field_name` = 'refresh_realtime_peerlist' LIMIT 1");
-			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["queue_update"] . "' WHERE `options`.`field_name` = 'refresh_realtime_queue' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["home_update"] . "' WHERE `options`.`field_name` = 'refresh_realtime_home' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["peerlist_update"] . "' WHERE `options`.`field_name` = 'refresh_realtime_peerlist' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["queue_update"] . "' WHERE `options`.`field_name` = 'refresh_realtime_queue' LIMIT 1");
 			
 			$super_peer_limit = intval($_POST["super_peer_limit"]);
 			if($super_peer_limit > 0 && $super_peer_limit < 10) { $super_peer_limit = 10; } // Limit range
 			if($super_peer_limit > 500) { $super_peer_limit = 500; } // Limit range
-			mysql_query("UPDATE `options` SET `field_data` = '$super_peer_limit' WHERE `options`.`field_name` = 'super_peer' LIMIT 1");
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '$super_peer_limit' WHERE `main_loop_status`.`field_name` = 'super_peer' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$super_peer_limit' WHERE `options`.`field_name` = 'super_peer' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$super_peer_limit' WHERE `main_loop_status`.`field_name` = 'super_peer' LIMIT 1");
 
 			$peer_failure_grade = intval($_POST["peer_failure_grade"]);
 			if($peer_failure_grade < 1 || $peer_failure_grade > 100) { $peer_failure_grade = 30; }
-			mysql_query("UPDATE `options` SET `field_data` = '$peer_failure_grade' WHERE `options`.`field_name` = 'peer_failure_grade' LIMIT 1");
-			mysql_query("UPDATE `main_loop_status` SET `field_data` = '$peer_failure_grade' WHERE `main_loop_status`.`field_name` = 'peer_failure_grade' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$peer_failure_grade' WHERE `options`.`field_name` = 'peer_failure_grade' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$peer_failure_grade' WHERE `main_loop_status`.`field_name` = 'peer_failure_grade' LIMIT 1");
 
-			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["timezone"] . "' WHERE `options`.`field_name` = 'default_timezone' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["timezone"] . "' WHERE `options`.`field_name` = 'default_timezone' LIMIT 1");
 
 			$body_text = options_screen2();
 			$body_text .= '<font color="blue"><strong>Refresh Settings, Super Peer Limit, &amp; Peer Failure Limit Saved!</strong></font><br>';
@@ -1375,7 +1386,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["hashcode"] == "save")
 		{
 			// Clear all hashcode settings to allow new ones to be created
-			mysql_query("DELETE FROM `options` WHERE `options`.`field_name` LIKE 'hashcode%'");
+			mysqli_query($db_connect, "DELETE FROM `options` WHERE `options`.`field_name` LIKE 'hashcode%'");
 			$counter = 1;
 			$hash_code;
 
@@ -1391,13 +1402,13 @@ if($_SESSION["valid_login"] == TRUE)
 					$hash_code = str_replace($symbols, "", $hash_code);
 
 					// Save hashcode
-					mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('hashcode$counter', '$hash_code')");
+					mysqli_query($db_connect, "INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('hashcode$counter', '$hash_code')");
 
 					// Save hashcode name
-					mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('hashcode" . $counter . "_name', '" . $_POST["name$counter"] . "')");
+					mysqli_query($db_connect, "INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('hashcode" . $counter . "_name', '" . $_POST["name$counter"] . "')");
 
 					// Save permissions
-					mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) 
+					mysqli_query($db_connect, "INSERT INTO `options` (`field_name` ,`field_data`) 
 						VALUES ('hashcode" . $counter . "_permissions', '" . generate_hashcode_permissions($_POST["pk_balance$counter"], 
 						$_POST["pk_gen_amt$counter"], 
 						$_POST["pk_recv$counter"], 
@@ -1428,9 +1439,9 @@ if($_SESSION["valid_login"] == TRUE)
 
 			while($counter <= 5)
 			{
-				$hashcode = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'hashcode$counter' LIMIT 1"),0,"field_data");
-				$hashcode_name = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'hashcode" . $counter . "_name' LIMIT 1"),0,"field_data");
-				$hashcode_permissions = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'hashcode" . $counter . "_permissions' LIMIT 1"),0,"field_data");
+				$hashcode = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'hashcode$counter' LIMIT 1"),0,"field_data");
+				$hashcode_name = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'hashcode" . $counter . "_name' LIMIT 1"),0,"field_data");
+				$hashcode_permissions = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'hashcode" . $counter . "_permissions' LIMIT 1"),0,"field_data");
 
 				$body_text .= '<tr><td valign="bottom" align="right"><strong>Name: <input type="text" name="name'. $counter . '" size="15" value="' . $hashcode_name . '"/>
 				<br>Hashcode: <input type="text" name="hashcode'. $counter . '" size="15" value="' . $hashcode . '"/></strong></td>
@@ -1478,12 +1489,12 @@ if($_SESSION["valid_login"] == TRUE)
 
 			// Find Empty Record Location
 			$record_number = 1;
-			$record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'installed_plugins_1' LIMIT 1"),0,0);
+			$record_check = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'installed_plugins_1' LIMIT 1"),0,0);
 			
 			while(empty($record_check) == FALSE)
 			{
 				$record_number++;
-				$record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'installed_plugins_$record_number' LIMIT 1"),0,0);
+				$record_check = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'installed_plugins_$record_number' LIMIT 1"),0,0);
 			}
 
 			if(empty($plugin_service) == TRUE)
@@ -1497,7 +1508,7 @@ if($_SESSION["valid_login"] == TRUE)
 					('installed_plugins_$record_number', '---file=$plugin_install---enable=0---show=0---name=$plugin_name---tab=$plugin_tab---service=$plugin_service---end')";
 			}
 
-			if(mysql_query($sql) == TRUE)
+			if(mysqli_query($db_connect, $sql) == TRUE)
 			{
 				$plugin_install_output .= '<font color="blue">Plugin (' . $plugin_name . ') Install Into Database Complete</font><br>';
 			}
@@ -1527,13 +1538,13 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			// Disable selected plugin, search for script file name in database
 			$plugin_filename = $_POST["pluginfile"];
-			$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+			$installed_plugins = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
 
 			// Rewrite String to Disable plugin
 			$new_disable_string = str_replace("enable=1", "enable=0", $installed_plugins);
 		
 			// Update String in Database
-			mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
 
 			home_screen("Plugin Manager", NULL, options_screen5() , "You can enable or disable plugins.");
 			exit;
@@ -1543,13 +1554,13 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			// Enable selected plugin, search for script file name in database
 			$plugin_filename = $_POST["pluginfile"];
-			$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+			$installed_plugins = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
 
 			// Rewrite String to Enable plugin
 			$new_disable_string = str_replace("enable=0", "enable=1", $installed_plugins);
 		
 			// Update String in Database
-			mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
 
 			home_screen("Plugin Manager", NULL, options_screen5() , "You can enable or disable plugins.");
 			exit;
@@ -1559,7 +1570,7 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			// Enable selected plugin, search for script file name in database
 			$plugin_filename = $_POST["pluginfile"];
-			$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+			$installed_plugins = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
 
 			// Find the file name for the plugin
 			$plugin_file = find_string("---file=", "---enable", $installed_plugins);
@@ -1586,7 +1597,7 @@ if($_SESSION["valid_login"] == TRUE)
 			// Delete Database Entry
 			$sql = "DELETE FROM `options` WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1";
 			
-			if(mysql_query($sql) == TRUE)
+			if(mysqli_query($db_connect, $sql) == TRUE)
 			{
 				$plugin_remove_output .= '<font color="blue">Plugin Database Entry Deleted</font><br>';
 			}
@@ -1612,7 +1623,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			$sql = "UPDATE `options` SET `field_data` = '$standard_tabs_settings' WHERE `options`.`field_name` = 'standard_tabs_settings' LIMIT 1";
 
-			if(mysql_query($sql) == TRUE)
+			if(mysqli_query($db_connect, $sql) == TRUE)
 			{
 				$text_bar = '<font color="blue"><strong>Standard Tab Settings Updated</strong></font><br>';
 
@@ -1629,24 +1640,24 @@ if($_SESSION["valid_login"] == TRUE)
 						if($show_status == TRUE)
 						{
 							// Show Plugin Tab
-							$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+							$installed_plugins = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
 
 							// Rewrite String to Show Plugin Tab
 							$new_disable_string = str_replace("show=0", "show=1", $installed_plugins);
 						
 							// Update String in Database
-							mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
+							mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
 						}
 						else
 						{
 							// Hide Plugin Tab
-							$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+							$installed_plugins = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
 
 							// Rewrite String to Show Plugin Tab
 							$new_disable_string = str_replace("show=1", "show=0", $installed_plugins);
 						
 							// Update String in Database
-							mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
+							mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
 						}
 
 						$cycle_counter++; // Next Plugin
@@ -1679,20 +1690,20 @@ if($_SESSION["valid_login"] == TRUE)
 				  KEY `qbi_index` (`public_key_hash`(4))
 				) ENGINE=MyISAM DEFAULT CHARSET=utf8;";
 
-				if(mysql_connect(MYSQL_IP,$admin_username,$admin_password) == FALSE)
+				if(mysqli_connect(MYSQL_IP,$admin_username,$admin_password) == FALSE)
 				{
 					$body_text = '<font color="red"><strong>Could Not Connect To Database</strong></font>';
 				}
 				
-				if(mysql_select_db(MYSQL_DATABASE) == FALSE)
+				if(mysqli_select_db(MYSQL_DATABASE) == FALSE)
 				{
 					$body_text = '<font color="red"><strong>Could Not Select Database</strong></font>';
 				}
 
-				if(mysql_query($sql) == TRUE)
+				if(mysqli_query($db_connect, $sql) == TRUE)
 				{
 					// Insert Place holder data for later checking
-					mysql_query("INSERT INTO `quantum_balance_index` (`public_key_hash` ,`max_foundation` ,`balance`)VALUES ('', '1', '')");
+					mysqli_query($db_connect, "INSERT INTO `quantum_balance_index` (`public_key_hash` ,`max_foundation` ,`balance`)VALUES ('', '1', '')");
 
 					$body_text = '<font color="green"><strong>Quantum Database Index Install Complete!</strong></font>';
 				}
@@ -1748,25 +1759,25 @@ if($_SESSION["valid_login"] == TRUE)
 	{
 		if($_GET["generate"] == "enable")
 		{
-			mysql_query("UPDATE `options` SET `field_data` = '1' WHERE `options`.`field_name` = 'generate_currency' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '1' WHERE `options`.`field_name` = 'generate_currency' LIMIT 1");
 		}
 		else if($_GET["generate"] == "disable")
 		{
-			mysql_query("UPDATE `options` SET `field_data` = '0' WHERE `options`.`field_name` = 'generate_currency' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '0' WHERE `options`.`field_name` = 'generate_currency' LIMIT 1");
 		}
 
 		if($_GET["IP"] == "change")
 		{
-			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["gen_IP"] . "' WHERE `options`.`field_name` = 'generation_IP' LIMIT 1");
-			mysql_query("UPDATE `options` SET `field_data` = '" . $_POST["gen_IP_v6"] . "' WHERE `options`.`field_name` = 'generation_IP_v6' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["gen_IP"] . "' WHERE `options`.`field_name` = 'generation_IP' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["gen_IP_v6"] . "' WHERE `options`.`field_name` = 'generation_IP_v6' LIMIT 1");
 
 			// Let the user know the IP was saved
 			$IP_save = '<font color="blue"><strong>IP Update Successful</strong></font>';
 		}
 
 		$sql = "SELECT IP_Address FROM `generating_peer_list`";
-		$sql_result = mysql_query($sql);
-		$sql_num_results = mysql_num_rows($sql_result);
+		$sql_result = mysqli_query($db_connect, $sql);
+		$sql_num_results = mysqli_num_rows($sql_result);
 
 		$ipv4_counter = 0;
 		$ipv6_counter = 0;
@@ -1786,8 +1797,8 @@ if($_SESSION["valid_login"] == TRUE)
 		}
 
 		$sql = "SELECT IP_Address FROM `generating_peer_queue`";
-		$sql_result = mysql_query($sql);
-		$sql_num_results = mysql_num_rows($sql_result);
+		$sql_result = mysqli_query($db_connect, $sql);
+		$sql_num_results = mysqli_num_rows($sql_result);
 
 		$ipv4_counter_queue = 0;
 		$ipv6_counter_queue = 0;
@@ -1806,21 +1817,21 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 		}
 
-		$generate_currency_enabled = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generate_currency' LIMIT 1"),0,0);
+		$generate_currency_enabled = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generate_currency' LIMIT 1"),0,0);
 
 		if($generate_currency_enabled == TRUE)
 		{
 			$my_public_key = my_public_key();
 			$join_peer_list_v4 = find_v4_gen_join($my_public_key);
 			$join_peer_list_v6 = find_v6_gen_join($my_public_key);
-			$last_generation = mysql_result(mysql_query("SELECT last_generation FROM `generating_peer_list` WHERE `public_key` = '$my_public_key' LIMIT 1"),0,0);
-			$my_generation_IP = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,0);
-			$my_generation_IP_v6 = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP_v6' LIMIT 1"),0,0);
+			$last_generation = mysql_result(mysqli_query($db_connect, "SELECT last_generation FROM `generating_peer_list` WHERE `public_key` = '$my_public_key' LIMIT 1"),0,0);
+			$my_generation_IP = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,0);
+			$my_generation_IP_v6 = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP_v6' LIMIT 1"),0,0);
 			$production_time;
 			$ipv4_status;
 			$ipv6_status;
 
-			$network_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
+			$network_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
 			
 			$generate_currency = 'Generation <font color="green"><strong>Enabled</strong></font>';
 			$generate_rate = '@ <font color="green"><strong>' . peer_gen_amount($my_public_key) . '</strong></font> per Cycle';
@@ -2036,7 +2047,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["generate"] == "showlist")
 		{
-			$default_public_key_font = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
+			$default_public_key_font = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
 			$my_public_key = my_public_key();
 			$ip_mode;
 
@@ -2044,8 +2055,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Public Key</th><th>Joined</th><th>Last Generated</th></tr>';
 
 			$sql = "SELECT * FROM `generating_peer_list` ORDER BY `join_peer_list` ASC";
-			$sql_result = mysql_query($sql);
-			$sql_num_results = mysql_num_rows($sql_result);
+			$sql_result = mysqli_query($db_connect, $sql);
+			$sql_num_results = mysqli_num_rows($sql_result);
 
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
@@ -2082,7 +2093,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["generate"] == "showqueue")
 		{
-			$default_public_key_font = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
+			$default_public_key_font = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
 			$my_public_key = my_public_key();
 			$ip_mode;
 
@@ -2090,8 +2101,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Public Key</th><th>Join Queue</th></tr>';
 
 			$sql = "SELECT * FROM `generating_peer_queue` ORDER BY `timestamp` ASC";
-			$sql_result = mysql_query($sql);
-			$sql_num_results = mysql_num_rows($sql_result);
+			$sql_result = mysqli_query($db_connect, $sql);
+			$sql_num_results = mysqli_num_rows($sql_result);
 
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
@@ -2140,7 +2151,7 @@ if($_SESSION["valid_login"] == TRUE)
 		}
 
 		// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
-		$gen_peers_total = mysql_result(mysql_query("SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
+		$gen_peers_total = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
 
 		for ($i = 0; $i < $max_cycles_ahead; $i++)
 		{
@@ -2211,7 +2222,7 @@ if($_SESSION["valid_login"] == TRUE)
 			// Create context resource for our request
 			$context = stream_context_create (array ( 'http' => $contextData ));
 
-			$network_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
+			$network_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
 
 			if($network_mode == 1)
 			{
@@ -2275,7 +2286,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$max_cycles_ahead = 576;
 			$total_ipv6_elections = 0;
 			// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
-			$gen_peers_total = mysql_result(mysql_query("SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
+			$gen_peers_total = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
 
 			for ($i = 1; $i < $max_cycles_ahead; $i++)// IPv4 Elections
 			{
@@ -2376,7 +2387,7 @@ if($_SESSION["valid_login"] == TRUE)
 				{
 					// Check if public key is valid by searching for any transactions
 					// that reference it
-					$valid_key_test = mysql_result(mysql_query("SELECT public_key_from, public_key_to FROM `transaction_history` WHERE `public_key_from` = '$public_key_to' OR `public_key_to` = '$public_key_to' LIMIT 1"),0,0);
+					$valid_key_test = mysql_result(mysqli_query($db_connect, "SELECT public_key_from, public_key_to FROM `transaction_history` WHERE `public_key_from` = '$public_key_to' OR `public_key_to` = '$public_key_to' LIMIT 1"),0,0);
 
 					if(empty($valid_key_test) == TRUE)
 					{
@@ -2531,8 +2542,8 @@ if($_SESSION["valid_login"] == TRUE)
 				$jump_to_transaction = transaction_cycle($counter + 5);
 
 				$sql = "SELECT * FROM `transaction_history` WHERE `timestamp` >= '$start_transaction_cycle' AND `timestamp` < '$end_transaction_cycle'";
-				$sql_result = mysql_query($sql);
-				$sql_num_results = mysql_num_rows($sql_result);
+				$sql_result = mysqli_query($db_connect, $sql);
+				$sql_num_results = mysqli_num_rows($sql_result);
 
 				if($_POST["highlight_cycle"] - 1500 == $start_transaction_cycle)
 				{
@@ -2625,7 +2636,7 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			// Examine Transaction Details
 			$sql = "SELECT * FROM `transaction_history` WHERE `timestamp` = '" . $_POST["timestamp"] . "' AND `hash` = '" . $_POST["hash"] . "'";
-			$sql_result = mysql_query($sql);			
+			$sql_result = mysqli_query($db_connect, $sql);			
 			$sql_row = mysql_fetch_array($sql_result);
 
 			$crypt1_data = tk_decrypt($sql_row["public_key_from"], base64_decode($sql_row["crypt_data1"]));
@@ -2743,14 +2754,14 @@ if($_SESSION["valid_login"] == TRUE)
 				{
 					// Save value in database
 					$sql = "UPDATE `options` SET `field_data` = '" . $_POST["font_size"] . "' WHERE `options`.`field_name` = 'public_key_font_size' LIMIT 1";
-					mysql_query($sql);
+					mysqli_query($db_connect, $sql);
 
 					$default_public_key_font = $_POST["font_size"];
 				}
 			}
 			else
 			{
-				$default_public_key_font = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
+				$default_public_key_font = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
 			}
 
 			if($hide_receive == FALSE)
@@ -2799,8 +2810,8 @@ if($_SESSION["valid_login"] == TRUE)
 
 				// Find the last X transactions sent to this public key
 				$sql = "SELECT timestamp, public_key_from, crypt_data3, attribute FROM `transaction_history` WHERE `public_key_to` = '$my_public_key' ORDER BY `transaction_history`.`timestamp` DESC";
-				$sql_result = mysql_query($sql);
-				$sql_num_results = mysql_num_rows($sql_result);
+				$sql_result = mysqli_query($db_connect, $sql);
+				$sql_num_results = mysqli_num_rows($sql_result);
 
 				$result_limit = 0;
 
@@ -2863,8 +2874,8 @@ if($_SESSION["valid_login"] == TRUE)
 				// Find the last X transactions from to this public key
 				$sql = "SELECT timestamp, public_key_from, public_key_to, crypt_data3, attribute FROM `transaction_history` WHERE `public_key_from` = '$my_public_key' ORDER BY `transaction_history`.`timestamp` DESC";
 
-				$sql_result = mysql_query($sql);
-				$sql_num_results = mysql_num_rows($sql_result);
+				$sql_result = mysqli_query($db_connect, $sql);
+				$sql_num_results = mysqli_num_rows($sql_result);
 				$result_limit = 0;
 
 				for ($i = 0; $i < $sql_num_results; $i++)
@@ -2934,7 +2945,7 @@ if($_SESSION["valid_login"] == TRUE)
 			{
 				// Save value in database
 				$sql = "UPDATE `options` SET `field_data` = '" . $_POST["font_size"] . "' WHERE `options`.`field_name` = 'public_key_font_size' LIMIT 1";
-				mysql_query($sql);
+				mysqli_query($db_connect, $sql);
 
 				header("Location: index.php?menu=queue");
 				exit;
@@ -2942,15 +2953,15 @@ if($_SESSION["valid_login"] == TRUE)
 		}
 		else
 		{
-			$default_public_key_font = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
+			$default_public_key_font = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
 		}
 
 		$my_public_key = my_public_key();
 
 		// Find the last X amount of transactions sent to this public key
 		$sql = "SELECT * FROM `transaction_queue` ORDER BY `transaction_queue`.`timestamp` DESC";
-		$sql_result = mysql_query($sql);
-		$sql_num_results = mysql_num_rows($sql_result);
+		$sql_result = mysqli_query($db_connect, $sql);
+		$sql_num_results = mysqli_num_rows($sql_result);
 
 		$body_string = '<strong><font color="blue">( ' . number_format($sql_num_results) . ' )</font> Network Transactions Waiting for Processing</strong><br><br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
 			<th>Sent From</th><th>Sent To</th><th>Amount</th></tr>';
@@ -3031,7 +3042,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$quick_info = 'This section contains all the network transactions that are queued to be stored in the transaction history.';
 		
-		$queue_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_queue' LIMIT 1"),0,"field_data");
+		$queue_update = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_queue' LIMIT 1"),0,"field_data");
 
 		home_screen('Realtime Transactions in Network Queue', $text_bar, $body_string , $quick_info, $queue_update);
 		exit;
@@ -3053,7 +3064,7 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			$sql = "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["schedule_check"] . "' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1";
 			
-			if(mysql_query($sql) == TRUE)
+			if(mysqli_query($db_connect, $sql) == TRUE)
 			{
 				$body_string = '<strong>An Integrity Check has been scheduled for Transaction Cycle #<font color="blue">' . $_POST["schedule_check"] . '</font></strong>';
 				write_log("A History Check was Scheduled for Transaction Cycle #" . $_POST["schedule_check"], "GU");
@@ -3064,7 +3075,7 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			$sql = "TRUNCATE TABLE `transaction_foundation`";
 			
-			if(mysql_query($sql) == TRUE)
+			if(mysqli_query($db_connect, $sql) == TRUE)
 			{
 				$body_string = '<strong>Transaction Foundation Hashes All Cleared</strong>';
 				write_log("Transaction Foundation Hashes All Cleared", "GU");
@@ -3075,7 +3086,7 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			$sql = "TRUNCATE TABLE `ip_banlist`";
 			
-			if(mysql_query($sql) == TRUE)
+			if(mysqli_query($db_connect, $sql) == TRUE)
 			{
 				$body_string = '<strong>IP Address Ban List Table Cleared</strong>';
 				write_log("IP Address Ban List Table Cleared", "GU");
@@ -3087,7 +3098,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$sql = "TRUNCATE TABLE `generating_peer_list`";
 			$sql2 = "TRUNCATE TABLE `generating_peer_queue`";
 
-			if(mysql_query($sql) == TRUE && mysql_query($sql2) == TRUE)
+			if(mysqli_query($db_connect, $sql) == TRUE && mysqli_query($db_connect, $sql2) == TRUE)
 			{
 				$body_string = '<strong>Generation Peer List & Election Queue List Cleared</strong>';
 				write_log("Generation Peer List & Election Queue List Cleared", "GU");
@@ -3115,7 +3126,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string = '<strong>Checking All Database Tables</strong><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Check Database Results</th></tr><tr><td>';
 
-			$db_check = mysql_query("CHECK TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
+			$db_check = mysqli_query($db_connect, "CHECK TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
 			$db_check_info = mysql_fetch_array($db_check);
 			$db_check_count = 0;
 			
@@ -3146,7 +3157,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string = '<strong>Repair All Database Tables</strong><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Repair Database Results</th></tr><tr><td>';
 
-			$db_check = mysql_query("REPAIR TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
+			$db_check = mysqli_query($db_connect, "REPAIR TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
 			$db_check_info = mysql_fetch_array($db_check);
 			$db_check_count = 0;
 			
@@ -3177,7 +3188,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string = '<strong>Optimize All Database Tables</strong><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Optimize Database Results</th></tr><tr><td>';
 
-			$db_check = mysql_query("OPTIMIZE TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
+			$db_check = mysqli_query($db_connect, "OPTIMIZE TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
 			$db_check_info = mysql_fetch_array($db_check);
 			$db_check_count = 0;
 			
@@ -3211,7 +3222,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["logs"] == "clear")
 		{
-			mysql_query("TRUNCATE TABLE `activity_logs`");
+			mysqli_query($db_connect, "TRUNCATE TABLE `activity_logs`");
 			write_log("All Logs Cleared.", "GU");
 		}
 
@@ -3342,8 +3353,8 @@ if($_SESSION["valid_login"] == TRUE)
 				$sql = "SELECT *  FROM `activity_logs` WHERE `log` LIKE '%" . $_POST["text_search"] . "%' ORDER BY `activity_logs`.`timestamp` DESC";
 			}
 		
-			$sql_result = mysql_query($sql);
-			$sql_num_results = mysql_num_rows($sql_result);
+			$sql_result = mysqli_query($db_connect, $sql);
+			$sql_num_results = mysqli_num_rows($sql_result);
 
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
@@ -3382,10 +3393,10 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			$sql = "UPDATE `my_keys` SET `field_data` = '" . base64_decode($_POST["restore_private_key"]) . "' WHERE `my_keys`.`field_name` = 'server_private_key' LIMIT 1";
 
-			if(mysql_query($sql) == TRUE)
+			if(mysqli_query($db_connect, $sql) == TRUE)
 			{
 				// Blank reverse crypto data field
-				mysql_query("UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");				
+				mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");				
 				
 				$server_message = '<br><font color="blue"><strong>Private Key Restore Complete!</strong></font><br><br>';
 			}
@@ -3399,10 +3410,10 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			$sql = "UPDATE `my_keys` SET `field_data` = '" . base64_decode($_POST["restore_public_key"]) . "' WHERE `my_keys`.`field_name` = 'server_public_key' LIMIT 1";
 
-			if(mysql_query($sql) == TRUE)
+			if(mysqli_query($db_connect, $sql) == TRUE)
 			{
 				// Blank reverse crypto data field
-				mysql_query("UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
 
 				$server_message = '<br><font color="blue"><strong>Public Key Restore Complete!</strong></font><br><br>';
 			}

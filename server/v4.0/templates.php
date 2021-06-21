@@ -1,7 +1,7 @@
 <?PHP
 //***********************************************************
 //***********************************************************
-function login_screen($error_message)
+function login_screen($error_message = "")
 {
 
 ?>
@@ -108,11 +108,11 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0, $
 			break;			
 	}
 
-	$standard_settings_number = intval(mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'standard_tabs_settings' LIMIT 1"),0,"field_data"));
+	$standard_settings_number = intval(mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'standard_tabs_settings' LIMIT 1"),0,"field_data"));
 
 	$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' ORDER BY `options`.`field_name` ASC";
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 	$plugin_output;
 
 	for ($i = 0; $i < $sql_num_results; $i++)
@@ -298,12 +298,12 @@ function options_screen()
 //***********************************************************
 function options_screen2()
 {
-	$home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
-	$peerlist_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_peerlist' LIMIT 1"),0,"field_data");
-	$queue_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_queue' LIMIT 1"),0,"field_data");
-	$super_peer = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'super_peer' LIMIT 1"),0,"field_data");
-	$peer_failure_grade = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,"field_data");
-	$default_timezone = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,"field_data");
+	$home_update = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
+	$peerlist_update = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_peerlist' LIMIT 1"),0,"field_data");
+	$queue_update = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_queue' LIMIT 1"),0,"field_data");
+	$super_peer = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'super_peer' LIMIT 1"),0,"field_data");
+	$peer_failure_grade = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,"field_data");
+	$default_timezone = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,"field_data");
 
 	if(empty($default_timezone) == FALSE)
 	{
@@ -454,7 +454,7 @@ function options_screen3()
 //***********************************************************
 function options_screen4()
 {
-	$standard_settings_number = intval(mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'standard_tabs_settings' LIMIT 1"),0,"field_data"));
+	$standard_settings_number = intval(mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'standard_tabs_settings' LIMIT 1"),0,"field_data"));
 		
 	if(check_standard_tab_settings($standard_settings_number, 1) == TRUE) { $tab_peerlist_enable = "CHECKED"; }else{ $tab_peerlist_disable = "CHECKED"; }
 	if(check_standard_tab_settings($standard_settings_number, 2) == TRUE) { $trans_queue_enable = "CHECKED"; }else{ $trans_queue_disable = "CHECKED"; }
@@ -467,8 +467,8 @@ function options_screen4()
 
 //	Plugin Tabs
 	$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' ORDER BY `options`.`field_name` ASC";
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 	$plugin_output;
 
 	if($sql_num_results > 0) { $plugin_output .= '<input type="hidden" name="plugins_installed" value="1">'; }
@@ -526,8 +526,8 @@ function options_screen4()
 function options_screen5()
 {
 	$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' ORDER BY `options`.`field_name` ASC";
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 	$plugin_output;
 
 	for ($i = 0; $i < $sql_num_results; $i++)
@@ -581,7 +581,7 @@ function options_screen6()
 //***********************************************************
 function options_screen7()
 {
-	$qbi_index = mysql_result(mysql_query("SELECT COUNT(*) FROM `quantum_balance_index` LIMIT 1"),0);
+	$qbi_index = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `quantum_balance_index` LIMIT 1"),0);
 
 	if($qbi_index > 0)
 	{
@@ -605,27 +605,27 @@ function options_screen7()
 //***********************************************************
 function system_screen()
 {
-	$max = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,0);
-	$new = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'max_new_peers' LIMIT 1"),0,0);
-	$domain = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,0);
-	$subfolder = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'server_subfolder' LIMIT 1"),0,0);
-	$port = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,0);
-	$gen_hash = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generating_peers_hash' LIMIT 1"),0,0);
-	$trans_history_hash = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'transaction_history_hash' LIMIT 1"),0,0);
-	$trans_queue_hash = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'transaction_queue_hash' LIMIT 1"),0,0);
-	$block_check_start = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'block_check_start' LIMIT 1"),0,0);
-	$uptime = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'timekoin_start_time' LIMIT 1"),0,0);
-	$request_max = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'server_request_max' LIMIT 1"),0,0);
-	$allow_lan_peers = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,0));
-	$allow_ambient_peer_restart = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'allow_ambient_peer_restart' LIMIT 1"),0,0));
-	$trans_history_check = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'trans_history_check' LIMIT 1"),0,0));
-	$gen_list_no_sync = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_peer_list_no_sync' LIMIT 1"),0,0);
-	$super_peer_mode = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'super_peer' LIMIT 1"),0,0);
-	$perm_peer_priority = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'perm_peer_priority' LIMIT 1"),0,0);
-	$auto_update_generation_IP = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,0));
-	$cli_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
-	$cli_port = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_port' LIMIT 1"),0,0);
-	$network_mode = intval(mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
+	$max = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,0);
+	$new = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'max_new_peers' LIMIT 1"),0,0);
+	$domain = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,0);
+	$subfolder = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'server_subfolder' LIMIT 1"),0,0);
+	$port = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,0);
+	$gen_hash = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generating_peers_hash' LIMIT 1"),0,0);
+	$trans_history_hash = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'transaction_history_hash' LIMIT 1"),0,0);
+	$trans_queue_hash = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'transaction_queue_hash' LIMIT 1"),0,0);
+	$block_check_start = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'block_check_start' LIMIT 1"),0,0);
+	$uptime = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'timekoin_start_time' LIMIT 1"),0,0);
+	$request_max = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'server_request_max' LIMIT 1"),0,0);
+	$allow_lan_peers = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,0));
+	$allow_ambient_peer_restart = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'allow_ambient_peer_restart' LIMIT 1"),0,0));
+	$trans_history_check = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'trans_history_check' LIMIT 1"),0,0));
+	$gen_list_no_sync = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_peer_list_no_sync' LIMIT 1"),0,0);
+	$super_peer_mode = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'super_peer' LIMIT 1"),0,0);
+	$perm_peer_priority = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'perm_peer_priority' LIMIT 1"),0,0);
+	$auto_update_generation_IP = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,0));
+	$cli_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
+	$cli_port = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'cli_port' LIMIT 1"),0,0);
+	$network_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
 
 	if($network_mode == 3)
 	{
@@ -729,10 +729,10 @@ function system_screen()
 	}
 
 	// Total number of records
-	$total_records = mysql_result(mysql_query("SELECT COUNT(*) FROM `transaction_history`"),0);
+	$total_records = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_history`"),0);
 
 	// Total number of transaction foundations in database
-	$total_foundations = mysql_result(mysql_query("SELECT COUNT(*) FROM `transaction_foundation`"),0);
+	$total_foundations = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_foundation`"),0);
 
 	if($total_foundations == foundation_cycle(0, TRUE))
 	{
@@ -756,7 +756,7 @@ function system_screen()
 	}
 
 	// Database Size
-	$db_size = mysql_result(mysql_query("SELECT CONCAT(SUM(ROUND(((DATA_LENGTH + INDEX_LENGTH - DATA_FREE) / 1024 / 1024),2)),\" MB\") AS Size FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA LIKE '" . MYSQL_DATABASE . "'"),0);
+	$db_size = mysql_result(mysqli_query($db_connect, "SELECT CONCAT(SUM(ROUND(((DATA_LENGTH + INDEX_LENGTH - DATA_FREE) / 1024 / 1024),2)),\" MB\") AS Size FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA LIKE '" . MYSQL_DATABASE . "'"),0);
 
 	$html_return = '<FORM ACTION="index.php?menu=system&amp;server_settings=change" METHOD="post">
 	<table border="0"><tr><td align="right" style="width:325px">
@@ -905,7 +905,7 @@ function tools_bar($walk_history)
 	$default_check = transaction_cycle(0, TRUE) - 10;
 	$default_current = transaction_cycle(0, TRUE);
 
-	$main_active = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
+	$main_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
 	
 	if($main_active != FALSE)
 	{

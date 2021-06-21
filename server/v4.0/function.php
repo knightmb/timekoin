@@ -9,13 +9,23 @@ define("NEXT_VERSION","current_version51.txt"); // What file to check for future
 
 error_reporting(E_ERROR | E_CORE_ERROR | E_COMPILE_ERROR); // Disable most error reporting except for fatal errors
 ini_set('display_errors', FALSE);
-
+//***********************************************************************************
+//***********************************************************************************
+if(function_exists('mysql_result') == FALSE)
+{
+	function mysql_result($result, $number, $field = 0)
+	{
+		mysqli_data_seek($result, $number);
+		$row = mysqli_fetch_array($result);
+		return $row[$field];
+	}
+}
 //***********************************************************************************
 //***********************************************************************************
 function ip_banned($ip)
 {
 	// Check for banned IP address
-	$ip = mysql_result(mysql_query("SELECT ip FROM `ip_banlist` WHERE `ip` = '$ip' LIMIT 1"),0,0);
+	$ip = mysql_result(mysqli_query("SELECT ip FROM `ip_banlist` WHERE `ip` = '$ip' LIMIT 1"),0,0);
 
 	if(empty($ip) == TRUE)
 	{
@@ -50,7 +60,7 @@ function log_ip($attribute, $multiple = 1, $super_peer_check = FALSE)
 	if($super_peer_check == TRUE)
 	{
 		// Is Super Peer Enabled?
-		$super_peer_mode = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'super_peer' LIMIT 1"),0,0);
+		$super_peer_mode = mysql_result(mysqli_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'super_peer' LIMIT 1"),0,0);
 
 		if($super_peer_mode > 0)
 		{
@@ -78,7 +88,7 @@ function log_ip($attribute, $multiple = 1, $super_peer_check = FALSE)
 		$multiple--;
 	}
 	
-	mysql_query($sql);
+	mysqli_query($sql);
 	return;
 }
 //***********************************************************************************
@@ -88,7 +98,7 @@ function scale_trigger($trigger = 100)
 	// So for example, a trigger of 1 means that one event can trigger flood protection.
 	// A trigger of 2 means 2 events will trigger flood protection. So only half as many
 	// IP copies are returned in this function.
-	$request_max = mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'server_request_max' LIMIT 1"),0,0);
+	$request_max = mysql_result(mysqli_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'server_request_max' LIMIT 1"),0,0);
 
 	return intval($request_max / $trigger);
 }
@@ -119,7 +129,7 @@ function find_string($start_tag, $end_tag, $full_string, $end_match = FALSE)
 function write_log($message, $type)
 {
 	// Write Log Entry
-	mysql_query("INSERT INTO `activity_logs` (`timestamp` ,`log` ,`attribute`)	
+	mysqli_query("INSERT INTO `activity_logs` (`timestamp` ,`log` ,`attribute`)	
 		VALUES ('" . time() . "', '" . filter_sql(substr($message, 0, 256)) . "', '$type')");
 	return;
 }
@@ -128,7 +138,7 @@ function write_log($message, $type)
 function generation_peer_hash()
 {
 	$sql = "SELECT public_key, join_peer_list FROM `generating_peer_list` ORDER BY `join_peer_list` ASC";
-	$sql_result = mysql_query($sql);
+	$sql_result = mysqli_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 
 	$generating_hash = 0;
@@ -180,7 +190,7 @@ function foundation_cycle($past_or_future = 0, $foundation_cycles_only = 0)
 //***********************************************************************************
 function transaction_history_hash()
 {
-	$hash = mysql_result(mysql_query("SELECT COUNT(*) FROM `transaction_history`"),0);
+	$hash = mysql_result(mysqli_query("SELECT COUNT(*) FROM `transaction_history`"),0);
 
 	$previous_foundation_block = foundation_cycle(-1, TRUE);
 	$current_foundation_cycle = foundation_cycle(0);
@@ -193,12 +203,12 @@ function transaction_history_hash()
 	// (50 blocks) or over 4 hours
 	if($current_generation_block - ($current_foundation_block * 500) > 50)
 	{
-		$current_history_foundation = mysql_result(mysql_query("SELECT * FROM `transaction_foundation` WHERE `block` = $previous_foundation_block LIMIT 1"),0,"hash");
+		$current_history_foundation = mysql_result(mysqli_query("SELECT * FROM `transaction_foundation` WHERE `block` = $previous_foundation_block LIMIT 1"),0,"hash");
 		$hash .= $current_history_foundation;
 	}
 
 	$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $current_foundation_cycle AND `timestamp` < $next_foundation_cycle AND `attribute` = 'H' ORDER BY `timestamp` ASC";
-	$sql_result = mysql_query($sql);
+	$sql_result = mysqli_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 
 	for ($i = 0; $i < $sql_num_results; $i++)
@@ -214,7 +224,7 @@ function transaction_history_hash()
 function queue_hash()
 {
 	$sql = "SELECT * FROM `transaction_queue` ORDER BY `hash`, `timestamp` ASC";
-	$sql_result = mysql_query($sql);
+	$sql_result = mysqli_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 
 	$transaction_queue_hash = 0;
@@ -250,7 +260,7 @@ function filter_public_key($public_key)
 //***********************************************************************************
 function perm_peer_mode()
 {
-	$perm_peer_priority = intval(mysql_result(mysql_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'perm_peer_priority' LIMIT 1"),0,0));
+	$perm_peer_priority = intval(mysql_result(mysqli_query("SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'perm_peer_priority' LIMIT 1"),0,0));
 
 	if($perm_peer_priority == 1)
 	{
@@ -264,39 +274,39 @@ function perm_peer_mode()
 //***********************************************************************************
 function my_public_key()
 {
-	return mysql_result(mysql_query("SELECT field_data FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,0);
+	return mysql_result(mysqli_query("SELECT field_data FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,0);
 }
 //***********************************************************************************
 function my_private_key()
 {
-	return mysql_result(mysql_query("SELECT field_data FROM `my_keys` WHERE `field_name` = 'server_private_key' LIMIT 1"),0,0);
+	return mysql_result(mysqli_query("SELECT field_data FROM `my_keys` WHERE `field_name` = 'server_private_key' LIMIT 1"),0,0);
 }
 //***********************************************************************************
 function my_subfolder()
 {
-	return mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'server_subfolder' LIMIT 1"),0,0);
+	return mysql_result(mysqli_query("SELECT field_data FROM `options` WHERE `field_name` = 'server_subfolder' LIMIT 1"),0,0);
 }
 //***********************************************************************************
 function my_port_number()
 {
-	return mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,0);
+	return mysql_result(mysqli_query("SELECT field_data FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,0);
 }
 //***********************************************************************************
 function my_domain()
 {
-	return mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,0);
+	return mysql_result(mysqli_query("SELECT field_data FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,0);
 }
 //***********************************************************************************
 function modify_peer_grade($ip_address, $domain, $subfolder, $port_number, $grade)
 {
-	$peer_failure = mysql_result(mysql_query("SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1"),0,0);
+	$peer_failure = mysql_result(mysqli_query("SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1"),0,0);
 	
 	if($peer_failure < 50000) // Don't change anything over 50,000 as it is reserved for peers where failure grade is not used
 	{
 		$peer_failure += $grade;
 		if($peer_failure >= 0)
 		{
-			mysql_query("UPDATE `active_peer_list` SET `failed_sent_heartbeat` = $peer_failure WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+			mysqli_query("UPDATE `active_peer_list` SET `failed_sent_heartbeat` = $peer_failure WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 		}
 	}
 	return;
@@ -360,7 +370,7 @@ function call_script($script, $priority = 1, $plugin = FALSE, $web_server_call =
 	if($web_server_call == TRUE)
 	{
 		// No Properly working PHP CLI Extensions for some odd reason, call from web server instead
-		$cli_port = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_port' LIMIT 1"),0,0);
+		$cli_port = mysql_result(mysqli_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_port' LIMIT 1"),0,0);
 		
 		if(empty($cli_port) == TRUE)
 		{
@@ -432,7 +442,7 @@ function call_script($script, $priority = 1, $plugin = FALSE, $web_server_call =
 function clone_script($script)
 {
 	// No Properly working PHP CLI Extensions for some odd reason, call from web server instead
-	$cli_port = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_port' LIMIT 1"),0,0);
+	$cli_port = mysql_result(mysqli_query("SELECT field_data FROM `options` WHERE `field_name` = 'cli_port' LIMIT 1"),0,0);
 		
 	if(empty($cli_port) == TRUE)
 	{
@@ -483,11 +493,11 @@ function walkhistory($block_start = 0, $block_end = 0)
 
 		$time3 = transaction_cycle(0 - $current_generation_block + 1 + $i);
 		$time4 = transaction_cycle(0 - $current_generation_block + 2 + $i);
-		$next_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time3 AND `timestamp` < $time4 AND `attribute` = 'H' LIMIT 1"),0,0);
+		$next_hash = mysql_result(mysqli_query("SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time3 AND `timestamp` < $time4 AND `attribute` = 'H' LIMIT 1"),0,0);
 
 		$sql = "SELECT timestamp, public_key_from, public_key_to, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
 
-		$sql_result = mysql_query($sql);
+		$sql_result = mysqli_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
 		$my_hash = 0;
 
@@ -554,25 +564,25 @@ function walkhistory($block_start = 0, $block_end = 0)
 function count_transaction_hash()
 {
 	// Check server balance via custom memory index
-	$count_transaction_hash = mysql_result(mysql_query("SELECT * FROM `balance_index` WHERE `public_key_hash` = 'count_transaction_hash' LIMIT 1"),0,"balance");
-	$count_transaction_hash_last = mysql_result(mysql_query("SELECT * FROM `balance_index` WHERE `public_key_hash` = 'count_transaction_hash' LIMIT 1"),0,"block");
+	$count_transaction_hash = mysql_result(mysqli_query("SELECT * FROM `balance_index` WHERE `public_key_hash` = 'count_transaction_hash' LIMIT 1"),0,"balance");
+	$count_transaction_hash_last = mysql_result(mysqli_query("SELECT * FROM `balance_index` WHERE `public_key_hash` = 'count_transaction_hash' LIMIT 1"),0,"block");
 
 	if($count_transaction_hash === FALSE)
 	{
 		// Does not exist, needs to be created
-		mysql_query("INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`) VALUES ('0', 'count_transaction_hash', '0')");
+		mysqli_query("INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`) VALUES ('0', 'count_transaction_hash', '0')");
 
 		// Update record with the latest total
-		$total_trans_hash = mysql_result(mysql_query("SELECT COUNT(attribute) FROM `transaction_history` USE INDEX(attribute) WHERE `attribute` = 'H'"),0);
-		mysql_query("UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$total_trans_hash' WHERE `balance_index`.`public_key_hash` = 'count_transaction_hash' LIMIT 1");
+		$total_trans_hash = mysql_result(mysqli_query("SELECT COUNT(attribute) FROM `transaction_history` USE INDEX(attribute) WHERE `attribute` = 'H'"),0);
+		mysqli_query("UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$total_trans_hash' WHERE `balance_index`.`public_key_hash` = 'count_transaction_hash' LIMIT 1");
 	}
 	else
 	{
 		if(time() - $count_transaction_hash_last > 300) // 300s cache time
 		{
 			// Update new hash count and cache time
-			$total_trans_hash = mysql_result(mysql_query("SELECT COUNT(attribute) FROM `transaction_history` USE INDEX(attribute) WHERE `attribute` = 'H'"),0);
-			mysql_query("UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$total_trans_hash' WHERE `balance_index`.`public_key_hash` = 'count_transaction_hash' LIMIT 1");
+			$total_trans_hash = mysql_result(mysqli_query("SELECT COUNT(attribute) FROM `transaction_history` USE INDEX(attribute) WHERE `attribute` = 'H'"),0);
+			mysqli_query("UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$total_trans_hash' WHERE `balance_index`.`public_key_hash` = 'count_transaction_hash' LIMIT 1");
 		}
 		else
 		{
@@ -587,7 +597,7 @@ function count_transaction_hash()
 function reset_transaction_hash_count()
 {
 	// Clear transaction count cache
-	mysql_query("DELETE FROM `balance_index` WHERE `balance_index`.`public_key_hash` = 'count_transaction_hash' LIMIT 1");
+	mysqli_query("DELETE FROM `balance_index` WHERE `balance_index`.`public_key_hash` = 'count_transaction_hash' LIMIT 1");
 	return;
 }
 //***********************************************************************************
@@ -686,7 +696,7 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 		OR (`public_key_to` = '$public_key' AND `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range')";
 	}
 
-	$sql_result = mysql_query($sql);
+	$sql_result = mysqli_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 	$crypto_balance = 0;
 	$transaction_info;
@@ -788,7 +798,7 @@ function check_crypt_balance($public_key)
 	}
 
 	$sql = "SELECT block, balance FROM `balance_index` WHERE `block` = $previous_foundation_block AND `public_key_hash` = '$public_key_hash' LIMIT 1";
-	$sql_result = mysql_query($sql);
+	$sql_result = mysqli_query($sql);
 	$sql_row = mysql_fetch_array($sql_result);
 
 	if(empty($sql_row["block"]) == TRUE)// No index exist yet, so after the balance check is complete, record the result for later use
@@ -796,7 +806,7 @@ function check_crypt_balance($public_key)
 		// Check if a Quantum Balance Index exist to shorten database access time
 		$pk_md5 = hash('md5', $public_key);
 		$sql2 = "SELECT max_foundation, balance FROM `quantum_balance_index` WHERE `public_key_hash` = '$pk_md5' LIMIT 1";
-		$sql_result2 = mysql_query($sql2);
+		$sql_result2 = mysqli_query($sql2);
 		$sql_row2 = mysql_fetch_array($sql_result2);
 
 		if(empty($sql_row2["max_foundation"]) == TRUE)// No Quantum Balance Index exist for this Public Key
@@ -807,7 +817,7 @@ function check_crypt_balance($public_key)
 			$qbi_max_foundation = (intval($current_foundation_block / 500)) * 500;
 
 			// Does this many Transaction Foundations even exist to index against?
-			$total_foundations = mysql_result(mysql_query("SELECT COUNT(*) FROM `transaction_foundation`"),0);
+			$total_foundations = mysql_result(mysqli_query("SELECT COUNT(*) FROM `transaction_foundation`"),0);
 
 			if($total_foundations > $qbi_max_foundation)
 			{
@@ -816,7 +826,7 @@ function check_crypt_balance($public_key)
 				$qbi_balance = check_crypt_balance_range($public_key, 0, $qbi_end_time_range);
 
 				// Store QBI in database for more permanent future access
-				mysql_query("INSERT INTO `quantum_balance_index` (`public_key_hash` ,`max_foundation` ,`balance`)
+				mysqli_query("INSERT INTO `quantum_balance_index` (`public_key_hash` ,`max_foundation` ,`balance`)
 					VALUES ('$pk_md5', '$qbi_max_foundation', '$qbi_balance')");
 			}
 			else
@@ -846,7 +856,7 @@ function check_crypt_balance($public_key)
 		$index_balance2 = check_crypt_balance_range($public_key, $start_time_range, $end_time_range);
 		
 		// Store index in database for future access
-		mysql_query("INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`)
+		mysqli_query("INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`)
 		VALUES ('$previous_foundation_block', '$public_key_hash', '$index_balance1')");
 		return ($index_balance1 + $index_balance2);
 	}
@@ -866,8 +876,8 @@ function check_crypt_balance($public_key)
 function peer_gen_amount($public_key)
 {
 	// 1 week = 604,800 seconds
-	$join_peer_list1 = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,"join_peer_list");
-	$join_peer_list2 = mysql_result(mysql_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),1,"join_peer_list");	
+	$join_peer_list1 = mysql_result(mysqli_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,"join_peer_list");
+	$join_peer_list2 = mysql_result(mysqli_query("SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),1,"join_peer_list");	
 	$amount;
 
 	if(empty($join_peer_list1) == TRUE || $join_peer_list1 < TRANSACTION_EPOCH)
@@ -1263,18 +1273,18 @@ function generation_cycle($when = 0)
 function db_cache_balance($my_public_key)
 {
 	// Check server balance via custom memory index
-	$my_server_balance = mysql_result(mysql_query("SELECT balance FROM `balance_index` WHERE `public_key_hash` = 'server_timekoin_balance' LIMIT 1"),0,0);
-	$my_server_balance_last = mysql_result(mysql_query("SELECT block FROM `balance_index` WHERE `public_key_hash` = 'server_timekoin_balance' LIMIT 1"),0,0);
+	$my_server_balance = mysql_result(mysqli_query("SELECT balance FROM `balance_index` WHERE `public_key_hash` = 'server_timekoin_balance' LIMIT 1"),0,0);
+	$my_server_balance_last = mysql_result(mysqli_query("SELECT block FROM `balance_index` WHERE `public_key_hash` = 'server_timekoin_balance' LIMIT 1"),0,0);
 
 	if($my_server_balance === FALSE)
 	{
 		// Does not exist, needs to be created
-		mysql_query("INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`) VALUES ('0', 'server_timekoin_balance', '0')");
+		mysqli_query("INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`) VALUES ('0', 'server_timekoin_balance', '0')");
 
 		// Update record with the latest balance
 		$display_balance = check_crypt_balance($my_public_key);
 
-		mysql_query("UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$display_balance' WHERE `balance_index`.`public_key_hash` = 'server_timekoin_balance' LIMIT 1");
+		mysqli_query("UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$display_balance' WHERE `balance_index`.`public_key_hash` = 'server_timekoin_balance' LIMIT 1");
 	}
 	else
 	{
@@ -1284,7 +1294,7 @@ function db_cache_balance($my_public_key)
 			// Update record with the latest balance
 			$display_balance = check_crypt_balance($my_public_key);
 
-			mysql_query("UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$display_balance' WHERE `balance_index`.`public_key_hash` = 'server_timekoin_balance' LIMIT 1");
+			mysqli_query("UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$display_balance' WHERE `balance_index`.`public_key_hash` = 'server_timekoin_balance' LIMIT 1");
 		}
 		else
 		{
@@ -1322,7 +1332,7 @@ function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $a
 	$sql = "INSERT INTO `my_transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`) VALUES 
 		('" . time() . "', '$my_public_key', '$encryptedData64_1', '$encryptedData64_2' , '$encryptedData64_3', '$triple_hash_check' , 'T')";
 
-	if(mysql_query($sql) == TRUE)
+	if(mysqli_query($sql) == TRUE)
 	{
 		// Success code
 		return TRUE;
@@ -1353,12 +1363,12 @@ function gen_simple_poll_test($ip_address, $domain, $subfolder, $port_number)
 
 	// Grab random Transaction Foundation Hash
 	$rand_block = TKRandom::num(0,foundation_cycle(0, TRUE) - 5); // Range from Start to Last 5 Foundation Hash
-	$random_foundation_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_foundation` WHERE `block` = $rand_block LIMIT 1"),0,0);
+	$random_foundation_hash = mysql_result(mysqli_query("SELECT hash FROM `transaction_foundation` WHERE `block` = $rand_block LIMIT 1"),0,0);
 
 	// Grab random Transaction Hash
 	$rand_block2 = TKRandom::num(transaction_cycle((0 - transaction_cycle(0, TRUE)), TRUE), transaction_cycle(-1000, TRUE)); // Range from Start to Last 1000 Transaction Hash
 	$rand_block2 = transaction_cycle(0 - $rand_block2);
-	$random_transaction_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` = $rand_block2 LIMIT 1"),0,0);
+	$random_transaction_hash = mysql_result(mysqli_query("SELECT hash FROM `transaction_history` WHERE `timestamp` = $rand_block2 LIMIT 1"),0,0);
 	$rand_block2 = ($rand_block2 - TRANSACTION_EPOCH - 300) / 300;
 
 	if(empty($random_foundation_hash) == FALSE) // Make sure we had one to compare first
@@ -1448,11 +1458,11 @@ function visual_walkhistory($transaction_cycle_start = 0, $block_end = 0)
 		$time3 = transaction_cycle(0 - $current_generation_block + 1 + $i);
 		$time4 = transaction_cycle(0 - $current_generation_block + 2 + $i);
 		
-		$next_hash = mysql_result(mysql_query("SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time3 AND `timestamp` < $time4 AND `attribute` = 'H' LIMIT 1"),0,0);
+		$next_hash = mysql_result(mysqli_query("SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time3 AND `timestamp` < $time4 AND `attribute` = 'H' LIMIT 1"),0,0);
 
 		$sql = "SELECT timestamp, public_key_from, public_key_to, hash, attribute FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
 
-		$sql_result = mysql_query($sql);
+		$sql_result = mysqli_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
 		$my_hash = 0;
 		$timestamp = 0;
@@ -1552,7 +1562,7 @@ function visual_repair($transaction_cycle_start = 0, $cycle_limit = 500)
 
 	$sql = "DELETE QUICK FROM `transaction_history` WHERE `transaction_history`.`timestamp` >= $time_range1 AND `transaction_history`.`timestamp` <= $time_range2 AND `attribute` = 'H'";
 
-	if(mysql_query($sql) == TRUE)
+	if(mysqli_query($sql) == TRUE)
 	{
 		$output .= '<tr><td class="style2">Clearing Hash Timestamps Ahead of Transaction Cycle #' . $transaction_cycle_start . '</td></tr>';
 	}
@@ -1575,7 +1585,7 @@ function visual_repair($transaction_cycle_start = 0, $cycle_limit = 500)
 
 		$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $time1 AND `timestamp` < $time2 ORDER BY `timestamp`, `hash` ASC";
 
-		$sql_result = mysql_query($sql);
+		$sql_result = mysqli_query($sql);
 		$sql_num_results = mysql_num_rows($sql_result);
 		$hash = 0;
 
@@ -1591,7 +1601,7 @@ function visual_repair($transaction_cycle_start = 0, $cycle_limit = 500)
 		$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from` ,`public_key_to` ,`crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
 		VALUES ('$time2', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$hash', 'H')";
 
-		if(mysql_query($sql) == FALSE)
+		if(mysqli_query($sql) == FALSE)
 		{
 			// Something failed
 			$output .= '<br><strong><font color="red">Repair ERROR in Database</font></strong></td></tr>';
@@ -1671,14 +1681,14 @@ function is_domain_valid($domain)
 function auto_update_IP_address()
 {
 	// IPv4 Update
-	$generation_IP = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,0);
+	$generation_IP = mysql_result(mysqli_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,0);
 	$poll_IP = filter_sql(poll_peer(NULL, 'timekoin.net', NULL, 80, 46, "ipv4.php"));
 
 	if(empty($generation_IP) == TRUE) // IP Field Empty
 	{
 		if(empty($poll_IP) == FALSE && ipv6_test($poll_IP) == FALSE)
 		{
-			if(mysql_query("UPDATE `options` SET `field_data` = '$poll_IP' WHERE `options`.`field_name` = 'generation_IP' LIMIT 1") == TRUE)
+			if(mysqli_query("UPDATE `options` SET `field_data` = '$poll_IP' WHERE `options`.`field_name` = 'generation_IP' LIMIT 1") == TRUE)
 			{
 				write_log("Generation IPv4 Updated to ($poll_IP)", "GP");
 			}
@@ -1691,7 +1701,7 @@ function auto_update_IP_address()
 		{
 			if(empty($poll_IP) == FALSE && ipv6_test($poll_IP) == FALSE)
 			{
-				if(mysql_query("UPDATE `options` SET `field_data` = '$poll_IP' WHERE `options`.`field_name` = 'generation_IP' LIMIT 1") == TRUE)
+				if(mysqli_query("UPDATE `options` SET `field_data` = '$poll_IP' WHERE `options`.`field_name` = 'generation_IP' LIMIT 1") == TRUE)
 				{
 					write_log("Generation IPv4 Updated from ($generation_IP) to ($poll_IP)", "GP");
 				}
@@ -1700,14 +1710,14 @@ function auto_update_IP_address()
 	}
 
 	// IPv6 Update	
-	$generation_IP = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP_v6' LIMIT 1"),0,0);
+	$generation_IP = mysql_result(mysqli_query("SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP_v6' LIMIT 1"),0,0);
 	$poll_IP = filter_sql(poll_peer(NULL, 'ipv6.timekoin.net', NULL, 80, 46, "ipv6.php"));
 
 	if(empty($generation_IP) == TRUE) // IP Field Empty
 	{
 		if(empty($poll_IP) == FALSE && ipv6_test($poll_IP) == TRUE)
 		{
-			if(mysql_query("UPDATE `options` SET `field_data` = '$poll_IP' WHERE `options`.`field_name` = 'generation_IP_v6' LIMIT 1") == TRUE)
+			if(mysqli_query("UPDATE `options` SET `field_data` = '$poll_IP' WHERE `options`.`field_name` = 'generation_IP_v6' LIMIT 1") == TRUE)
 			{
 				write_log("Generation IPv6 Updated to ($poll_IP)", "GP");
 			}
@@ -1720,7 +1730,7 @@ function auto_update_IP_address()
 		{
 			if(empty($poll_IP) == FALSE && ipv6_test($poll_IP) == TRUE)
 			{
-				if(mysql_query("UPDATE `options` SET `field_data` = '$poll_IP' WHERE `options`.`field_name` = 'generation_IP_v6' LIMIT 1") == TRUE)
+				if(mysqli_query("UPDATE `options` SET `field_data` = '$poll_IP' WHERE `options`.`field_name` = 'generation_IP_v6' LIMIT 1") == TRUE)
 				{
 					write_log("Generation IPv6 Updated from ($generation_IP) to ($poll_IP)", "GP");
 				}
@@ -1732,122 +1742,122 @@ function auto_update_IP_address()
 function initialization_database()
 {
 	// Clear IP Activity and Banlist for next start
-	mysql_query("TRUNCATE TABLE `ip_activity`");
-	mysql_query("TRUNCATE TABLE `ip_banlist`");
+	mysqli_query("TRUNCATE TABLE `ip_activity`");
+	mysqli_query("TRUNCATE TABLE `ip_banlist`");
 
 	// Clear Active & New Peers List
-	mysql_query("DELETE FROM `active_peer_list` WHERE `active_peer_list`.`join_peer_list` != 0"); // Permanent Peers Ignored
-	mysql_query("TRUNCATE TABLE `new_peers_list`");
+	mysqli_query("DELETE FROM `active_peer_list` WHERE `active_peer_list`.`join_peer_list` != 0"); // Permanent Peers Ignored
+	mysqli_query("TRUNCATE TABLE `new_peers_list`");
 
 	// Record when started
-	mysql_query("UPDATE `options` SET `field_data` = '" . time() . "' WHERE `options`.`field_name` = 'timekoin_start_time' LIMIT 1");
+	mysqli_query("UPDATE `options` SET `field_data` = '" . time() . "' WHERE `options`.`field_name` = 'timekoin_start_time' LIMIT 1");
 //**************************************
 // Upgrade Database from v3.x earlier versions
 
 	// Auto IP Update Settings
-	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,0);
+	$new_record_check = mysql_result(mysqli_query("SELECT * FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,0);
 	if($new_record_check === FALSE)
 	{
 		// Does not exist, create it
-		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('auto_update_generation_IP', '0')");
+		mysqli_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('auto_update_generation_IP', '0')");
 	}
 
 	// CLI Mode Settings
-	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0);
+	$new_record_check = mysql_result(mysqli_query("SELECT * FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0);
 	if($new_record_check === FALSE)
 	{
 		// Does not exist, create it
-		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('cli_mode', '1')");
+		mysqli_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('cli_mode', '1')");
 	}
 
 	// CLI Mode Port Settings
-	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'cli_port' LIMIT 1"),0,0);
+	$new_record_check = mysql_result(mysqli_query("SELECT * FROM `options` WHERE `field_name` = 'cli_port' LIMIT 1"),0,0);
 	if($new_record_check === FALSE)
 	{
 		// Does not exist, create it
-		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('cli_port', '')");
+		mysqli_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('cli_port', '')");
 	}
 
 	// IPv4 + IPv6 Network Mode
-	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0);
+	$new_record_check = mysql_result(mysqli_query("SELECT * FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0);
 	if($new_record_check === FALSE)
 	{
 		// Does not exist, create it
-		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('network_mode', '1')");
+		mysqli_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('network_mode', '1')");
 	}
 
 	// IPv6 Generation IP Field
-	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'generation_IP_v6' LIMIT 1"),0,0);
+	$new_record_check = mysql_result(mysqli_query("SELECT * FROM `options` WHERE `field_name` = 'generation_IP_v6' LIMIT 1"),0,0);
 	if($new_record_check === FALSE)
 	{
 		// Does not exist, create it
-		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('generation_IP_v6', '')");
+		mysqli_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('generation_IP_v6', '')");
 	}
 // Main Loop Status & Active Options Setup
 
 	// Truncate to Free RAM
-	mysql_query("TRUNCATE TABLE `main_loop_status`");
+	mysqli_query("TRUNCATE TABLE `main_loop_status`");
 	$time = time();
 //**************************************
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('balance_last_heartbeat', '1')");	
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('foundation_last_heartbeat', '1')");
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('generation_last_heartbeat', '1')");
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('genpeer_last_heartbeat', '1')");
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('main_heartbeat_active', '0')");
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('main_last_heartbeat', '$time')");
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('peerlist_last_heartbeat', '1')");
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('queueclerk_last_heartbeat', '1')");
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('transclerk_last_heartbeat', '1')");
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('treasurer_last_heartbeat', '1')");
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('watchdog_heartbeat_active', '0')");
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('watchdog_last_heartbeat', '$time')");
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('peer_transaction_start_blocks', '1')");
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('peer_transaction_performance', '10')");
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('block_check_back', '1')");
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('block_check_start', '0')");	
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('firewall_blocked_peer', '0')");	
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('foundation_block_check', '0')");
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('foundation_block_check_end', '0')");
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('foundation_block_check_start', '0')");	
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('generation_peer_list_no_sync', '0')");
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('no_peer_activity', '0')");
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('time_sync_error', '0')");
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('transaction_history_block_check', '0')");
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('update_available', '0')");
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('balance_last_heartbeat', '1')");	
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('foundation_last_heartbeat', '1')");
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('generation_last_heartbeat', '1')");
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('genpeer_last_heartbeat', '1')");
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('main_heartbeat_active', '0')");
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('main_last_heartbeat', '$time')");
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('peerlist_last_heartbeat', '1')");
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('queueclerk_last_heartbeat', '1')");
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('transclerk_last_heartbeat', '1')");
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('treasurer_last_heartbeat', '1')");
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('watchdog_heartbeat_active', '0')");
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('watchdog_last_heartbeat', '$time')");
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('peer_transaction_start_blocks', '1')");
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('peer_transaction_performance', '10')");
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('block_check_back', '1')");
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('block_check_start', '0')");	
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('firewall_blocked_peer', '0')");	
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('foundation_block_check', '0')");
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('foundation_block_check_end', '0')");
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('foundation_block_check_start', '0')");	
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('generation_peer_list_no_sync', '0')");
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('no_peer_activity', '0')");
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('time_sync_error', '0')");
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('transaction_history_block_check', '0')");
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('update_available', '0')");
 //**************************************
 // Copy values from Database to RAM Database
-	$db_to_RAM = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'allow_ambient_peer_restart' LIMIT 1"),0,0);
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('allow_ambient_peer_restart', '$db_to_RAM')");
+	$db_to_RAM = mysql_result(mysqli_query("SELECT field_data FROM `options` WHERE `field_name` = 'allow_ambient_peer_restart' LIMIT 1"),0,0);
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('allow_ambient_peer_restart', '$db_to_RAM')");
 
-	$db_to_RAM = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,0);
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('allow_LAN_peers', '$db_to_RAM')");
+	$db_to_RAM = mysql_result(mysqli_query("SELECT field_data FROM `options` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,0);
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('allow_LAN_peers', '$db_to_RAM')");
 
-	$db_to_RAM = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'server_request_max' LIMIT 1"),0,0);
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('server_request_max', '$db_to_RAM')");
+	$db_to_RAM = mysql_result(mysqli_query("SELECT field_data FROM `options` WHERE `field_name` = 'server_request_max' LIMIT 1"),0,0);
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('server_request_max', '$db_to_RAM')");
 
-	$db_to_RAM = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,0);
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('max_active_peers', '$db_to_RAM')");
+	$db_to_RAM = mysql_result(mysqli_query("SELECT field_data FROM `options` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,0);
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('max_active_peers', '$db_to_RAM')");
 
-	$db_to_RAM = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'max_new_peers' LIMIT 1"),0,0);
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('max_new_peers', '$db_to_RAM')");
+	$db_to_RAM = mysql_result(mysqli_query("SELECT field_data FROM `options` WHERE `field_name` = 'max_new_peers' LIMIT 1"),0,0);
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('max_new_peers', '$db_to_RAM')");
 
-	$db_to_RAM = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'trans_history_check' LIMIT 1"),0,0);
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('trans_history_check', '$db_to_RAM')");
+	$db_to_RAM = mysql_result(mysqli_query("SELECT field_data FROM `options` WHERE `field_name` = 'trans_history_check' LIMIT 1"),0,0);
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('trans_history_check', '$db_to_RAM')");
 
-	$db_to_RAM = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'super_peer' LIMIT 1"),0,0);
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('super_peer', '$db_to_RAM')");
+	$db_to_RAM = mysql_result(mysqli_query("SELECT field_data FROM `options` WHERE `field_name` = 'super_peer' LIMIT 1"),0,0);
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('super_peer', '$db_to_RAM')");
 
-	$db_to_RAM = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'perm_peer_priority' LIMIT 1"),0,0);
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('perm_peer_priority', '$db_to_RAM')");
+	$db_to_RAM = mysql_result(mysqli_query("SELECT field_data FROM `options` WHERE `field_name` = 'perm_peer_priority' LIMIT 1"),0,0);
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('perm_peer_priority', '$db_to_RAM')");
 
-	$db_to_RAM = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,0);
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('auto_update_generation_IP', '$db_to_RAM')");
+	$db_to_RAM = mysql_result(mysqli_query("SELECT field_data FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,0);
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('auto_update_generation_IP', '$db_to_RAM')");
 	
-	$db_to_RAM = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,0);
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('peer_failure_grade', '$db_to_RAM')");
+	$db_to_RAM = mysql_result(mysqli_query("SELECT field_data FROM `options` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,0);
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('peer_failure_grade', '$db_to_RAM')");
 
-	$db_to_RAM = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0);
-	mysql_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('network_mode', '$db_to_RAM')");	
+	$db_to_RAM = mysql_result(mysqli_query("SELECT field_data FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0);
+	mysqli_query("INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('network_mode', '$db_to_RAM')");	
 //**************************************
 	return 0;
 }
@@ -2019,15 +2029,15 @@ function generate_new_keys()
 
 		$sql = "UPDATE `my_keys` SET `field_data` = '$new_privatekey' WHERE `my_keys`.`field_name` = 'server_private_key' LIMIT 1";
 
-		if(mysql_query($sql) == TRUE)
+		if(mysqli_query($sql) == TRUE)
 		{
 			// Private Key Update Success
 			$sql = "UPDATE `my_keys` SET `field_data` = '$new_publickey' WHERE `my_keys`.`field_name` = 'server_public_key' LIMIT 1";
 			
-			if(mysql_query($sql) == TRUE)
+			if(mysqli_query($sql) == TRUE)
 			{
 				// Blank reverse crypto data field
-				mysql_query("UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
+				mysqli_query("UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
 
 				// Public Key Update Success				
 				return 1;
@@ -2374,7 +2384,7 @@ function update_windows_port($new_port)
 	if(file_exists("../../pms_config.ini") == TRUE)
 	{
 		//Previous port number
-		$old_port = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
+		$old_port = mysql_result(mysqli_query("SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
 
 		if($old_port != $new_port)// Don't change unless different than before
 		{
@@ -2845,7 +2855,7 @@ function ipv6_compress($ip_address)
 function find_v4_gen_key($my_public_key)
 {
 	$sql = "SELECT IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
-	$sql_result = mysql_query($sql);
+	$sql_result = mysqli_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 
 	for ($i = 0; $i < $sql_num_results; $i++)
@@ -2867,7 +2877,7 @@ function find_v4_gen_key($my_public_key)
 function find_v6_gen_key($my_public_key)
 {
 	$sql = "SELECT IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
-	$sql_result = mysql_query($sql);
+	$sql_result = mysqli_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 
 	for ($i = 0; $i < $sql_num_results; $i++)
@@ -2889,7 +2899,7 @@ function find_v6_gen_key($my_public_key)
 function find_v4_gen_IP($my_public_key)
 {
 	$sql = "SELECT IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
-	$sql_result = mysql_query($sql);
+	$sql_result = mysqli_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 
 	for ($i = 0; $i < $sql_num_results; $i++)
@@ -2911,7 +2921,7 @@ function find_v4_gen_IP($my_public_key)
 function find_v6_gen_IP($my_public_key)
 {
 	$sql = "SELECT IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
-	$sql_result = mysql_query($sql);
+	$sql_result = mysqli_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 
 	for ($i = 0; $i < $sql_num_results; $i++)
@@ -2933,7 +2943,7 @@ function find_v6_gen_IP($my_public_key)
 function find_v4_gen_join($my_public_key)
 {
 	$sql = "SELECT join_peer_list, IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
-	$sql_result = mysql_query($sql);
+	$sql_result = mysqli_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 
 	for ($i = 0; $i < $sql_num_results; $i++)
@@ -2955,7 +2965,7 @@ function find_v4_gen_join($my_public_key)
 function find_v6_gen_join($my_public_key)
 {
 	$sql = "SELECT join_peer_list, IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
-	$sql_result = mysql_query($sql);
+	$sql_result = mysqli_query($sql);
 	$sql_num_results = mysql_num_rows($sql_result);
 
 	for ($i = 0; $i < $sql_num_results; $i++)
