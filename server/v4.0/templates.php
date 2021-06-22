@@ -848,7 +848,7 @@ function generation_body($generate_currency)
 		<li>Once elected, your server will create generation transactions during generation cycles. Generation cycles occur at pseudo-random times. 
 		Use the <a href="index.php?menu=generation&amp;generations=show"><font color="blue"><strong>Generation Calendar</strong></font></a> to see the upcoming generation cycles in the next 24 hours.</li>
 		<li>The server may continue to generate currency as long as it stays online. 
-		If the server does not generate currency for 2 hours, the network assumes it has gone offline and the server key will be removed from the Generating Peer List. 
+		If the server does not generate currency for 8 hours, the network assumes it has gone offline and the server key will be removed from the Generating Peer List. 
 		Once the server comes back online, it will need to be re-elected before generation can begin again.</li>
 		</ol>
 		<strong>Generation Amount Schedule</strong><br>

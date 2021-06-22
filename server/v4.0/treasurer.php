@@ -87,7 +87,7 @@ $next_transaction_cycle = transaction_cycle(1);
 // Check my transaction queue and copy pending transaction to the main transaction queue, giving priority
 // to self created transactions over 3rd party submitted transactions
 $sql = "(SELECT * FROM `my_transaction_queue` WHERE `public_key` = '" . my_public_key() . "' ORDER BY `my_transaction_queue`.`timestamp` ASC) 
-	UNION (SELECT * FROM `my_transaction_queue` ORDER BY `my_transaction_queue`.`timestamp` ASC) LIMIT 100";
+	UNION (SELECT * FROM `my_transaction_queue` ORDER BY `my_transaction_queue`.`timestamp` ASC) LIMIT 1000";
 
 $sql_result = mysqli_query($db_connect, $sql);
 $sql_num_results = mysqli_num_rows($sql_result);
@@ -121,10 +121,10 @@ if($sql_num_results > 0)
 
 			if(empty($found_transaction_history) == FALSE)
 			{
-				// This transaction is in the history now, let's wait about 15 minutes before clearing
+				// This transaction is in the history now, let's wait about 45 minutes before clearing
 				// this from the transaction queue in case of network congestion or other factors
 				// that somehow prevented the transaction from making into the network peer swarm
-				if(time() - $found_transaction_history > 900) // Recycle the variable ;)
+				if(time() - $found_transaction_history > 2700) // Recycle the variable ;)
 				{
 					$sql = "DELETE QUICK FROM `my_transaction_queue` WHERE `my_transaction_queue`.`public_key` = '$public_key' AND `my_transaction_queue`.`hash` = '$hash_check' LIMIT 1";
 

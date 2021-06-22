@@ -163,18 +163,18 @@ function generation_peer_hash()
 }
 //***********************************************************************************
 //***********************************************************************************
-function transaction_cycle($past_or_future = 0, $transacton_cycles_only = 0)
+function transaction_cycle($past_or_future = 0, $transaction_cycles_only = 0)
 {
-	$transacton_cycles = (time() - TRANSACTION_EPOCH) / 300;
+	$transaction_cycles = (time() - TRANSACTION_EPOCH) / 300;
 
 	// Return the last transaction cycle
-	if($transacton_cycles_only == TRUE)
+	if($transaction_cycles_only == TRUE)
 	{
-		return intval($transacton_cycles + $past_or_future);
+		return intval($transaction_cycles + $past_or_future);
 	}
 	else
 	{
-		return TRANSACTION_EPOCH + (intval($transacton_cycles + $past_or_future) * 300);
+		return TRANSACTION_EPOCH + (intval($transaction_cycles + $past_or_future) * 300);
 	}
 }
 //***********************************************************************************

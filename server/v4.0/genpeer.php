@@ -544,6 +544,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 		if($sql_num_results > 0)
 		{
+			$gen_peers_total = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_list`"),0);
+
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
 				$sql_row = mysqli_fetch_array($sql_result);
@@ -740,11 +742,25 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								$simple_poll_fail == FALSE &&
 								is_private_ip($peer_ip) == FALSE) // Filter private IPs
 							{
-								mysqli_query($db_connect, "INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
-								write_log("IPv4 Generation Peer Queue List was updated with Public Key: " . base64_encode($public_key), "GP");
+								// Did this Public Key pay me the minimum fee to enter election
+								$pre_transaction_cycle = transaction_cycle(-9); // Check within the previous 45 minutes
+								$sql_fee_result = mysql_result(mysqli_query($db_connect, "SELECT crypt_data3 FROM `transaction_history` WHERE `timestamp` >= '$pre_transaction_cycle' AND `public_key_from` = '$public_key' AND `public_key_to` = '" . my_public_key() . "' LIMIT 1"),0,0);
+								$transaction_info = tk_decrypt($public_key, base64_decode($sql_fee_result));
+								$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);								
+								
+								if($transaction_amount_sent >= $gen_peers_total)
+								{
+									mysqli_query($db_connect, "INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
+									write_log("IPv4 Generation Peer Queue List was updated with Public Key: " . base64_encode($public_key), "GP");
+								}
+								else
+								{
+									write_log("IPv4 Generation Fee ($gen_peers_total) has not been paid to this server by Public Key: " . base64_encode($public_key), "GP");
+								}
 							}
 							else if(my_public_key() == $public_key)
 							{
+								// My own public key goes in without checking
 								mysqli_query($db_connect, "INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
 								write_log("IPv4 Generation Peer Queue List was updated with My Public Key", "GP");
 							}

@@ -2343,7 +2343,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$send_amount = $_POST["send_amount"];
 			$public_key_64 = $_POST["send_public_key"];			
 			$public_key_to = base64_decode($public_key_64);
-			$current_balance = db_cache_balance($my_public_key);			
+			$current_balance = db_cache_balance($my_public_key);
 
 			if($send_amount > $current_balance)
 			{
