@@ -979,7 +979,7 @@ if($_GET["action"] == "pk_recv")
 
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_row($sql_result);
+			$sql_row = mysqli_fetch_row($sql_result);
 
 			$crypt3 = $sql_row[0];
 			$attribute = $sql_row[1];
@@ -1039,7 +1039,7 @@ if($_GET["action"] == "pk_sent")
 
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_row($sql_result);
+			$sql_row = mysqli_fetch_row($sql_result);
 
 			$crypt3 = $sql_row[0];
 			$attribute = $sql_row[1];
@@ -1099,7 +1099,7 @@ if($_GET["action"] == "pk_gen_total")
 
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_row($sql_result);
+			$sql_row = mysqli_fetch_row($sql_result);
 
 			$public_key_from = $sql_row[0];			
 			$public_key_to = $sql_row[1];

@@ -446,7 +446,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 
 							$foundations_built++;
 
-							if($foundations_built > 3)
+							if($foundations_built > 5)
 							{
 								// Break out of this loop in case there is a lot
 								// of history to catch up on. We don't want to tie

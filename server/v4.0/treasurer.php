@@ -346,137 +346,149 @@ if($sql_num_results > 0)
 			// Random generation time that can be duplicated across all servers
 			if(generation_cycle() == TRUE)
 			{
-				// Is this public key allowed to generate currency?
-				$generation_public_key = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),0,0);			
-				
-				if(empty($generation_public_key) == TRUE)
+				// Generating Peers are limited to 100,000 transactions lifetime per public key
+				$generation_records_total = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_history` WHERE `public_key_to` = '$public_key' AND `attribute` = 'G'"),0);
+
+				if($generation_records_total >= 100000)
 				{
-					//Not allowed to generate currency
-					write_log("Key Not in Generation Peer List: " . base64_encode($public_key), "G");
-					$record_failure_counter++;
+					write_log("Public Key has hit 100,000 generating transaction limit:<BR>" . base64_encode($public_key), "G");
 				}
 				else
 				{
-					// Check to make sure there is not a duplicate generation transaction already
-					$found_public_key_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `attribute` = 'G' AND `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle LIMIT 1"),0,0);
-
-					if(empty($found_public_key_queue) == TRUE)
+write_log("Public Key has [$generation_records_total] generation transactions:<BR>" . base64_encode($public_key), "G");
+					// Is this public key allowed to generate currency?
+					$generation_public_key = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),0,0);			
+					
+					if(empty($generation_public_key) == TRUE)
 					{
-						// Check to make sure enough time has passed since this public key joined the network to allow currency generation
-						// Default is 1 Hour or 3600 seconds
-						$join_peer_list = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,0);
-						$join_peer_list2 = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),1,0);
-
-						if(empty($join_peer_list2) == TRUE)
-						{
-							// Non-Gateway Peer
-							$join_peer_list2 = $join_peer_list;
-						}
-
-						if((time() - $join_peer_list) >= 3600 && (time() - $join_peer_list2) >= 3600) // It's been more than 3600 seconds since this public key(s) joined the generating peer list
-						{
-							$time_created = $previous_transaction_cycle + 1; // Format timestamp for a 1 second after previous transaction cycle
-							$crypt1 = $sql_row["crypt_data1"];
-							$crypt2 = $sql_row["crypt_data2"];
-							$crypt3 = $sql_row["crypt_data3"];
-							$hash_check = $sql_row["hash"];
-
-							// Check generation amount to make sure it has not been tampered with
-							$transaction_info = tk_decrypt($public_key, base64_decode($crypt3));
-							$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
-							$transaction_timestamp = find_string("TIME=", "---HASH", $transaction_info);							
-							$transaction_amount_sent_test = intval($transaction_amount_sent);
-
-							if($transaction_amount_sent_test == $transaction_amount_sent && $transaction_amount_sent > 0)
-							{
-								// Is a valid integer
-								$amount_valid = TRUE;
-							}
-							else
-							{
-								// Is NOT a valid integer
-								$amount_valid = FALSE;
-							}
-
-							if($transaction_amount_sent <= peer_gen_amount($public_key) && $amount_valid == TRUE)
-							{
-								// Everything checks out for valid integer and generation amount
-							}
-							else
-							{
-								// Either the amount to generate was wrong or the amount itself is not an integer
-								$amount_valid = FALSE;
-							}
-
-							// Find destination public key, it should be the same as the source public key
-							$public_key_to_1 = tk_decrypt($public_key, base64_decode($crypt1));
-							$public_key_to_2 = tk_decrypt($public_key, base64_decode($crypt2));
-							$public_key_to = $public_key_to_1 . $public_key_to_2;
-
-							if(hash('sha256', $crypt1 . $crypt2 . $crypt3) == $hash_check && 
-								strlen($public_key) > 300 &&
-								$amount_valid == TRUE && 
-								$public_key_to == $public_key && 
-								$time_created == $transaction_timestamp) // Check various parts of the generation transaction
-							{
-								// Public key not found, insert into final transaction history
-								$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from`, `public_key_to` ,`crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
-									VALUES ($time_created, '$public_key', '$public_key', '$crypt1', '$crypt2', '$crypt3', '$hash_check', 'G')";
-
-								if(mysqli_query($db_connect, $sql) == FALSE)
-								{
-									//Something didn't work
-									write_log("Generation Database Insert Failed for this Key: " . base64_encode($public_key), "G");
-									$record_failure_counter++;
-								}
-								else
-								{
-									$record_insert_counter++;
-								}
-
-								// Update the last generation timestamp
-								mysqli_query($db_connect, "UPDATE `generating_peer_list` SET `last_generation` = '$current_transaction_cycle' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 2");
-							}
-							else if($time_created != $transaction_timestamp)
-							{
-								// The timestamp format is invalid
-								write_log("Generation Timestamp Invalid for this Key: " . base64_encode($public_key), "G");
-								$record_failure_counter++;
-							}
-							else if($amount_valid == FALSE)
-							{
-								// Failed Hash check or Valid Amount check
-								write_log("Generation Amount Invalid for this Key: " . base64_encode($public_key), "G");
-								$record_failure_counter++;
-							}
-							else if(hash('sha256', $crypt1 . $crypt2 . $crypt3) != $hash_check)
-							{
-								// Failed Hash check or Valid Amount check
-								write_log("Generation Hash Check Failed for this Key: " . base64_encode($public_key), "G");
-								$record_failure_counter++;
-							}
-							else if($public_key_to != $public_key)
-							{
-								// Failed Hash check or Valid Amount check
-								write_log("Generation Public Key Source and Destination DO NOT MATCH for this Key: " . base64_encode($public_key), "G");
-								$record_failure_counter++;
-							}							
-						}
-						else
-						{
-							// Not enough time has passed
-							write_log("Generation Too Early for this Key: " . base64_encode($public_key), "G");
-							$record_failure_counter++;
-						}
+						//Not allowed to generate currency
+						write_log("Key Not in Generation Peer List: " . base64_encode($public_key), "G");
+						$record_failure_counter++;
 					}
 					else
 					{
-						// Duplicate generation transaction already exist
-						write_log("Generation Duplicate Discarded for this Key: " . base64_encode($public_key), "G");
-						$record_failure_counter++;
-					}
+						// Check to make sure there is not a duplicate generation transaction already
+						$found_public_key_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `attribute` = 'G' AND `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle LIMIT 1"),0,0);
 
-				}// End key allowed check
+						if(empty($found_public_key_queue) == TRUE)
+						{
+							// Check to make sure enough time has passed since this public key joined the network to allow currency generation
+							// Default is 1 Hour or 3600 seconds
+							$join_peer_list = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,0);
+							$join_peer_list2 = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),1,0);
+
+							if(empty($join_peer_list2) == TRUE)
+							{
+								// Non-Gateway Peer
+								$join_peer_list2 = $join_peer_list;
+							}
+
+							if((time() - $join_peer_list) >= 3600 && (time() - $join_peer_list2) >= 3600) // It's been more than 3600 seconds since this public key(s) joined the generating peer list
+							{
+								$time_created = $previous_transaction_cycle + 1; // Format timestamp for a 1 second after previous transaction cycle
+								$crypt1 = $sql_row["crypt_data1"];
+								$crypt2 = $sql_row["crypt_data2"];
+								$crypt3 = $sql_row["crypt_data3"];
+								$hash_check = $sql_row["hash"];
+
+								// Check generation amount to make sure it has not been tampered with
+								$transaction_info = tk_decrypt($public_key, base64_decode($crypt3));
+								$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
+								$transaction_timestamp = find_string("TIME=", "---HASH", $transaction_info);							
+								$transaction_amount_sent_test = intval($transaction_amount_sent);
+
+								if($transaction_amount_sent_test == $transaction_amount_sent && $transaction_amount_sent > 0)
+								{
+									// Is a valid integer
+									$amount_valid = TRUE;
+								}
+								else
+								{
+									// Is NOT a valid integer
+									$amount_valid = FALSE;
+								}
+
+								if($transaction_amount_sent <= peer_gen_amount($public_key) && $amount_valid == TRUE)
+								{
+									// Everything checks out for valid integer and generation amount
+								}
+								else
+								{
+									// Either the amount to generate was wrong or the amount itself is not an integer
+									$amount_valid = FALSE;
+								}
+
+								// Find destination public key, it should be the same as the source public key
+								$public_key_to_1 = tk_decrypt($public_key, base64_decode($crypt1));
+								$public_key_to_2 = tk_decrypt($public_key, base64_decode($crypt2));
+								$public_key_to = $public_key_to_1 . $public_key_to_2;
+
+								if(hash('sha256', $crypt1 . $crypt2 . $crypt3) == $hash_check && 
+									strlen($public_key) > 300 &&
+									$amount_valid == TRUE && 
+									$public_key_to == $public_key && 
+									$time_created == $transaction_timestamp) // Check various parts of the generation transaction
+								{
+									// Public key not found, insert into final transaction history
+									$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from`, `public_key_to` ,`crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
+										VALUES ($time_created, '$public_key', '$public_key', '$crypt1', '$crypt2', '$crypt3', '$hash_check', 'G')";
+
+									if(mysqli_query($db_connect, $sql) == FALSE)
+									{
+										//Something didn't work
+										write_log("Generation Database Insert Failed for this Key: " . base64_encode($public_key), "G");
+										$record_failure_counter++;
+									}
+									else
+									{
+										$record_insert_counter++;
+									}
+
+									// Update the last generation timestamp
+									mysqli_query($db_connect, "UPDATE `generating_peer_list` SET `last_generation` = '$current_transaction_cycle' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 2");
+								}
+								else if($time_created != $transaction_timestamp)
+								{
+									// The timestamp format is invalid
+									write_log("Generation Timestamp Invalid for this Key: " . base64_encode($public_key), "G");
+									$record_failure_counter++;
+								}
+								else if($amount_valid == FALSE)
+								{
+									// Failed Hash check or Valid Amount check
+									write_log("Generation Amount Invalid for this Key: " . base64_encode($public_key), "G");
+									$record_failure_counter++;
+								}
+								else if(hash('sha256', $crypt1 . $crypt2 . $crypt3) != $hash_check)
+								{
+									// Failed Hash check or Valid Amount check
+									write_log("Generation Hash Check Failed for this Key: " . base64_encode($public_key), "G");
+									$record_failure_counter++;
+								}
+								else if($public_key_to != $public_key)
+								{
+									// Failed Hash check or Valid Amount check
+									write_log("Generation Public Key Source and Destination DO NOT MATCH for this Key: " . base64_encode($public_key), "G");
+									$record_failure_counter++;
+								}							
+							}
+							else
+							{
+								// Not enough time has passed
+								write_log("Generation Too Early for this Key: " . base64_encode($public_key), "G");
+								$record_failure_counter++;
+							}
+						}
+						else
+						{
+							// Duplicate generation transaction already exist
+							write_log("Generation Duplicate Discarded for this Key: " . base64_encode($public_key), "G");
+							$record_failure_counter++;
+						}
+
+					}// End key allowed check
+
+				}// End 100,000 Generation Limit Check
 
 			} // End generation allowed check
 			else
@@ -653,7 +665,7 @@ if(empty($current_hash) == TRUE)
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
 				$sql_row = mysqli_fetch_array($sql_result);
-				$hash .= $sql_row["hash"];
+				$hash.= $sql_row["hash"];
 			}
 
 			// Transaction hash

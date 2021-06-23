@@ -117,6 +117,7 @@ else
 
 ini_set('default_socket_timeout', 3); // Timeout for request in seconds
 ini_set('user_agent', 'Timekoin Server (Transclerk) v' . TIMEKOIN_VERSION);
+$sql_max_allowed_packet = mysql_result(mysqli_query($db_connect, "SHOW VARIABLES LIKE 'max_allowed_packet'"),0,1);
 
 while(1) // Begin Infinite Loop
 {
@@ -376,15 +377,15 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 		//Scale the amount of transaction cycles to check based on the last peer performance reading
 		if($peer_transaction_performance <= 10)
 		{
-			if($hash_check_counter < 50) // Cap limit 50
+			if($hash_check_counter < 100) // Cap limit 100
 			{
 				$new_peer_poll_blocks = $hash_check_counter + 1;
 			}
 			else
 			{
 				// Upper Limit Reached
-				// Really super fast peers? Keep at 50, just in case.
-				$new_peer_poll_blocks = 50;
+				// Really super fast peers? Keep at 100, just in case.
+				$new_peer_poll_blocks = 100;
 			}
 		}
 		else
@@ -740,9 +741,9 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 												if(empty($found_duplicate) == TRUE)
 												{
-													// Limit Max Query String to 1MB (1,024,000 bytes)
+													// Limit Max Query String to $sql_max_allowed_packet
 													// Many DB have this limit by default and most users may not know how to set it higher :(
-													if(strlen($super_peer_insert . ",('$transaction_timestamp', '" . filter_public_key($transaction_public_key_from) . "', '" . filter_public_key($transaction_public_key_to) . "', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')") <= 1024000)
+													if(strlen($super_peer_insert . ",('$transaction_timestamp', '" . filter_public_key($transaction_public_key_from) . "', '" . filter_public_key($transaction_public_key_to) . "', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')") <= $sql_max_allowed_packet)
 													{
 														// Query still under 1MB in size
 														$super_peer_record_count++;

@@ -726,7 +726,7 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_row($sql_result);
+		$sql_row = mysqli_fetch_row($sql_result);
 
 		$public_key_from = $sql_row[0];
 		$public_key_to = $sql_row[1];
@@ -1591,7 +1591,7 @@ function visual_repair($transaction_cycle_start = 0, $cycle_limit = 500)
 
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	$sql = "DELETE QUICK FROM `transaction_history` WHERE `transaction_history`.`timestamp` >= $time_range1 AND `transaction_history`.`timestamp` <= $time_range2 AND `attribute` = 'H'";
-
+	
 	if(mysqli_query($db_connect, $sql) == TRUE)
 	{
 		$output .= '<tr><td class="style2">Clearing Hash Timestamps Ahead of Transaction Cycle #' . $transaction_cycle_start . '</td></tr>';
@@ -1600,7 +1600,7 @@ function visual_repair($transaction_cycle_start = 0, $cycle_limit = 500)
 	{
 		return '<tr><td class="style2">Database ERROR, stopping repair process...</td></tr>';
 	}
-
+	
 	for ($t = $transaction_cycle_start; $t < $current_transaction_cycle; $t++)
 	{
 		if($cycle_limit < 0) // Finished
@@ -1622,12 +1622,11 @@ function visual_repair($transaction_cycle_start = 0, $cycle_limit = 500)
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
 			$sql_row = mysqli_fetch_array($sql_result);
-			$hash .= $sql_row["hash"];
+			$hash.= $sql_row["hash"];
 		}
 
 		// Transaction hash
 		$hash = hash('sha256', $hash);
-
 		$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from` ,`public_key_to` ,`crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
 		VALUES ('$time2', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$hash', 'H')";
 

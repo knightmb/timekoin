@@ -48,7 +48,7 @@ Password: <input type="password" size="20" name="timekoin_password" />
 } 
 //***********************************************************
 //***********************************************************
-function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0, $plugin_reference = FALSE)
+function home_screen($contents = "", $select_bar = "", $body = "", $quick_info = "", $refresh = 0, $plugin_reference = FALSE)
 {
 	$home;
 	$options;
@@ -211,11 +211,11 @@ if(check_standard_tab_settings($standard_settings_number, 128) == TRUE) { $menu_
 <?PHP
 	if($plugin_reference == TRUE)
 	{
-		echo '<img src="../img/timekoin_logo.png" width="80" height="80" alt="" />';
+		echo '<img src="../img/timekoin_logo_80.png" alt="" />';
 	}
 	else
 	{
-		echo '<img src="img/timekoin_logo.png" width="80" height="80" alt="" />';
+		echo '<img src="img/timekoin_logo_80.png" alt="" />';
 	}	
 ?>
 </div>
@@ -820,7 +820,7 @@ function system_service_bar()
 }
 //***********************************************************
 //***********************************************************
-function generation_body($generate_currency)
+function generation_body($generate_currency = "")
 {
 	$return_html;
 	if($generate_currency == "1")
@@ -871,7 +871,7 @@ function generation_body($generate_currency)
 }
 //***********************************************************
 //***********************************************************
-function send_receive_body($fill_in_key, $amount, $cancel = FALSE, $easy_key, $message)
+function send_receive_body($fill_in_key = "", $amount = "", $cancel = FALSE, $easy_key = "", $message = "")
 {
 	if($cancel == TRUE)
 	{
@@ -896,7 +896,7 @@ function send_receive_body($fill_in_key, $amount, $cancel = FALSE, $easy_key, $m
 }
 //***********************************************************
 //***********************************************************
-function tools_bar($walk_history)
+function tools_bar($walk_history = "")
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
