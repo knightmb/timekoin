@@ -120,7 +120,7 @@ set_time_limit(300);
 $loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,"field_data");
 
 // Check script status
-if($loop_active === FALSE)
+if($loop_active == "")
 {
 	// Time to exit
 	exit;
@@ -179,7 +179,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		if($ipv4_peers_ready == TRUE)
 		{
 			$public_key_score = NULL;// Reset Public Key Score
-			mysql_data_seek($sql_result, 0);// Reset pointer back to beginning of data
+			mysqli_data_seek($sql_result, 0);// Reset pointer back to beginning of data
 			
 			if($sql_num_results == 1)// Lone IPv4 Address Public Key Won
 			{
@@ -284,7 +284,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		if($ipv6_peers_ready == TRUE)
 		{
 			$public_key_score = NULL;// Reset Public Key Score
-			mysql_data_seek($sql_result, 0);// Reset pointer back to beginning of data
+			mysqli_data_seek($sql_result, 0);// Reset pointer back to beginning of data
 
 			if($sql_num_results == 1)
 			{

@@ -461,7 +461,7 @@ function clone_script($script)
 	// No Properly working PHP CLI Extensions for some odd reason, call from web server instead
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	$cli_port = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'cli_port' LIMIT 1"),0,0);
-		
+
 	if(empty($cli_port) == TRUE)
 	{
 		// Use the same server port that is reported to other peers

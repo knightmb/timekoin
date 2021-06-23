@@ -132,7 +132,7 @@ while(1) // Begin Infinite Loop :)
 	// Are we to remain active?
 	$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
 
-	if($loop_active === FALSE) // Database Error
+	if($loop_active == "") // Database Error
 	{
 		// Database Error, try to re-establish a connection after 5 seconds
 		mysqli_close($db_connect);

@@ -51,7 +51,7 @@ set_time_limit(300);
 $loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,"field_data");
 
 // Check script status
-if($loop_active === FALSE)
+if($loop_active == "")
 {
 	// Time to exit
 	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");

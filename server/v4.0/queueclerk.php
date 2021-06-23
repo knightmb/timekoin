@@ -578,7 +578,7 @@ if($process_clone == FALSE) // No Activity Settings for Clone Process
 	$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,0);
 
 	// Check script status
-	if($loop_active === FALSE)
+	if($loop_active == "")
 	{
 		// Time to exit
 		exit;
@@ -658,7 +658,6 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 	// How does my transaction queue compare to others?
 	// Ask all of my active peers
 	$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND() LIMIT 10";
-
 	$sql_result = mysqli_query($db_connect, $sql);
 	$sql_num_results = mysqli_num_rows($sql_result);
 
@@ -767,7 +766,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 					$reverse_queue_data = NULL;
 					$reverse_queue_data_counter = 1;
 
-					mysql_data_seek($sql_result2, 0); // Reset pointer back to beginning of data
+					mysqli_data_seek($sql_result2, 0); // Reset pointer back to beginning of data
 
 					if($sql_num_results2 > 0)
 					{
@@ -849,6 +848,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 				} // Connected Peer Check for Reverse Queue Bulk Sending
 
 			} // Clone Process Valid Check
+
 	//***********************************************************
 			while(empty($current_hash) == FALSE)
 			{
@@ -887,7 +887,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 				$queue_hash_test = NULL;
 				$hash_match = NULL;					
 				
-				mysql_data_seek($sql_result2, 0); // Reset pointer back to beginning of data
+				mysqli_data_seek($sql_result2, 0); // Reset pointer back to beginning of data
 
 				if($sql_num_results2 > 0)
 				{
@@ -1081,7 +1081,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 						}
 						else
 						{
-							write_log("More Than 100 Transactions Trying to Queue for Key: " . base64_encode($transaction_public_key), "QC");
+							write_log("More Than 100 Transactions Trying to Queue from Key: " . base64_encode($transaction_public_key), "QC");
 						}
 					}
 				} // End Empty Hash Check

@@ -127,7 +127,7 @@ set_time_limit(300);
 $loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,0);
 
 // Check script status
-if($loop_active === FALSE)
+if($loop_active == "")
 {
 	// Time to exit
 	exit;

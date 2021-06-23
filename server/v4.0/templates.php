@@ -40,7 +40,7 @@ Password: <input type="password" size="20" name="timekoin_password" />
 <center><img src="img/timekoin_logo.png" alt="" /></center>
 </div>
 </div>
-<div id="footer"><p>Timekoin Crypto Currency - <a href="http://timekoin.org">http://timekoin.org</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?></p></div>
+<div id="footer"><p>Timekoin Crypto Currency - <a href="http://timekoin.net">http://timekoin.net</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?></p></div>
 </div>
 </body>
 </html>
@@ -233,7 +233,7 @@ if(check_standard_tab_settings($standard_settings_number, 128) == TRUE) { $menu_
 <div class="box"><?PHP echo $quick_info; ?></div>
 </div>
 </div>
-<div id="footer"><p>Timekoin Crypto Currency v<?PHP echo TIMEKOIN_VERSION; ?> - <a href="http://timekoin.org">http://timekoin.org</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?> - ( You are logged in as <strong><?PHP echo $_SESSION["login_username"]; ?></strong> )</p></div>
+<div id="footer"><p>Timekoin Crypto Currency v<?PHP echo TIMEKOIN_VERSION; ?> - <a href="http://timekoin.net">http://timekoin.net</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?> - ( You are logged in as <strong><?PHP echo $_SESSION["login_username"]; ?></strong> )</p></div>
 </div>
 </body>
 </html>
