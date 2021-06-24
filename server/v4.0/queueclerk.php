@@ -298,6 +298,7 @@ if($_GET["action"] == "transaction" && empty($_GET["number"]) == FALSE)
 	$sql_num_results = mysqli_num_rows($sql_result);
 	$transaction_queue_hash;
 	$qhash;
+	$echo_buffer;
 
 	if($sql_num_results > 0)
 	{
@@ -312,10 +313,14 @@ if($_GET["action"] == "transaction" && empty($_GET["number"]) == FALSE)
 			{
 				$qhash = $sql_row["timestamp"] . base64_encode($sql_row["public_key"]) . $sql_row["crypt_data1"] . $sql_row["crypt_data2"] . $sql_row["crypt_data3"] . $sql_row["hash"] . $sql_row["attribute"];
 				$qhash = hash('md5', $qhash);
+				
+				$echo_buffer = NULL;
+				$echo_buffer.= "-----timestamp=" . $sql_row["timestamp"] . "-----public_key=" . base64_encode($sql_row["public_key"]) . "-----crypt1=" . $sql_row["crypt_data1"];
+				$echo_buffer.= "-----crypt2=" . $sql_row["crypt_data2"] . "-----crypt3=" . $sql_row["crypt_data3"] . "-----hash=" . $sql_row["hash"];
+				$echo_buffer.= "-----attribute=" . $sql_row["attribute"] . "-----end---qhash=$qhash---endqhash";
 
-				echo "-----timestamp=" , $sql_row["timestamp"] , "-----public_key=" , base64_encode($sql_row["public_key"]) , "-----crypt1=" , $sql_row["crypt_data1"];
-				echo "-----crypt2=" , $sql_row["crypt_data2"] , "-----crypt3=" , $sql_row["crypt_data3"] , "-----hash=" , $sql_row["hash"];
-				echo "-----attribute=" , $sql_row["attribute"] , "-----end---qhash=$qhash---endqhash";
+				echo $echo_buffer;
+
 				break;
 			}
 

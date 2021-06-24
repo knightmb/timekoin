@@ -73,17 +73,20 @@ if($_GET["action"] == "transaction_data" && $_GET["block_number"] >= 0)
 	$sql_result = mysqli_query($db_connect, $sql);
 	$sql_num_results = mysqli_num_rows($sql_result);
 	$c = 1;
+	$echo_buffer;
 
 	if($sql_num_results > 0)
 	{
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
 			$sql_row = mysqli_fetch_array($sql_result);
-			
-			echo "-----timestamp$c=" , $sql_row["timestamp"] , "-----public_key_from$c=" , base64_encode($sql_row["public_key_from"]) , "-----public_key_to$c=" , base64_encode($sql_row["public_key_to"]);
-			echo "-----crypt1data$c=" , $sql_row["crypt_data1"] , "-----crypt2data$c=" , $sql_row["crypt_data2"] , "-----crypt3data$c=" , $sql_row["crypt_data3"] , "-----hash$c=" , $sql_row["hash"];
-			echo "-----attribute$c=" , $sql_row["attribute"] , "-----end$c";			
+		
+			$echo_buffer = NULL;
+			$echo_buffer.= "-----timestamp$c=" . $sql_row["timestamp"] . "-----public_key_from$c=" . base64_encode($sql_row["public_key_from"]) . "-----public_key_to$c=" . base64_encode($sql_row["public_key_to"]);
+			$echo_buffer.= "-----crypt1data$c=" . $sql_row["crypt_data1"] . "-----crypt2data$c=" . $sql_row["crypt_data2"] . "-----crypt3data$c=" . $sql_row["crypt_data3"] . "-----hash$c=" . $sql_row["hash"];
+			$echo_buffer.= "-----attribute$c=" . $sql_row["attribute"] . "-----end$c";
 
+			echo $echo_buffer;
 			$c++;
 		}		
 	}
@@ -306,6 +309,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 	// Keep track of when transaction data from peers is being polled
 	$peer_performance = time();
+	$downloading_from_super_peer = FALSE;
 
 	if($sql_num_results > 0)
 	{
@@ -377,15 +381,15 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 		//Scale the amount of transaction cycles to check based on the last peer performance reading
 		if($peer_transaction_performance <= 10)
 		{
-			if($hash_check_counter < 100) // Cap limit 100
+			if($hash_check_counter < 400) // Cap limit 400
 			{
 				$new_peer_poll_blocks = $hash_check_counter + 1;
 			}
 			else
 			{
 				// Upper Limit Reached
-				// Really super fast peers? Keep at 100, just in case.
-				$new_peer_poll_blocks = 100;
+				// Really super fast peers? Keep at 400, just in case.
+				$new_peer_poll_blocks = 400;
 			}
 		}
 		else
@@ -645,10 +649,11 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 									$super_transaction_cycle = $block_number;
 									$super_peer_insert;
 									$super_peer_record_count = 0;
+									$downloading_from_super_peer = TRUE;
 
 									while($super_transaction_cycle < $block_number + $super_peer_cycles)
 									{
-										$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 5000000, "transclerk.php?action=transaction_data&block_number=$super_transaction_cycle"));
+										$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 64000000, "transclerk.php?action=transaction_data&block_number=$super_transaction_cycle"));
 
 										if(empty($poll_peer) == TRUE)
 										{
@@ -1040,8 +1045,12 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 		} // End for Loop - Hash check cycling
 //***********************************************************************************
 		// Store peer performance data for later tuning
-		$peer_performance = (time() - $peer_performance);
-		mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$peer_performance' WHERE `main_loop_status`.`field_name` = 'peer_transaction_performance' LIMIT 1");
+		if($downloading_from_super_peer == FALSE)
+		{
+			$peer_performance = (time() - $peer_performance);
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$peer_performance' WHERE `main_loop_status`.`field_name` = 'peer_transaction_performance' LIMIT 1");
+		}
+
 		mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$new_peer_poll_blocks' WHERE `main_loop_status`.`field_name` = 'peer_transaction_start_blocks' LIMIT 1");
 
 		if($sync_block == $hash_check_counter)

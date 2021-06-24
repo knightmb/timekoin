@@ -468,11 +468,24 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 					}
 					else
 					{
-						write_log("Transaction History Walk FAILED.<br>A Transaction History Check has been scheduled to Examine Transaction Cycle #$do_history_walk", "FO");
-						
-						// The history walk failed due to an error somewhere, can't continue.
-						// Schedule a block check at the location -1 in hopes that it will be cleared up for the next loop
-						$sql = "UPDATE `main_loop_status` SET `field_data` = '" . ($do_history_walk - 1) . "' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1";
+						$current_block_check_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transaction_history_block_check' LIMIT 1"),0,0);
+
+						if($current_block_check_active == ($do_history_walk - 1))
+						{
+							// Less spam in Events Log
+							if(rand(1,4) == 4)
+							{
+								write_log("Foundation Manager is waiting to Examine Transaction Cycle #$do_history_walk", "FO");
+							}		
+						}
+						else
+						{
+							write_log("Transaction History Walk FAILED.<br>A Transaction History Check has been scheduled to Examine Transaction Cycle #$do_history_walk", "FO");
+							
+							// The history walk failed due to an error somewhere, can't continue.
+							// Schedule a block check at the location -1 in hopes that it will be cleared up for the next loop
+							$sql = "UPDATE `main_loop_status` SET `field_data` = '" . ($do_history_walk - 1) . "' WHERE `main_loop_status`.`field_name` = 'transaction_history_block_check' LIMIT 1";
+						}
 
 						if(mysqli_query($db_connect, $sql) == TRUE)
 						{
