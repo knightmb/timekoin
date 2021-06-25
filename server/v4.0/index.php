@@ -2313,8 +2313,11 @@ if($_SESSION["valid_login"] == TRUE)
 				$last3_gen = $str[strlen($str)-3];
 
 				$current_generation_block = transaction_cycle($i, TRUE);
-				TKRandom::seed($current_generation_block);
-				$tk_random_number = TKRandom::num(0, 9);
+				//TKRandom::seed($current_generation_block);
+				//$tk_random_number = TKRandom::num(0, 9);
+
+				mt_srand(TKFoundationSeed() + $current_generation_block);
+				$tk_random_number = mt_rand(0, 9);
 
 				if($last3_gen + $tk_random_number < 6)
 				{

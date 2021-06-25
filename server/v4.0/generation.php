@@ -309,10 +309,6 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 					}
 				}
 				//**********************************************************************
-
-
-
-				
 				
 				if(election_cycle(1) == TRUE ||
 					election_cycle(2) == TRUE ||
@@ -525,6 +521,76 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 
 			if(empty($found_public_key) == TRUE || $update_generation_IP == TRUE)
 			{
+				// Not in the allowed generation list, send a request to be elected
+				// when the next transaction cycle does an election.
+				// All future generating peers must pay a fee to enter any peer election.
+				// The fee is the total number of generating peers paid to every peer before submitting
+				// an election request.
+				// Example: 10 peers generating, each peer must be paid 10 TK, for a total of 100 TK
+				// to enter the current peer election.
+				// If you lose the peer election, you have to pay to try again next election cycle.
+				if(election_cycle(9, 2, $gen_peers_total) == TRUE) // 45 Minutes ahead
+				{
+					// Pay all the generating peers a fee to enter the peer election.
+					// Total Servers for Generating Peers.
+					$gen_peers_total = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_list`"),0);
+				
+					// Check your server balance to make sure server can afford to create these transactions
+					$current_balance = db_cache_balance($my_public_key);
+
+					if($current_balance >= $gen_peers_total * $gen_peers_total)
+					{
+						$sql = "SELECT public_key FROM `generating_peer_list`";
+						$sql_result = mysqli_query($db_connect, $sql);
+						$sql_num_results = mysqli_num_rows($sql_result);
+						$my_private_key = my_private_key();
+
+						$sql2 = "SELECT crypt_data1, crypt_data2 FROM `my_transaction_queue`";
+
+						for ($i = 0; $i < $sql_num_results; $i++)
+						{
+							$sql_row = mysqli_fetch_array($sql_result);
+							$election_payment = FALSE;
+
+							// Check transaction queue for already existing transaction
+							$sql_result2 = mysqli_query($db_connect, $sql2);
+							$sql_num_results2 = mysqli_num_rows($sql_result2);
+
+							for ($i = 0; $i < $sql_num_results2; $i++)
+							{
+								$sql_row2 = mysqli_fetch_array($sql_result2);
+
+								$public_key_to_1 = tk_decrypt($my_public_key, base64_decode($sql_row2["crypt_data1"]));
+								$public_key_to_2 = tk_decrypt($my_public_key, base64_decode($sql_row2["crypt_data2"]));
+								$public_key_to = $public_key_to_1 . $public_key_to_2;
+
+								if($sql_row["public_key"] == $public_key_to)
+								{
+									// Payment already in queue
+									$election_payment = TRUE;
+									break;
+								}
+							}
+
+							if($election_payment == FALSE)
+							{
+								if(send_timekoins($my_private_key, $my_public_key, $sql_row["public_key"], $gen_peers_total, "Election_Fee") == FALSE)
+								{
+									write_log($ip_mode . "Creating Election Fee Transaction ($gen_peers_total)TK Failed for Public Key:<br>" . base64_encode($sql_row["public_key"]),"G");
+								}
+								else
+								{
+									write_log($ip_mode . "Election Fee for ($gen_peers_total)TK Sent to Public Key:<br>" . base64_encode($sql_row["public_key"]),"G");
+								}
+							}
+						}
+					}
+					else
+					{
+						write_log($ip_mode . "Server Balance of ($current_balance) is too low to pay ($gen_peers_total)TK to all generating peers.","G");
+					}
+				}
+				//**********************************************************************
 				// Not in the allowed generation list, send a request to be elected
 				// when the next transaction cycle does an election.
 				if(election_cycle(1, 2, $gen_peers_total) == TRUE ||

@@ -799,7 +799,7 @@ function system_screen()
 	<strong>Information<br><br>
 	' . $gen_hash . '<br>
 	' . $trans_history_hash_color1 . $trans_history_hash .  $trans_history_hash_color2 . '<br>
-	' . $trans_queue_hash . '<br>
+	<font color="blue">' . $trans_queue_hash . '</font><br>
 	' . number_format($total_records) . '<br>
 	' . $total_trans_hash . ' of ' . number_format(transaction_cycle(0, TRUE)) . '<br>
 	' . $total_foundations . ' of ' . number_format(foundation_cycle(0, TRUE)) . '<br>

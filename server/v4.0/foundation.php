@@ -135,11 +135,11 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 		if(rand(1,4) == 4)
 		{
 			// Check the most recent foundations more frequently than older foundations
-			$rand_block = rand($previous_foundation_block - 4,$previous_foundation_block);
+			$rand_block = rand($previous_foundation_block - 4, $previous_foundation_block);
 		}
 		else
 		{
-			$rand_block = rand(0,$previous_foundation_block);
+			$rand_block = rand(0, $previous_foundation_block);
 		}
 		
 		$current_foundation_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_foundation` WHERE `block` = $rand_block LIMIT 1"),0,0);
@@ -334,19 +334,48 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 
 } // End number of results check
 //***********************************************************************************
+	// Check that the TK Foundation Seed is set in memory
+	$TK_foundation_seed = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'TKFoundationSeed' LIMIT 1"));
+
+	if($TK_foundation_seed == 0)
+	{
+		// Missing TK Foundation Seed, Create a New One
+		// Do we have a valid and recent transaction foundation to access?
+		$TK_foundation_seed_block = $previous_foundation_block - 1;
+		$TK_foundation_seed_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_foundation` WHERE `block` = $TK_foundation_seed_block LIMIT 1"),0,0);
+		
+		if(empty($TK_foundation_seed_hash) == FALSE)
+		{
+			// Create a number from the hash to seed the TK random number generator
+			$number_seed = NULL;
+			$number_seed.=	getCharFreq($TK_foundation_seed_hash, 1);
+			$number_seed.=	getCharFreq($TK_foundation_seed_hash, 2);
+			$number_seed.=	getCharFreq($TK_foundation_seed_hash, 3);
+			$number_seed.=	getCharFreq($TK_foundation_seed_hash, 4);
+			$number_seed.=	getCharFreq($TK_foundation_seed_hash, 5);
+			$number_seed.=	getCharFreq($TK_foundation_seed_hash, 6);
+			$number_seed.=	getCharFreq($TK_foundation_seed_hash, 7);
+			$number_seed.=	getCharFreq($TK_foundation_seed_hash, 8);
+			$number_seed.=	getCharFreq($TK_foundation_seed_hash, 9);
+
+			// Save new seed number
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$number_seed' WHERE `main_loop_status`.`field_name` = 'TKFoundationSeed' LIMIT 1");
+		}
+		else
+		{
+			write_log("Missing Transaction Foundation #$TK_foundation_seed_block to Build TK Foundation Seed", "FO");
+		}
+	}
+//***********************************************************************************
 // How many foundation blocks exist?
 	$foundation_blocks = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_foundation`"),0);
 
 	// How does it compare to the current foundation cycle?
-	if($foundation_blocks == $current_foundation_block)
-	{
-		// No need to run anything
-	}
-	else
+	if($foundation_blocks != $current_foundation_block)
 	{
 		// Check to make sure enough lead time exist in advance to building
 		// another transaction foundation.
-		if($current_generation_block - ($current_foundation_block * 500) > 2)
+		if($current_generation_block - ($current_foundation_block * 500) > 2)// 2 Transaction Cycles
 		{
 			// Numbers don't match, what do we have?
 			$sql = "SELECT * FROM `transaction_foundation` ORDER BY `transaction_foundation`.`block` ASC";
@@ -426,6 +455,9 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 						{
 							// Success
 							write_log("New Transaction Foundation #$i Complete", "FO");
+
+							// Reset for new seed number
+							mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'TKFoundationSeed' LIMIT 1");							
 
 							// Check against Quantum Balance Index
 							$qbi_max_foundation = (intval($current_foundation_block / 500)) * 500;

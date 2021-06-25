@@ -200,7 +200,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 				// the public key with the most points win
 				$highest_score = 0;
 				$public_key_winner = NULL;
-				write_log("IPv4 Peer Election Score Key: " . scorePublicKey(NULL, TRUE), "GP");
+				write_log("IPv4 Peer Election Score Key:" . scorePublicKey(NULL, TRUE), "GP");
 
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
@@ -305,7 +305,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 				// the public key with the most points win
 				$highest_score = 0;
 				$public_key_winner = NULL;
-				write_log("IPv6 Peer Election Score Key: " . scorePublicKey(NULL, TRUE), "GP");
+				write_log("IPv6 Peer Election Score Key:" . scorePublicKey(NULL, TRUE), "GP");
 
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
@@ -742,20 +742,39 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								$simple_poll_fail == FALSE &&
 								is_private_ip($peer_ip) == FALSE) // Filter private IPs
 							{
-								// Did this Public Key pay me the minimum fee to enter election
+								// Did this Public Key pay the minimum fee to enter election
 								$pre_transaction_cycle = transaction_cycle(-9); // Check within the previous 45 minutes
-								$sql_fee_result = mysql_result(mysqli_query($db_connect, "SELECT crypt_data3 FROM `transaction_history` WHERE `timestamp` >= '$pre_transaction_cycle' AND `public_key_from` = '$public_key' AND `public_key_to` = '" . my_public_key() . "' LIMIT 1"),0,0);
-								$transaction_info = tk_decrypt($public_key, base64_decode($sql_fee_result));
-								$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);								
 								
-								if($transaction_amount_sent >= $gen_peers_total)
+								$payment_sql = "SELECT public_key FROM `generating_peer_list`";
+								$payment_sql_result = mysqli_query($db_connect, $payment_sql);
+								$payment_sql_num_results = mysqli_num_rows($payment_sql_result);
+								$all_generating_peers_paid = TRUE;
+
+								for ($i_pay = 0; $i_pay < $payment_sql_num_results; $i_pay++)
+								{
+									$payment_sql_row = mysqli_fetch_array($payment_sql_result);
+
+									$pay_this_public_key = $payment_sql_row["public_key"];
+									$sql_fee_result = mysql_result(mysqli_query($db_connect, "SELECT crypt_data3 FROM `transaction_history` WHERE `timestamp` >= '$pre_transaction_cycle' AND `public_key_from` = '$public_key' AND `public_key_to` = '$pay_this_public_key' LIMIT 1"),0,0);
+									$transaction_info = tk_decrypt($public_key, base64_decode($sql_fee_result));
+									$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
+									if($transaction_amount_sent == "") { $transaction_amount_sent = 0; }
+									
+									if($transaction_amount_sent < $gen_peers_total)
+									{
+										$all_generating_peers_paid = FALSE;
+										break;
+									}
+								}
+								
+								if($all_generating_peers_paid == TRUE)
 								{
 									mysqli_query($db_connect, "INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
-									write_log("IPv4 Generation Peer Queue List was updated with Public Key: " . base64_encode($public_key), "GP");
+									write_log("IPv4 Generation Peer Queue List was updated with Public Key:<BR>" . base64_encode($public_key), "GP");
 								}
 								else
 								{
-									write_log("IPv4 Generation Fee ($gen_peers_total) has not been paid to this server by Public Key: " . base64_encode($public_key), "GP");
+									write_log("IPv4 Generation Fee ($gen_peers_total)TK Has NOT Been Paid to All Generating Peers by Public Key:<BR>" . base64_encode($public_key), "GP");
 								}
 							}
 							else if(my_public_key() == $public_key)
@@ -1213,8 +1232,40 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								$simple_poll_fail == FALSE &&
 								is_private_ip($peer_ip) == FALSE) // Filter private IPs
 							{
-								mysqli_query($db_connect, "INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
-								write_log("IPv6 Generation Peer Queue List was updated with Public Key: " . base64_encode($public_key), "GP");
+								// Did this Public Key pay the minimum fee to enter election
+								$pre_transaction_cycle = transaction_cycle(-9); // Check within the previous 45 minutes
+								
+								$payment_sql = "SELECT public_key FROM `generating_peer_list`";
+								$payment_sql_result = mysqli_query($db_connect, $payment_sql);
+								$payment_sql_num_results = mysqli_num_rows($payment_sql_result);
+								$all_generating_peers_paid = TRUE;
+
+								for ($i_pay = 0; $i_pay < $payment_sql_num_results; $i_pay++)
+								{
+									$payment_sql_row = mysqli_fetch_array($payment_sql_result);
+
+									$pay_this_public_key = $payment_sql_row["public_key"];
+									$sql_fee_result = mysql_result(mysqli_query($db_connect, "SELECT crypt_data3 FROM `transaction_history` WHERE `timestamp` >= '$pre_transaction_cycle' AND `public_key_from` = '$public_key' AND `public_key_to` = '$pay_this_public_key' LIMIT 1"),0,0);
+									$transaction_info = tk_decrypt($public_key, base64_decode($sql_fee_result));
+									$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
+									if($transaction_amount_sent == "") { $transaction_amount_sent = 0; }
+									
+									if($transaction_amount_sent < $gen_peers_total)
+									{
+										$all_generating_peers_paid = FALSE;
+										break;
+									}
+								}
+								
+								if($all_generating_peers_paid == TRUE)
+								{
+									mysqli_query($db_connect, "INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
+									write_log("IPv6 Generation Peer Queue List was updated with Public Key:<BR>" . base64_encode($public_key), "GP");									
+								}
+								else
+								{
+									write_log("IPv6 Generation Fee ($gen_peers_total)TK Has NOT Been Paid to All Generating Peers by Public Key:<BR>" . base64_encode($public_key), "GP");
+								}								
 							}
 							else if(my_public_key() == $public_key)
 							{

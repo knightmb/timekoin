@@ -13,11 +13,20 @@ ini_set('display_errors', FALSE);
 //***********************************************************************************
 if(function_exists('mysql_result') == FALSE)
 {
-	function mysql_result($result, $number, $field = 0)
+	function mysql_result($result, $number = 0, $field = 0)
 	{
-		mysqli_data_seek($result, $number);
-		$row = mysqli_fetch_array($result);
-		return $row[$field];
+		$sql_num_results = mysqli_num_rows($result);
+
+		if($sql_num_results <= $number)
+		{
+			return NULL;
+		}
+		else
+		{
+			mysqli_data_seek($result, $number);
+			$row = mysqli_fetch_array($result);
+			return $row[$field];
+		}
 	}
 }
 //***********************************************************************************
@@ -211,7 +220,7 @@ function transaction_history_hash()
 	// (50 blocks) or over 4 hours
 	if($current_generation_block - ($current_foundation_block * 500) > 50)
 	{
-		$current_history_foundation = mysql_result(mysqli_query($db_connect, "SELECT * FROM `transaction_foundation` WHERE `block` = $previous_foundation_block LIMIT 1"),0,"hash");
+		$current_history_foundation = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_foundation` WHERE `block` = $previous_foundation_block LIMIT 1"),0,0);
 		$hash .= $current_history_foundation;
 	}
 
@@ -901,8 +910,8 @@ function peer_gen_amount($public_key)
 {
 	// 1 week = 604,800 seconds
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-	$join_peer_list1 = mysql_result(mysqli_query($db_connect, "SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,"join_peer_list");
-	$join_peer_list2 = mysql_result(mysqli_query($db_connect, "SELECT * FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),1,"join_peer_list");	
+	$join_peer_list1 = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,0);
+	$join_peer_list2 = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),1,0);
 	$amount;
 
 	if(empty($join_peer_list1) == TRUE || $join_peer_list1 < TRANSACTION_EPOCH)
@@ -1029,40 +1038,27 @@ function peer_gen_amount($public_key)
 }
 //***********************************************************************************
 //***********************************************************************************
-class TKRandom
+function getCharFreq($str, $chr = FALSE)
 {
-	// random seed
-	private static $RSeed = 0;
-	// set seed
-	public static function seed($s = 0)
-  	{
-		self::$RSeed = abs(intval($s)) % 9999999 + 1;
-		self::num();
-	}
-	// generate random number
-	public static function num($min = 0, $max = 2147483647)
-  	{
-		if (self::$RSeed == 0) self::seed(mt_rand());
-		self::$RSeed = (self::$RSeed * 125) % 2796203;
-		return self::$RSeed % ($max - $min + 1) + $min;
-	}
+	$c = Array();
+	if($chr !== FALSE) return substr_count($str, $chr);
+	foreach(preg_split('//',$str,-1,1)as$v)($c[$v])?$c[$v]++ :$c[$v]=1;
+	return $c;
 }
 //***********************************************************************************
 //***********************************************************************************
-function getCharFreq($str,$chr=false)
+function TKFoundationSeed()
 {
-	$c = Array();
-	if ($chr!==false) return substr_count($str, $chr);
-	foreach(preg_split('//',$str,-1,1)as$v)($c[$v])?$c[$v]++ :$c[$v]=1;
-	return $c;
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+	$TK_foundation_seed = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'TKFoundationSeed' LIMIT 1"));
+	return $TK_foundation_seed;
 }
 //***********************************************************************************
 //***********************************************************************************
 function scorePublicKey($public_key, $score_key = FALSE)
 {
 	$current_generation_block = transaction_cycle(0, TRUE);	
-
-	TKRandom::seed($current_generation_block);
+	mt_srand(TKFoundationSeed() + $current_generation_block);
 
 	$public_key_score = 0;
 	$tkrandom_num = 0;
@@ -1075,8 +1071,8 @@ function scorePublicKey($public_key, $score_key = FALSE)
 		// Output what is being used to score the keys
 		for ($i = 0; $i < 18; $i++)
 		{
-			$tkrandom_num = TKRandom::num(1, 35);
-			$output_score_key .= "[$tkrandom_num=" . base_convert($tkrandom_num, 10, 36) . "]";  // Base 10 to Base 36 conversion
+			$tkrandom_num = mt_rand(1, 35);
+			$output_score_key .= " [" . base_convert($tkrandom_num, 10, 36) . "=$tkrandom_num]";  // Base 10 to Base 36 conversion
 		}
 		
 		return $output_score_key;
@@ -1084,7 +1080,7 @@ function scorePublicKey($public_key, $score_key = FALSE)
 
 	for ($i = 0; $i < 18; $i++)
 	{
-		$tkrandom_num = TKRandom::num(1, 35);
+		$tkrandom_num = mt_rand(1, 35);
 		$character = base_convert($tkrandom_num, 10, 36);  // Base 10 to Base 36 conversion
 		$public_key_score += getCharFreq($public_key, $character);
 	}
@@ -1172,8 +1168,8 @@ function election_cycle($when = 0, $ip_type = 1, $gen_peers_total = 0)
 		$str = strval($current_generation_cycle);
 		$last3_gen = intval($str[strlen($str)-3]);
 
-		TKRandom::seed($current_generation_block);
-		$tk_random_number = TKRandom::num(0, 9);
+		mt_srand(TKFoundationSeed() + $current_generation_block);
+		$tk_random_number = mt_rand(0, 9);
 
 		if($last3_gen + $tk_random_number > 16)
 		{
@@ -1231,9 +1227,9 @@ function election_cycle($when = 0, $ip_type = 1, $gen_peers_total = 0)
 			$last3_gen-= 5;
 		}
 		// Transpose waveform 180 degrees from IPv4 Generation
-		TKRandom::seed($current_generation_block);
-		$tk_random_number = TKRandom::num(0, 9);
-		$ipv6_gen_peer_adapt = TKRandom::num(0, $gen_peers_total);
+		mt_srand(TKFoundationSeed() + $current_generation_block);
+		$tk_random_number = mt_rand(0, 9);
+		$ipv6_gen_peer_adapt = mt_rand(0, $gen_peers_total);
 
 		// The more IPv6 Peers that Generate, the less often Peer Elections happen
 		if($last3_gen + $tk_random_number > 16)
@@ -1278,8 +1274,8 @@ function generation_cycle($when = 0)
 	$str = strval($current_generation_cycle);
 	$last3_gen = intval($str[strlen($str)-3]);
 
-	TKRandom::seed($current_generation_block);
-	$tk_random_number = TKRandom::num(0, 9);
+	mt_srand(TKFoundationSeed() + $current_generation_block);
+	$tk_random_number = mt_rand(0, 9);
 
 	if($last3_gen + $tk_random_number < 6)
 	{
@@ -1385,16 +1381,15 @@ function unix_timestamp_to_human($timestamp = "", $default_timezone, $format = '
 function gen_simple_poll_test($ip_address, $domain, $subfolder, $port_number)
 {
 	$simple_poll_fail = FALSE; // Reset Variable
-
-	TKRandom::seed(transaction_cycle(0, TRUE));
+	mt_srand(TKFoundationSeed() + transaction_cycle(0, TRUE));
 
 	// Grab random Transaction Foundation Hash
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-	$rand_block = TKRandom::num(0,foundation_cycle(0, TRUE) - 5); // Range from Start to Last 5 Foundation Hash
+	$rand_block = mt_rand(0,foundation_cycle(0, TRUE) - 5); // Range from Start to Last 5 Foundation Hash
 	$random_foundation_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_foundation` WHERE `block` = $rand_block LIMIT 1"),0,0);
 
 	// Grab random Transaction Hash
-	$rand_block2 = TKRandom::num(transaction_cycle((0 - transaction_cycle(0, TRUE)), TRUE), transaction_cycle(-1000, TRUE)); // Range from Start to Last 1000 Transaction Hash
+	$rand_block2 = mt_rand(transaction_cycle((0 - transaction_cycle(0, TRUE)), TRUE), transaction_cycle(-1000, TRUE)); // Range from Start to Last 1000 Transaction Hash
 	$rand_block2 = transaction_cycle(0 - $rand_block2);
 	$random_transaction_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_history` WHERE `timestamp` = $rand_block2 LIMIT 1"),0,0);
 	$rand_block2 = ($rand_block2 - TRANSACTION_EPOCH - 300) / 300;
@@ -1856,6 +1851,7 @@ function initialization_database()
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('time_sync_error', '0')");
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('transaction_history_block_check', '0')");
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('update_available', '0')");
+	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('TKFoundationSeed', '0')");
 //**************************************
 // Copy values from Database to RAM Database
 	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'allow_ambient_peer_restart' LIMIT 1"),0,0);
