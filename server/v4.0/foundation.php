@@ -346,6 +346,8 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 		
 		if(empty($TK_foundation_seed_hash) == FALSE)
 		{
+			write_log("Re-calculating Network Seed via Transaction Foundation #$TK_foundation_seed_block", "FO");
+
 			// Create a number from the hash to seed the TK random number generator
 			$number_seed = NULL;
 			$number_seed.=	getCharFreq($TK_foundation_seed_hash, 1);

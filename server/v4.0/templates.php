@@ -881,8 +881,8 @@ function send_receive_body($fill_in_key = "", $amount = "", $cancel = FALSE, $ea
 	}
 	else
 	{
-		$cancel_button = '<FORM ACTION="index.php?menu=send&amp;easykey=grab" METHOD="post"><input type="text" size="24" name="easy_key" value="' . $easy_key . '" /><br>
-			<input type="submit" value="Easy Key" /></FORM>';
+		$cancel_button = '<FORM ACTION="index.php?menu=send&amp;easykey=grab" METHOD="post"><input type="text" size="28" name="easy_key" value="' . $easy_key . '" /><br>
+		<input type="submit" value="Lookup Easy Key" /></FORM>';
 		$form_action = '<FORM ACTION="index.php?menu=send&amp;check=key" METHOD="post">';
 	}
 
@@ -892,7 +892,7 @@ function send_receive_body($fill_in_key = "", $amount = "", $cancel = FALSE, $ea
 	<tr><td valign="top"><strong>Amount:</strong> <input type="text" size="8" value="' . $amount . '" name="send_amount" />
 	<input type="submit" name="Submit1" value="Send Timekoins" /></td></tr></table></FORM>
 	<table border="0" cellpadding="6"><tr><td style="width:580px" align="right">' . $cancel_button  . '</td></tr>
-	<tr><td align="right">Create Your Own Here:<br><a target="_blank" href="http://easy.timekoin.net/">easy.timekoin.net</a></td></tr></table>';
+	<tr><td align="right">Create Your Own Here:<br><a target="_self" href="index.php?menu=send&amp;easy_key=new"><strong>Easy Key Creation</strong></a></td></tr></table>';
 }
 //***********************************************************
 //***********************************************************

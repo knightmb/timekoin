@@ -355,7 +355,6 @@ if($sql_num_results > 0)
 				}
 				else
 				{
-write_log("Public Key has [$generation_records_total] generation transactions:<BR>" . base64_encode($public_key), "G");
 					// Is this public key allowed to generate currency?
 					$generation_public_key = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),0,0);			
 					

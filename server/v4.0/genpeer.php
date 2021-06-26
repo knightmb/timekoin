@@ -259,7 +259,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 //***********************************************************************************
 	// IPv6 Election
 	// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
-	$gen_peers_total = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
+	$gen_peers_total = num_gen_peers(TRUE);
 
 	if(election_cycle(0, 2, $gen_peers_total) == TRUE)// IPv6 Peers
 	{
@@ -544,7 +544,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 		if($sql_num_results > 0)
 		{
-			$gen_peers_total = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_list`"),0);
+			$gen_peers_total = num_gen_peers();
 
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
@@ -1019,7 +1019,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 	// Scan for new election request of IPv6 generating peers
 
 	// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
-	$gen_peers_total = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
+	$gen_peers_total = num_gen_peers(TRUE);
 
 	if(election_cycle(1, 2, $gen_peers_total) == TRUE ||
 		election_cycle(2, 2, $gen_peers_total) == TRUE ||

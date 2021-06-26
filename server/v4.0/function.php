@@ -6,6 +6,8 @@ define("ARBITRARY_KEY","01110100011010010110110101100101"); // Space filler for 
 define("SHA256TEST","8c49a2b56ebd8fc49a17956dc529943eb0d73c00ee6eafa5d8b3ba1274eb3ea4"); // Known SHA256 Test Result
 define("TIMEKOIN_VERSION","4.0"); // This Timekoin Software Version
 define("NEXT_VERSION","current_version51.txt"); // What file to check for future versions
+// Easy Key Blackhole Public Key
+define("EASY_KEY_PUBLIC_KEY","LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS1UaW1la29pbitFYXN5K0tleStibGFjaytob2xlK2FkZHJlc3MrV3ViYmErbHViYmErZHViK2R1YitSaWtraSt0aWtraSt0YXZpK2JpdGNoK0FuZCt0aGF0cyt0aGUrd2F5K3RoZStuZXdzK2dvZXMrSGl0K3RoZStzYWNrK0phY2srVWgrb2grc29tZXJzYXVsdCtqdW1wK0FpZHMrU2h1bStzaHVtK3NobGlwcGVkeStkb3ArR3Jhc3MrdGFzdGVzK2JhZCtObytqdW1waW5nK2luK3RoZStzZXdlcitCdXJnZXIrdGltZStSdWJiZXIrYmFieStiYWJieStCdW5rZXJzK1llYWgrc2F5K3RoYXQrYWxsK3RoZSt0aW1lK1RpbWVrb2luK0Vhc3krS2V5LS0tLS1FTkQgUFVCTElDIEtFWS0tLS0t");
 
 error_reporting(E_ERROR | E_CORE_ERROR | E_COMPILE_ERROR); // Disable most error reporting except for fatal errors
 ini_set('display_errors', FALSE);
@@ -903,6 +905,54 @@ function check_crypt_balance($public_key)
 		$index_balance = check_crypt_balance_range($public_key, $start_time_range, $end_time_range);		
 		return ($crypto_balance + $index_balance);
 	}
+}
+//***********************************************************************************
+//***********************************************************************************
+function num_gen_peers($exclude_last_24hours = FALSE)
+{
+	// How many peers are generating currency?
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+
+	if($exclude_last_24hours == TRUE)
+	{
+		return intval(mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400))));
+	}
+	else
+	{
+		return intval(mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_list`")));
+	}
+}
+//***********************************************************************************
+//***********************************************************************************
+function easy_key_lookup($easy_key = "")
+{
+	// Lookup Easy Key in Transaction History
+	if(empty($easy_key) == TRUE) { return; }
+
+	// Does this easy key exist in the transaction history?
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+
+	// Look back as far as 3 Months (8,766 Transaction Cycles or 7889400 Seconds)
+	$month_1_cycles = transaction_cycle(-26298);
+	$easy_key_public_key = base64_decode(EASY_KEY_PUBLIC_KEY);
+	$sql = "SELECT public_key_from, crypt_data3 FROM `transaction_history` WHERE `timestamp` >= $month_1_cycles AND `public_key_to` = '$easy_key_public_key'";
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
+
+	for ($i = 0; $i < $sql_num_results; $i++)
+	{
+		$sql_row = mysqli_fetch_array($sql_result);
+		$transaction_data = tk_decrypt($sql_row["public_key_from"], base64_decode($sql_row["crypt_data3"]));
+		$transaction_message = find_string("---MSG=", "", $transaction_data, TRUE);
+
+		if($transaction_message == $easy_key)
+		{
+			// Easy Key Found, Return Public Key Associated With It
+			return base64_encode($sql_row["public_key_from"]);
+		}
+	}
+
+	return; // No match found
 }
 //***********************************************************************************
 //***********************************************************************************

@@ -267,7 +267,7 @@ if($_GET["action"] == "exchange")
 		$my_server_port_number = my_port_number();
 		$allow_lan_peers = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,0));
 		$network_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
-		$self_key = hash('crc32', mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,0));
+		$self_key = hash('crc32', my_public_key());
 
 		if($self_key == $_GET["selfkey"])
 		{
@@ -684,7 +684,7 @@ if($active_peers < $max_active_peers)
 				if($poll_peer == "OK")
 				{
 					// Generate Self-key to prevent self-connects on purpose or by accident
-					$self_key = hash('crc32', mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,0));
+					$self_key = hash('crc32', my_public_key());
 					// Add this peer to the active list
 					$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 512, "peerlist.php?action=exchange&domain=$my_server_domain&subfolder=$my_server_subfolder&port_number=$my_server_port_number&selfkey=$self_key");
 

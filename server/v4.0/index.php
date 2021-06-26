@@ -2128,7 +2128,7 @@ if($_SESSION["valid_login"] == TRUE)
 		}
 
 		// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
-		$gen_peers_total = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
+		$gen_peers_total = num_gen_peers(TRUE);
 
 		for ($i = 0; $i < $max_cycles_ahead; $i++)
 		{
@@ -2263,7 +2263,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$max_cycles_ahead = 576;
 			$total_ipv6_elections = 0;
 			// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
-			$gen_peers_total = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
+			$gen_peers_total = num_gen_peers(TRUE);
 
 			for ($i = 1; $i < $max_cycles_ahead; $i++)// IPv4 Elections
 			{
@@ -2444,24 +2444,26 @@ if($_SESSION["valid_login"] == TRUE)
 			{
 				if($_GET["easykey"] == "grab")
 				{
-					ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
-					ini_set('default_socket_timeout', 7); // Timeout for request in seconds
 					$message = $_POST["send_message"];
-					$easy_key = filter_sql($_POST["easy_key"]); // Filter SQL just in case
 					$last_easy_key = filter_sql($_POST["easy_key"]); // Filter SQL just in case
 
-					// Translate Easy Key to Public Key and fill in field with
-					$context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
-					$easy_key = filter_sql(file_get_contents("http://timekoin.net/easy.php?s=$easy_key", FALSE, $context, NULL, 500));
-
-					if($easy_key == "ERROR" || empty($easy_key) == TRUE)
+					if(empty($_POST["easy_key"]) == FALSE)
 					{
-						$server_message = '<font color="red"><strong>' . $last_easy_key . ' Not Found. Check Your Spelling.</strong></font>';
-						$easy_key = NULL;
+						$easy_key = filter_sql(easy_key_lookup($_POST["easy_key"])); // Filter SQL just in case
+
+						if(empty($easy_key) == TRUE)
+						{
+							$server_message = '<font color="blue"><strong>' . $last_easy_key . '</font> <font color="red">Not Found!<BR>Spelling is Case Sensitive.</strong></font>';
+							$easy_key = NULL;
+						}
+						else
+						{
+							$server_message = '<table border="0"><tr><td style="width:580px" align="right"><font color="green"><strong>Easy Key Found!</strong></font></td></tr></table>';
+						}
 					}
 					else
 					{
-						$server_message = '<table border="0"><tr><td style="width:580px" align="right"><font color="blue"><strong>Easy Key Found</strong></font></td></tr></table>';
+						$server_message = '<font color="red"><strong>Easy Key Lookup Empty!</strong></font>';
 					}
 				}
 				
@@ -2472,15 +2474,45 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 		}
 
-		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong>Current Server Balance: <font color="green">' . number_format($display_balance) . '</font></strong></td></tr>
-			<tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
-			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
+		if($_GET["easy_key"] == "new")
+		{
+			$body_string = '<FORM ACTION="index.php?menu=send&amp;easy_key=create" METHOD="post">
+			<table border="0" cellpadding="6"><tr><td><font color="green"><strong>Create New Easy Key</strong></font></td></tr>
+			<tr><td><strong>Creation Fee: <font color="green">' . num_gen_peers() . ' TK</font></strong></td></tr>
+			<tr><td><strong><font color="blue">New Public Key</font></strong><BR>
+			<textarea name="easy_public_key" rows="6" cols="75"></textarea></td></tr>
+			<tr><td><strong><font color="blue">New Easy Key</font></strong><BR>
+			<input type="text" maxlength="64" size="64" value="" name="new_easy_key" /></td></tr></table>
+			<input type="submit" value="Create New Easy Key" /></FORM>';
 
-		$quick_info = 'Send your own Timekoins to someone else.<br><br>
+			$quick_info = '<strong>Easy Keys</strong> are shortcuts enabling access to much longer <font color="blue">Public Keys</font> in Timekoin.</br><BR>
+			An <strong>Easy Key</strong> can be an e-mail address, a custom word, or number that you create.</br></br>
+			A New <strong>Easy Key</strong> shortcut you create must be between 1 and 64 characters in length including spaces.</br></br>
+			Each <strong>Easy Key</strong> shortcut may only contain letters, digits, or special characters such as</br><strong> ^ ! - _ . { } @ [ ]</strong><BR><BR>
+			All <strong>Easy Keys <font color="red">Expire</font></strong> after <strong><font color="blue">3 Months</font></strong> unless you renew the key by creating it again with the same <font color="blue">Public Key</font> as before.';
+		}
+		else
+		{
+			$quick_info = 'Send your own Timekoins to someone else.<br><br>
 			Your server will attempt to verify if the public key is valid by examing the transaction history before sending.<br><br>
 			New public keys with no history could appear invalid for this reason, so always double check.<br><br>
 			You can enter an <strong>Easy Key</strong> and Timekoin will fill in the Public Key field for you.<br><br>
 			Messages encoded into your transaction are limited to <strong>64</strong> characters and are visible to anyone.<br>No <strong>| ? = \' ` * %</strong> characters allowed.';
+		}
+
+		if($_GET["easy_key"] == "create")
+		{
+			$easy_public_key = $_POST["easy_public_key"];
+			$new_easy_key = $_POST["new_easy_key"];			
+			
+			$body_string = $easy_public_key . '<BR><BR>' . $new_easy_key;
+		}
+
+		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong>Current Server Balance: <font color="green">' . number_format($display_balance) . '</font></strong></td></tr>
+			<tr><td><strong><font color="green">My Public Key</font> to receive:</strong></td></tr>
+			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
+
+
 
 		home_screen('Send / Receive Timekoins', $text_bar, $body_string , $quick_info);
 		exit;

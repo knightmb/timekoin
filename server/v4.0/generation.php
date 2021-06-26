@@ -144,7 +144,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 		if($network_mode == 1 || $network_mode == 2)// Generation IPv4 Enabled Check
 		{
 			// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
-			$gen_peers_total = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
+			$gen_peers_total = num_gen_peers(TRUE);
 
 			// IPv4 Generation
 			$found_public_key = find_v4_gen_key($my_public_key);
@@ -251,7 +251,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 				{
 					// Pay all the generating peers a fee to enter the peer election.
 					// Total Servers for Generating Peers.
-					$gen_peers_total = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_list`"),0);
+					$gen_peers_total = num_gen_peers();
 				
 					// Check your server balance to make sure server can afford to create these transactions
 					$current_balance = db_cache_balance($my_public_key);
@@ -274,7 +274,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 							$sql_result2 = mysqli_query($db_connect, $sql2);
 							$sql_num_results2 = mysqli_num_rows($sql_result2);
 
-							for ($i = 0; $i < $sql_num_results2; $i++)
+							for ($i2 = 0; $i2 < $sql_num_results2; $i2++)
 							{
 								$sql_row2 = mysqli_fetch_array($sql_result2);
 
@@ -426,7 +426,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 		if($network_mode == 1 || $network_mode == 3)// Generation IPv6 Enabled Check
 		{
 			// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
-			$gen_peers_total = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400) . ""),0);
+			$gen_peers_total = num_gen_peers(TRUE);
 
 			// IPv6 Generation
 			$found_public_key = find_v6_gen_key($my_public_key);
@@ -533,7 +533,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 				{
 					// Pay all the generating peers a fee to enter the peer election.
 					// Total Servers for Generating Peers.
-					$gen_peers_total = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_list`"),0);
+					$gen_peers_total = num_gen_peers();
 				
 					// Check your server balance to make sure server can afford to create these transactions
 					$current_balance = db_cache_balance($my_public_key);
@@ -556,7 +556,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 							$sql_result2 = mysqli_query($db_connect, $sql2);
 							$sql_num_results2 = mysqli_num_rows($sql_result2);
 
-							for ($i = 0; $i < $sql_num_results2; $i++)
+							for ($i2 = 0; $i2 < $sql_num_results2; $i2++)
 							{
 								$sql_row2 = mysqli_fetch_array($sql_result2);
 
