@@ -599,7 +599,7 @@ function count_transaction_hash()
 	$count_transaction_hash = mysql_result(mysqli_query($db_connect, "SELECT * FROM `balance_index` WHERE `public_key_hash` = 'count_transaction_hash' LIMIT 1"),0,"balance");
 	$count_transaction_hash_last = mysql_result(mysqli_query($db_connect, "SELECT * FROM `balance_index` WHERE `public_key_hash` = 'count_transaction_hash' LIMIT 1"),0,"block");
 
-	if($count_transaction_hash === FALSE)
+	if($count_transaction_hash == "")
 	{
 		// Does not exist, needs to be created
 		mysqli_query($db_connect, "INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`) VALUES ('0', 'count_transaction_hash', '0')");
@@ -1348,7 +1348,7 @@ function db_cache_balance($my_public_key)
 	$my_server_balance = mysql_result(mysqli_query($db_connect, "SELECT balance FROM `balance_index` WHERE `public_key_hash` = 'server_timekoin_balance' LIMIT 1"),0,0);
 	$my_server_balance_last = mysql_result(mysqli_query($db_connect, "SELECT block FROM `balance_index` WHERE `public_key_hash` = 'server_timekoin_balance' LIMIT 1"),0,0);
 
-	if($my_server_balance === FALSE)
+	if($my_server_balance == "")
 	{
 		// Does not exist, needs to be created
 		mysqli_query($db_connect, "INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`) VALUES ('0', 'server_timekoin_balance', '0')");
@@ -1833,7 +1833,7 @@ function initialization_database()
 
 	// Auto IP Update Settings
 	$new_record_check = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,0);
-	if($new_record_check === FALSE)
+	if($new_record_check == "")
 	{
 		// Does not exist, create it
 		mysqli_query($db_connect, "INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('auto_update_generation_IP', '0')");
@@ -1841,7 +1841,7 @@ function initialization_database()
 
 	// CLI Mode Settings
 	$new_record_check = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0);
-	if($new_record_check === FALSE)
+	if($new_record_check == "")
 	{
 		// Does not exist, create it
 		mysqli_query($db_connect, "INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('cli_mode', '1')");
@@ -1849,7 +1849,7 @@ function initialization_database()
 
 	// CLI Mode Port Settings
 	$new_record_check = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'cli_port' LIMIT 1"),0,0);
-	if($new_record_check === FALSE)
+	if($new_record_check == "")
 	{
 		// Does not exist, create it
 		mysqli_query($db_connect, "INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('cli_port', '')");
@@ -1857,7 +1857,7 @@ function initialization_database()
 
 	// IPv4 + IPv6 Network Mode
 	$new_record_check = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0);
-	if($new_record_check === FALSE)
+	if($new_record_check == "")
 	{
 		// Does not exist, create it
 		mysqli_query($db_connect, "INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('network_mode', '1')");
@@ -1865,7 +1865,7 @@ function initialization_database()
 
 	// IPv6 Generation IP Field
 	$new_record_check = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'generation_IP_v6' LIMIT 1"),0,0);
-	if($new_record_check === FALSE)
+	if($new_record_check == "")
 	{
 		// Does not exist, create it
 		mysqli_query($db_connect, "INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('generation_IP_v6', '')");

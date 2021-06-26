@@ -242,7 +242,7 @@ if($_GET["action"] == "tk_start_stop")
 
 			if($watchdog_heartbeat_active == FALSE) // Not running currently
 			{
-				if($watchdog_heartbeat_active === FALSE) // No record exist yet, need to create one
+				if($watchdog_heartbeat_active == "") // No record exist yet, need to create one
 				{
 					mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('watchdog_heartbeat_active', '0')");
 				}

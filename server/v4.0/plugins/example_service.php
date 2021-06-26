@@ -33,7 +33,7 @@ $db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABA
 // Avoid stacking this many times
 $already_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'example_service.php' LIMIT 1"),0,0);
 
-if($already_active === FALSE)
+if($already_active == "")
 {
 	// Creating Status State - Timekoin Looks for the filename
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('example_service.php', '0')"); // Offline

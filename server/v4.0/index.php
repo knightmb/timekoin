@@ -60,7 +60,7 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 				// Check for new system startup
 				$fresh_system = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` LIMIT 1"),0,0);
 
-				if($fresh_system === FALSE)
+				if($fresh_system == "")
 				{
 					// Stop all other script activity until the user actually starts the system.
 					// This is useful when recoving from an unknown error or crash.
@@ -502,7 +502,7 @@ if($_SESSION["valid_login"] == TRUE)
 				// Does Plugin Service Report Any Status?
 				$plugin_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = '$plugin_file' LIMIT 1"),0,"field_data");
 
-				if($plugin_active === FALSE)
+				if($plugin_active == "")
 				{
 					// Does not exist
 					$plugin_service_output .= '<tr><td align="center"><img src="img/arrow.gif" alt="" /></td><td><font color="DodgerBlue"><strong>' . $plugin_service . '</strong></font></td>

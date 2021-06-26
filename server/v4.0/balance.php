@@ -105,7 +105,7 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 	$public_key_hash = hash('md5', my_public_key());
 	$balance_index = mysql_result(mysqli_query($db_connect, "SELECT block FROM `balance_index` WHERE `public_key_hash` = '$public_key_hash' AND `block` = $cache_block LIMIT 1"),0,0);
 
-	if($balance_index === FALSE)
+	if($balance_index == "")
 	{
 		// Create self first :)
 		write_log("Updating Balance Index For Self", "BA");
@@ -130,7 +130,7 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 				// Run a balance index if one does not already exist
 				$balance_index = mysql_result(mysqli_query($db_connect, "SELECT block FROM `balance_index` WHERE `public_key_hash` = '$public_key_hash' AND `block` = $cache_block LIMIT 1"),0,0);
 
-				if($balance_index === FALSE)
+				if($balance_index == "")
 				{
 					// No index balance, go ahead and create one
 					write_log("Updating Balance Index For Transaction Queue", "BA");
@@ -152,10 +152,10 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 		$time_back = time() - 300000;
 
 		// Pick a Random Transaction from the Past
-		$public_key_from = mysql_result(mysqli_query($db_connect, "SELECT public_key_to FROM `transaction_history` WHERE `timestamp` > $time_back AND `attribute` = 'T' GROUP BY `public_key_to` ORDER BY RAND() LIMIT 1"),0,0);
+		$public_key_from = mysql_result(mysqli_query($db_connect, "SELECT public_key_to FROM `transaction_history` WHERE `public_key_to` != '" . base64_decode(EASY_KEY_PUBLIC_KEY) . "' AND `timestamp` > $time_back AND `attribute` = 'T' GROUP BY `public_key_to` ORDER BY RAND() LIMIT 1"),0,0);
 
 		// Run a balance index if one does not already exist
-		if($public_key_from === FALSE)
+		if($public_key_from == "")
 		{
 			write_log("No Recent Transactions Exist To Update Balance Index", "BA");
 		}
@@ -164,7 +164,7 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 			$public_key_hash = hash('md5', $public_key_from); // MD5 Conversion
 			$balance_index = mysql_result(mysqli_query($db_connect, "SELECT block FROM `balance_index` WHERE `public_key_hash` = '$public_key_hash' AND `block` = $cache_block LIMIT 1"),0,0);
 
-			if($balance_index === FALSE)
+			if($balance_index == "")
 			{
 				// No index balance, go ahead and create one
 				write_log("Updating Balance Index From Transaction History", "BA");

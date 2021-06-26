@@ -153,7 +153,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 
 			if($trans_history_check == 1)
 			{
-				$rand_freq = 40; // Normal
+				$rand_freq = 50; // Normal
 			}
 			else if($trans_history_check == 2)
 			{
