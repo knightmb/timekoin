@@ -27,7 +27,7 @@ if($_GET["action"] == "poll" && empty($_GET["challenge"]) == FALSE)
 	echo hash('crc32', intval($_GET["challenge"]));
 
 	// Check if Ambient Peer Restart is enabled (randomize to avoid DB spamming)
-	if(rand(1,50) == 50)
+	if(mt_rand(1,50) == 50)
 	{
 		$allow_ambient_peer_restart = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'allow_ambient_peer_restart' LIMIT 1"),0,0);
 
@@ -171,6 +171,7 @@ if($_GET["action"] == "new_peers")
 	$sql_num_results = mysqli_num_rows($sql_result);
 
 	$peer_counter = 1;
+	$echo_buffer = NULL;
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
@@ -184,15 +185,18 @@ if($_GET["action"] == "new_peers")
 		// Check for non-private IP range
 		if(is_private_ip($ip_address, $allow_lan_peers) == FALSE)
 		{
-			echo "-----IP$peer_counter=$ip_address-----domain$peer_counter=$domain-----subfolder$peer_counter=$subfolder-----port_number$peer_counter=$port_number-----";
+			$echo_buffer.= "-----IP$peer_counter=$ip_address-----domain$peer_counter=$domain-----subfolder$peer_counter=$subfolder-----port_number$peer_counter=$port_number-----";
 			$peer_counter++;
 		}
 	}
+
+	echo $echo_buffer;
 
 	$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND() LIMIT 5";
 
 	$sql_result = mysqli_query($db_connect, $sql);
 	$sql_num_results = mysqli_num_rows($sql_result);
+	$echo_buffer = NULL;
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
@@ -206,10 +210,12 @@ if($_GET["action"] == "new_peers")
 		// Check for non-private IP range
 		if(is_private_ip($ip_address, $allow_lan_peers) == FALSE)
 		{		
-			echo "-----IP$peer_counter=$ip_address-----domain$peer_counter=$domain-----subfolder$peer_counter=$subfolder-----port_number$peer_counter=$port_number-----";
+			$echo_buffer.= "-----IP$peer_counter=$ip_address-----domain$peer_counter=$domain-----subfolder$peer_counter=$subfolder-----port_number$peer_counter=$port_number-----";
 			$peer_counter++;
 		}
 	}
+
+	echo $echo_buffer;
 
 	// Log inbound IP activity
 	log_ip("PL", 1);
@@ -529,7 +535,7 @@ if($active_peers == 0 && $new_peers == 0)
 	$sql_num_results = mysqli_num_rows($sql_result);
 
 	// First Contact Server Format
-	//---ip=192.168.0.1---domain=timekoin.com---subfolder=timekoin---port=80---end
+	//---ip=192.168.0.1---domain=timekoin.net---subfolder=timekoin---port=80---end
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
 		$sql_row = mysqli_fetch_array($sql_result);
@@ -670,7 +676,7 @@ if($active_peers < $max_active_peers)
 		if($duplicate_peer == FALSE && $invalid_peer == FALSE)
 		{
 			//Send a challenge hash to see if a timekoin server is active
-			$poll_challenge = rand(1, 999999);
+			$poll_challenge = mt_rand(1, 999999);
 			$hash_solution = hash('crc32', $poll_challenge);
 
 			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 10, "peerlist.php?action=poll&challenge=$poll_challenge");
@@ -790,7 +796,7 @@ if($active_peers < $max_active_peers)
 $sql = "SELECT * FROM `new_peers_list`";
 $new_peers_numbers = mysqli_num_rows(mysqli_query($db_connect, $sql));
 
-if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to avoid spamming for new peers
+if($new_peers_numbers < $max_new_peers && mt_rand(1,3) == 2)//Randomize a little to avoid spamming for new peers
 {
 	if(empty($my_server_domain) == TRUE)
 	{
@@ -1040,7 +1046,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 		}
 
 		// Choose the type polling done
-		$poll_type = rand(1,7);
+		$poll_type = mt_rand(1,7);
 		// 1=CRC32
 		// 2=Network Mode
 		// 3&4=Reverse Failure Score Check
@@ -1051,7 +1057,7 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 		if($poll_type == 1)
 		{
 			//Send a challenge hash to see if a timekoin server is active
-			$poll_challenge = rand(1, 999999);
+			$poll_challenge = mt_rand(1, 999999);
 			$hash_solution = hash('crc32', $poll_challenge);
 
 			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 10, "peerlist.php?action=poll&challenge=$poll_challenge");
@@ -1239,14 +1245,14 @@ if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to
 			$ip_address = ipv6_compress($ip_address);
 		}
 
-		$poll_type = rand(1,2);
+		$poll_type = mt_rand(1,2);
 
 		// 1=CRC32
 		// 2=Server Full Check
 		if($poll_type == 1)
 		{
 			//Send a challenge hash to see if a timekoin server is active
-			$poll_challenge = rand(1, 999999);
+			$poll_challenge = mt_rand(1, 999999);
 			$hash_solution = hash('crc32', $poll_challenge);
 
 			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 10, "peerlist.php?action=poll&challenge=$poll_challenge");

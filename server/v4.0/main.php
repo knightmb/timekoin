@@ -157,26 +157,29 @@ while(1) // Begin Infinite Loop :)
 	//*****************************************************************************************************
 	//*****************************************************************************************************	
 	// Do a random time sync check and report any errors to the user
-	if(rand(1,99) == 30)
+	if(mt_rand(1,100) == 50)
 	{
-		$poll_peer = filter_sql(file_get_contents("http://timekoin.net/time.php", FALSE, $context, NULL, 12));
+		$poll_peer = intval(filter_sql(file_get_contents("http://timekoin.net/time.php", FALSE, $context, NULL, 12)));
 		$my_time = time();
 
-		if(abs($poll_peer - $my_time) > 15 && empty($poll_peer) == FALSE)
+		if($poll_peer != 0)
 		{
-			// Timekoin peer time is not in sync
-			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'time_sync_error' LIMIT 1");
-		}
-		else
-		{
-			// Timekoin peer time is in sync
-			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'time_sync_error' LIMIT 1");
+			if(abs($poll_peer - $my_time) > 15 && empty($poll_peer) == FALSE)
+			{
+				// Timekoin peer time is not in sync
+				mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'time_sync_error' LIMIT 1");
+			}
+			else
+			{
+				// Timekoin peer time is in sync
+				mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'time_sync_error' LIMIT 1");
+			}
 		}
 	}
 	//*****************************************************************************************************
 	//*****************************************************************************************************	
 	// Do a update software check and report to user if one is available
-	if(rand(1,300) == 100)
+	if(mt_rand(1,300) == 100)
 	{
 		if(check_for_updates(TRUE) == 1)
 		{
@@ -215,7 +218,7 @@ while(1) // Begin Infinite Loop :)
 		}
 
 		// Clear out ban list of IPs older than 1 day
-		if(rand(1,200) == 30) // Randomize a little to save DB usage
+		if(mt_rand(1,200) == 30) // Randomize a little to save DB usage
 		{
 			mysqli_query($db_connect, "DELETE FROM `ip_banlist` WHERE `ip_banlist`.`when` < " . (time() - 86400));
 		}
@@ -223,7 +226,7 @@ while(1) // Begin Infinite Loop :)
 	//*****************************************************************************************************		
 		// Trim old activity logs to prevent database from filling up too much space
 		// Retain last X number of activity logs
-		if(rand(1,500) == 100) // Randomize a little to save DB usage
+		if(mt_rand(1,500) == 100) // Randomize a little to save DB usage
 		{
 			$activity_log_count = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `activity_logs`"),0);
 
@@ -404,7 +407,7 @@ while(1) // Begin Infinite Loop :)
 			}
 		}
 
-		if(rand(1,4) == 3) // Randomize checking to keep database load down
+		if(mt_rand(1,4) == 3) // Randomize checking to keep database load down
 		{
 			// Check watchdog script to make sure it is still running
 			$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,0);

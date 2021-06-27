@@ -132,7 +132,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 	if($sql_num_results > 0)
 	{
 		// Choose random transaction foundation
-		if(rand(1,4) == 4)
+		if(mt_rand(1,4) == 4)
 		{
 			// Check the most recent foundations more frequently than older foundations
 			$rand_block = rand($previous_foundation_block - 4, $previous_foundation_block);
@@ -149,7 +149,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 		{
 			// How frequent the transaction foundation checks are set by the user
 			$trans_history_check = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'trans_history_check' LIMIT 1"),0,0));
-			$rand_freq = 99; // Rare - Default if no user set value
+			$rand_freq = 100; // Rare - Default if no user set value
 
 			if($trans_history_check == 1)
 			{
@@ -161,7 +161,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 			}
 
 			// Check that a foundation block has not become corrupt due to unknown reasons
-			if(rand(1,$rand_freq) == 15)
+			if(mt_rand(1,$rand_freq) == 15)
 			{
 				// Build an existing Foundation Block and compare to the Hash in the database.
 				// If the two hash do not match, then some repairs need to be made to the transaction history.
@@ -341,7 +341,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 	{
 		// Missing TK Foundation Seed, Create a New One
 		// Do we have a valid and recent transaction foundation to access?
-		$TK_foundation_seed_block = $previous_foundation_block - 1;
+		$TK_foundation_seed_block = foundation_cycle(-2, TRUE);
 		$TK_foundation_seed_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_foundation` WHERE `block` = $TK_foundation_seed_block LIMIT 1"),0,0);
 		
 		if(empty($TK_foundation_seed_hash) == FALSE)
@@ -507,7 +507,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 						if($current_block_check_active == ($do_history_walk - 1))
 						{
 							// Less spam in Events Log
-							if(rand(1,4) == 4)
+							if(mt_rand(1,4) == 4)
 							{
 								write_log("Foundation Manager is waiting to Examine Transaction Cycle #$do_history_walk", "FO");
 							}		

@@ -250,11 +250,16 @@ function trans_percent_status()
 
 	if($percent_update == 100)
 	{
-		$status = '<font color="#818181"><strong>100%</strong></font>';
+		$status = '<font color="green"><strong>100%</strong></font>';
 	}
 	else if($percent_update < 100 && $percent_update >= 99)
 	{
-		$status = '<font color="#5858FA"><strong>' . number_format($percent_update, 3) . '%</strong></font><strong> (' . number_format(transaction_cycle(0, TRUE) - $total_trans_hash) . ' Transaction Cycles to Update)</strong>';
+		if(number_format($percent_update, 2) == 100)
+		{
+			$percent_update = 99.99;
+		}
+		
+		$status = '<font color="#5858FA"><strong>' . number_format($percent_update, 2) . '%</strong></font><strong> (' . number_format(transaction_cycle(0, TRUE) - $total_trans_hash) . ' Transaction Cycles to Update)</strong>';
 	}
 	else
 	{

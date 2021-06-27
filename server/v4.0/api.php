@@ -793,6 +793,7 @@ if($_GET["action"] == "pk_history")
 			$sql_num_results = mysqli_num_rows($sql_result);
 			$counter = 1;
 			$result_limit = 0;
+			$echo_buffer = NULL;
 
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
@@ -813,15 +814,17 @@ if($_GET["action"] == "pk_history")
 				// How many cycles back did this take place?
 				$cycles_back = intval((time() - $sql_row["timestamp"]) / 300);
 
-				echo "---TIMESTAMP$counter=" . $sql_row["timestamp"];
-				echo "---FROM$counter=" . base64_encode($sql_row["public_key_from"]);
-				echo "---AMOUNT$counter=$transaction_amount";
-				echo "---VERIFY$counter=$cycles_back";
-				echo "---MESSAGE$counter=$inside_message---END$counter";
+				$echo_buffer.= "---TIMESTAMP$counter=" . $sql_row["timestamp"];
+				$echo_buffer.= "---FROM$counter=" . base64_encode($sql_row["public_key_from"]);
+				$echo_buffer.= "---AMOUNT$counter=$transaction_amount";
+				$echo_buffer.= "---VERIFY$counter=$cycles_back";
+				$echo_buffer.= "---MESSAGE$counter=$inside_message---END$counter";
 
 				$counter++;
 				$result_limit++;
 			}
+
+			echo $echo_buffer;
 
 			// Log inbound IP activity
 			log_ip("AP", scale_trigger(100));
@@ -837,7 +840,8 @@ if($_GET["action"] == "pk_history")
 			$sql_num_results = mysqli_num_rows($sql_result);
 			$counter = 1;
 			$result_limit = 0;
-
+			$echo_buffer = NULL;
+				
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
 				if($result_limit >= $last)
@@ -858,15 +862,17 @@ if($_GET["action"] == "pk_history")
 				// How many cycles back did this take place?
 				$cycles_back = intval((time() - $sql_row["timestamp"]) / 300);
 
-				echo "---TIMESTAMP$counter=" . $sql_row["timestamp"];
-				echo "---TO$counter=" . base64_encode($sql_row["public_key_to"]);
-				echo "---AMOUNT$counter=$transaction_amount";
-				echo "---VERIFY$counter=$cycles_back";
-				echo "---MESSAGE$counter=$inside_message---END$counter";
+				$echo_buffer.= "---TIMESTAMP$counter=" . $sql_row["timestamp"];
+				$echo_buffer.= "---TO$counter=" . base64_encode($sql_row["public_key_to"]);
+				$echo_buffer.= "---AMOUNT$counter=$transaction_amount";
+				$echo_buffer.= "---VERIFY$counter=$cycles_back";
+				$echo_buffer.= "---MESSAGE$counter=$inside_message---END$counter";
 
 				$counter++;
 				$result_limit++;
 			}
+
+			echo $echo_buffer;
 
 			// Log inbound IP activity
 			log_ip("AP", scale_trigger(100));
@@ -906,6 +912,7 @@ if($_GET["action"] == "tk_trans_total")
 
 		$counter = -1; // Transaction back from present cycle
 		$output_counter = 1;
+		$echo_buffer = NULL;
 
 		while($last > 0)
 		{
@@ -935,14 +942,16 @@ if($_GET["action"] == "tk_trans_total")
 				}
 			}
 
-			echo "---TIMESTAMP$output_counter=" . transaction_cycle($counter);
-			echo "---NUM$output_counter=$transaction_counter";
-			echo "---AMOUNT$output_counter=$amount---END$output_counter";
+			$echo_buffer.= "---TIMESTAMP$output_counter=" . transaction_cycle($counter);
+			$echo_buffer.= "---NUM$output_counter=$transaction_counter";
+			$echo_buffer.= "---AMOUNT$output_counter=$amount---END$output_counter";
 
 			$output_counter++;
 			$counter--;
 			$last--;
 		}
+
+		echo $echo_buffer;
 
 	}// End Permission Check
 

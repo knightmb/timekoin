@@ -2204,8 +2204,8 @@ if($_SESSION["valid_login"] == TRUE)
 			if($network_mode == 1)
 			{
 				// Do both IPv4 & IPv6 Firewall Testing
-				$firewall_poll = filter_sql(file_get_contents('http://timekoin.com/utility/firewall.php', FALSE, $context, NULL, 1024));
-				$firewall_poll_v6 = filter_sql(file_get_contents('http://ipv6.timekoin.net/utility/firewall.php', FALSE, $context, NULL, 1024));
+				$firewall_poll = filter_sql(file_get_contents('http://timekoin.net/firewall.php', FALSE, $context, NULL, 1024));
+				$firewall_poll_v6 = filter_sql(file_get_contents('http://ipv6.timekoin.net/firewall.php', FALSE, $context, NULL, 1024));
 
 				if(empty($firewall_poll) == TRUE)
 				{
@@ -2225,7 +2225,7 @@ if($_SESSION["valid_login"] == TRUE)
 			if($network_mode == 2)
 			{
 				// IPv4 Firewall Testing
-				$firewall_poll = filter_sql(file_get_contents('http://timekoin.com/utility/firewall.php', FALSE, $context, NULL, 1024));
+				$firewall_poll = filter_sql(file_get_contents('http://timekoin.net/firewall.php', FALSE, $context, NULL, 1024));
 
 				if(empty($firewall_poll) == TRUE)
 				{
@@ -2240,7 +2240,7 @@ if($_SESSION["valid_login"] == TRUE)
 			if($network_mode == 3)
 			{
 				// IPv6 Firewall Testing
-				$firewall_poll_v6 = filter_sql(file_get_contents('http://ipv6.timekoin.net/utility/firewall.php', FALSE, $context, NULL, 1024));
+				$firewall_poll_v6 = filter_sql(file_get_contents('http://ipv6.timekoin.net/firewall.php', FALSE, $context, NULL, 1024));
 
 				if(empty($firewall_poll_v6) == TRUE)
 				{
@@ -2376,7 +2376,7 @@ if($_SESSION["valid_login"] == TRUE)
 						$display_balance = db_cache_balance($my_public_key);
 						$body_string = send_receive_body($public_key_64, $send_amount, TRUE, NULL, $message);
 						$body_string .= '<hr><font color="red"><strong>This public key may not be valid as it has no existing history of transactions.<br>
-							There is no way to recover timekoins sent to the wrong public key.<br>
+							There is no way to recover Timekoins sent to the wrong public key.<br>
 							Click "Send Timekoins" to send now.</strong></font><br><br>';
 					}
 					else
@@ -2424,11 +2424,12 @@ if($_SESSION["valid_login"] == TRUE)
 						// Now it's time to send the transaction
 						$my_private_key = my_private_key();
 
+						//if(send_timekoins($my_private_key, $my_public_key, $public_key_to, $send_amount, $message) == TRUE)
 						if(send_timekoins($my_private_key, $my_public_key, $public_key_to, $send_amount, $message) == TRUE)
 						{
 							$display_balance = db_cache_balance($my_public_key);
 							$body_string = send_receive_body($public_key_64, $send_amount);
-							$body_string .= '<hr><font color="green"><strong>You just sent ' . $send_amount . ' timekoins to the above public key.</strong></font><br>
+							$body_string .= '<hr><font color="green"><strong>You just sent ' . $send_amount . ' TK to the above public key.</strong></font><br>
 							<font color="blue"><strong>Your balance will not reflect this until the transaction is recorded across the entire network.</strong></font><br><br>';
 						}
 						else
@@ -2449,7 +2450,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 					if(empty($_POST["easy_key"]) == FALSE)
 					{
-						$easy_key = filter_sql(easy_key_lookup($_POST["easy_key"])); // Filter SQL just in case
+						$easy_key = filter_sql(base64_encode(easy_key_lookup($_POST["easy_key"]))); // Filter SQL just in case
 
 						if(empty($easy_key) == TRUE)
 						{
@@ -2478,17 +2479,14 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			$body_string = '<FORM ACTION="index.php?menu=send&amp;easy_key=create" METHOD="post">
 			<table border="0" cellpadding="6"><tr><td><font color="green"><strong>Create New Easy Key</strong></font></td></tr>
-			<tr><td><strong>Creation Fee: <font color="green">' . num_gen_peers() . ' TK</font></strong></td></tr>
-			<tr><td><strong><font color="blue">New Public Key</font></strong><BR>
-			<textarea name="easy_public_key" rows="6" cols="75"></textarea></td></tr>
+			<tr><td><strong>Creation Fee: <font color="green">' . (num_gen_peers(FALSE, TRUE) + 1) . ' TK</font></strong></td></tr>
 			<tr><td><strong><font color="blue">New Easy Key</font></strong><BR>
 			<input type="text" maxlength="64" size="64" value="" name="new_easy_key" /></td></tr></table>
 			<input type="submit" value="Create New Easy Key" /></FORM>';
 
 			$quick_info = '<strong>Easy Keys</strong> are shortcuts enabling access to much longer <font color="blue">Public Keys</font> in Timekoin.</br><BR>
-			An <strong>Easy Key</strong> can be an e-mail address, a custom word, or number that you create.</br></br>
 			A New <strong>Easy Key</strong> shortcut you create must be between 1 and 64 characters in length including spaces.</br></br>
-			Each <strong>Easy Key</strong> shortcut may only contain letters, digits, or special characters such as</br><strong> ^ ! - _ . { } @ [ ]</strong><BR><BR>
+			Each <strong>Easy Key</strong> shortcut may only contain letters, digits, or special characters.</br>No <strong>| ? = \' ` * %</strong> characters allowed.<BR><BR>
 			All <strong>Easy Keys <font color="red">Expire</font></strong> after <strong><font color="blue">3 Months</font></strong> unless you renew the key by creating it again with the same <font color="blue">Public Key</font> as before.';
 		}
 		else
@@ -2502,17 +2500,100 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["easy_key"] == "create")
 		{
-			$easy_public_key = $_POST["easy_public_key"];
-			$new_easy_key = $_POST["new_easy_key"];			
-			
-			$body_string = $easy_public_key . '<BR><BR>' . $new_easy_key;
+			$new_easy_key = $_POST["new_easy_key"];
+			$easy_key_lookup = easy_key_lookup($new_easy_key);
+			$create_check = FALSE;
+
+			if($easy_key_lookup == "")
+			{
+				// None exist, let's create it
+				$create_check = TRUE;
+			}
+			else
+			{
+				// One already exist, is it ours?
+				if($easy_key_lookup == $my_public_key)
+				{
+					// Going to renew our existing easy key
+					$create_check = TRUE;
+				}
+			}
+
+			if($create_check == TRUE)
+			{
+				if(strlen($new_easy_key) >= 1 && strlen($new_easy_key) <= 64)
+				{
+					$old_strlen = strlen($new_easy_key);
+					$new_easy_key = filter_sql($new_easy_key);
+					$symbols = array("|", "?", "="); // SQL + URL
+					$new_easy_key = str_replace($symbols, "", $new_easy_key);
+
+					if($old_strlen == strlen($new_easy_key))
+					{
+						// All checks complete for valid input, check if server has enough TK
+						// to purchase the Easy Key
+						if(db_cache_balance($my_public_key) >= (num_gen_peers(FALSE, TRUE) + 1))
+						{
+							$sql = "SELECT public_key FROM `generating_peer_list` GROUP BY `public_key`";
+							$sql_result = mysqli_query($db_connect, $sql);
+							$sql_num_results = mysqli_num_rows($sql_result);
+							$my_private_key = my_private_key();
+							$my_public_key = my_public_key();
+
+							for ($i = 0; $i < $sql_num_results; $i++)
+							{
+								$sql_row = mysqli_fetch_array($sql_result);
+
+								if($sql_row["public_key"] != $my_public_key)
+								{
+									if(send_timekoins($my_private_key, $my_public_key, $sql_row["public_key"], 1, "New Easy Key Fee") == FALSE)
+									{
+										write_log($ip_mode . "New Easy Key Fee Transaction Failed for Public Key:<br>" . base64_encode($sql_row["public_key"]),"GU");
+									}
+									else
+									{
+										write_log($ip_mode . "New Easy Key Fee Sent to Public Key:<br>" . base64_encode($sql_row["public_key"]),"GU");
+									}
+								}
+							}
+							
+							// Finally, send transaction to Easy Key Blackhole Address
+							// with a 45 Minute Delay
+							if(send_timekoins($my_private_key, $my_public_key, base64_decode(EASY_KEY_PUBLIC_KEY), 1, $new_easy_key, (time() + 2700)) == TRUE)
+							{
+								$body_string = '<BR><BR><font color="green"><strong>Easy Key [' . $new_easy_key . '] Has Been Submitted to the Timekoin Network!</font><BR><BR>
+								Your Easy Key Should be Active Within 45 Minutes.<BR>
+								If You Are Renewing Your Key Before it Expires, then Expect No Delay.</strong>';
+							}
+							else
+							{
+								write_log($ip_mode . "Easy Key Transaction for Creation Failed to Send","GU");
+							}
+						}
+						else
+						{
+							$body_string = '<BR><BR><font color="red"><strong>Creation Fee of [' . (num_gen_peers(FALSE, TRUE) + 1) . '] TK Needed to Create This Easy Key!</strong></font>';
+						}
+					}
+					else
+					{
+						$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' Has Invalid Characters!</strong></font>';
+					}
+				}
+				else
+				{
+					$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' Character Length Incorrect!</strong></font>';
+				}
+			}
+			else
+			{
+				$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' is Taken Already!</strong></font>';
+			}
 		}
 
 		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong>Current Server Balance: <font color="green">' . number_format($display_balance) . '</font></strong></td></tr>
-			<tr><td><strong><font color="green">My Public Key</font> to receive:</strong></td></tr>
-			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
-
-
+		<tr><td><strong><font color="green">My Public Key</font> to receive:</strong></td></tr>
+		<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
 
 		home_screen('Send / Receive Timekoins', $text_bar, $body_string , $quick_info);
 		exit;

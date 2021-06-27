@@ -73,22 +73,20 @@ if($_GET["action"] == "transaction_data" && $_GET["block_number"] >= 0)
 	$sql_result = mysqli_query($db_connect, $sql);
 	$sql_num_results = mysqli_num_rows($sql_result);
 	$c = 1;
-	$echo_buffer;
+	$echo_buffer = NULL;
 
 	if($sql_num_results > 0)
 	{
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
 			$sql_row = mysqli_fetch_array($sql_result);
-		
-			$echo_buffer = NULL;
 			$echo_buffer.= "-----timestamp$c=" . $sql_row["timestamp"] . "-----public_key_from$c=" . base64_encode($sql_row["public_key_from"]) . "-----public_key_to$c=" . base64_encode($sql_row["public_key_to"]);
 			$echo_buffer.= "-----crypt1data$c=" . $sql_row["crypt_data1"] . "-----crypt2data$c=" . $sql_row["crypt_data2"] . "-----crypt3data$c=" . $sql_row["crypt_data3"] . "-----hash$c=" . $sql_row["hash"];
 			$echo_buffer.= "-----attribute$c=" . $sql_row["attribute"] . "-----end$c";
-
-			echo $echo_buffer;
 			$c++;
-		}		
+		}
+
+		echo $echo_buffer;
 	}
 
 	// Log inbound IP activity
@@ -595,7 +593,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				}
 				else
 				{
-					$peer_number = rand(1,$hash_disagree);// Random peer from array
+					$peer_number = mt_rand(1,$hash_disagree);// Random peer from array
 					$ip_address = $hash_disagree_peers["ip_address$peer_number"];
 					$domain = $hash_disagree_peers["domain$peer_number"];
 					$subfolder = $hash_disagree_peers["subfolder$peer_number"];
@@ -1137,7 +1135,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'peer_transaction_start_blocks' LIMIT 1");
 		}
 
-		if(rand(1,10) == 10) // Randomize to avoid spamming checks all the time
+		if(mt_rand(1,10) == 10) // Randomize to avoid spamming checks all the time
 		{
 			// Poll a random block from a random peer for random accuracy :)
 			// Within the range of the current foundation block to now

@@ -81,7 +81,7 @@ function log_ip($attribute, $multiple = 1, $super_peer_check = FALSE)
 		{
 			// Only count 1 in 4 IP for Super Peer Transaction Clerk to avoid
 			// accidental banning of peers accessing high volume data.
-			if(rand(1,4) != 4)
+			if(mt_rand(1,4) != 4)
 			{
 				return;
 			}
@@ -908,7 +908,7 @@ function check_crypt_balance($public_key)
 }
 //***********************************************************************************
 //***********************************************************************************
-function num_gen_peers($exclude_last_24hours = FALSE)
+function num_gen_peers($exclude_last_24hours = FALSE, $group_public_key = FALSE)
 {
 	// How many peers are generating currency?
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
@@ -916,6 +916,10 @@ function num_gen_peers($exclude_last_24hours = FALSE)
 	if($exclude_last_24hours == TRUE)
 	{
 		return intval(mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_list` WHERE `join_peer_list` < " . (time() - 86400))));
+	}
+	else if($group_public_key == TRUE)
+	{
+		return intval(mysql_result(mysqli_query($db_connect, "SELECT COUNT(DISTINCT `public_key`) FROM `generating_peer_list`")));
 	}
 	else
 	{
@@ -927,15 +931,22 @@ function num_gen_peers($exclude_last_24hours = FALSE)
 function easy_key_lookup($easy_key = "")
 {
 	// Lookup Easy Key in Transaction History
-	if(empty($easy_key) == TRUE) { return; }
+	if(empty($easy_key) == TRUE)
+	{ 
+		return;
+	}
+	else
+	{
+		$easy_key = filter_sql($easy_key);
+	}
 
 	// Does this easy key exist in the transaction history?
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
-	// Look back as far as 3 Months (8,766 Transaction Cycles or 7889400 Seconds)
-	$month_1_cycles = transaction_cycle(-26298);
+	// Look back as far as 3 Months (26,298 Transaction Cycles or 7889400 Seconds)
+	$month_back_cycles = transaction_cycle(-26298);
 	$easy_key_public_key = base64_decode(EASY_KEY_PUBLIC_KEY);
-	$sql = "SELECT public_key_from, crypt_data3 FROM `transaction_history` WHERE `timestamp` >= $month_1_cycles AND `public_key_to` = '$easy_key_public_key'";
+	$sql = "SELECT public_key_from, crypt_data3 FROM `transaction_history` WHERE `timestamp` >= $month_back_cycles AND `public_key_to` = '$easy_key_public_key' ORDER BY `transaction_history`.`timestamp` ASC";
 	$sql_result = mysqli_query($db_connect, $sql);
 	$sql_num_results = mysqli_num_rows($sql_result);
 
@@ -948,7 +959,7 @@ function easy_key_lookup($easy_key = "")
 		if($transaction_message == $easy_key)
 		{
 			// Easy Key Found, Return Public Key Associated With It
-			return base64_encode($sql_row["public_key_from"]);
+			return $sql_row["public_key_from"];
 		}
 	}
 
@@ -1378,7 +1389,7 @@ function db_cache_balance($my_public_key)
 }
 //***********************************************************************************
 //***********************************************************************************
-function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $amount, $message)
+function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $amount, $message, $custom_timestamp = FALSE)
 {
 	$arr1 = str_split($send_to_public_key, 181);
 
@@ -1401,9 +1412,15 @@ function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $a
 	$encryptedData64_3 = base64_encode($encryptedData3);
 	$triple_hash_check = hash('sha256', $encryptedData64_1 . $encryptedData64_2 . $encryptedData64_3);
 
+	if($custom_timestamp == FALSE)
+	{
+		// Standard Timestamp
+		$custom_timestamp = time();
+	}
+
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	$sql = "INSERT INTO `my_transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`) VALUES 
-		('" . time() . "', '$my_public_key', '$encryptedData64_1', '$encryptedData64_2' , '$encryptedData64_3', '$triple_hash_check' , 'T')";
+		('$custom_timestamp', '$my_public_key', '$encryptedData64_1', '$encryptedData64_2' , '$encryptedData64_3', '$triple_hash_check' , 'T')";
 
 	if(mysqli_query($db_connect, $sql) == TRUE)
 	{
@@ -1937,6 +1954,34 @@ function initialization_database()
 	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0);
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('network_mode', '$db_to_RAM')");	
 //**************************************
+//***********************************************************************************
+	// Check that the TK Foundation Seed is set in memory
+	// Do we have a valid and recent transaction foundation to access?
+	$TK_foundation_seed_block = foundation_cycle(-2, TRUE);
+	$TK_foundation_seed_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_foundation` WHERE `block` = $TK_foundation_seed_block LIMIT 1"),0,0);
+	
+	if(empty($TK_foundation_seed_hash) == FALSE)
+	{
+		// Create a number from the hash to seed the TK random number generator
+		$number_seed = NULL;
+		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 1);
+		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 2);
+		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 3);
+		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 4);
+		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 5);
+		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 6);
+		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 7);
+		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 8);
+		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 9);
+
+		// Save new seed number
+		mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$number_seed' WHERE `main_loop_status`.`field_name` = 'TKFoundationSeed' LIMIT 1");
+	}
+	else
+	{
+		write_log("Missing Transaction Foundation #$TK_foundation_seed_block to Build TK Foundation Seed", "MA");
+	}
+//***********************************************************************************
 	return 0;
 }
 //***********************************************************************************
@@ -2136,14 +2181,14 @@ function generate_new_keys()
 //***********************************************************************************
 function check_for_updates($code_feedback = FALSE)
 {
-	// Poll timekoin.com for any program updates
+	// Poll timekoin.net for any program updates
 	$context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
 	ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
 	ini_set('default_socket_timeout', 10); // Timeout for request in seconds
 
 	$update_check1 = 'Checking for Updates....<br><br>';
 
-	$poll_version = file_get_contents("https://timekoin.com/tkupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
+	$poll_version = file_get_contents("https://timekoin.net/tkupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
 
 	if($poll_version > TIMEKOIN_VERSION && empty($poll_version) == FALSE)
 	{
@@ -2158,7 +2203,7 @@ function check_for_updates($code_feedback = FALSE)
 	}
 	else
 	{
-		$update_check1 .= '<strong><font color="red">ERROR: Could Not Contact Secure Server https://timekoin.com</font></strong>';
+		$update_check1 .= '<strong><font color="red">ERROR: Could Not Contact Secure Server https://timekoin.net</font></strong>';
 	}
 
 	return $update_check1;
@@ -2195,7 +2240,7 @@ function check_update_script($script_name, $script, $php_script_file, $poll_vers
 {
 	$update_status_return = NULL;
 	
-	$poll_sha = file_get_contents("https://timekoin.com/tkupdates/v$poll_version/$script.sha", FALSE, $context, NULL, 64);
+	$poll_sha = file_get_contents("https://timekoin.net/tkupdates/v$poll_version/$script.sha", FALSE, $context, NULL, 64);
 
 	if(empty($poll_sha) == FALSE)
 	{
@@ -2220,7 +2265,7 @@ function check_update_script($script_name, $script, $php_script_file, $poll_vers
 //***********************************************************************************
 function get_update_script($php_script, $poll_version, $context)
 {
-	return file_get_contents("https://timekoin.com/tkupdates/v$poll_version/$php_script.txt", FALSE, $context, NULL);
+	return file_get_contents("https://timekoin.net/tkupdates/v$poll_version/$php_script.txt", FALSE, $context, NULL);
 }
 //***********************************************************************************
 //***********************************************************************************
@@ -2270,12 +2315,12 @@ function run_script_update($script_name, $script_php, $poll_version, $context, $
 //***********************************************************************************
 function do_updates()
 {
-	// Poll timekoin.com for any program updates
+	// Poll timekoin.net for any program updates
 	$context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
 	ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
 	ini_set('default_socket_timeout', 10); // Timeout for request in seconds
 
-	$poll_version = file_get_contents("https://timekoin.com/tkupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
+	$poll_version = file_get_contents("https://timekoin.net/tkupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
 
 	$update_status = 'Starting Update Process...<br><br>';
 
@@ -2345,12 +2390,12 @@ function do_updates()
 		$update_status .= run_script_update("Function Storage (function.php)", "function", $poll_version, $context);
 		//****************************************************
 
-		$finish_message = file_get_contents("https://timekoin.com/tkupdates/v$poll_version/ZZZfinish.txt", FALSE, $context, NULL);
+		$finish_message = file_get_contents("https://timekoin.net/tkupdates/v$poll_version/ZZZfinish.txt", FALSE, $context, NULL);
 		$update_status .= '<br>' . $finish_message;
 	}
 	else
 	{
-		$update_status .= '<font color="red"><strong>ERROR: Could Not Contact Secure Server https://timekoin.com</strong></font>';
+		$update_status .= '<font color="red"><strong>ERROR: Could Not Contact Secure Server https://timekoin.net</strong></font>';
 	}
 
 	return $update_status;

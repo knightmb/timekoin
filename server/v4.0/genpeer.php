@@ -54,14 +54,16 @@ if($_GET["action"] == "gen_peer_list")
 
 	if($sql_num_results > 0)
 	{
+		$echo_buffer = NULL;
+		
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
 			$sql_row = mysqli_fetch_array($sql_result);
-
-			echo "-----public_key$queue_number=" , base64_encode($sql_row["public_key"]) , "-----join$queue_number=" , $sql_row["join_peer_list"] , "-----last$queue_number=" , $sql_row["last_generation"] , "-----ip$queue_number=" , $sql_row["IP_Address"] , "-----END$queue_number";
-
+			$echo_buffer.= "-----public_key$queue_number=" . base64_encode($sql_row["public_key"]) . "-----join$queue_number=" . $sql_row["join_peer_list"] . "-----last$queue_number=" . $sql_row["last_generation"] . "-----ip$queue_number=" . $sql_row["IP_Address"] . "-----END$queue_number";
 			$queue_number++;
 		}
+
+		echo $echo_buffer;
 	}
 
 	// Log inbound IP activity
@@ -375,8 +377,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 //***********************************************************************************
 // Generation IP Auto Update Detection
 	$auto_update_generation_IP = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,0));
-	
-	if(rand(1,100) == 100 && $auto_update_generation_IP == 1) // Randomize to avoid spamming
+
+	if(mt_rand(1,50) == 25 && $auto_update_generation_IP == 1) // Randomize to avoid spamming
 	{
 		auto_update_IP_address();
 	}
@@ -450,7 +452,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$generation_peer_list_no_sync' WHERE `main_loop_status`.`field_name` = 'generation_peer_list_no_sync' LIMIT 1");
 		}
 
-		$i = rand(1, $gen_list_hash_different); // Select Random Peer from Disagree List
+		$i = mt_rand(1, $gen_list_hash_different); // Select Random Peer from Disagree List
 		$ip_address = $hash_different["ip_address$i"];
 		$domain = $hash_different["domain$i"];
 		$subfolder = $hash_different["subfolder$i"];
@@ -498,7 +500,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 			if(empty($public_key_match) == TRUE)
 			{
 				// No match in database to this public key
-				if(strlen($gen_peer_public_key) > 256 && empty($gen_peer_public_key) == FALSE && $gen_peer_join_peer_list <= $current_generation_cycle && $gen_peer_join_peer_list > TRANSACTION_EPOCH)
+				if(strlen($gen_peer_public_key) > 256 && empty($gen_peer_public_key) == FALSE && empty($gen_peer_IP) == FALSE && $gen_peer_join_peer_list <= $current_generation_cycle && $gen_peer_join_peer_list > TRANSACTION_EPOCH)
 				{
 					$sql = "INSERT INTO `generating_peer_list` (`public_key`,`join_peer_list`,`last_generation`,`IP_Address`)
 					VALUES ('$gen_peer_public_key', '$gen_peer_join_peer_list', '$gen_peer_last_generation', '$gen_peer_IP')";
@@ -521,7 +523,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 	else
 	{
 		// Clear out any out of sync counts once the list is in sync
-		if(rand(1,3) == 2) // Randomize to avoid spamming the DB
+		if(mt_rand(1,3) == 2) // Randomize to avoid spamming the DB
 		{
 			// Reset out of sync counter
 			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'generation_peer_list_no_sync' LIMIT 1");
@@ -743,9 +745,9 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								is_private_ip($peer_ip) == FALSE) // Filter private IPs
 							{
 								// Did this Public Key pay the minimum fee to enter election
-								$pre_transaction_cycle = transaction_cycle(-9); // Check within the previous 45 minutes
+								$pre_transaction_cycle = transaction_cycle(-10); // Check within the previous 45 minutes
 								
-								$payment_sql = "SELECT public_key FROM `generating_peer_list`";
+								$payment_sql = "SELECT public_key FROM `generating_peer_list` GROUP BY `public_key`";
 								$payment_sql_result = mysqli_query($db_connect, $payment_sql);
 								$payment_sql_num_results = mysqli_num_rows($payment_sql_result);
 								$all_generating_peers_paid = TRUE;
@@ -755,7 +757,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 									$payment_sql_row = mysqli_fetch_array($payment_sql_result);
 
 									$pay_this_public_key = $payment_sql_row["public_key"];
-									$sql_fee_result = mysql_result(mysqli_query($db_connect, "SELECT crypt_data3 FROM `transaction_history` WHERE `timestamp` >= '$pre_transaction_cycle' AND `public_key_from` = '$public_key' AND `public_key_to` = '$pay_this_public_key' LIMIT 1"),0,0);
+									$sql_fee_result = mysql_result(mysqli_query($db_connect, "SELECT crypt_data3 FROM `transaction_history` WHERE `timestamp` >= '$pre_transaction_cycle' AND `public_key_from` = '$public_key' AND `public_key_to` = '$pay_this_public_key' LIMIT 1"));
 									$transaction_info = tk_decrypt($public_key, base64_decode($sql_fee_result));
 									$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 									if($transaction_amount_sent == "") { $transaction_amount_sent = 0; }
@@ -972,7 +974,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							{
 								if(election_cycle(1) == TRUE) // Don't update myself until right before the peer election
 								{
-									if(empty($IP_exist1) == TRUE)// Check to make sure this isn't already in the database
+									if(empty($IP_exist1) == TRUE && empty($peer_ip) == FALSE)// Check to make sure this isn't already in the database
 									{
 										mysqli_query($db_connect, "UPDATE `generating_peer_list` SET `IP_Address` = '$peer_ip' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
 										write_log("IPv4 Generation Peer List was updated with My New IP Address ($peer_ip)", "GP");
@@ -1233,9 +1235,9 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								is_private_ip($peer_ip) == FALSE) // Filter private IPs
 							{
 								// Did this Public Key pay the minimum fee to enter election
-								$pre_transaction_cycle = transaction_cycle(-9); // Check within the previous 45 minutes
+								$pre_transaction_cycle = transaction_cycle(-10); // Check within the previous 45 minutes
 								
-								$payment_sql = "SELECT public_key FROM `generating_peer_list`";
+								$payment_sql = "SELECT public_key FROM `generating_peer_list` GROUP BY `public_key`";
 								$payment_sql_result = mysqli_query($db_connect, $payment_sql);
 								$payment_sql_num_results = mysqli_num_rows($payment_sql_result);
 								$all_generating_peers_paid = TRUE;
@@ -1245,7 +1247,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 									$payment_sql_row = mysqli_fetch_array($payment_sql_result);
 
 									$pay_this_public_key = $payment_sql_row["public_key"];
-									$sql_fee_result = mysql_result(mysqli_query($db_connect, "SELECT crypt_data3 FROM `transaction_history` WHERE `timestamp` >= '$pre_transaction_cycle' AND `public_key_from` = '$public_key' AND `public_key_to` = '$pay_this_public_key' LIMIT 1"),0,0);
+									$sql_fee_result = mysql_result(mysqli_query($db_connect, "SELECT crypt_data3 FROM `transaction_history` WHERE `timestamp` >= '$pre_transaction_cycle' AND `public_key_from` = '$public_key' AND `public_key_to` = '$pay_this_public_key' LIMIT 1"));
 									$transaction_info = tk_decrypt($public_key, base64_decode($sql_fee_result));
 									$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 									if($transaction_amount_sent == "") { $transaction_amount_sent = 0; }
@@ -1461,7 +1463,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							{
 								if(election_cycle(1) == TRUE) // Don't update myself until right before the peer election
 								{
-									if(empty($IP_exist1) == TRUE)// Check to make sure this isn't already in the database
+									if(empty($IP_exist1) == TRUE && empty($peer_ip) == FALSE)// Check to make sure this isn't already in the database
 									{
 										mysqli_query($db_connect, "UPDATE `generating_peer_list` SET `IP_Address` = '$peer_ip' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
 										write_log("IPv6 Generation Peer List was updated with My New IP Address ($peer_ip)", "GP");

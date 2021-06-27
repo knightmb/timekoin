@@ -86,8 +86,9 @@ $next_transaction_cycle = transaction_cycle(1);
 //*****************************************************************************************************
 // Check my transaction queue and copy pending transaction to the main transaction queue, giving priority
 // to self created transactions over 3rd party submitted transactions
-$sql = "(SELECT * FROM `my_transaction_queue` WHERE `public_key` = '" . my_public_key() . "' ORDER BY `my_transaction_queue`.`timestamp` ASC) 
-	UNION (SELECT * FROM `my_transaction_queue` ORDER BY `my_transaction_queue`.`timestamp` ASC) LIMIT 1000";
+
+$sql = "(SELECT * FROM `my_transaction_queue` WHERE `public_key` = '" . my_public_key() . "' AND `timestamp` < '" . time() . "' ORDER BY `my_transaction_queue`.`timestamp` ASC) 
+	UNION (SELECT * FROM `my_transaction_queue` WHERE `public_key` != '" . my_public_key() . "' AND `timestamp` < '" . time() . "' ORDER BY `my_transaction_queue`.`timestamp` ASC) LIMIT 1000";
 
 $sql_result = mysqli_query($db_connect, $sql);
 $sql_num_results = mysqli_num_rows($sql_result);
@@ -533,8 +534,7 @@ if($sql_num_results > 0)
 				// Validate transaction against known public key balance
 				if(check_crypt_balance($public_key) >= $transaction_amount_sent && $transaction_amount_sent > 0 && $amount_valid == TRUE)
 				{
-					// Balance checks out
-				
+					// Balance checks out...
 					// Check hash value for tampering of crypt1, crypt2, or crypt3 fields
 					if(hash('sha256', $crypt1 . $crypt2 . $crypt3) == $hash_check)
 					{
@@ -546,19 +546,101 @@ if($sql_num_results > 0)
 
 						if(strlen($public_key) > 300 && strlen($public_key_to) > 300 && $public_key !== $public_key_to) // Filter to/from self public keys
 						{
-							// Public key not found, insert into final transaction history
 							$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from` , `public_key_to` , `crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
-								VALUES ($time_created, '$public_key', '$public_key_to' , '$crypt1', '$crypt2', '$crypt3', '$hash_check', 'T')";
+							VALUES ($time_created, '$public_key', '$public_key_to' , '$crypt1', '$crypt2', '$crypt3', '$hash_check', 'T')";
 
-							if(mysqli_query($db_connect, $sql) == FALSE)
+							if($public_key_to !== base64_decode(EASY_KEY_PUBLIC_KEY))
 							{
-								//Something didn't work
-								write_log("Transaction Database Insert Failed for this Key: " . base64_encode($public_key), "T");
-								$record_failure_counter++;
+								// Insert into final transaction history
+								if(mysqli_query($db_connect, $sql) == FALSE)
+								{
+									//Something didn't work
+									write_log("Transaction Database Insert Failed for this Key: " . base64_encode($public_key), "T");
+									$record_failure_counter++;
+								}
+								else
+								{
+									$record_insert_counter++;
+								}							
 							}
 							else
 							{
-								$record_insert_counter++;
+								// Extra steps needed to verify Easy Key Transactions
+								$transaction_message = find_string("---MSG=", "", $transaction_info, TRUE);
+								$easy_key_lookup = easy_key_lookup($transaction_message);
+
+								if($easy_key_lookup === $public_key)
+								{
+									// This public key already owns this easy key
+									$easy_key_check = TRUE;
+								}
+								else if($easy_key_lookup !== $public_key && empty($easy_key_lookup) == FALSE)
+								{
+									// This other public key already owns this easy key
+									$easy_key_check = FALSE;
+								}
+								else
+								{
+									// No Easy Key Exist by this Name
+									$easy_key_check = TRUE;
+								}
+
+								if($easy_key_check == TRUE)
+								{
+									// Have all the generating peers been paid the Easy Key Fee?
+									$pre_transaction_cycle = transaction_cycle(-10); // Check within the previous 45 minutes
+									$payment_sql = "SELECT public_key FROM `generating_peer_list` GROUP BY `public_key`";
+									$payment_sql_result = mysqli_query($db_connect, $payment_sql);
+									$payment_sql_num_results = mysqli_num_rows($payment_sql_result);
+									$all_generating_peers_paid = TRUE;
+									$my_public_key = my_public_key();
+
+									for ($i_pay = 0; $i_pay < $payment_sql_num_results; $i_pay++)
+									{
+										$payment_sql_row = mysqli_fetch_array($payment_sql_result);
+										$pay_this_public_key = $payment_sql_row["public_key"];									
+										
+										if($pay_this_public_key !== $my_public_key)// You don't pay yourself
+										{
+											$sql_fee_result = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `timestamp` >= '$pre_transaction_cycle' AND `public_key_from` = '$public_key' AND `public_key_to` = '$pay_this_public_key' LIMIT 1"));
+
+											if(empty($sql_fee_result) == TRUE)
+											{
+												// Payment to this Generating Peer Does NOT Exist!
+												$all_generating_peers_paid = FALSE;
+												break;
+											}
+										}
+									}
+
+									if($all_generating_peers_paid == TRUE)
+									{
+										// Insert into final transaction history
+										if(mysqli_query($db_connect, $sql) == FALSE)
+										{
+											//Something didn't work
+											write_log("Transaction Database Insert Failed for this Key: " . base64_encode($public_key), "T");
+											$record_failure_counter++;
+										}
+										else
+										{
+											$record_insert_counter++;
+										}
+									}
+									else
+									{
+										// Transaction will NOT be recorded due to lack of payment to all Generating Peers
+										write_log("Easy Key [$transaction_message] Failed for Lack of Payment to All Generating Peers by Public Key:<BR>" . base64_encode($public_key), "T");
+										$safe_delete_transaction = TRUE;
+										$record_failure_counter++;
+									}
+								}
+								else
+								{
+									write_log("Easy Key [$transaction_message] Already Belongs To Public Key: " . base64_encode($easy_key_lookup), "T");
+									$safe_delete_transaction = TRUE;
+									$record_failure_counter++;
+								}
 							}
 						}
 						else
@@ -630,7 +712,7 @@ if($sql_num_results > 0)
 }
 else
 {
-	if(rand(1,4) == 4)// Randomize to cut down on DB I/O
+	if(mt_rand(1,4) == 4)// Randomize to cut down on DB I/O
 	{
 		// Wipe transaction that are too old to be used in the next transaction cycle
 		mysqli_query($db_connect, "DELETE QUICK FROM `transaction_queue` WHERE `transaction_queue`.`timestamp` < $previous_transaction_cycle");

@@ -148,8 +148,8 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 	// Normal, none transaction queue balance index query
 	if($queue_index_created == FALSE) // Only do one or the other at a time
 	{
-		// 1000 Transaction Cycles Back in time to index
-		$time_back = time() - 300000;
+		// 500 Transaction Cycles Back in time to index
+		$time_back = transaction_cycle(-500);
 
 		// Pick a Random Transaction from the Past
 		$public_key_from = mysql_result(mysqli_query($db_connect, "SELECT public_key_to FROM `transaction_history` WHERE `public_key_to` != '" . base64_decode(EASY_KEY_PUBLIC_KEY) . "' AND `timestamp` > $time_back AND `attribute` = 'T' GROUP BY `public_key_to` ORDER BY RAND() LIMIT 1"),0,0);

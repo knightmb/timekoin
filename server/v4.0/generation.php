@@ -158,7 +158,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 			// What Public Key is using my IPv4 Address?			
 			$key_generation_IP = mysql_result(mysqli_query($db_connect, "SELECT public_key FROM `generating_peer_list` WHERE `IP_Address` = '$my_generation_IP' LIMIT 1"),0,0);
 
-			if($my_generation_IP != $my_peer_generation_IP && empty($found_public_key) == FALSE)
+			if($my_generation_IP != $my_peer_generation_IP && empty($found_public_key) == FALSE && empty($my_generation_IP) == FALSE)
 			{
 				// My IP is not the same as the one recorded in the generation peer list.
 				// Use an election request to update all the peers to the new address.
@@ -195,7 +195,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						$my_private_key = my_private_key();
 
 						// Generate a network request to be added to the generation peer list
-						$generation_request = ARBITRARY_KEY . rand(1, 999999);
+						$generation_request = ARBITRARY_KEY . mt_rand(1, 999999);
 
 						// Update Reverse Crypto Testing Data
 						$generation_key_crypt = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_key_crypt' LIMIT 1"),0,0);
@@ -258,12 +258,11 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 
 					if($current_balance >= $gen_peers_total * $gen_peers_total)
 					{
-						$sql = "SELECT public_key FROM `generating_peer_list`";
+						$sql = "SELECT public_key FROM `generating_peer_list` GROUP BY `public_key`";
+						$sql2 = "SELECT crypt_data1, crypt_data2 FROM `my_transaction_queue`";						
 						$sql_result = mysqli_query($db_connect, $sql);
 						$sql_num_results = mysqli_num_rows($sql_result);
 						$my_private_key = my_private_key();
-
-						$sql2 = "SELECT crypt_data1, crypt_data2 FROM `my_transaction_queue`";
 
 						for ($i = 0; $i < $sql_num_results; $i++)
 						{
@@ -292,7 +291,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 
 							if($election_payment == FALSE)
 							{
-								if(send_timekoins($my_private_key, $my_public_key, $sql_row["public_key"], $gen_peers_total, "Election_Fee") == FALSE)
+								if(send_timekoins($my_private_key, $my_public_key, $sql_row["public_key"], $gen_peers_total, "New Election Fee") == FALSE)
 								{
 									write_log($ip_mode . "Creating Election Fee Transaction ($gen_peers_total)TK Failed for Public Key:<br>" . base64_encode($sql_row["public_key"]),"G");
 								}
@@ -325,7 +324,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						$my_private_key = my_private_key();
 
 						// Generate a network request to be added to the generation peer list
-						$generation_request = ARBITRARY_KEY . rand(1, 999999);
+						$generation_request = ARBITRARY_KEY . mt_rand(1, 999999);
 
 						// Update Reverse Crypto Testing Data
 						$generation_key_crypt = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_key_crypt' LIMIT 1"),0,0);
@@ -440,7 +439,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 			// What Public Key is using my IPv6 Address?			
 			$key_generation_IP = mysql_result(mysqli_query($db_connect, "SELECT public_key FROM `generating_peer_list` WHERE `IP_Address` = '$my_generation_IP' LIMIT 1"),0,0);
 
-			if($my_generation_IP != $my_peer_generation_IP && empty($found_public_key) == FALSE)
+			if($my_generation_IP != $my_peer_generation_IP && empty($found_public_key) == FALSE && empty($my_generation_IP) == FALSE)
 			{
 				// My IP is not the same as the one recorded in the generation peer list.
 				// Use an election request to update all the peers to the new address.
@@ -477,7 +476,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						$my_private_key = my_private_key();
 
 						// Generate a network request to be added to the generation peer list
-						$generation_request = ARBITRARY_KEY . rand(1, 999999);
+						$generation_request = ARBITRARY_KEY . mt_rand(1, 999999);
 
 						// Update Reverse Crypto Testing Data
 						$generation_key_crypt = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_key_crypt' LIMIT 1"),0,0);
@@ -540,12 +539,11 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 
 					if($current_balance >= $gen_peers_total * $gen_peers_total)
 					{
-						$sql = "SELECT public_key FROM `generating_peer_list`";
+						$sql = "SELECT public_key FROM `generating_peer_list` GROUP BY `public_key`";
+						$sql2 = "SELECT crypt_data1, crypt_data2 FROM `my_transaction_queue`";
 						$sql_result = mysqli_query($db_connect, $sql);
 						$sql_num_results = mysqli_num_rows($sql_result);
 						$my_private_key = my_private_key();
-
-						$sql2 = "SELECT crypt_data1, crypt_data2 FROM `my_transaction_queue`";
 
 						for ($i = 0; $i < $sql_num_results; $i++)
 						{
@@ -574,7 +572,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 
 							if($election_payment == FALSE)
 							{
-								if(send_timekoins($my_private_key, $my_public_key, $sql_row["public_key"], $gen_peers_total, "Election_Fee") == FALSE)
+								if(send_timekoins($my_private_key, $my_public_key, $sql_row["public_key"], $gen_peers_total, "New Election Fee") == FALSE)
 								{
 									write_log($ip_mode . "Creating Election Fee Transaction ($gen_peers_total)TK Failed for Public Key:<br>" . base64_encode($sql_row["public_key"]),"G");
 								}
@@ -608,7 +606,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						$my_private_key = my_private_key();
 
 						// Generate a network request to be added to the generation peer list
-						$generation_request = ARBITRARY_KEY . rand(1, 999999);
+						$generation_request = ARBITRARY_KEY . mt_rand(1, 999999);
 
 						// Update Reverse Crypto Testing Data
 						$generation_key_crypt = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_key_crypt' LIMIT 1"),0,0);
@@ -709,6 +707,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 	} // Generation enabled check
 
 } // End Time allowed check
+$my_private_key = NULL;//Wipe from memory
 //***********************************************************************************
 //***********************************************************************************
 $loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,0);
