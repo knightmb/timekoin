@@ -775,6 +775,7 @@ if($active_peers < $max_active_peers)
 		{
 			// Active response will remove poll failures
 			$poll_failures--;
+			if($poll_failures < 0) { $poll_failures = 0; }
 			mysqli_query($db_connect, "UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 		}
 
@@ -1261,6 +1262,7 @@ if($new_peers_numbers < $max_new_peers && mt_rand(1,3) == 2)//Randomize a little
 			{
 				//Got a response from an active Timekoin server
 				$poll_failures--;
+				if($poll_failures < 0) { $poll_failures = 0; }
 				mysqli_query($db_connect, "UPDATE `new_peers_list` SET `poll_failures` = $poll_failures WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 			}		
 			else
@@ -1285,6 +1287,7 @@ if($new_peers_numbers < $max_new_peers && mt_rand(1,3) == 2)//Randomize a little
 			{
 				//Got a response from an active Timekoin server that is not full to capacity yet
 				$poll_failures-= 5;
+				if($poll_failures < 0) { $poll_failures = 0; }
 				mysqli_query($db_connect, "UPDATE `new_peers_list` SET `poll_failures` = $poll_failures WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 			}
 		}

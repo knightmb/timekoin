@@ -5,7 +5,7 @@ define("TRANSACTION_EPOCH","1338576300"); // Epoch timestamp: 1338576300
 define("ARBITRARY_KEY","01110100011010010110110101100101"); // Space filler for non-encryption data
 define("SHA256TEST","8c49a2b56ebd8fc49a17956dc529943eb0d73c00ee6eafa5d8b3ba1274eb3ea4"); // Known SHA256 Test Result
 define("TIMEKOIN_VERSION","4.0"); // This Timekoin Software Version
-define("NEXT_VERSION","current_version51.txt"); // What file to check for future versions
+define("NEXT_VERSION","next_version1.txt"); // What file to check for future versions
 // Easy Key Blackhole Public Key
 define("EASY_KEY_PUBLIC_KEY","LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS1UaW1la29pbitFYXN5K0tleStibGFjaytob2xlK2FkZHJlc3MrV3ViYmErbHViYmErZHViK2R1YitSaWtraSt0aWtraSt0YXZpK2JpdGNoK0FuZCt0aGF0cyt0aGUrd2F5K3RoZStuZXdzK2dvZXMrSGl0K3RoZStzYWNrK0phY2srVWgrb2grc29tZXJzYXVsdCtqdW1wK0FpZHMrU2h1bStzaHVtK3NobGlwcGVkeStkb3ArR3Jhc3MrdGFzdGVzK2JhZCtObytqdW1waW5nK2luK3RoZStzZXdlcitCdXJnZXIrdGltZStSdWJiZXIrYmFieStiYWJieStCdW5rZXJzK1llYWgrc2F5K3RoYXQrYWxsK3RoZSt0aW1lK1RpbWVrb2luK0Vhc3krS2V5LS0tLS1FTkQgUFVCTElDIEtFWS0tLS0t");
 
@@ -121,24 +121,16 @@ function scale_trigger($trigger = 100)
 //***********************************************************************************
 function find_string($start_tag, $end_tag, $full_string, $end_match = FALSE)
 {
-	$delimiter = '|';
-	
 	if($end_match == FALSE)
-	{
-		$regex = $delimiter . preg_quote($start_tag, $delimiter) . '(.*?)'  . preg_quote($end_tag, $delimiter)  . $delimiter  . 's';
+	{	
+		preg_match('|' . $start_tag . '(.*?)' . $end_tag . '|', $full_string, $output);
+		return $output[1];
 	}
 	else
 	{
-		$regex = $delimiter . preg_quote($start_tag, $delimiter) . '(.*)'  . preg_quote($end_tag, $delimiter)  . $delimiter  . 's';
+		preg_match('|' . $start_tag . '(.*)|', $full_string, $output);
+		return $output[1];
 	}
-
-	preg_match_all($regex,$full_string,$matches);
-
-	foreach($matches[1] as $found_string)
-	{
-	}
-	
-	return $found_string;
 }
 //***********************************************************************************
 //***********************************************************************************
@@ -1769,14 +1761,49 @@ function is_domain_valid($domain)
 	return $result;
 }
 //***********************************************************************************
-function auto_update_IP_address()
+function auto_update_IP_address($new_start = FALSE)
 {
 	// IPv4 Update
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-	$generation_IP = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,0);
+	$generation_IPv4 = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"));
+	$generation_IPv6 = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP_v6' LIMIT 1"));
+
+	if($new_start == TRUE)
+	{
+		$network_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1")));
+
+		if($network_mode == 1)
+		{
+			//Both IPv4 & IPv6 Mode
+			if(empty($generation_IPv4) == FALSE && empty($generation_IPv6) == FALSE)
+			{
+				// No need to set first time
+				return;
+			}
+		}
+		else if($network_mode == 2)
+		{
+			//IPv4 Mode
+			if(empty($generation_IPv4) == FALSE)
+			{
+				// No need to set first time
+				return;
+			}
+		}
+		else if($network_mode == 3)
+		{
+			//IPv6 Mode
+			if(empty($generation_IPv6) == FALSE)
+			{
+				// No need to set first time
+				return;
+			}
+		}
+	}
+
 	$poll_IP = filter_sql(poll_peer(NULL, 'timekoin.net', NULL, 80, 46, "ipv4.php"));
 
-	if(empty($generation_IP) == TRUE) // IP Field Empty
+	if(empty($generation_IPv4) == TRUE) // IP Field Empty
 	{
 		if(empty($poll_IP) == FALSE && ipv6_test($poll_IP) == FALSE)
 		{
@@ -1789,7 +1816,7 @@ function auto_update_IP_address()
 	else
 	{
 		// Check that existing IP still matches current IP and update if there is no match
-		if($generation_IP != $poll_IP)
+		if($generation_IPv4 != $poll_IP)
 		{
 			if(empty($poll_IP) == FALSE && ipv6_test($poll_IP) == FALSE)
 			{
@@ -1802,10 +1829,9 @@ function auto_update_IP_address()
 	}
 
 	// IPv6 Update	
-	$generation_IP = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP_v6' LIMIT 1"),0,0);
 	$poll_IP = filter_sql(poll_peer(NULL, 'ipv6.timekoin.net', NULL, 80, 46, "ipv6.php"));
 
-	if(empty($generation_IP) == TRUE) // IP Field Empty
+	if(empty($generation_IPv6) == TRUE) // IP Field Empty
 	{
 		if(empty($poll_IP) == FALSE && ipv6_test($poll_IP) == TRUE)
 		{
@@ -1818,7 +1844,7 @@ function auto_update_IP_address()
 	else
 	{
 		// Check that existing IP still matches current IP and update if there is no match
-		if($generation_IP != $poll_IP)
+		if($generation_IPv6 != $poll_IP)
 		{
 			if(empty($poll_IP) == FALSE && ipv6_test($poll_IP) == TRUE)
 			{
@@ -1845,48 +1871,6 @@ function initialization_database()
 
 	// Record when started
 	mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . time() . "' WHERE `options`.`field_name` = 'timekoin_start_time' LIMIT 1");
-//**************************************
-// Upgrade Database from v3.x earlier versions
-
-	// Auto IP Update Settings
-	$new_record_check = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,0);
-	if($new_record_check == "")
-	{
-		// Does not exist, create it
-		mysqli_query($db_connect, "INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('auto_update_generation_IP', '0')");
-	}
-
-	// CLI Mode Settings
-	$new_record_check = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0);
-	if($new_record_check == "")
-	{
-		// Does not exist, create it
-		mysqli_query($db_connect, "INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('cli_mode', '1')");
-	}
-
-	// CLI Mode Port Settings
-	$new_record_check = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'cli_port' LIMIT 1"),0,0);
-	if($new_record_check == "")
-	{
-		// Does not exist, create it
-		mysqli_query($db_connect, "INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('cli_port', '')");
-	}
-
-	// IPv4 + IPv6 Network Mode
-	$new_record_check = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0);
-	if($new_record_check == "")
-	{
-		// Does not exist, create it
-		mysqli_query($db_connect, "INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('network_mode', '1')");
-	}
-
-	// IPv6 Generation IP Field
-	$new_record_check = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'generation_IP_v6' LIMIT 1"),0,0);
-	if($new_record_check == "")
-	{
-		// Does not exist, create it
-		mysqli_query($db_connect, "INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('generation_IP_v6', '')");
-	}
 // Main Loop Status & Active Options Setup
 
 	// Truncate to Free RAM
@@ -1982,6 +1966,10 @@ function initialization_database()
 		write_log("Missing Transaction Foundation #$TK_foundation_seed_block to Build TK Foundation Seed", "MA");
 	}
 //***********************************************************************************
+	// Auto Detect IP Address on Start if Empty
+	auto_update_IP_address(TRUE);
+//***********************************************************************************
+
 	return 0;
 }
 //***********************************************************************************

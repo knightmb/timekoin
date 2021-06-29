@@ -48,7 +48,7 @@ while(1) // Begin Infinite Loop
 {
 set_time_limit(300);
 //***********************************************************************************
-$loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,"field_data");
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"));
 
 // Check script status
 if($loop_active == "")
@@ -86,9 +86,10 @@ $next_transaction_cycle = transaction_cycle(1);
 //*****************************************************************************************************
 // Check my transaction queue and copy pending transaction to the main transaction queue, giving priority
 // to self created transactions over 3rd party submitted transactions
-
-$sql = "(SELECT * FROM `my_transaction_queue` WHERE `public_key` = '" . my_public_key() . "' AND `timestamp` < '" . time() . "' ORDER BY `my_transaction_queue`.`timestamp` ASC) 
-	UNION (SELECT * FROM `my_transaction_queue` WHERE `public_key` != '" . my_public_key() . "' AND `timestamp` < '" . time() . "' ORDER BY `my_transaction_queue`.`timestamp` ASC) LIMIT 1000";
+$my_public_key = my_public_key();
+$easy_key_public_key = base64_decode(EASY_KEY_PUBLIC_KEY);
+$sql = "(SELECT * FROM `my_transaction_queue` WHERE `public_key` = '$my_public_key' AND `timestamp` < '" . time() . "' ORDER BY `my_transaction_queue`.`timestamp` ASC) 
+	UNION (SELECT * FROM `my_transaction_queue` WHERE `public_key` != '$my_public_key' AND `timestamp` < '" . time() . "' ORDER BY `my_transaction_queue`.`timestamp` ASC) LIMIT 1000";
 
 $sql_result = mysqli_query($db_connect, $sql);
 $sql_num_results = mysqli_num_rows($sql_result);
@@ -515,9 +516,7 @@ if($sql_num_results > 0)
 
 				// How much is this public key trying to send to another public key?
 				$transaction_info = tk_decrypt($public_key, base64_decode($crypt3));
-
 				$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
-
 				$transaction_amount_sent_test = intval($transaction_amount_sent);
 
 				if($transaction_amount_sent_test == $transaction_amount_sent)
@@ -549,7 +548,7 @@ if($sql_num_results > 0)
 							$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from` , `public_key_to` , `crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
 							VALUES ($time_created, '$public_key', '$public_key_to' , '$crypt1', '$crypt2', '$crypt3', '$hash_check', 'T')";
 
-							if($public_key_to !== base64_decode(EASY_KEY_PUBLIC_KEY))
+							if($public_key_to !== $easy_key_public_key)
 							{
 								// Insert into final transaction history
 								if(mysqli_query($db_connect, $sql) == FALSE)
@@ -593,7 +592,6 @@ if($sql_num_results > 0)
 									$payment_sql_result = mysqli_query($db_connect, $payment_sql);
 									$payment_sql_num_results = mysqli_num_rows($payment_sql_result);
 									$all_generating_peers_paid = TRUE;
-									$my_public_key = my_public_key();
 
 									for ($i_pay = 0; $i_pay < $payment_sql_num_results; $i_pay++)
 									{

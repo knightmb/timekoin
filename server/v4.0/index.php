@@ -2165,7 +2165,7 @@ if($_SESSION["valid_login"] == TRUE)
 			There also exist a setting in the system tab to auto-update the server IP if it changes frequently.<br><br>
 			You can manually update this field if the IP address detected is incorrect.<br><br>
 			Next Peer Election<br>' . $time_election . '</strong></font><br><br>
-			Currency Generation in<br>' . $time_generate . '</strong></font>';
+			Currency Creation in<br>' . $time_generate . '</strong></font>';
 
 		if($_GET["firewall"] == "tool")
 		{

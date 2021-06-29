@@ -116,7 +116,7 @@ $db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABA
 
 $context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
 ini_set('user_agent', 'Timekoin Server (Main) v' . TIMEKOIN_VERSION);
-ini_set('default_socket_timeout', 3); // Timeout for request in seconds
+ini_set('default_socket_timeout', 1); // Timeout for request in seconds
 $activity_log_max = 100000; // Maximum number of activity log entries to retain
 
 // CLI Mode selection
@@ -192,7 +192,7 @@ while(1) // Begin Infinite Loop :)
 	// Check for spamming IPs
 		$request_max = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'server_request_max' LIMIT 1"),0,0);
 
-		$sql = "SELECT ip, attribute FROM `ip_activity` GROUP BY `ip`";
+		$sql = "SELECT ip, attribute FROM `ip_activity` WHERE `timestamp` >= " . (time() - 10) . " GROUP BY `ip`";
 		$sql_result = mysqli_query($db_connect, $sql);
 		$sql_num_results = mysqli_num_rows($sql_result);
 
@@ -207,7 +207,7 @@ while(1) // Begin Infinite Loop :)
 				$sql = "SELECT timestamp FROM `ip_activity` WHERE `ip` = '$select_IP'";
 				$sql_num_results2 = mysqli_num_rows(mysqli_query($db_connect, $sql));
 
-				if($sql_num_results2 > $request_max && empty($select_IP) == FALSE && $select_IP != "127.0.0.1")
+				if($sql_num_results2 > $request_max && empty($select_IP) == FALSE && $select_IP != "127.0.0.1" && $select_IP != "::1")
 				{
 					// More than X request per cycle means something is wrong
 					// so this IP needs to be banned for a while

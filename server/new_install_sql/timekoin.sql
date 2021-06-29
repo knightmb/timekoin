@@ -15,8 +15,8 @@ CREATE TABLE IF NOT EXISTS `active_peer_list` (
   `domain` varchar(256) NOT NULL,
   `subfolder` varchar(256) NOT NULL,
   `port_number` smallint(5) unsigned NOT NULL,
-  `last_heartbeat` int(12) unsigned NOT NULL,
-  `join_peer_list` int(10) unsigned NOT NULL,
+  `last_heartbeat` bigint(20) unsigned NOT NULL,
+  `join_peer_list` bigint(20) unsigned NOT NULL,
   `failed_sent_heartbeat` smallint(5) unsigned NOT NULL
 ) ENGINE=MEMORY DEFAULT CHARSET=utf8;
 
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS `active_peer_list` (
 --
 
 CREATE TABLE IF NOT EXISTS `activity_logs` (
-  `timestamp` int(10) unsigned NOT NULL,
+  `timestamp` bigint(20) unsigned NOT NULL,
   `log` varchar(256) NOT NULL,
   `attribute` varchar(2) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS `activity_logs` (
 --
 
 CREATE TABLE IF NOT EXISTS `balance_index` (
-  `block` int(10) unsigned NOT NULL,
+  `block` bigint(20) unsigned NOT NULL,
   `public_key_hash` varchar(32) NOT NULL,
   `balance` bigint(20) unsigned NOT NULL
 ) ENGINE=MEMORY DEFAULT CHARSET=utf8;
@@ -54,8 +54,8 @@ CREATE TABLE IF NOT EXISTS `balance_index` (
 
 CREATE TABLE IF NOT EXISTS `generating_peer_list` (
   `public_key` text NOT NULL,
-  `join_peer_list` int(10) unsigned NOT NULL,
-  `last_generation` int(10) unsigned NOT NULL,
+  `join_peer_list` bigint(20) unsigned NOT NULL,
+  `last_generation` bigint(20) unsigned NOT NULL,
   `IP_Address` varchar(46) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS `generating_peer_list` (
 --
 
 CREATE TABLE IF NOT EXISTS `generating_peer_queue` (
-  `timestamp` int(10) unsigned NOT NULL,
+  `timestamp` bigint(20) unsigned NOT NULL,
   `public_key` text NOT NULL,
   `IP_Address` varchar(46) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS `generating_peer_queue` (
 --
 
 CREATE TABLE IF NOT EXISTS `ip_activity` (
-  `timestamp` int(10) unsigned NOT NULL,
+  `timestamp` bigint(20) unsigned NOT NULL,
   `ip` varchar(46) NOT NULL,
   `attribute` varchar(2) NOT NULL
 ) ENGINE=MEMORY DEFAULT CHARSET=utf8;
@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS `ip_activity` (
 --
 
 CREATE TABLE IF NOT EXISTS `ip_banlist` (
-  `when` int(10) unsigned NOT NULL,
+  `when` bigint(20) unsigned NOT NULL,
   `ip` varchar(46) NOT NULL
 ) ENGINE=MEMORY DEFAULT CHARSET=utf8;
 
@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS `ip_banlist` (
 
 CREATE TABLE IF NOT EXISTS `main_loop_status` (
   `field_name` varchar(32) NOT NULL,
-  `field_data` int(10) unsigned NOT NULL
+  `field_data` bigint(20) unsigned NOT NULL
 ) ENGINE=MEMORY DEFAULT CHARSET=utf8;
 
 --
@@ -140,7 +140,7 @@ INSERT INTO `my_keys` (`field_name`, `field_data`) VALUES
 --
 
 CREATE TABLE IF NOT EXISTS `my_transaction_queue` (
-  `timestamp` int(10) unsigned NOT NULL,
+  `timestamp` bigint(20) unsigned NOT NULL,
   `public_key` text NOT NULL,
   `crypt_data1` varchar(256) NOT NULL,
   `crypt_data2` varchar(256) NOT NULL,
@@ -223,7 +223,7 @@ INSERT INTO `options` (`field_name`, `field_data`) VALUES
 
 CREATE TABLE IF NOT EXISTS `quantum_balance_index` (
   `public_key_hash` varchar(32) NOT NULL,
-  `max_foundation` int(11) unsigned NOT NULL,
+  `max_foundation` bigint(20) unsigned NOT NULL,
   `balance` bigint(20) unsigned NOT NULL,
   KEY `qbi_index` (`public_key_hash`(4))
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
@@ -242,7 +242,7 @@ INSERT INTO `quantum_balance_index` (`public_key_hash`, `max_foundation`, `balan
 --
 
 CREATE TABLE IF NOT EXISTS `transaction_foundation` (
-  `block` int(10) unsigned NOT NULL,
+  `block` bigint(20) unsigned NOT NULL,
   `hash` varchar(64) NOT NULL,
   PRIMARY KEY (`block`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
@@ -254,7 +254,7 @@ CREATE TABLE IF NOT EXISTS `transaction_foundation` (
 --
 
 CREATE TABLE IF NOT EXISTS `transaction_history` (
-  `timestamp` int(10) unsigned NOT NULL,
+  `timestamp` bigint(20) unsigned NOT NULL,
   `public_key_from` text NOT NULL,
   `public_key_to` text NOT NULL,
   `crypt_data1` varchar(256) NOT NULL,
@@ -274,7 +274,7 @@ CREATE TABLE IF NOT EXISTS `transaction_history` (
 --
 
 CREATE TABLE IF NOT EXISTS `transaction_queue` (
-  `timestamp` int(10) unsigned NOT NULL,
+  `timestamp` bigint(20) unsigned NOT NULL,
   `public_key` text NOT NULL,
   `crypt_data1` varchar(256) NOT NULL,
   `crypt_data2` varchar(256) NOT NULL,

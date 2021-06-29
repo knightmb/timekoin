@@ -374,16 +374,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$generating_hash' WHERE `options`.`field_name` = 'generating_peers_hash' LIMIT 1");
 	}
 //***********************************************************************************
-//***********************************************************************************
-// Generation IP Auto Update Detection
-	$auto_update_generation_IP = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,0));
-
-	if(mt_rand(1,50) == 25 && $auto_update_generation_IP == 1) // Randomize to avoid spamming
-	{
-		auto_update_IP_address();
-	}
-//***********************************************************************************	
-//***********************************************************************************
 	// How does my generation peer list compare to others?
 	// Ask all of my active peers
 	$sql = perm_peer_mode();

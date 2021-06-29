@@ -75,6 +75,15 @@ else
 	exit;
 }
 //***********************************************************************************
+// Generation IP Auto Update Detection
+	$auto_update_generation_IP = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1")));
+
+	if(mt_rand(1,50) == 25 && $auto_update_generation_IP == 1) // Randomize to avoid spamming
+	{
+		auto_update_IP_address();
+	}
+//***********************************************************************************	
+//***********************************************************************************
 // Is generation turned on for our server key?
 
 $next_generation_cycle = transaction_cycle(1);
