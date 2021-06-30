@@ -20,17 +20,37 @@ include 'templates.php';// Path to files already used by Timekoin
 include 'function.php';// Path to files already used by Timekoin
 include 'configuration.php';// Path to files already used by Timekoin
 
+//***********************************************************************************
+if(function_exists('mysql_result') == FALSE)
+{
+	function mysql_result($result, $number = 0, $field = 0)
+	{
+		$sql_num_results = mysqli_num_rows($result);
+
+		if($sql_num_results <= $number)
+		{
+			return NULL;
+		}
+		else
+		{
+			mysqli_data_seek($result, $number);
+			$row = mysqli_fetch_array($result);
+			return $row[$field];
+		}
+	}
+}
+//***********************************************************************************
+
 // Make DB Connection
-mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD);
-mysql_select_db(MYSQL_DATABASE);
+$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
 // Avoid stacking this many times
-$already_active = mysql_result(mysql_query("SELECT * FROM `data_cache` WHERE `field_name` = 'TKCS_example_service.php' LIMIT 1"),0,"field_data");
+$already_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `data_cache` WHERE `field_name` = 'TKCS_example_service.php' LIMIT 1"),0,"field_data");
 
-if($already_active === FALSE)
+if($already_active == "")
 {
 	// Creating Status State - Timekoin Looks for the filename
-	mysql_query("INSERT INTO `data_cache` (`field_name` ,`field_data`)VALUES ('TKCS_example_service.php', '1')"); // Active
+	mysqli_query($db_connect, "INSERT INTO `data_cache` (`field_name` ,`field_data`)VALUES ('TKCS_example_service.php', '1')"); // Active
 }
 else
 {
@@ -41,9 +61,9 @@ else
 while(1) // Begin Infinite Loop :)
 {
 	// Are we to remain active?
-	$tkclient_active = mysql_result(mysql_query("SELECT * FROM `data_cache` WHERE `field_name` = 'TKCS_example_service.php' LIMIT 1"),0,"field_data");
+	$tkclient_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `data_cache` WHERE `field_name` = 'TKCS_example_service.php' LIMIT 1"),0,"field_data");
 
-	if($tkclient_active === FALSE)
+	if($tkclient_active == "")
 	{
 		// Shutdown
 		exit;

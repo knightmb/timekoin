@@ -1,10 +1,32 @@
 <?PHP
 define("TRANSACTION_EPOCH","1338576300"); // Epoch timestamp: 1338576300
-define("TIMEKOIN_VERSION","1.25"); // This Timekoin Software Version
-define("NEXT_VERSION","tk_client_current_version3.txt"); // What file to check for future versions
+define("TIMEKOIN_VERSION","1.26"); // This Timekoin Software Version
+define("NEXT_VERSION","tk_client_next_version1.txt"); // What file to check for future versions
+// Easy Key Blackhole Public Key
+define("EASY_KEY_PUBLIC_KEY","LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS1UaW1la29pbitFYXN5K0tleStibGFjaytob2xlK2FkZHJlc3MrV3ViYmErbHViYmErZHViK2R1YitSaWtraSt0aWtraSt0YXZpK2JpdGNoK0FuZCt0aGF0cyt0aGUrd2F5K3RoZStuZXdzK2dvZXMrSGl0K3RoZStzYWNrK0phY2srVWgrb2grc29tZXJzYXVsdCtqdW1wK0FpZHMrU2h1bStzaHVtK3NobGlwcGVkeStkb3ArR3Jhc3MrdGFzdGVzK2JhZCtObytqdW1waW5nK2luK3RoZStzZXdlcitCdXJnZXIrdGltZStSdWJiZXIrYmFieStiYWJieStCdW5rZXJzK1llYWgrc2F5K3RoYXQrYWxsK3RoZSt0aW1lK1RpbWVrb2luK0Vhc3krS2V5LS0tLS1FTkQgUFVCTElDIEtFWS0tLS0t");
 
 error_reporting(E_ERROR | E_CORE_ERROR | E_COMPILE_ERROR); // Disable most error reporting except for fatal errors
 ini_set('display_errors', FALSE);
+//***********************************************************************************
+//***********************************************************************************
+if(function_exists('mysql_result') == FALSE)
+{
+	function mysql_result($result, $number = 0, $field = 0)
+	{
+		$sql_num_results = mysqli_num_rows($result);
+
+		if($sql_num_results <= $number)
+		{
+			return NULL;
+		}
+		else
+		{
+			mysqli_data_seek($result, $number);
+			$row = mysqli_fetch_array($result);
+			return $row[$field];
+		}
+	}
+}
 //***********************************************************************************
 //***********************************************************************************
 function transaction_cycle($past_or_future = 0, $transacton_cycles_only = 0)
@@ -23,7 +45,7 @@ function transaction_cycle($past_or_future = 0, $transacton_cycles_only = 0)
 }
 //***********************************************************************************
 //***********************************************************************************
-function is_domain_valid($domain)
+function is_domain_valid($domain = "")
 {
 	$result = TRUE;
 	
@@ -51,7 +73,7 @@ function is_domain_valid($domain)
 }
 //***********************************************************************************
 //***********************************************************************************
-function filter_sql($string)
+function filter_sql($string = "")
 {
 	// Filter symbols that might lead to an SQL injection attack
 	$symbols = array("'", "%", "*", "`");
@@ -61,33 +83,26 @@ function filter_sql($string)
 }
 //***********************************************************************************
 //***********************************************************************************
-function find_string($start_tag, $end_tag, $full_string, $end_match = FALSE)
+function find_string($start_tag = "", $end_tag = "", $full_string = "", $end_match = FALSE)
 {
-	$delimiter = '|';
-	
 	if($end_match == FALSE)
-	{
-		$regex = $delimiter . preg_quote($start_tag, $delimiter) . '(.*?)'  . preg_quote($end_tag, $delimiter)  . $delimiter  . 's';
+	{	
+		preg_match('|' . $start_tag . '(.*?)' . $end_tag . '|', $full_string, $output);
+		return $output[1];
 	}
 	else
 	{
-		$regex = $delimiter . preg_quote($start_tag, $delimiter) . '(.*)'  . preg_quote($end_tag, $delimiter)  . $delimiter  . 's';
+		preg_match('|' . $start_tag . '(.*)|', $full_string, $output);
+		return $output[1];
 	}
-
-	preg_match_all($regex,$full_string,$matches);
-
-	foreach($matches[1] as $found_string)
-	{
-	}
-	
-	return $found_string;
 }
 //***********************************************************************************
 //***********************************************************************************
-function write_log($message, $type)
+function write_log($message = "", $type = "")
 {
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	// Write Log Entry
-	mysql_query("INSERT DELAYED INTO `activity_logs` (`timestamp` ,`log` ,`attribute`)	
+	mysqli_query($db_connect, "INSERT DELAYED INTO `activity_logs` (`timestamp` ,`log` ,`attribute`)	
 		VALUES ('" . time() . "', '" . substr($message, 0, 256) . "', '$type')");
 	return;
 }
@@ -95,9 +110,10 @@ function write_log($message, $type)
 //***********************************************************************************
 function queue_hash()
 {
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	$sql = "SELECT * FROM `transaction_queue` ORDER BY `hash`, `timestamp` ASC";
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 
 	$transaction_queue_hash = 0;
 
@@ -105,7 +121,7 @@ function queue_hash()
 	{
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_array($sql_result);
+			$sql_row = mysqli_fetch_array($sql_result);
 			$transaction_queue_hash .= $sql_row["timestamp"] . $sql_row["public_key"] . $sql_row["crypt_data1"] . 
 			$sql_row["crypt_data2"] . $sql_row["crypt_data3"] . $sql_row["hash"] . $sql_row["attribute"];
 		}
@@ -119,15 +135,17 @@ function queue_hash()
 //***********************************************************************************
 function my_public_key()
 {
-	return mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,1);
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+	return mysql_result(mysqli_query($db_connect, "SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,1);
 }
 //***********************************************************************************
 function my_private_key()
 {
-	return mysql_result(mysql_query("SELECT * FROM `my_keys` WHERE `field_name` = 'server_private_key' LIMIT 1"),0,1);
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+	return mysql_result(mysqli_query($db_connect, "SELECT * FROM `my_keys` WHERE `field_name` = 'server_private_key' LIMIT 1"),0,1);
 }
 //***********************************************************************************
-function poll_peer($ip_address, $domain, $subfolder, $port_number, $max_length, $poll_string, $custom_context)
+function poll_peer($ip_address = "", $domain = "", $subfolder = "", $port_number = "", $max_length = "", $poll_string = "", $custom_context = "")
 {
 	if(empty($custom_context) == TRUE)
 	{
@@ -173,7 +191,7 @@ function poll_peer($ip_address, $domain, $subfolder, $port_number, $max_length, 
 }
 //***********************************************************************************
 //***********************************************************************************
-function tk_encrypt($key, $crypt_data)
+function tk_encrypt($key = "", $crypt_data = "")
 {
 	if(function_exists('openssl_private_encrypt') == TRUE)
 	{
@@ -192,7 +210,7 @@ function tk_encrypt($key, $crypt_data)
 }
 //***********************************************************************************
 //***********************************************************************************
-function tk_decrypt($key, $crypt_data, $skip_openssl_check = FALSE)
+function tk_decrypt($key = "", $crypt_data = "", $skip_openssl_check = FALSE)
 {
 	$decrypt;
 
@@ -226,16 +244,129 @@ function tk_decrypt($key, $crypt_data, $skip_openssl_check = FALSE)
 }
 //***********************************************************************************
 //***********************************************************************************
-function transaction_history_query($to_from, $last = 1)
+function easy_key_lookup($easy_key = "")
+{
+	// Ask one of my active peers
+	ini_set('user_agent', 'Timekoin Client v' . TIMEKOIN_VERSION);
+	ini_set('default_socket_timeout', 5); // Timeout for request in seconds
+
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+	$easy_key = base64_encode($easy_key);
+
+	$params = array ('easy_key' => $easy_key);
+
+	// Build Http query using params
+	$query = http_build_query($params);
+	 
+	// Create Http context details
+	$contextData = array (
+						 'method' => 'POST',
+						 'header' => "Connection: close\r\n".
+										 "Content-Length: ".strlen($query)."\r\n",
+						 'content'=> $query );
+	 
+	// Create context resource for our request
+	$context = stream_context_create (array ( 'http' => $contextData ));
+
+	$sql_result = mysqli_query($db_connect, "SELECT * FROM `active_peer_list` ORDER BY RAND()");
+	$sql_num_results = mysqli_num_rows($sql_result);
+
+	for ($i = 0; $i < $sql_num_results; $i++)
+	{
+		$sql_row = mysqli_fetch_array($sql_result);
+		$ip_address = $sql_row["IP_Address"];
+		$domain = $sql_row["domain"];
+		$subfolder = $sql_row["subfolder"];
+		$port_number = $sql_row["port_number"];
+		$code = $sql_row["code"];
+		$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 500, "api.php?action=easy_key&hash=$code", $context));
+
+		if($poll_peer === 0)
+		{
+			// No Easy Key exist by that Name
+			return 0;
+		}
+
+		if(strlen($poll_peer) > 60)
+		{
+			// Easy Key shortcut Found!
+			return $poll_peer;
+		}
+	}
+
+	// No peers would respond
+	write_log("No Peers Answered the Easy Key Poll", "GU");
+	return;
+}
+//***********************************************************************************
+//***********************************************************************************
+function num_gen_peers($distinct = 0, $public_keys = 0)
+{
+	// Ask one of my active peers
+	ini_set('user_agent', 'Timekoin Client v' . TIMEKOIN_VERSION);
+	ini_set('default_socket_timeout', 5); // Timeout for request in seconds
+
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+	$sql_result = mysqli_query($db_connect, "SELECT * FROM `active_peer_list` ORDER BY RAND()");
+	$sql_num_results = mysqli_num_rows($sql_result);
+
+	if($distinct == TRUE)
+	{
+		$distinct = 1;
+	}
+
+	for ($i = 0; $i < $sql_num_results; $i++)
+	{
+		$sql_row = mysqli_fetch_array($sql_result);
+		$ip_address = $sql_row["IP_Address"];
+		$domain = $sql_row["domain"];
+		$subfolder = $sql_row["subfolder"];
+		$port_number = $sql_row["port_number"];
+		$code = $sql_row["code"];
+		$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 500000, "api.php?action=num_gen_peers&distinct=$distinct&public_keys=$public_keys&hash=$code"));
+
+		if($public_keys == 1)
+		{
+			// Looking for list of public keys generating
+			if(empty($poll_peer) == FALSE)
+			{
+				return $poll_peer;
+			}
+		}
+		else
+		{
+			// Looking for numbers
+			if($poll_peer === 0 || empty($poll_peer) == TRUE)
+			{
+				// Number of Generating Peers
+				return 0;
+			}
+			
+			if($poll_peer > 0)
+			{
+				// Number of Generating Peers
+				return $poll_peer;
+			}
+		}
+	}
+
+	// No peers would respond
+	write_log("No Peers Answered the Number of Generating Peers Poll", "GU");
+	return;
+}
+//***********************************************************************************
+//***********************************************************************************
+function transaction_history_query($to_from = "", $last = 1)
 {
 	// Ask one of my active peers
 	ini_set('user_agent', 'Timekoin Client v' . TIMEKOIN_VERSION);
 	ini_set('default_socket_timeout', 5); // Timeout for request in seconds
 	$cache_refresh_time = 60; // Default cache time in seconds
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
 	if($to_from == 1)
 	{	
-		$trans_history_sent_to = mysql_result(mysql_query("SELECT * FROM `data_cache` WHERE `field_name` = 'trans_history_sent_to' LIMIT 1"),0,"field_data");
+		$trans_history_sent_to = mysql_result(mysqli_query($db_connect, "SELECT * FROM `data_cache` WHERE `field_name` = 'trans_history_sent_to' LIMIT 1"),0,"field_data");
 		$timestamp_cache = intval(find_string("---time=", "---last", $trans_history_sent_to));
 		$last_cache = intval(find_string("---last=", "---hdata", $trans_history_sent_to));
 
@@ -248,7 +379,7 @@ function transaction_history_query($to_from, $last = 1)
 
 	if($to_from == 2)
 	{
-		$trans_history_sent_from = mysql_result(mysql_query("SELECT * FROM `data_cache` WHERE `field_name` = 'trans_history_sent_from' LIMIT 1"),0,"field_data");
+		$trans_history_sent_from = mysql_result(mysqli_query($db_connect, "SELECT * FROM `data_cache` WHERE `field_name` = 'trans_history_sent_from' LIMIT 1"),0,"field_data");
 		$timestamp_cache = intval(find_string("---time=", "---last", $trans_history_sent_from));
 		$last_cache = intval(find_string("---last=", "---hdata", $trans_history_sent_from));
 
@@ -288,12 +419,12 @@ function transaction_history_query($to_from, $last = 1)
 	// Create context resource for our request
 	$context = stream_context_create (array ( 'http' => $contextData ));
 
-	$sql_result = mysql_query("SELECT * FROM `active_peer_list` ORDER BY RAND()");
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, "SELECT * FROM `active_peer_list` ORDER BY RAND()");
+	$sql_num_results = mysqli_num_rows($sql_result);
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		$sql_row = mysqli_fetch_array($sql_result);
 		$ip_address = $sql_row["IP_Address"];
 		$domain = $sql_row["domain"];
 		$subfolder = $sql_row["subfolder"];
@@ -306,12 +437,12 @@ function transaction_history_query($to_from, $last = 1)
 			// Update data cache
 			if($to_from == 1)
 			{
-				mysql_query("UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---last=$last---hdata=$poll_peer---hend' WHERE `data_cache`.`field_name` = 'trans_history_sent_to' LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---last=$last---hdata=$poll_peer---hend' WHERE `data_cache`.`field_name` = 'trans_history_sent_to' LIMIT 1");
 			}
 
 			if($to_from == 2)
 			{
-				mysql_query("UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---last=$last---hdata=$poll_peer---hend' WHERE `data_cache`.`field_name` = 'trans_history_sent_from' LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---last=$last---hdata=$poll_peer---hend' WHERE `data_cache`.`field_name` = 'trans_history_sent_from' LIMIT 1");
 			}			
 			
 			return $poll_peer;
@@ -329,12 +460,13 @@ function tk_trans_total($last = 1)
 	// Ask one of my active peers
 	ini_set('user_agent', 'Timekoin Client v' . TIMEKOIN_VERSION);
 	ini_set('default_socket_timeout', 5); // Timeout for request in seconds
-	$sql_result = mysql_query("SELECT * FROM `active_peer_list` ORDER BY RAND()");
-	$sql_num_results = mysql_num_rows($sql_result);
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+	$sql_result = mysqli_query($db_connect, "SELECT * FROM `active_peer_list` ORDER BY RAND()");
+	$sql_num_results = mysqli_num_rows($sql_result);
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		$sql_row = mysqli_fetch_array($sql_result);
 		$ip_address = $sql_row["IP_Address"];
 		$domain = $sql_row["domain"];
 		$subfolder = $sql_row["subfolder"];
@@ -354,12 +486,14 @@ function tk_trans_total($last = 1)
 }
 //***********************************************************************************
 //***********************************************************************************
-function verify_public_key($public_key)
+function verify_public_key($public_key = "")
 {
 	if(empty($public_key) == TRUE)
 	{
 		return 0;
 	}
+
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
 	// Ask one of my active peers
 	ini_set('user_agent', 'Timekoin Client v' . TIMEKOIN_VERSION);
@@ -381,12 +515,12 @@ function verify_public_key($public_key)
 	// Create context resource for our request
 	$context = stream_context_create (array ( 'http' => $contextData ));
 
-	$sql_result = mysql_query("SELECT * FROM `active_peer_list` ORDER BY RAND()");
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, "SELECT * FROM `active_peer_list` ORDER BY RAND()");
+	$sql_num_results = mysqli_num_rows($sql_result);
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		$sql_row = mysqli_fetch_array($sql_result);
 		$ip_address = $sql_row["IP_Address"];
 		$domain = $sql_row["domain"];
 		$subfolder = $sql_row["subfolder"];
@@ -406,12 +540,14 @@ function verify_public_key($public_key)
 }
 //***********************************************************************************
 //***********************************************************************************
-function check_crypt_balance($public_key)
+function check_crypt_balance($public_key = "")
 {
 	if(empty($public_key) == TRUE)
 	{
 		return 0;
 	}
+
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
 	// Ask one of my active peers
 	ini_set('user_agent', 'Timekoin Client v' . TIMEKOIN_VERSION);
@@ -433,14 +569,14 @@ function check_crypt_balance($public_key)
 	// Create context resource for our request
 	$context = stream_context_create (array ( 'http' => $contextData ));
 
-	$sql_result = mysql_query("SELECT * FROM `active_peer_list` ORDER BY RAND()");
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, "SELECT * FROM `active_peer_list` ORDER BY RAND()");
+	$sql_num_results = mysqli_num_rows($sql_result);
 	$zero_balance; // Flag for true zero balance
 	$zero_balance_counter; // Count true rezo balance responses
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		$sql_row = mysqli_fetch_array($sql_result);
 		$ip_address = $sql_row["IP_Address"];
 		$domain = $sql_row["domain"];
 		$subfolder = $sql_row["subfolder"];
@@ -475,7 +611,7 @@ function check_crypt_balance($public_key)
 }
 //***********************************************************************************
 //***********************************************************************************
-function tk_time_convert($time)
+function tk_time_convert($time = "")
 {
 	if($time < 0)
 	{
@@ -531,12 +667,13 @@ function tk_time_convert($time)
 }
 //***********************************************************************************
 //***********************************************************************************
-function db_cache_balance($my_public_key)
+function db_cache_balance($my_public_key = "")
 {
 	$cache_refresh_time = 30; // Refresh TTL in seconds
-	
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+
 	// Check server balance via cache
-	$billfold_balance = mysql_result(mysql_query("SELECT * FROM `data_cache` WHERE `field_name` = 'billfold_balance' LIMIT 1"),0,"field_data");
+	$billfold_balance = mysql_result(mysqli_query($db_connect, "SELECT * FROM `data_cache` WHERE `field_name` = 'billfold_balance' LIMIT 1"),0,"field_data");
 	$timestamp_cache = intval(find_string("---time=", "---data", $billfold_balance));
 
 	if(time() - $cache_refresh_time <= $timestamp_cache) // Cache TTL
@@ -546,12 +683,12 @@ function db_cache_balance($my_public_key)
 	}
 
 	$balance = check_crypt_balance($my_public_key); // Cache stale, refresh and update cache
-	mysql_query("UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---data=$balance---end' WHERE `data_cache`.`field_name` = 'billfold_balance' LIMIT 1");
+	mysqli_query($db_connect, "UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---data=$balance---end' WHERE `data_cache`.`field_name` = 'billfold_balance' LIMIT 1");
 	return $balance;
 }
 //***********************************************************************************
 //***********************************************************************************
-function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $amount, $message)
+function send_timekoins($my_private_key = "", $my_public_key = "", $send_to_public_key = "", $amount = "", $message = "", $custom_timestamp = FALSE)
 {
 	if(empty($my_private_key) == TRUE || empty($my_public_key) == TRUE || empty($send_to_public_key) == TRUE)
 	{
@@ -561,6 +698,7 @@ function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $a
 	ini_set('user_agent', 'Timekoin Client v' . TIMEKOIN_VERSION);
 	ini_set('default_socket_timeout', 3); // Timeout for request in seconds
 
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	$arr1 = str_split($send_to_public_key, 181);
 	$encryptedData1 = tk_encrypt($my_private_key, $arr1[0]);
 	$encryptedData64_1 = base64_encode($encryptedData1);	
@@ -581,14 +719,18 @@ function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $a
 	$encryptedData64_3 = base64_encode($encryptedData3);
 	$triple_hash_check = hash('sha256', $encryptedData64_1 . $encryptedData64_2 . $encryptedData64_3);
 
-	$timestamp = transaction_cycle(0) + 1;	
+	if($custom_timestamp == FALSE)
+	{
+		// Standard Timestamp
+		$custom_timestamp = transaction_cycle(0) + 1;
+	}	
+	
 	$attribute = "T";
-
-	$qhash = $timestamp . base64_encode($my_public_key) . $encryptedData64_1 . $encryptedData64_2 . $encryptedData64_3 . $triple_hash_check . $attribute;
+	$qhash = $custom_timestamp . base64_encode($my_public_key) . $encryptedData64_1 . $encryptedData64_2 . $encryptedData64_3 . $triple_hash_check . $attribute;
 	$qhash = hash('md5', $qhash);
 
 	// Create map with request parameters
-	$params = array ('timestamp' => $timestamp, 
+	$params = array ('timestamp' => $custom_timestamp, 
 		'public_key' => base64_encode($my_public_key), 
 		'crypt_data1' => $encryptedData64_1, 
 		'crypt_data2' => $encryptedData64_2, 
@@ -611,13 +753,13 @@ function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $a
 	$context = stream_context_create (array ( 'http' => $contextData ));
 
 	// Try all Active Peer Servers
-	$sql_result = mysql_query("SELECT * FROM `active_peer_list` ORDER BY RAND()");
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, "SELECT * FROM `active_peer_list` ORDER BY RAND()");
+	$sql_num_results = mysqli_num_rows($sql_result);
 	$return_results;
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		$sql_row = mysqli_fetch_array($sql_result);
 		$ip_address = $sql_row["IP_Address"];
 		$domain = $sql_row["domain"];
 		$subfolder = $sql_row["subfolder"];
@@ -649,7 +791,8 @@ function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $a
 //***********************************************************************************
 function unix_timestamp_to_human($timestamp = "", $format = 'D d M Y - H:i:s')
 {
-	$default_timezone = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,"field_data");
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+	$default_timezone = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,"field_data");
 
 	if(empty($default_timezone) == FALSE)
 	{	
@@ -661,7 +804,7 @@ function unix_timestamp_to_human($timestamp = "", $format = 'D d M Y - H:i:s')
 }
 //***********************************************************************************
 //***********************************************************************************
-function is_private_ip($ip, $ignore = FALSE)
+function is_private_ip($ip = "", $ignore = FALSE)
 {
 	if(empty($ip) == TRUE)
 	{
@@ -684,7 +827,7 @@ function is_private_ip($ip, $ignore = FALSE)
 }
 //***********************************************************************************
 //***********************************************************************************
-function call_script($script, $priority = 1, $plugin = FALSE)
+function call_script($script = "", $priority = 1, $plugin = FALSE)
 {
 	if($priority == 1)
 	{
@@ -739,18 +882,19 @@ function generate_new_keys()
 		$symbols = array("\r");
 		$new_publickey = str_replace($symbols, "", $publickey);
 		$new_privatekey = str_replace($symbols, "", $privatekey);
+		$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
 		$sql = "UPDATE `my_keys` SET `field_data` = '$new_privatekey' WHERE `my_keys`.`field_name` = 'server_private_key' LIMIT 1";
 
-		if(mysql_query($sql) == TRUE)
+		if(mysqli_query($db_connect, $sql) == TRUE)
 		{
 			// Private Key Update Success
 			$sql = "UPDATE `my_keys` SET `field_data` = '$new_publickey' WHERE `my_keys`.`field_name` = 'server_public_key' LIMIT 1";
 			
-			if(mysql_query($sql) == TRUE)
+			if(mysqli_query($db_connect, $sql) == TRUE)
 			{
 				// Blank reverse crypto data field
-				mysql_query("UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
 
 				// Public Key Update Success				
 				return 1;
@@ -769,14 +913,15 @@ function generate_new_keys()
 //***********************************************************************************
 function check_for_updates($code_feedback = FALSE)
 {
-	// Poll timekoin.com for any program updates
+	// Poll timekoin.net for any program updates
 	$context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
 	ini_set('user_agent', 'Timekoin Client (GUI) v' . TIMEKOIN_VERSION);
 	ini_set('default_socket_timeout', 15); // Timeout for request in seconds
-
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+	
 	$update_check1 = 'Checking for Updates....<br><br>';
 
-	$poll_version = file_get_contents("https://timekoin.com/tkcliupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
+	$poll_version = file_get_contents("https://timekoin.net/tkcliupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
 
 	if($poll_version > TIMEKOIN_VERSION && empty($poll_version) == FALSE)
 	{
@@ -790,18 +935,18 @@ function check_for_updates($code_feedback = FALSE)
 		// No update available
 		$update_check1 .= 'Current Version: <strong>' . TIMEKOIN_VERSION . '</strong><br><br><font color="blue">No Update Necessary.</font>';	
 		// Reset available update alert
-		mysql_query("UPDATE `options` SET `field_data` = '0' WHERE `options`.`field_name` = 'update_available' LIMIT 1");
+		mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '0' WHERE `options`.`field_name` = 'update_available' LIMIT 1");
 	}
 	else
 	{
-		$update_check1 .= '<strong>ERROR: Could Not Contact Secure Server https://timekoin.com</strong>';
+		$update_check1 .= '<strong>ERROR: Could Not Contact Secure Server https://timekoin.net</strong>';
 	}
 
 	return $update_check1;
 }
 //***********************************************************************************
 //***********************************************************************************
-function install_update_script($script_name, $script_file)
+function install_update_script($script_name = "", $script_file = "")
 {
 	$fh = fopen($script_name, 'w');
 
@@ -827,11 +972,11 @@ function install_update_script($script_name, $script_file)
 }
 //***********************************************************************************
 //***********************************************************************************
-function check_update_script($script_name, $script, $php_script_file, $poll_version, $context)
+function check_update_script($script_name = "", $script = "", $php_script_file = "", $poll_version = "", $context = "")
 {
 	$update_status_return = NULL;
 	
-	$poll_sha = file_get_contents("https://timekoin.com/tkcliupdates/v$poll_version/$script.sha", FALSE, $context, NULL, 64);
+	$poll_sha = file_get_contents("https://timekoin.net/tkcliupdates/v$poll_version/$script.sha", FALSE, $context, NULL, 64);
 
 	if(empty($poll_sha) == FALSE)
 	{
@@ -854,13 +999,13 @@ function check_update_script($script_name, $script, $php_script_file, $poll_vers
 }
 //***********************************************************************************
 //***********************************************************************************
-function get_update_script($php_script, $poll_version, $context)
+function get_update_script($php_script = "", $poll_version = "", $context = "")
 {
-	return file_get_contents("https://timekoin.com/tkcliupdates/v$poll_version/$php_script.txt", FALSE, $context, NULL);
+	return file_get_contents("https://timekoin.net/tkcliupdates/v$poll_version/$php_script.txt", FALSE, $context, NULL);
 }
 //***********************************************************************************
 //***********************************************************************************
-function run_script_update($script_name, $script_php, $poll_version, $context, $php_format = 1, $sub_folder = "")
+function run_script_update($script_name = "", $script_php = "", $poll_version = "", $context = "", $php_format = 1, $sub_folder = "")
 {
 	$php_file = get_update_script($script_php, $poll_version, $context);
 	
@@ -906,12 +1051,12 @@ function run_script_update($script_name, $script_php, $poll_version, $context, $
 //***********************************************************************************
 function do_updates()
 {
-	// Poll timekoin.com for any program updates
+	// Poll timekoin.net for any program updates
 	$context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
 	ini_set('user_agent', 'Timekoin Client (GUI) v' . TIMEKOIN_VERSION);
 	ini_set('default_socket_timeout', 10); // Timeout for request in seconds
-
-	$poll_version = file_get_contents("https://timekoin.com/tkcliupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+	$poll_version = file_get_contents("https://timekoin.net/tkcliupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
 
 	$update_status = 'Starting Update Process...<br><br>';
 
@@ -954,15 +1099,15 @@ function do_updates()
 		$update_status .= 'Checking for <strong>Function Storage</strong> Update...<br>';
 		$update_status .= run_script_update("Function Storage (function.php)", "function", $poll_version, $context);
 		//****************************************************
-		$finish_message = file_get_contents("https://timekoin.com/tkcliupdates/v$poll_version/ZZZfinish.txt", FALSE, $context, NULL);
+		$finish_message = file_get_contents("https://timekoin.net/tkcliupdates/v$poll_version/ZZZfinish.txt", FALSE, $context, NULL);
 		$update_status .= '<br>' . $finish_message;
 
 		// Reset available update alert
-		mysql_query("UPDATE `options` SET `field_data` = '0' WHERE `options`.`field_name` = 'update_available' LIMIT 1");
+		mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '0' WHERE `options`.`field_name` = 'update_available' LIMIT 1");
 	}
 	else
 	{
-		$update_status .= '<strong>ERROR: Could Not Contact Secure Server https://timekoin.com</strong>';
+		$update_status .= '<strong>ERROR: Could Not Contact Secure Server https://timekoin.net</strong>';
 	}
 
 	return $update_status;
@@ -980,33 +1125,34 @@ function initialization_database()
 			write_log("/plugins Directory CREATED!", "GU");
 		}
 	}
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
 	// Automatic Update Check Record
-	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'update_available' LIMIT 1"),0,0);
-	if($new_record_check === FALSE)
+	$new_record_check = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'update_available' LIMIT 1"),0,0);
+	if($new_record_check == "")
 	{
 		// Does not exist, create it
-		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('update_available', '0')");
+		mysqli_query($db_connect, "INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('update_available', '0')");
 	}
 
 	// Timezone Settings
-	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,0);
-	if($new_record_check === FALSE)
+	$new_record_check = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,0);
+	if($new_record_check == "")
 	{
 		// Does not exist, create it
-		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('default_timezone', '')");
+		mysqli_query($db_connect, "INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('default_timezone', '')");
 	}
 
 	// Tab Management Settings
-	$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'standard_tabs_settings' LIMIT 1"),0,0);
-	if($new_record_check === FALSE)
+	$new_record_check = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'standard_tabs_settings' LIMIT 1"),0,0);
+	if($new_record_check == "")
 	{
 		// Does not exist, create it
-		mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('standard_tabs_settings', '223')");
+		mysqli_query($db_connect, "INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('standard_tabs_settings', '223')");
 	}	
 }
 //***********************************************************************************
-function standard_tab_settings($peerlist, $trans_queue, $send_receive, $history, $address, $system, $backup, $tools)
+function standard_tab_settings($peerlist = "", $trans_queue = "", $send_receive = "", $history = "", $address = "", $system = "", $backup = "", $tools = "")
 {
 	$permissions_number = 0;
 
@@ -1022,7 +1168,7 @@ function standard_tab_settings($peerlist, $trans_queue, $send_receive, $history,
 	return $permissions_number;
 }
 //***********************************************************************************
-function check_standard_tab_settings($permissions_number, $standard_tab)
+function check_standard_tab_settings($permissions_number = "", $standard_tab = "")
 {
 // Tools Tab
 	if($permissions_number - 256 >= 0) { $permissions_number -= 256; } // Subtract Active Permission
@@ -1140,7 +1286,7 @@ function check_standard_tab_settings($permissions_number, $standard_tab)
 	return FALSE;
 }
 //***********************************************************************************
-function file_upload($http_file_name)
+function file_upload($http_file_name = "")
 {
 	$user_file_upload = strtolower(basename($_FILES[$http_file_name]['name']));
 
@@ -1156,7 +1302,7 @@ function file_upload($http_file_name)
 	}	
 }
 //***********************************************************************************
-function read_plugin($filename)
+function read_plugin($filename = "")
 {
 	$handle = fopen($filename, "r");
 	$contents = stream_get_contents($handle);

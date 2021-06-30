@@ -28,20 +28,16 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 
 	if(empty($http_username) == FALSE && empty($http_password) == FALSE)
 	{
-		if(mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD) == FALSE)
+		$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+
+		if($db_connect == FALSE)
 		{
 			login_screen('Could Not Connect To Database');
 			exit;
 		}
 		
-		if(mysql_select_db(MYSQL_DATABASE) == FALSE)
-		{
-			login_screen('Could Not Select Database');
-			exit;
-		}
-
-		$username_hash = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'username' LIMIT 1"),0,"field_data");
-		$password_hash = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,"field_data");
+		$username_hash = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'username' LIMIT 1"),0,"field_data");
+		$password_hash = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,"field_data");
 
 		if(hash('sha256', $http_username) == $username_hash)
 		{
@@ -56,12 +52,12 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 
 				// Start any plugins
 				$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' ORDER BY `options`.`field_name` ASC";
-				$sql_result = mysql_query($sql);
-				$sql_num_results = mysql_num_rows($sql_result);
+				$sql_result = mysqli_query($db_connect, $sql);
+				$sql_num_results = mysqli_num_rows($sql_result);
 
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
-					$sql_row = mysql_fetch_array($sql_result);
+					$sql_row = mysqli_fetch_array($sql_result);
 
 					$plugin_file = find_string("---file=", "---enable", $sql_row["field_data"]);		
 					$plugin_enable = intval(find_string("---enable=", "---show", $sql_row["field_data"]));
@@ -95,16 +91,11 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 
 if($_SESSION["valid_login"] == TRUE)
 {
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 //****************************************************************************
-	if(mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD) == FALSE)
+	if($db_connect == FALSE)
 	{
 		home_screen('ERROR', '<font color="red"><strong>Could Not Connect To Database</strong></font>', '', '');
-		exit;
-	}
-	
-	if(mysql_select_db(MYSQL_DATABASE) == FALSE)
-	{
-		home_screen('ERROR','<font color="red"><strong>Could Not Select Database</strong></font>', '', '');
 		exit;
 	}
 //****************************************************************************
@@ -159,7 +150,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$display_balance_GUI = number_format($display_balance);
 		}
 
-		$update_available = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'update_available' LIMIT 1"),0,"field_data");
+		$update_available = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'update_available' LIMIT 1"),0,"field_data");
 
 		if($update_available == TRUE)
 		{
@@ -175,7 +166,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$quick_info = 'This section will contain helpful information about each tab in the software.';
 
-		$home_update = mysql_result(mysql_query("SELECT field_data FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,0);
+		$home_update = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,0);
 
 		if($home_update < 60 && $home_update != 0) // Cap home updates refresh to 1 minute
 		{
@@ -199,7 +190,7 @@ if($_SESSION["valid_login"] == TRUE)
 			{
 				// Save value in database
 				$sql = "UPDATE `options` SET `field_data` = '" . $_POST["font_size"] . "' WHERE `options`.`field_name` = 'public_key_font_size' LIMIT 1";
-				mysql_query($sql);
+				mysqli_query($db_connect, $sql);
 
 				header("Location: index.php?menu=address");
 				exit;
@@ -207,13 +198,13 @@ if($_SESSION["valid_login"] == TRUE)
 		}
 		else
 		{
-			$default_public_key_font = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
+			$default_public_key_font = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
 		}
 
 		if($_GET["task"] == "delete")
 		{
 			// Remove Address Entry
-			mysql_query("DELETE FROM `address_book` WHERE `address_book`.`id` = " . $_GET["name_id"]);
+			mysqli_query($db_connect, "DELETE FROM `address_book` WHERE `address_book`.`id` = " . $_GET["name_id"]);
 		}
 
 		if($_GET["task"] == "save_new")
@@ -223,16 +214,13 @@ if($_SESSION["valid_login"] == TRUE)
 			
 			if(empty($_POST["easy_key"]) == FALSE)
 			{
-				// Attemp to lookup Easy Key
-				ini_set('user_agent', 'Timekoin Client (GUI) v' . TIMEKOIN_VERSION);
-				ini_set('default_socket_timeout', 10); // Timeout for request in seconds
+				// Lookup Easy Key
 				$easy_key = $_POST["easy_key"];
 
 				// Translate Easy Key to Public Key and fill in field with
-				$context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
-				$full_key = filter_sql(file_get_contents("http://timekoin.net/easy.php?s=$easy_key", FALSE, $context, NULL, 500));
+				$full_key = filter_sql(easy_key_lookup($easy_key));
 
-				if($full_key == "ERROR" || empty($full_key) == TRUE)
+				if($full_key === 0 || empty($full_key) == TRUE)
 				{
 					$easy_key_fail = TRUE;
 				}
@@ -240,7 +228,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			if($easy_key_fail == FALSE)
 			{
-				mysql_query("INSERT INTO `address_book` (`id`, `name`, `easy_key`, `full_key`) VALUES
+				mysqli_query($db_connect, "INSERT INTO `address_book` (`id`, `name`, `easy_key`, `full_key`) VALUES
 					(NULL, '" . $_POST["name"] . "', '$easy_key', '$full_key')");
 			}
 		}
@@ -270,16 +258,11 @@ if($_SESSION["valid_login"] == TRUE)
 			
 			if(empty($_POST["easy_key"]) == FALSE)
 			{
-				// Attemp to lookup Easy Key
-				ini_set('user_agent', 'Timekoin Client (GUI) v' . TIMEKOIN_VERSION);
-				ini_set('default_socket_timeout', 10); // Timeout for request in seconds
+				// Lookup Easy Key
 				$easy_key = $_POST["easy_key"];
+				$full_key = filter_sql(easy_key_lookup($easy_key));
 
-				// Translate Easy Key to Public Key and fill in field with
-				$context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
-				$full_key = filter_sql(file_get_contents("http://timekoin.net/easy.php?s=$easy_key", FALSE, $context, NULL, 500));
-
-				if($full_key == "ERROR" || empty($full_key) == TRUE)
+				if($full_key === 0 || empty($full_key) == TRUE)
 				{
 					$easy_key_edit_fail = TRUE;
 				}
@@ -287,7 +270,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			if($easy_key_edit_fail == FALSE)
 			{
-				mysql_query("UPDATE `address_book` SET `name` = '" . $_POST["name"] . "', `easy_key` = '$easy_key', `full_key` = '$full_key' WHERE `address_book`.`id` = " . $_GET["name_id"]);
+				mysqli_query($db_connect, "UPDATE `address_book` SET `name` = '" . $_POST["name"] . "', `easy_key` = '$easy_key', `full_key` = '$full_key' WHERE `address_book`.`id` = " . $_GET["name_id"]);
 			}
 		}
 
@@ -295,7 +278,7 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			if($easy_key_edit_fail == TRUE)
 			{
-				$easy_edit_messasge = '<font color="red"><strong>Easy Key Lookup Failed</strong></font>';
+				$easy_edit_messasge = '<font color="red"><strong>Easy Key Lookup Failed!<BR>Spelling is Case Sensitive.</strong></font>';
 				$name = $_POST["name"];
 				$easy_key = $_POST["easy_key"];
 				$full_key = $_POST["full_key"];
@@ -303,9 +286,9 @@ if($_SESSION["valid_login"] == TRUE)
 			else
 			{
 				// Edit Address
-				$name = mysql_result(mysql_query("SELECT name FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
-				$easy_key = mysql_result(mysql_query("SELECT easy_key FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
-				$full_key = mysql_result(mysql_query("SELECT full_key FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
+				$name = mysql_result(mysqli_query($db_connect, "SELECT name FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
+				$easy_key = mysql_result(mysqli_query($db_connect, "SELECT easy_key FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
+				$full_key = mysql_result(mysqli_query($db_connect, "SELECT full_key FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
 			}
 
 			$body_string = '<FORM ACTION="index.php?menu=address&amp;task=edit_save&amp;name_id=' . $_GET["name_id"] . '" METHOD="post">
@@ -321,15 +304,15 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["task"] != "new" && $_GET["task"] != "edit" && $easy_key_fail == FALSE && $easy_key_edit_fail == FALSE) // Default View
 		{
 			$sql = "SELECT * FROM `address_book` ORDER BY `address_book`.`name` ASC";
-			$sql_result = mysql_query($sql);
-			$sql_num_results = mysql_num_rows($sql_result);
+			$sql_result = mysqli_query($db_connect, $sql);
+			$sql_num_results = mysqli_num_rows($sql_result);
 
 			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
 				<tr><th>Address Name</th><th>Easy Key</th><th>Full Public Key</th><th></th><th></th><th></th></tr>';
 
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
-				$sql_row = mysql_fetch_array($sql_result);
+				$sql_row = mysqli_fetch_array($sql_result);
 				$body_string .= '<tr><td class="style2"><p style="word-wrap:break-word; width:175px; font-size:12px;">' . 	
 					$sql_row["name"] . 
 					' <a href="index.php?menu=history&amp;name_id=' . $sql_row["id"] . '" title="' . $sql_row["name"] . ' History"><img src="img/timekoin_history.png" style="float: right;"></a></p>
@@ -370,7 +353,7 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			// Manually remove this peer
 			$sql = "DELETE FROM `active_peer_list` WHERE `active_peer_list`.`IP_Address` = '" . $_POST["ip"] . "' AND `active_peer_list`.`domain` = '" . $_POST["domain"] . "' LIMIT 1";
-			mysql_query($sql);
+			mysqli_query($db_connect, $sql);
 		}
 
 		if($_GET["save"] == "peer" && empty($_POST["edit_port"]) == FALSE)
@@ -388,7 +371,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$sql = "UPDATE `active_peer_list` SET `last_heartbeat` = UNIX_TIMESTAMP() ,`join_peer_list` = $join_peer_list , `failed_sent_heartbeat` = '0',
 				`IP_Address` = '" . $_POST["edit_ip"] . "', `domain` = '" . $_POST["edit_domain"] . "', `subfolder` = '" . $_POST["edit_subfolder"] . "', `port_number` = '" . $_POST["edit_port"] . "' , `code` = '" . $_POST["edit_code"] . "'
 				WHERE `active_peer_list`.`IP_Address` = '" . $_POST["update_ip"] . "' AND `active_peer_list`.`domain` = '" . $_POST["update_domain"] . "' LIMIT 1";
-			mysql_query($sql);
+			mysqli_query($db_connect, $sql);
 		}
 
 		if($_GET["save"] == "newpeer" && empty($_POST["edit_port"]) == FALSE)
@@ -396,7 +379,7 @@ if($_SESSION["valid_login"] == TRUE)
 			// Manually insert new peer
 			$sql = "INSERT INTO `active_peer_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`last_heartbeat` ,`join_peer_list` ,`failed_sent_heartbeat` , `code`)
 				VALUES ('" . $_POST["edit_ip"] . "', '" . $_POST["edit_domain"] . "', '" . $_POST["edit_subfolder"] . "', '" . $_POST["edit_port"] . "', UNIX_TIMESTAMP() , UNIX_TIMESTAMP() , '0', '" . $_POST["edit_code"] . "')";
-			mysql_query($sql);
+			mysqli_query($db_connect, $sql);
 		}
 
 		if($_GET["save"] == "firstcontact")
@@ -406,7 +389,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			if($field_numbers > 0)
 			{
-				mysql_query("DELETE FROM `options` WHERE `options`.`field_name` = 'first_contact_server'");
+				mysqli_query($db_connect, "DELETE FROM `options` WHERE `options`.`field_name` = 'first_contact_server'");
 
 				while($field_numbers > 0)
 				{
@@ -419,7 +402,7 @@ if($_SESSION["valid_login"] == TRUE)
 							"---port=" . $_POST["first_contact_port$field_numbers"] . "---code=" . 
 							$_POST["first_contact_code$field_numbers"] . "---end')";
 
-						mysql_query($sql);
+						mysqli_query($db_connect, $sql);
 					}
 					
 					$field_numbers--;
@@ -446,8 +429,8 @@ if($_SESSION["valid_login"] == TRUE)
 			else if($_GET["type"] == "firstcontact")
 			{
 				$sql = "SELECT *  FROM `options` WHERE `field_name` = 'first_contact_server'";
-				$sql_result = mysql_query($sql);
-				$sql_num_results = mysql_num_rows($sql_result) + 2;
+				$sql_result = mysqli_query($db_connect, $sql);
+				$sql_num_results = mysqli_num_rows($sql_result) + 2;
 				$counter = 1;
 				$body_string = '<FORM ACTION="index.php?menu=peerlist&amp;save=firstcontact" METHOD="post">
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
@@ -455,7 +438,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
-					$sql_row = mysql_fetch_array($sql_result);
+					$sql_row = mysqli_fetch_array($sql_result);
 
 					$peer_ip = find_string("---ip=", "---domain", $sql_row["field_data"]);
 					$peer_domain = find_string("---domain=", "---subfolder", $sql_row["field_data"]);
@@ -481,8 +464,8 @@ if($_SESSION["valid_login"] == TRUE)
 			{
 				// Manually edit this peer
 				$sql = "SELECT * FROM `active_peer_list` WHERE `IP_Address` = '" . $_POST["ip"] ."' AND `domain` = '" . $_POST["domain"] ."' LIMIT 1";
-				$sql_result = mysql_query($sql);
-				$sql_row = mysql_fetch_array($sql_result);
+				$sql_result = mysqli_query($db_connect, $sql);
+				$sql_row = mysqli_fetch_array($sql_result);
 
 				if($sql_row["join_peer_list"] == 0)
 				{
@@ -509,10 +492,10 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 
 			$sql = "SELECT * FROM `active_peer_list`";
-			$active_peers = mysql_num_rows(mysql_query($sql));
+			$active_peers = mysqli_num_rows(mysqli_query($db_connect, $sql));
 
 			$sql = "SELECT * FROM `new_peers_list`";
-			$new_peers = mysql_num_rows(mysql_query($sql));
+			$new_peers = mysqli_num_rows(mysqli_query($db_connect, $sql));
 
 			$peer_number_bar = '<strong>Active Peers: <font color="green">' . $active_peers . '</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Peers in Reserve: <font color="blue">' . $new_peers . '</font></strong>';
 
@@ -540,12 +523,12 @@ if($_SESSION["valid_login"] == TRUE)
 				$sql = "SELECT * FROM `active_peer_list`";
 			}
 
-			$sql_result = mysql_query($sql);
-			$sql_num_results = mysql_num_rows($sql_result);
+			$sql_result = mysqli_query($db_connect, $sql);
+			$sql_num_results = mysqli_num_rows($sql_result);
 
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
-				$sql_row = mysql_fetch_array($sql_result);
+				$sql_row = mysqli_fetch_array($sql_result);
 
 				if($_GET["show"] != "reserve")
 				{
@@ -604,16 +587,16 @@ if($_SESSION["valid_login"] == TRUE)
 				<td colspan="4"><FORM ACTION="index.php?menu=peerlist&amp;edit=peer&amp;type=firstcontact" METHOD="post"><input type="submit" value="First Contact Servers"/></FORM></td></tr></table></div>';
 
 			$sql = "SELECT * FROM `new_peers_list`";
-			$new_peers = mysql_num_rows(mysql_query($sql));		
+			$new_peers = mysqli_num_rows(mysqli_query($db_connect, $sql));		
 
 			if($_GET["show"] == "reserve")
 			{
 				$sql = "SELECT * FROM `active_peer_list`";
-				$sql_num_results = mysql_num_rows(mysql_query($sql));
+				$sql_num_results = mysqli_num_rows(mysqli_query($db_connect, $sql));
 			}
 
-			$peer_transaction_start_blocks = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_start_blocks' LIMIT 1"),0,"field_data");
-			$peer_transaction_performance = mysql_result(mysql_query("SELECT * FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_performance' LIMIT 1"),0,"field_data");
+			$peer_transaction_start_blocks = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_start_blocks' LIMIT 1"),0,"field_data");
+			$peer_transaction_performance = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_performance' LIMIT 1"),0,"field_data");
 
 			$peer_number_bar = '<table border="0" cellspacing="0" cellpadding="0"><tr><td style="width:125px"><strong>Active Peers: <font color="green">' . $sql_num_results . '</font></strong></td>
 				<td style="width:175px"><strong>Peers in Reserve: <font color="blue">' . $new_peers . '</font></strong></td></tr></table>';
@@ -621,7 +604,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$quick_info = 'Shows all Active Peers.<br><br>You can manually delete or edit peers in this section.
 				<br><br>Peers in <font color="blue">Blue</font> will not expire after 5 minutes of inactivity.';
 
-			$home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
+			$home_update = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
 
 			if($_GET["show"] == "reserve")
 			{
@@ -643,11 +626,11 @@ if($_SESSION["valid_login"] == TRUE)
 			if(empty($_POST["current_private_key_password"]) == FALSE && empty($_POST["new_private_key_password"]) == FALSE && empty($_POST["confirm_private_key_password"]) == FALSE)
 			{
 				// Encrypt Private Key for first time
-				$new_record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'private_key_crypt' LIMIT 1"),0,0);
-				if($new_record_check === FALSE && $_POST["new_private_key_password"] == $_POST["confirm_private_key_password"])
+				$new_record_check = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'private_key_crypt' LIMIT 1"),0,0);
+				if($new_record_check == "" && $_POST["new_private_key_password"] == $_POST["confirm_private_key_password"])
 				{
 					// Encrypted Private Key Marker does not exist, create it
-					if(mysql_query("INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('private_key_crypt', '1')") == TRUE)
+					if(mysqli_query($db_connect, "INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('private_key_crypt', '1')") == TRUE)
 					{
 						// First Time Encryption
 						// Grab Currency Private Key, encrypt, then update database
@@ -655,7 +638,7 @@ if($_SESSION["valid_login"] == TRUE)
 						
 						$sql = "UPDATE `my_keys` SET `field_data` = '$my_new_crypt_private_key' WHERE `my_keys`.`field_name` = 'server_private_key' LIMIT 1";
 
-						if(mysql_query($sql) == TRUE)
+						if(mysqli_query($db_connect, $sql) == TRUE)
 						{
 							$encrypt_private_key = TRUE;
 						}
@@ -675,7 +658,7 @@ if($_SESSION["valid_login"] == TRUE)
 							$my_new_crypt_private_key = AesCtr::encrypt($decrypt_private_key, $_POST["new_private_key_password"], 256);
 							
 							$sql = "UPDATE `my_keys` SET `field_data` = '$my_new_crypt_private_key' WHERE `my_keys`.`field_name` = 'server_private_key' LIMIT 1";
-							if(mysql_query($sql) == TRUE)
+							if(mysqli_query($db_connect, $sql) == TRUE)
 							{
 								$encrypt_private_key = TRUE;
 							}
@@ -693,9 +676,9 @@ if($_SESSION["valid_login"] == TRUE)
 				if(empty($valid_key) == FALSE) // If Empty means decrypt password was wrong
 				{
 					$sql = "UPDATE `my_keys` SET `field_data` = '$decrypt_private_key' WHERE `my_keys`.`field_name` = 'server_private_key' LIMIT 1";
-					if(mysql_query($sql) == TRUE)
+					if(mysqli_query($db_connect, $sql) == TRUE)
 					{
-						if(mysql_query("DELETE FROM `options` WHERE `options`.`field_name` = 'private_key_crypt'") == TRUE)
+						if(mysqli_query($db_connect, "DELETE FROM `options` WHERE `options`.`field_name` = 'private_key_crypt'") == TRUE)
 						{
 							$encrypt_private_key = 2;							
 						}
@@ -716,7 +699,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 						$sql = "UPDATE `options` SET `field_data` = '$username_hash' WHERE `options`.`field_name` = 'username' LIMIT 1";
 
-						if(mysql_query($sql) == TRUE)
+						if(mysqli_query($db_connect, $sql) == TRUE)
 						{
 							// Update success, now change the session username
 							$_SESSION["login_username"] = $_POST["confirm_username"];
@@ -728,7 +711,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			if(empty($_POST["current_password"]) == FALSE && empty($_POST["new_password"]) == FALSE && empty($_POST["confirm_password"]) == FALSE)
 			{
-				$password_hash = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,"field_data");
+				$password_hash = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,"field_data");
 				$current_password_hash = hash('sha256', $_POST["current_password"]);
 				$new_password_hash = hash('sha256', $_POST["new_password"]);
 
@@ -741,7 +724,7 @@ if($_SESSION["valid_login"] == TRUE)
 						// Write new hash to database for username and change the session username
 						$sql = "UPDATE `options` SET `field_data` = '$new_password_hash' WHERE `options`.`field_name` = 'password' LIMIT 1";
 
-						if(mysql_query($sql) == TRUE)
+						if(mysqli_query($db_connect, $sql) == TRUE)
 						{
 							$password_change = TRUE;
 						}
@@ -787,16 +770,16 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["refresh"] == "change")
 		{
 			$sql = "UPDATE `options` SET `field_data` = '" . $_POST["home_update"] . "' WHERE `options`.`field_name` = 'refresh_realtime_home' LIMIT 1";
-			if(mysql_query($sql) == TRUE)
+			if(mysqli_query($db_connect, $sql) == TRUE)
 			{
 				$sql = "UPDATE `options` SET `field_data` = '" . $_POST["max_peers"] . "' WHERE `options`.`field_name` = 'max_active_peers' LIMIT 1";
-				if(mysql_query($sql) == TRUE)
+				if(mysqli_query($db_connect, $sql) == TRUE)
 				{
 					$sql = "UPDATE `options` SET `field_data` = '" . $_POST["max_new_peers"] . "' WHERE `options`.`field_name` = 'max_new_peers' LIMIT 1";
-					if(mysql_query($sql) == TRUE)
+					if(mysqli_query($db_connect, $sql) == TRUE)
 					{
 						$sql = "UPDATE `options` SET `field_data` = '" . $_POST["timezone"] . "' WHERE `options`.`field_name` = 'default_timezone' LIMIT 1";
-						if(mysql_query($sql) == TRUE)
+						if(mysqli_query($db_connect, $sql) == TRUE)
 						{
 							$refresh_change = TRUE;
 						}
@@ -855,12 +838,12 @@ if($_SESSION["valid_login"] == TRUE)
 
 			// Find Empty Record Location
 			$record_number = 1;
-			$record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'installed_plugins_1' LIMIT 1"),0,0);
+			$record_check = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'installed_plugins_1' LIMIT 1"),0,0);
 			
 			while(empty($record_check) == FALSE)
 			{
 				$record_number++;
-				$record_check = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'installed_plugins_$record_number' LIMIT 1"),0,0);
+				$record_check = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'installed_plugins_$record_number' LIMIT 1"),0,0);
 			}
 
 			if(empty($plugin_service) == TRUE)
@@ -874,7 +857,7 @@ if($_SESSION["valid_login"] == TRUE)
 					('installed_plugins_$record_number', '---file=$plugin_install---enable=0---show=0---name=$plugin_name---tab=$plugin_tab---service=$plugin_service---end')";
 			}
 
-			if(mysql_query($sql) == TRUE)
+			if(mysqli_query($db_connect, $sql) == TRUE)
 			{
 				$plugin_install_output .= '<font color="blue">Plugin (' . $plugin_name . ') Install Into Database Complete</font><br>';
 			}
@@ -912,13 +895,13 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			// Disable selected plugin, search for script file name in database
 			$plugin_filename = $_POST["pluginfile"];
-			$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+			$installed_plugins = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
 
 			// Rewrite String to Disable plugin
 			$new_disable_string = str_replace("enable=1", "enable=0", $installed_plugins);
 		
 			// Update String in Database
-			mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
 
 			home_screen("Plugin Manager", NULL, options_screen5() , "You can enable or disable plugins.");
 			exit;
@@ -928,13 +911,13 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			// Enable selected plugin, search for script file name in database
 			$plugin_filename = $_POST["pluginfile"];
-			$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+			$installed_plugins = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
 
 			// Rewrite String to Enable plugin
 			$new_disable_string = str_replace("enable=0", "enable=1", $installed_plugins);
 		
 			// Update String in Database
-			mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
 
 			$quick_info = 'You can enable or disable plugins.<br><br>
 			<strong>Plugin Services</strong> are started when you login. To shutdown plugin services, log out.<br><br>
@@ -948,7 +931,7 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			// Enable selected plugin, search for script file name in database
 			$plugin_filename = $_POST["pluginfile"];
-			$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+			$installed_plugins = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
 
 			// Find the file name for the plugin
 			$plugin_file = find_string("---file=", "---enable", $installed_plugins);
@@ -975,7 +958,7 @@ if($_SESSION["valid_login"] == TRUE)
 			// Delete Database Entry
 			$sql = "DELETE FROM `options` WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1";
 			
-			if(mysql_query($sql) == TRUE)
+			if(mysqli_query($db_connect, $sql) == TRUE)
 			{
 				$plugin_remove_output .= '<font color="blue">Plugin Database Entry Deleted</font><br>';
 			}
@@ -1006,7 +989,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			$sql = "UPDATE `options` SET `field_data` = '$standard_tabs_settings' WHERE `options`.`field_name` = 'standard_tabs_settings' LIMIT 1";
 
-			if(mysql_query($sql) == TRUE)
+			if(mysqli_query($db_connect, $sql) == TRUE)
 			{
 				$text_bar = '<font color="blue"><strong>Standard Tab Settings Updated</strong></font><br>';
 
@@ -1023,24 +1006,24 @@ if($_SESSION["valid_login"] == TRUE)
 						if($show_status == TRUE)
 						{
 							// Show Plugin Tab
-							$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+							$installed_plugins = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
 
 							// Rewrite String to Show Plugin Tab
 							$new_disable_string = str_replace("show=0", "show=1", $installed_plugins);
 						
 							// Update String in Database
-							mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
+							mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
 						}
 						else
 						{
 							// Hide Plugin Tab
-							$installed_plugins = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+							$installed_plugins = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
 
 							// Rewrite String to Show Plugin Tab
 							$new_disable_string = str_replace("show=1", "show=0", $installed_plugins);
 						
 							// Update String in Database
-							mysql_query("UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
+							mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$new_disable_string' WHERE `options`.`field_name` LIKE 'installed_plugins%' AND `options`.`field_data` = '$installed_plugins' LIMIT 1");
 						}
 
 						$cycle_counter++; // Next Plugin
@@ -1162,7 +1145,7 @@ if($_SESSION["valid_login"] == TRUE)
 					{
 						// Now it's time to send the transaction
 						$my_private_key = my_private_key();
-						$private_key_crypt = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'private_key_crypt' LIMIT 1"),0,1);
+						$private_key_crypt = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'private_key_crypt' LIMIT 1"),0,1);
 
 						if($private_key_crypt == TRUE)
 						{
@@ -1220,19 +1203,14 @@ if($_SESSION["valid_login"] == TRUE)
 			{
 				if($_GET["easykey"] == "grab")
 				{
-					ini_set('user_agent', 'Timekoin Client (GUI) v' . TIMEKOIN_VERSION);
-					ini_set('default_socket_timeout', 10); // Timeout for request in seconds
 					$message = $_POST["send_message"];
 					$easy_key = filter_sql($_POST["easy_key"]); // Filter SQL just in case
 					$last_easy_key = filter_sql($_POST["easy_key"]); // Filter SQL just in case
+					$easy_key = filter_sql(easy_key_lookup($easy_key));
 
-					// Translate Easy Key to Public Key and fill in field with
-					$context = stream_context_create(array('http' => array('header'=>'Connection: close'))); // Force close socket after complete
-					$easy_key = filter_sql(file_get_contents("http://timekoin.net/easy.php?s=$easy_key", FALSE, $context, NULL, 500));
-
-					if($easy_key == "ERROR" || empty($easy_key) == TRUE)
+					if($easy_key === 0 || empty($easy_key) == TRUE)
 					{
-						$server_message = '<font color="red"><strong>' . $last_easy_key . ' Not Found. Check Your Spelling.</strong></font>';
+						$server_message = '<font color="red"><strong>' . $last_easy_key . ' Not Found!<BR>Spelling is Case Sensitive.</strong></font>';
 						$easy_key = NULL;
 					}
 					else
@@ -1251,9 +1229,9 @@ if($_SESSION["valid_login"] == TRUE)
 				else
 				{
 					// Insert Address Book Entry
-					$name = mysql_result(mysql_query("SELECT name FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
-					$easy_key = mysql_result(mysql_query("SELECT easy_key FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
-					$full_key = mysql_result(mysql_query("SELECT full_key FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
+					$name = mysql_result(mysqli_query($db_connect, "SELECT name FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
+					$easy_key = mysql_result(mysqli_query($db_connect, "SELECT easy_key FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
+					$full_key = mysql_result(mysqli_query($db_connect, "SELECT full_key FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
 					
 					$display_balance = db_cache_balance($my_public_key);
 					$body_string = send_receive_body($full_key, NULL, NULL, $easy_key, $message, $name);
@@ -1270,15 +1248,136 @@ if($_SESSION["valid_login"] == TRUE)
 			$display_balance = number_format($display_balance);
 		}
 
-		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong>Current Billfold Balance: <font color="green">' . $display_balance . '</font></strong></td></tr>
-			<tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
-			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
+		if($_GET["easy_key"] == "new")
+		{
+			$body_string = '<FORM ACTION="index.php?menu=send&amp;easy_key=create" METHOD="post">
+			<table border="0" cellpadding="6"><tr><td><font color="green"><strong>Create New Easy Key</strong></font></td></tr>
+			<tr><td><strong>Creation Fee: <font color="green">' . (num_gen_peers(TRUE) + 1) . ' TK</font></strong></td></tr>
+			<tr><td><strong><font color="blue">New Easy Key</font></strong><BR>
+			<input type="text" maxlength="64" size="64" value="" name="new_easy_key" /></td></tr></table>
+			<input type="submit" value="Create New Easy Key" /></FORM>';
 
+			$quick_info = '<strong>Easy Keys</strong> are shortcuts enabling access to much longer <font color="blue">Public Keys</font> in Timekoin.</br><BR>
+			A New <strong>Easy Key</strong> shortcut you create must be between 1 and 64 characters in length including spaces.</br></br>
+			Each <strong>Easy Key</strong> shortcut may only contain letters, digits, or special characters.</br>No <strong>| ? = \' ` * %</strong> characters allowed.<BR><BR>
+			All <strong>Easy Keys <font color="red">Expire</font></strong> after <strong><font color="blue">3 Months</font></strong> unless you renew the key by creating it again with the same <font color="blue">Public Key</font> as before.';
+		}
+		else
+		{
 		$quick_info = 'Send your own Timekoins to someone else.<br><br>
 			Your client will attempt to verify if the public key is valid by examing the transaction history before sending.<br><br>
 			New public keys with no history could appear invalid for this reason, so always double check.<br><br>
 			You can enter an <strong>Easy Key</strong> and Timekoin will fill in the Public Key field for you.<br><br>
-			Messages encoded into your transaction are limited to <strong>64</strong> characters. Messages are visible to anyone that examines your specific transaction details.<br><br>No <strong>| ? = \' ` * %</strong> characters allowed.';
+			Messages encoded into your transaction are limited to <strong>64</strong> characters. Messages are visible to anyone that examines your specific transaction details.<br><br>No <strong>| ? = \' ` * %</strong> characters allowed.';			
+		}
+
+		if($_GET["easy_key"] == "create")
+		{
+			$new_easy_key = $_POST["new_easy_key"];
+			$easy_key_lookup = easy_key_lookup($new_easy_key);
+			$create_check = FALSE;
+
+			if($easy_key_lookup == "" || $easy_key_lookup === 0)
+			{
+				// None exist, let's create it
+				$create_check = TRUE;
+			}
+			else
+			{
+				// One already exist, is it ours?
+				if($easy_key_lookup == $my_public_key)
+				{
+					// Going to renew our existing easy key
+					$create_check = TRUE;
+				}
+			}
+
+			if($create_check == TRUE)
+			{
+				if(strlen($new_easy_key) >= 1 && strlen($new_easy_key) <= 64)
+				{
+					$old_strlen = strlen($new_easy_key);
+					$new_easy_key = filter_sql($new_easy_key);
+					$symbols = array("|", "?", "="); // SQL + URL
+					$new_easy_key = str_replace($symbols, "", $new_easy_key);
+
+					if($old_strlen == strlen($new_easy_key))
+					{
+						// All checks complete for valid input, check if server has enough TK
+						// to purchase the Easy Key
+						if(db_cache_balance($my_public_key) >= (num_gen_peers(TRUE) + 1))
+						{
+							$gen_public_keys = num_gen_peers(TRUE, TRUE);
+
+							if(empty($gen_public_keys) == FALSE)
+							{
+								$gen_peer_public_key = "Start";
+								$counter = 1;
+								$my_private_key = my_private_key();
+
+								while(empty($gen_peer_public_key) == FALSE)
+								{
+									$gen_peer_public_key = find_string("---GEN_PUBLIC$counter=", "---END$counter", $gen_public_keys);
+									$gen_peer_public_key = filter_sql(base64_decode($gen_peer_public_key));
+
+									if($gen_peer_public_key != $my_public_key)
+									{
+										if(send_timekoins($my_private_key, $my_public_key, $gen_peer_public_key, 1, "New Easy Key Fee") == FALSE)
+										{
+											write_log("New Easy Key Fee Transaction Failed for Public Key:<br>" . base64_encode($gen_peer_public_key),"GU");
+										}
+										else
+										{
+											write_log("New Easy Key Fee Sent to Public Key:<br>" . base64_encode($gen_peer_public_key),"GU");
+										}
+									}
+
+									$counter++;
+								}
+
+								// Finally, send transaction to Easy Key Blackhole Address
+								// with a 45 Minute Delay
+								if(send_timekoins($my_private_key, $my_public_key, base64_decode(EASY_KEY_PUBLIC_KEY), 1, $new_easy_key, (time() + 2700)) == TRUE)
+								{
+									$body_string = '<BR><BR><font color="green"><strong>Easy Key [' . $new_easy_key . '] Has Been Submitted to the Timekoin Network!</font><BR><BR>
+									Your Easy Key Should be Active Within 45 Minutes.<BR>
+									If You Are Renewing Your Key Before it Expires, then Expect No Delay.</strong>';
+								}
+								else
+								{
+									$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' Creation Failed!<BR>Could Not Send Final Transaction!</strong></font>';
+									write_log("Easy Key Transaction for Creation Failed to Send","GU");
+								}								
+							}
+							else
+							{
+								$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' Creation Failed!<BR>Could Gather Generating Public Keys!</strong></font>';
+							}
+						}
+						else
+						{
+							$body_string = '<BR><BR><font color="red"><strong>Creation Fee of [' . (num_gen_peers(TRUE) + 1) . '] TK Needed to Create This Easy Key!</strong></font>';
+						}
+					}
+					else
+					{
+						$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' Has Invalid Characters!</strong></font>';
+					}
+				}
+				else
+				{
+					$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' Character Length Incorrect!</strong></font>';
+				}
+			}
+			else
+			{
+				$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' is Taken Already!</strong></font>';
+			}
+		}		
+
+		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong>Current Billfold Balance: <font color="green">' . $display_balance . '</font></strong></td></tr>
+			<tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
+			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
 
 		home_screen('Send / Receive Timekoins', $text_bar, $body_string , $quick_info);
 		exit;
@@ -1314,20 +1413,20 @@ if($_SESSION["valid_login"] == TRUE)
 			{
 				// Save value in database
 				$sql = "UPDATE `options` SET `field_data` = '" . $_POST["font_size"] . "' WHERE `options`.`field_name` = 'public_key_font_size' LIMIT 1";
-				mysql_query($sql);
+				mysqli_query($db_connect, $sql);
 
 				$default_public_key_font = $_POST["font_size"];
 			}
 		}
 		else
 		{
-			$default_public_key_font = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
+			$default_public_key_font = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
 		}
 
 		if(empty($_GET["name_id"]) == FALSE)
 		{
-			$name = mysql_result(mysql_query("SELECT name FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
-			$full_key = mysql_result(mysql_query("SELECT full_key FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
+			$name = mysql_result(mysqli_query($db_connect, "SELECT name FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
+			$full_key = mysql_result(mysqli_query($db_connect, "SELECT full_key FROM `address_book` WHERE `id` = " . $_GET["name_id"]),0,0);
 			$show_last = 100;
 			$name_from = ' from <font color="blue">' . $name . '</font>';
 			$name_to = ' to <font color="blue">' . $name . '</font>';			
@@ -1367,7 +1466,7 @@ if($_SESSION["valid_login"] == TRUE)
 					else
 					{
 						// Check if the key matches anyone in the address book
-						$address_name = mysql_result(mysql_query("SELECT name FROM `address_book` WHERE `full_key` = '$public_key_from'"),0,0);
+						$address_name = mysql_result(mysqli_query($db_connect, "SELECT name FROM `address_book` WHERE `full_key` = '$public_key_from'"),0,0);
 
 						if(empty($address_name) == TRUE)
 						{
@@ -1436,9 +1535,13 @@ if($_SESSION["valid_login"] == TRUE)
 				if(empty($_GET["name_id"]) == TRUE)
 				{				
 					// Check if the key matches anyone in the address book
-					$address_name = mysql_result(mysql_query("SELECT name FROM `address_book` WHERE `full_key` = '$public_key_to'"),0,0);
+					$address_name = mysql_result(mysqli_query($db_connect, "SELECT name FROM `address_book` WHERE `full_key` = '$public_key_to'"),0,0);
 
-					if(empty($address_name) == TRUE)
+					if($public_key_to == EASY_KEY_PUBLIC_KEY)
+					{
+						$public_key_to = '<td class="style2"><font color="green">Your Easy Key Shortcut</font>';
+					}
+					else if(empty($address_name) == TRUE)
 					{
 						$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:150px; font-size:' . $default_public_key_font . 'px;">' . $public_key_to . '</p>';
 					}
@@ -1499,7 +1602,7 @@ if($_SESSION["valid_login"] == TRUE)
 			{
 				// Save value in database
 				$sql = "UPDATE `options` SET `field_data` = '" . $_POST["font_size"] . "' WHERE `options`.`field_name` = 'public_key_font_size' LIMIT 1";
-				mysql_query($sql);
+				mysqli_query($db_connect, $sql);
 
 				header("Location: index.php?menu=queue");
 				exit;
@@ -1507,22 +1610,22 @@ if($_SESSION["valid_login"] == TRUE)
 		}
 		else
 		{
-			$default_public_key_font = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
+			$default_public_key_font = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
 		}
 
 		$my_public_key = my_public_key();
 
 		// Find the last X amount of transactions sent to this public key
 		$sql = "SELECT * FROM `transaction_queue` ORDER BY `transaction_queue`.`timestamp` DESC";
-		$sql_result = mysql_query($sql);
-		$sql_num_results = mysql_num_rows($sql_result);
+		$sql_result = mysqli_query($db_connect, $sql);
+		$sql_num_results = mysqli_num_rows($sql_result);
 
 		$body_string = '<strong><font color="blue">( ' . number_format($sql_num_results) . ' )</font> Network Transactions Waiting for Processing</strong><br><br><div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Date</th>
 			<th>Send From</th><th>Send To</th><th>Amount</th></tr>';
 
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_array($sql_result);
+			$sql_row = mysqli_fetch_array($sql_result);
 			$crypt1 = $sql_row["crypt_data1"];
 			$crypt2 = $sql_row["crypt_data2"];
 			$crypt3 = $sql_row["crypt_data3"];
@@ -1553,7 +1656,7 @@ if($_SESSION["valid_login"] == TRUE)
 					$public_key_from = '<td class="style2"><font color="blue">Self Generated Transaction</font>';
 					
 					// Check if the key matches anyone in the address book
-					$address_name = mysql_result(mysql_query("SELECT name FROM `address_book` WHERE `full_key` = '" . base64_encode($public_key_trans_to) . "'"),0,0);
+					$address_name = mysql_result(mysqli_query($db_connect, "SELECT name FROM `address_book` WHERE `full_key` = '" . base64_encode($public_key_trans_to) . "'"),0,0);
 
 					if(empty($address_name) == TRUE)
 					{
@@ -1581,7 +1684,7 @@ if($_SESSION["valid_login"] == TRUE)
 					else
 					{
 						// Check if the key matches anyone in the address book
-						$address_name = mysql_result(mysql_query("SELECT name FROM `address_book` WHERE `full_key` = '" . base64_encode($public_key_trans_to) . "'"),0,0);
+						$address_name = mysql_result(mysqli_query($db_connect, "SELECT name FROM `address_book` WHERE `full_key` = '" . base64_encode($public_key_trans_to) . "'"),0,0);
 
 						if(empty($address_name) == TRUE)
 						{
@@ -1595,7 +1698,7 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 
 				// Check if the key matches anyone in the address book
-				$address_name = mysql_result(mysql_query("SELECT name FROM `address_book` WHERE `full_key` = '" . base64_encode($public_key_trans) . "'"),0,0);
+				$address_name = mysql_result(mysqli_query($db_connect, "SELECT name FROM `address_book` WHERE `full_key` = '" . base64_encode($public_key_trans) . "'"),0,0);
 
 				if(empty($address_name) == TRUE)
 				{
@@ -1627,7 +1730,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$quick_info = 'This section contains all the network transactions that are queued to be stored in the transaction history.';
 		
-		$home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
+		$home_update = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
 
 		home_screen('Transactions in Network Queue', $text_bar, $body_string , $quick_info, $home_update);
 		exit;
@@ -1643,8 +1746,8 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string = '<strong>Checking All Database Tables</strong><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Check Database Results</th></tr><tr><td>';
 
-			$db_check = mysql_query("CHECK TABLE `activity_logs`,`address_book`,`data_cache`,`my_keys`,`options`,`transaction_queue`");
-			$db_check_info = mysql_fetch_array($db_check);
+			$db_check = mysqli_query($db_connect, "CHECK TABLE `activity_logs`,`address_book`,`data_cache`,`my_keys`,`options`,`transaction_queue`");
+			$db_check_info = mysqli_fetch_array($db_check);
 			$db_check_count = 0;
 			
 			while(empty($db_check_info["$db_check_count"]) == FALSE)
@@ -1655,7 +1758,7 @@ if($_SESSION["valid_login"] == TRUE)
 				if(empty($db_check_info["$db_check_count"]) == TRUE)
 				{
 					// Move to next array
-					$db_check_info = mysql_fetch_array($db_check);
+					$db_check_info = mysqli_fetch_array($db_check);
 					$db_check_count = 0;
 					$body_string .= "</td></tr><tr><td>";
 				}
@@ -1674,8 +1777,8 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string = '<strong>Repair All Database Tables</strong><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Repair Database Results</th></tr><tr><td>';
 
-			$db_check = mysql_query("REPAIR TABLE `activity_logs`,`address_book`,`data_cache`,`my_keys`,`options`,`transaction_queue`");
-			$db_check_info = mysql_fetch_array($db_check);
+			$db_check = mysqli_query($db_connect, "REPAIR TABLE `activity_logs`,`address_book`,`data_cache`,`my_keys`,`options`,`transaction_queue`");
+			$db_check_info = mysqli_fetch_array($db_check);
 			$db_check_count = 0;
 			
 			while(empty($db_check_info["$db_check_count"]) == FALSE)
@@ -1686,7 +1789,7 @@ if($_SESSION["valid_login"] == TRUE)
 				if(empty($db_check_info["$db_check_count"]) == TRUE)
 				{
 					// Move to next array
-					$db_check_info = mysql_fetch_array($db_check);
+					$db_check_info = mysqli_fetch_array($db_check);
 					$db_check_count = 0;
 					$body_string .= "</td></tr><tr><td>";
 				}
@@ -1705,8 +1808,8 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string = '<strong>Optimize All Database Tables</strong><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Optimize Database Results</th></tr><tr><td>';
 
-			$db_check = mysql_query("OPTIMIZE TABLE `activity_logs`,`address_book`,`data_cache`,`my_keys`,`options`,`transaction_queue`");
-			$db_check_info = mysql_fetch_array($db_check);
+			$db_check = mysqli_query($db_connect, "OPTIMIZE TABLE `activity_logs`,`address_book`,`data_cache`,`my_keys`,`options`,`transaction_queue`");
+			$db_check_info = mysqli_fetch_array($db_check);
 			$db_check_count = 0;
 			
 			while(empty($db_check_info["$db_check_count"]) == FALSE)
@@ -1717,7 +1820,7 @@ if($_SESSION["valid_login"] == TRUE)
 				if(empty($db_check_info["$db_check_count"]) == TRUE)
 				{
 					// Move to next array
-					$db_check_info = mysql_fetch_array($db_check);
+					$db_check_info = mysqli_fetch_array($db_check);
 					$db_check_count = 0;
 					$body_string .= "</td></tr><tr><td>";
 				}
@@ -1739,7 +1842,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["logs"] == "clear")
 		{
-			mysql_query("TRUNCATE TABLE `activity_logs`");
+			mysqli_query($db_connect, "TRUNCATE TABLE `activity_logs`");
 			write_log("All Logs Cleared.", "GU");			
 		}
 
@@ -1784,12 +1887,12 @@ if($_SESSION["valid_login"] == TRUE)
 				$sql = "SELECT * FROM `activity_logs` WHERE `attribute` = '" . $_POST["filter"] . "' ORDER BY `activity_logs`.`timestamp` DESC LIMIT $show_last";
 			}
 			
-			$sql_result = mysql_query($sql);
-			$sql_num_results = mysql_num_rows($sql_result);
+			$sql_result = mysqli_query($db_connect, $sql);
+			$sql_num_results = mysqli_num_rows($sql_result);
 
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
-				$sql_row = mysql_fetch_array($sql_result);
+				$sql_row = mysqli_fetch_array($sql_result);
 
 				$body_string .= '<tr>
 				<td class="style2"><p style="width:160px;">' . unix_timestamp_to_human($sql_row["timestamp"]) . '</p></td>
@@ -1821,10 +1924,10 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			$sql = "UPDATE `my_keys` SET `field_data` = '" . base64_decode($_POST["restore_private_key"]) . "' WHERE `my_keys`.`field_name` = 'server_private_key' LIMIT 1";
 
-			if(mysql_query($sql) == TRUE)
+			if(mysqli_query($db_connect, $sql) == TRUE)
 			{
 				// Blank reverse crypto data field
-				mysql_query("UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");				
+				mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");				
 				
 				$server_message = '<br><font color="blue"><strong>Private Key Restore Complete!</strong></font><br><br>';
 			}
@@ -1838,10 +1941,10 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			$sql = "UPDATE `my_keys` SET `field_data` = '" . base64_decode($_POST["restore_public_key"]) . "' WHERE `my_keys`.`field_name` = 'server_public_key' LIMIT 1";
 
-			if(mysql_query($sql) == TRUE)
+			if(mysqli_query($db_connect, $sql) == TRUE)
 			{
 				// Blank reverse crypto data field
-				mysql_query("UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
 
 				$server_message = '<br><font color="blue"><strong>Public Key Restore Complete!</strong></font><br><br>';
 			}
@@ -1854,7 +1957,7 @@ if($_SESSION["valid_login"] == TRUE)
 		$my_public_key = base64_encode(my_public_key());
 		$my_private_key = base64_encode(my_private_key());
 
-		$private_key_crypt = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'private_key_crypt' LIMIT 1"),0,1);
+		$private_key_crypt = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'private_key_crypt' LIMIT 1"),0,1);
 
 		if($private_key_crypt == TRUE)
 		{
@@ -1898,7 +2001,7 @@ if($_SESSION["valid_login"] == TRUE)
 		header("Location: index.php");
 		
 		// Stop all plugin services
-		mysql_query("DELETE FROM `data_cache` WHERE `data_cache`.`field_name` LIKE 'TKCS_%'");
+		mysqli_query($db_connect, "DELETE FROM `data_cache` WHERE `data_cache`.`field_name` LIKE 'TKCS_%'");
 		exit;		
 	}
 //****************************************************************************

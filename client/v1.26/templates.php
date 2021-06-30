@@ -1,7 +1,7 @@
 <?PHP
 //***********************************************************
 //***********************************************************
-function login_screen($error_message)
+function login_screen($error_message = "")
 {
 
 ?>
@@ -62,7 +62,7 @@ Password: <input type="password" name="timekoin_password" />
 <center><img src="img/timekoin_logo.png" alt="" /></center>
 </div>
 </div>
-<div id="footer"><p>Timekoin Crypto Currency - <a href="http://timekoin.org">http://timekoin.org</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?></p></div>
+<div id="footer"><p>Timekoin Crypto Currency - <a href="http://timekoin.net">http://timekoin.net</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?></p></div>
 </div>
 </body>
 </html>	
@@ -72,6 +72,8 @@ Password: <input type="password" name="timekoin_password" />
 //***********************************************************
 function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0, $plugin_reference = FALSE)
 {
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+
 	$home;
 	$options;
 	$address;
@@ -102,7 +104,7 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0, $
 	{
 		case "home":
 			$home = 'class="active"';
-			$graph_data_range_recv = mysql_result(mysql_query("SELECT * FROM `data_cache` WHERE `field_name` = 'graph_data_range_recv' LIMIT 1"),0,"field_data");
+			$graph_data_range_recv = mysql_result(mysqli_query($db_connect, "SELECT * FROM `data_cache` WHERE `field_name` = 'graph_data_range_recv' LIMIT 1"),0,"field_data");
 			$timestamp_cache = intval(find_string("---time=", "---max", $graph_data_range_recv));
 
 			if(time() - $cache_refresh_time > $timestamp_cache) // Cache TTL
@@ -134,7 +136,7 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0, $
 				// Update data cache
 				if(empty($graph_data_range_recv) == FALSE)
 				{
-					mysql_query("UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---max=$largest_recv---data=$graph_data_range_recv---end' WHERE `data_cache`.`field_name` = 'graph_data_range_recv' LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---max=$largest_recv---data=$graph_data_range_recv---end' WHERE `data_cache`.`field_name` = 'graph_data_range_recv' LIMIT 1");
 				}
 			}
 			else
@@ -144,7 +146,7 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0, $
 				$graph_data_range_recv = find_string("---data=", "---end", $graph_data_range_recv);
 			}
 
-			$graph_data_range_sent = mysql_result(mysql_query("SELECT * FROM `data_cache` WHERE `field_name` = 'graph_data_range_sent' LIMIT 1"),0,"field_data");
+			$graph_data_range_sent = mysql_result(mysqli_query($db_connect, "SELECT * FROM `data_cache` WHERE `field_name` = 'graph_data_range_sent' LIMIT 1"),0,"field_data");
 			$timestamp_cache = intval(find_string("---time=", "---max", $graph_data_range_sent));
 
 			if(time() - $cache_refresh_time > $timestamp_cache)// Cache TTL
@@ -177,7 +179,7 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0, $
 				// Update data cache
 				if(empty($graph_data_range_sent) == FALSE)
 				{
-					mysql_query("UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---max=$largest_sent---data=$graph_data_range_sent---end' WHERE `data_cache`.`field_name` = 'graph_data_range_sent' LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---max=$largest_sent---data=$graph_data_range_sent---end' WHERE `data_cache`.`field_name` = 'graph_data_range_sent' LIMIT 1");
 				}
 			}
 			else
@@ -187,8 +189,8 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0, $
 				$graph_data_range_sent = find_string("---data=", "---end", $graph_data_range_sent);
 			}
 
-			$graph_data_trans_total = mysql_result(mysql_query("SELECT * FROM `data_cache` WHERE `field_name` = 'graph_data_trans_total' LIMIT 1"),0,"field_data");
-			$graph_data_amount_total = mysql_result(mysql_query("SELECT * FROM `data_cache` WHERE `field_name` = 'graph_data_amount_total' LIMIT 1"),0,"field_data");			
+			$graph_data_trans_total = mysql_result(mysqli_query($db_connect, "SELECT * FROM `data_cache` WHERE `field_name` = 'graph_data_trans_total' LIMIT 1"),0,"field_data");
+			$graph_data_amount_total = mysql_result(mysqli_query($db_connect, "SELECT * FROM `data_cache` WHERE `field_name` = 'graph_data_amount_total' LIMIT 1"),0,"field_data");			
 		
 			$timestamp_cache = intval(find_string("---time=", "---max", $graph_data_trans_total));
 
@@ -241,8 +243,8 @@ function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0, $
 				// Update data cache
 				if(empty($graph_data_trans_total) == FALSE && empty($graph_data_amount_total) == FALSE)
 				{
-					mysql_query("UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---max=$max_transactions---data=$graph_data_trans_total---end' WHERE `data_cache`.`field_name` = 'graph_data_trans_total' LIMIT 1");
-					mysql_query("UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---max=$max_amount---data=$graph_data_amount_total---end' WHERE `data_cache`.`field_name` = 'graph_data_amount_total' LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---max=$max_transactions---data=$graph_data_trans_total---end' WHERE `data_cache`.`field_name` = 'graph_data_trans_total' LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---max=$max_amount---data=$graph_data_amount_total---end' WHERE `data_cache`.`field_name` = 'graph_data_amount_total' LIMIT 1");
 				}
 			}
 			else
@@ -355,16 +357,16 @@ g_graph = new Graph(
 	}
 
 
-	$standard_settings_number = intval(mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'standard_tabs_settings' LIMIT 1"),0,"field_data"));
+	$standard_settings_number = intval(mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'standard_tabs_settings' LIMIT 1"),0,"field_data"));
 
 	$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' ORDER BY `options`.`field_name` ASC";
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 	$plugin_output;
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		$sql_row = mysqli_fetch_array($sql_result);
 
 		$plugin_file = find_string("---file=", "---enable", $sql_row["field_data"]);		
 		$plugin_tab = find_string("---tab=", "---service", $sql_row["field_data"]);
@@ -471,11 +473,11 @@ g_graph = new Graph(
 <?PHP
 	if($plugin_reference == TRUE)
 	{
-		echo '<img src="../img/timekoin_logo.png" width="80" height="80" alt="" />';
+		echo '<img src="../img/timekoin_logo_80.png" alt="" />';
 	}
 	else
 	{
-		echo '<img src="img/timekoin_logo.png" width="80" height="80" alt="" />';
+		echo '<img src="img/timekoin_logo_80.png" alt="" />';
 	}	
 ?>
 </div>
@@ -493,7 +495,7 @@ g_graph = new Graph(
 <div class="box"><?PHP echo $quick_info; ?></div>
 </div>
 </div>
-<div id="footer"><p>Timekoin Crypto Currency Client v<?PHP echo TIMEKOIN_VERSION; ?> - <a href="http://timekoin.org">http://timekoin.org</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?> - ( You are logged in as <strong><?PHP echo $_SESSION["login_username"]; ?></strong> )</p>
+<div id="footer"><p>Timekoin Crypto Currency Client v<?PHP echo TIMEKOIN_VERSION; ?> - <a href="http://timekoin.net">http://timekoin.net</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?> - ( You are logged in as <strong><?PHP echo $_SESSION["login_username"]; ?></strong> )</p>
  </div>
 </div>
 </body>
@@ -504,7 +506,9 @@ g_graph = new Graph(
 //***********************************************************
 function options_screen()
 {
-	$private_key_crypt = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'private_key_crypt' LIMIT 1"),0,1);
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+
+	$private_key_crypt = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'private_key_crypt' LIMIT 1"),0,1);
 
 	if($private_key_crypt == TRUE)
 	{
@@ -549,10 +553,11 @@ Confirm Password: <input type="password" name="confirm_password" /><br><br>
 //***********************************************************
 function options_screen2()
 {
-	$home_update = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
-	$max_active_peers = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,"field_data");
-	$max_new_peers = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'max_new_peers' LIMIT 1"),0,"field_data");
-	$default_timezone = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,"field_data");
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+	$home_update = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
+	$max_active_peers = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,"field_data");
+	$max_new_peers = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'max_new_peers' LIMIT 1"),0,"field_data");
+	$default_timezone = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,"field_data");
 
 	if(empty($default_timezone) == FALSE)
 	{
@@ -690,7 +695,8 @@ function options_screen3()
 //***********************************************************
 function options_screen4()
 {
-	$standard_settings_number = intval(mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'standard_tabs_settings' LIMIT 1"),0,"field_data"));
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+	$standard_settings_number = intval(mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'standard_tabs_settings' LIMIT 1"),0,"field_data"));
 		
 	if(check_standard_tab_settings($standard_settings_number, 1) == TRUE) { $tab_peerlist_enable = "CHECKED"; }else{ $tab_peerlist_disable = "CHECKED"; }
 	if(check_standard_tab_settings($standard_settings_number, 2) == TRUE) { $trans_queue_enable = "CHECKED"; }else{ $trans_queue_disable = "CHECKED"; }
@@ -703,15 +709,15 @@ function options_screen4()
 
 //	Plugin Tabs
 	$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' ORDER BY `options`.`field_name` ASC";
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 	$plugin_output;
 
 	if($sql_num_results > 0) { $plugin_output .= '<input type="hidden" name="plugins_installed" value="1">'; }
 	
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		$sql_row = mysqli_fetch_array($sql_result);
 
 		$plugin_file = find_string("---file=", "---enable", $sql_row["field_data"]);		
 		$plugin_name = find_string("---name=", "---tab", $sql_row["field_data"]);
@@ -759,14 +765,15 @@ function options_screen4()
 //***********************************************************
 function options_screen5()
 {
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' ORDER BY `options`.`field_name` ASC";
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 	$plugin_output;
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		$sql_row = mysqli_fetch_array($sql_result);
 		$plugin_file = find_string("---file=", "---enable", $sql_row["field_data"]);
 		$plugin_enable = intval(find_string("---enable=", "---show", $sql_row["field_data"]));
 		$plugin_name = find_string("---name=", "---tab", $sql_row["field_data"]);
@@ -813,8 +820,10 @@ function options_screen6()
 } 
 //***********************************************************
 //***********************************************************
-function send_receive_body($fill_in_key, $amount, $cancel = FALSE, $easy_key, $message, $name)
+function send_receive_body($fill_in_key = "", $amount = "", $cancel = FALSE, $easy_key = "", $message = "", $name = "")
 {
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+
 	if(empty($name) == FALSE)
 	{
 		// Fill in address book name
@@ -825,7 +834,7 @@ function send_receive_body($fill_in_key, $amount, $cancel = FALSE, $easy_key, $m
 	if($cancel == TRUE)
 	{
 		// Redo menu to show cancel or complete send buttons
-		$private_key_crypt = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'private_key_crypt' LIMIT 1"),0,1);
+		$private_key_crypt = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'private_key_crypt' LIMIT 1"),0,1);
 
 		if($private_key_crypt == TRUE)
 		{
@@ -850,7 +859,7 @@ function send_receive_body($fill_in_key, $amount, $cancel = FALSE, $easy_key, $m
 	<input type="submit" onclick="showWait()" name="Submit1" value="Send Timekoins" /></td><td valign="top" align="right">' . $request_password . '
 	</td></tr></table></FORM>
 	<table border="0" cellpadding="6"><tr><td style="width:580px" align="right">' . $cancel_button  . '</td></tr>
-	<tr><td align="right">Create Your Own Here:<br><a target="_blank" href="http://easy.timekoin.net/">easy.timekoin.net</a></td></tr></table>';
+	<tr><td align="right">Create Your Own Here:<br><a target="_self" href="index.php?menu=send&amp;easy_key=new"><strong>Easy Key Creation</strong></a></td></tr></table>';
 }
 //***********************************************************
 //***********************************************************
@@ -863,7 +872,7 @@ function tools_bar()
 }
 //***********************************************************
 //***********************************************************
-function backup_body($private_key, $public_key, $cancel_private = FALSE, $cancel_public = FALSE)
+function backup_body($private_key = "", $public_key = "", $cancel_private = FALSE, $cancel_public = FALSE)
 {
 	if($cancel_private == TRUE)
 	{

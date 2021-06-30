@@ -6,12 +6,9 @@ session_name("tkclitask");
 session_start();
 
 //***********************************************************************************
-if(mysql_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD) == FALSE)
-{
-	exit;
-}
+$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
-if(mysql_select_db(MYSQL_DATABASE) == FALSE)
+if($db_connect == FALSE)
 {
 	exit;
 }
@@ -22,11 +19,12 @@ function transaction_queue()
 	$next_transaction_cycle = transaction_cycle(1);
 	$current_transaction_cycle = transaction_cycle(0);
 	$results;
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
 	// Wipe transaction queue of all old transaction from current to previous cycle
 	if(rand(1,2) == 2) // Randomize a little
 	{
-		mysql_query("DELETE QUICK FROM `transaction_queue` WHERE `transaction_queue`.`timestamp` < $current_transaction_cycle");
+		mysqli_query($db_connect, "DELETE QUICK FROM `transaction_queue` WHERE `transaction_queue`.`timestamp` < $current_transaction_cycle");
 	}
 
 	// Create a hash of my own transaction queue
@@ -43,8 +41,8 @@ function transaction_queue()
 
 	$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND()";
 
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 
 	$transaction_queue_hash_match = 0;
 	$transaction_queue_hash_different = 0;
@@ -55,7 +53,7 @@ function transaction_queue()
 		
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_array($sql_result);
+			$sql_row = mysqli_fetch_array($sql_result);
 
 			$ip_address = $sql_row["IP_Address"];
 			$domain = $sql_row["domain"];
@@ -129,14 +127,14 @@ function transaction_queue()
 				{
 					// Old Queue System Check
 					//Check if this transaction is already in our queue
-					$hash_match = mysql_result(mysql_query("SELECT timestamp FROM `transaction_queue` WHERE `hash` = '$current_hash' LIMIT 1"),0,0);
+					$hash_match = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_queue` WHERE `hash` = '$current_hash' LIMIT 1"),0,0);
 				}
 				else
 				{
 					// New Queue System Check
 					$sql2 = "SELECT * FROM `transaction_queue`";
-					$sql_result2 = mysql_query($sql2);
-					$sql_num_results2 = mysql_num_rows($sql_result2);
+					$sql_result2 = mysqli_query($db_connect, $sql2);
+					$sql_num_results2 = mysqli_num_rows($sql_result2);
 					$queue_hash_test = NULL;
 					$hash_match = NULL;					
 
@@ -144,7 +142,7 @@ function transaction_queue()
 					{
 						for ($i2 = 0; $i2 < $sql_num_results2; $i2++)
 						{
-							$sql_row2 = mysql_fetch_array($sql_result2);
+							$sql_row2 = mysqli_fetch_array($sql_result2);
 
 							$queue_hash_test.= $sql_row2["timestamp"] . $sql_row2["public_key"] . $sql_row2["crypt_data1"] . 
 							$sql_row2["crypt_data2"] . $sql_row2["crypt_data3"] . $sql_row2["hash"] . $sql_row2["attribute"];		
@@ -297,13 +295,13 @@ function transaction_queue()
 					{
 						// Check for 100 public key limit in the transaction queue
 						$sql = "SELECT timestamp FROM `transaction_queue` WHERE `public_key` = '$transaction_public_key'";
-						$sql_result = mysql_query($sql);
-						$sql_num_results = mysql_num_rows($sql_result);
+						$sql_result = mysqli_query($db_connect, $sql);
+						$sql_num_results = mysqli_num_rows($sql_result);
 
 						if($sql_num_results < 100)
 						{						
 							// Transaction hash and real hash match.
-							mysql_query("INSERT INTO `transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
+							mysqli_query($db_connect, "INSERT INTO `transaction_queue` (`timestamp`,`public_key`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`)
 							VALUES ('$transaction_timestamp', '$transaction_public_key', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')");
 						}
 					}
@@ -327,29 +325,29 @@ function peer_list()
 {
 	ini_set('user_agent', 'Timekoin Client (Peerlist) v' . TIMEKOIN_VERSION);
 	ini_set('default_socket_timeout', 2); // Timeout for request in seconds
-
-	$max_active_peers = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,"field_data");
-	$max_new_peers = mysql_result(mysql_query("SELECT * FROM `options` WHERE `field_name` = 'max_new_peers' LIMIT 1"),0,"field_data");
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+	$max_active_peers = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,"field_data");
+	$max_new_peers = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'max_new_peers' LIMIT 1"),0,"field_data");
 
 	// How many active peers do we have?
-	$active_peers = mysql_result(mysql_query("SELECT COUNT(join_peer_list) FROM `active_peer_list`"),0);
-	$new_peers = mysql_result(mysql_query("SELECT COUNT(poll_failures) FROM `new_peers_list`"),0);
+	$active_peers = mysql_result(mysqli_query($db_connect, "SELECT COUNT(join_peer_list) FROM `active_peer_list`"),0);
+	$new_peers = mysql_result(mysqli_query($db_connect, "SELECT COUNT(poll_failures) FROM `new_peers_list`"),0);
 
 	if($active_peers == 0)
 	{
 		// No active or new peers to poll from, start with the first contact servers
 		// and copy them to the new peer list
 		$sql = "SELECT * FROM `options` WHERE `field_name` = 'first_contact_server' ORDER BY RAND() LIMIT $max_active_peers";
-		$sql_result = mysql_query($sql);
-		$sql_num_results = mysql_num_rows($sql_result);
+		$sql_result = mysqli_query($db_connect, $sql);
+		$sql_num_results = mysqli_num_rows($sql_result);
 
 		write_log("Peer List Empty. Adding First Contact Servers.", "PL");
 
 		// First Contact Server Format
-		//---ip=192.168.0.1---domain=timekoin.com---subfolder=timekoin---port=80---code=guest---end
+		//---ip=192.168.0.1---domain=timekoin.net---subfolder=timekoin---port=80---code=guest---end
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_array($sql_result);
+			$sql_row = mysqli_fetch_array($sql_result);
 			
 			$peer_ip = find_string("---ip=", "---domain", $sql_row["field_data"]);
 			$peer_domain = find_string("---domain=", "---subfolder", $sql_row["field_data"]);
@@ -361,7 +359,7 @@ function peer_list()
 			$sql = "INSERT INTO `active_peer_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`last_heartbeat`, `join_peer_list`, `failed_sent_heartbeat`, `code`)
 			VALUES ('$peer_ip', '$peer_domain', '$peer_subfolder', '$peer_port_number', UNIX_TIMESTAMP(), UNIX_TIMESTAMP(), '0', '$peer_code');";
 
-			mysql_query($sql);
+			mysqli_query($db_connect, $sql);
 
 			$active_peers++;
 		}
@@ -372,15 +370,15 @@ function peer_list()
 	{
 		//Start polling peers from the new peers list
 		$sql = "SELECT * FROM `new_peers_list` ORDER BY RAND() LIMIT 10";
-		$sql_result = mysql_query($sql);
-		$sql_num_results = mysql_num_rows($sql_result);
+		$sql_result = mysqli_query($db_connect, $sql);
+		$sql_num_results = mysqli_num_rows($sql_result);
 
 		// Peer difference
 		$peer_difference_count = $max_active_peers - $active_peers;
 
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_array($sql_result);
+			$sql_row = mysqli_fetch_array($sql_result);
 			$ip_address = $sql_row["IP_Address"];
 			$domain = $sql_row["domain"];
 			$subfolder = $sql_row["subfolder"];
@@ -389,8 +387,8 @@ function peer_list()
 			$code = $sql_row["code"];			
 
 			// Check to make sure that this peer is not already in our active peer list
-			$duplicate_check1 = mysql_result(mysql_query("SELECT * FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' LIMIT 1"),0,0);
-			$duplicate_check2 = mysql_result(mysql_query("SELECT * FROM `active_peer_list` WHERE `domain` LIKE '$domain' LIMIT 1"),0,1);
+			$duplicate_check1 = mysql_result(mysqli_query($db_connect, "SELECT * FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' LIMIT 1"),0,0);
+			$duplicate_check2 = mysql_result(mysqli_query($db_connect, "SELECT * FROM `active_peer_list` WHERE `domain` LIKE '$domain' LIMIT 1"),0,1);
 
 			if(empty($ip_address) == TRUE)
 			{
@@ -451,7 +449,7 @@ function peer_list()
 					$sql = "INSERT INTO `active_peer_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`last_heartbeat` ,`join_peer_list` ,`failed_sent_heartbeat` ,`code`)
 			VALUES ('$ip_address', '$domain', '$subfolder', '$port_number', '" . time() . "', '" . time() . "', '0', '$code');";
 
-					if(mysql_query($sql) == TRUE)
+					if(mysqli_query($db_connect, $sql) == TRUE)
 					{
 						// Subtract 1 from the peer difference count
 						$peer_difference_count--;
@@ -462,14 +460,14 @@ function peer_list()
 				{
 					//No response, record polling failure for future reference
 					$poll_failures++;
-					mysql_query("UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 				}
 
 			} // End Duplicate Peer Check
 			else
 			{
 				// Active response will remove poll failures
-				mysql_query("UPDATE `new_peers_list` SET `poll_failures` = 0 WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `new_peers_list` SET `poll_failures` = 0 WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 			}
 
 			// Check to see if enough peers have been added
@@ -487,20 +485,20 @@ function peer_list()
 	// Add more peers to the new peers list to satisfy new peer limit
 	// How many new peers do we have now?
 	$sql = "SELECT * FROM `new_peers_list`";
-	$new_peers_numbers = mysql_num_rows(mysql_query($sql));
+	$new_peers_numbers = mysqli_num_rows(mysqli_query($db_connect, $sql));
 
 	if($new_peers_numbers < $max_new_peers && rand(1,3) == 2)//Randomize a little to avoid spamming for new peers
 	{
 		// Add more possible peers to the new peer list by polling what the active peers have
 		$sql = "SELECT * FROM `active_peer_list` ORDER BY RAND() LIMIT 10";
-		$sql_result = mysql_query($sql);
-		$sql_num_results = mysql_num_rows($sql_result);
+		$sql_result = mysqli_query($db_connect, $sql);
+		$sql_num_results = mysqli_num_rows($sql_result);
 
 		$new_peer_difference = $max_new_peers - $new_peers_numbers;
 
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysql_fetch_array($sql_result);
+			$sql_row = mysqli_fetch_array($sql_result);
 			
 			$ip_address = $sql_row["IP_Address"];
 			$domain = $sql_row["domain"];
@@ -543,8 +541,8 @@ function peer_list()
 				else
 				{
 					// Check to make sure that this peer is not already in our new peer list
-					$duplicate_check1 = mysql_result(mysql_query("SELECT * FROM `new_peers_list` WHERE `IP_Address` = '$peer_IP' LIMIT 1"),0,0);
-					$duplicate_check2 = mysql_result(mysql_query("SELECT * FROM `new_peers_list` WHERE `domain` LIKE '$peer_domain' LIMIT 1"),0,1);
+					$duplicate_check1 = mysql_result(mysqli_query($db_connect, "SELECT * FROM `new_peers_list` WHERE `IP_Address` = '$peer_IP' LIMIT 1"),0,0);
+					$duplicate_check2 = mysql_result(mysqli_query($db_connect, "SELECT * FROM `new_peers_list` WHERE `domain` LIKE '$peer_domain' LIMIT 1"),0,1);
 
 					if(empty($peer_IP) == TRUE)
 					{
@@ -594,7 +592,7 @@ function peer_list()
 						$sql = "INSERT INTO `new_peers_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`poll_failures` ,`code`)
 				VALUES ('$peer_IP', '$peer_domain', '$peer_subfolder', '$peer_port_number', '0', 'guest')";
 
-						if(mysql_query($sql) == TRUE)
+						if(mysqli_query($db_connect, $sql) == TRUE)
 						{
 							// Subtract one from total left to find
 							$new_peer_difference--;
@@ -624,12 +622,12 @@ function peer_list()
 //***********************************************************************************
 // Send a heartbeat to all active peers in our list to make sure they are still online
 	$sql = "SELECT * FROM `active_peer_list`";
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		$sql_row = mysqli_fetch_array($sql_result);
 
 		if(rand(1,3) == 2)// Randomize to avoid spamming
 		{
@@ -647,14 +645,14 @@ function peer_list()
 			if($poll_peer == TRUE)
 			{
 				//Got a response from an active Timekoin server
-				mysql_query("UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "', `failed_sent_heartbeat` = 0 WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "', `failed_sent_heartbeat` = 0 WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 			}		
 			else
 			{
 				//No response, record polling failure for future reference
 				$failed_sent_heartbeat++;
 
-				mysql_query("UPDATE `active_peer_list` SET `failed_sent_heartbeat` = '$failed_sent_heartbeat' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `active_peer_list` SET `failed_sent_heartbeat` = '$failed_sent_heartbeat' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 			}
 		} // End Randomize Check
 
@@ -663,18 +661,18 @@ function peer_list()
 	// Remove all active peers that are offline for more than 5 minutes
 	if(rand(1,2) == 2)// Randomize to avoid spamming DB
 	{
-		mysql_query("DELETE QUICK FROM `active_peer_list` WHERE `last_heartbeat` < " . (time() - 300) . " AND `join_peer_list` != 0");
+		mysqli_query($db_connect, "DELETE QUICK FROM `active_peer_list` WHERE `last_heartbeat` < " . (time() - 300) . " AND `join_peer_list` != 0");
 	}
 	
 //***********************************************************************************
 // Send a heartbeat to all reserve peers in our list to make sure they are still online
 	$sql = "SELECT * FROM `new_peers_list`";
-	$sql_result = mysql_query($sql);
-	$sql_num_results = mysql_num_rows($sql_result);
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysql_fetch_array($sql_result);
+		$sql_row = mysqli_fetch_array($sql_result);
 
 		if(rand(1,3) == 2)// Randomize to avoid spamming
 		{
@@ -690,13 +688,13 @@ function peer_list()
 			if($poll_peer == TRUE)
 			{
 				//Got a response from an active Timekoin server
-				mysql_query("UPDATE `new_peers_list` SET `poll_failures` = 0 WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `new_peers_list` SET `poll_failures` = 0 WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 			}		
 			else
 			{
 				//No response, record polling failure for future reference
 				$poll_failures++;
-				mysql_query("UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+				mysqli_query($db_connect, "UPDATE `new_peers_list` SET `poll_failures` = '$poll_failures' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 			}
 		} // End Randomize Check
 	} // End for Loop
@@ -704,7 +702,7 @@ function peer_list()
 	// Clean up reserve peer list by removing those that have no responded for over 6 poll attempts
 	if(rand(1,2) == 2)// Randomize to avoid spamming DB
 	{	
-		mysql_query("DELETE QUICK FROM `new_peers_list` WHERE `poll_failures` > 6");
+		mysqli_query($db_connect, "DELETE QUICK FROM `new_peers_list` WHERE `poll_failures` > 6");
 	}
 
 	return;
@@ -723,7 +721,8 @@ function tk_client_task()
 		if(check_for_updates(TRUE) == 1)
 		{
 			// Update available, alert user
-			mysql_query("UPDATE `options` SET `field_data` = '1' WHERE `options`.`field_name` = 'update_available' LIMIT 1");
+			$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '1' WHERE `options`.`field_name` = 'update_available' LIMIT 1");
 		}
 	}
 	return;
