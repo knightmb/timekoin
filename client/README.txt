@@ -22,7 +22,7 @@ any of the 3 points results in the collapse of the entire transaction data.
 The software requires these components before installing.
 
 1. Web Server (Apache, IIS, etc.)
-2. PHP (v5 or higher) for the Web Server, including the mySQL, GMP, and
+2. PHP (v7.2 or higher) for the Web Server, including the mySQL, GMP, and
 *OpenSSL* module if possible
 3. mySQL or MariaDB Database Server (v5 or higher, free community version works just fine)
 
@@ -38,7 +38,7 @@ far as we know.
 
 1.  Checklist Requirements:
 
-	A. Verify that your web server has installed, PHP5 (with mySQL, GMP,
+	A. Verify that your web server has installed, PHPv7.2 (with mySQL, GMP,
 *OpenSSL* if possible) modules installed, and that you have access to
 your mySQL server to create new databases, set user permissions, etc. It's also
 important that you have the ability to modify access rights on your web server
@@ -136,7 +136,7 @@ through installations) visit the website for more information about Timekoin.
 There you will find more resources and forums to get the maximum enjoyment out
 of your Timekoin client software.
 
-http://timekoin.org/
+http://timekoin.net/
 
 
 Sincerely!

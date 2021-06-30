@@ -1,10 +1,15 @@
 Timekoin Client - Change Log
 
+Timekoin Client - 1.26 (Released 2021-6-30)
+===========================================
+- Updated to work with PHP v7.2 and higher
+- Updated to work with new Easy Key system
+
+
 Timekoin Client - 1.25 (Released 2014-2-12)
 ===========================================
 - Update Queue Watch for new Timekoin Queue management system
 - Speed Tweaks to Interface
-
 
 Timekoin Client - 1.2 (Released 2013-11-09)
 ===========================================
