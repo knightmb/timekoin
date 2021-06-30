@@ -1,9 +1,20 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 4.0 (Released 2021-6-30)
+============================================
+- The entire back-end of Timekoin has been re-worked so it is no longer compatible with any version less than PHP v7.2 now
+- Timekoin default sql template upgraded to all 64-bit integers where time storage might be an issue in +100 years :)
+- Easy Key moved into Transaction History instead of external site
+- Replaced the Timekoin Random Number generator with the Mersenne Twister implementation, available as of PHP 7.1.0
+- Transaction Foundations now seeds the Mersenne Twister implementation to make it nearly impossible to predict future numbers
+- Network speed increase, data bandwidth reduction and history processing speed increase
+- Generation Idle Removal Window has been increased from 2 Hours to 8 Hours
+- Increased "My Transaction Queue" time from 15 minutes to 45 Minutes
+- Begin new peer election process where new servers must pay to enter peer election
+
 Timekoin Server - 3.61 (Released 2016-1-18)
 ============================================
 - Bug fix in Generation Peer Manager to clear key scores to prevent cross contamination of data between IPv4 Peer Elections & IPv6 Peer Elections
-
 
 Timekoin Server - 3.6 (Released 2016-1-18)
 ============================================

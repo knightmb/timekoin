@@ -22,16 +22,15 @@ any of the 3 points results in the collapse of the entire transaction data.
 The software requires these components before installing.
 
 1. Web Server (Apache, IIS, etc.)
-2. PHP (v5 or higher) for the Web Server, including the CLI, mySQL, GMP
-extensions (OpenSSL optional)
+2. PHP (v7.2 or higher) for the Web Server, including the CLI, mySQL, GMP
+extensions (OpenSSL optional but recommended for speed)
 3. mySQL (or drop in MariaDB) Database Server (v5 or higher, free community 
 version works just fine)
 
 -=================== QUICK INSTALL =====================-
 
 If you are a computer guru, the software can be setup on any operating system
-that
-supports the requirements above (Windows, Mac, Linux, Unix, etc.) If you already
+that supports the requirements above (Windows, Mac, Linux, Unix, etc.) If you already
 have or know how to quickly install these, then you will be able to get up and
 running very quickly.
 
@@ -40,7 +39,7 @@ far as we know.
 
 1.  Checklist Requirements:
 
-	A. Verify that your web server has installed, PHP5 (with CLI,
+	A. Verify that your web server has installed, PHPv7.2 (with CLI,
 mySQL, GMP) modules installed, and that you have access to your mySQL server
 to create new databases, set user permissions, etc. It's also important that you
 have the ability to modify access rights on your web server as some of the
@@ -67,7 +66,7 @@ account.
 
 	A. Now that the database is prepared, begin by creating a folder on your
 web server. The folder name can be whatever you like, but we recommend
-“timekoin” for these instructions. Copy all the files from the v2.X folder to
+“timekoin” for these instructions. Copy all the files from the v4.X folder to
 this new web folder. Make sure your directory structure stays intact so that the
 “css” and “img” folders make it properly to their new home.
 
@@ -156,7 +155,7 @@ The next important  field is “Timekoin Subfolder”. The default is “timekoi
 because usually peers would get to your server via http://mywebsite.com/timekoin
 for a domain or http://192.168.1.1/timekoin for an IP address. If you are
 running timekoin from a different folder (example
-http://mywebsite.com/bobs_koin/), then this field needs to updated accordingly.
+http://mywebsite.com/foo_koin/), then this field needs to updated accordingly.
 This is how other peers will find you on the Internet, so if the folder is
 inaccurate, your server will report an inaccurate path to the other peers and
 thus peers will not be able to communicate back to your server.
@@ -195,7 +194,7 @@ through installations) visit the website for more information about timekoin.
 There you will find more resources and forums to get the maximum enjoyment out
 of your timekoin server software.
 
-http://timekoin.org/
+http://timekoin.net/
 
 
 Sincerely!
