@@ -645,7 +645,7 @@ if($_GET["action"] == "send_tk")
 {
 	if(check_hashcode_permissions($hash_permissions, "send_tk") == TRUE)
 	{
-		$next_transaction_cycle = transaction_cycle(1);
+		$next_transaction_cycle = transaction_cycle(10);// Increased for a 45 Minute Future Transaction if desired
 		$current_transaction_cycle = transaction_cycle(0);		
 		
 		$transaction_timestamp = intval($_POST["timestamp"]);
@@ -1143,6 +1143,86 @@ if($_GET["action"] == "pk_gen_total")
 }
 //***********************************************************************************
 //***********************************************************************************
+if($_GET["action"] == "easy_key")
+{
+	if(check_hashcode_permissions($hash_permissions, "easy_key") == TRUE)
+	{
+		// Easy Key shortcut
+		$easy_key = easy_key_lookup(base64_decode($_POST["easy_key"]));
+
+		if($easy_key == "")
+		{
+			// No Public Key Found
+			echo 0;
+		}
+		else
+		{
+			// Send Public Key in Base64
+			echo base64_encode($easy_key);
+		}
+	}
+
+	// Log inbound IP activity
+	log_ip("AP", scale_trigger(100));
+	exit;
+}
+//***********************************************************************************
+//***********************************************************************************
+if($_GET["action"] == "num_gen_peers")
+{
+	if(check_hashcode_permissions($hash_permissions, "num_gen_peers") == TRUE)
+	{
+		$distinct = intval($_GET["distinct"]);
+		$public_keys = intval($_GET["public_keys"]);
+
+		if($distinct == 1)
+		{
+			if($public_keys == 1)
+			{
+				$sql = "SELECT public_key FROM `generating_peer_list` GROUP BY `public_key`";
+			}
+			else
+			{
+				echo num_gen_peers(FALSE, TRUE);
+			}
+		}
+		else
+		{
+			if($public_keys == 1)
+			{
+				$sql = "SELECT public_key FROM `generating_peer_list`";
+			}
+			else
+			{
+				echo num_gen_peers();
+			}
+		}
+
+		if($public_keys == 1)
+		{
+			$sql_result = mysqli_query($db_connect, $sql);
+			$sql_num_results = mysqli_num_rows($sql_result);
+			$counter = 1;
+			$echo_buffer;
+
+			for ($i = 0; $i < $sql_num_results; $i++)
+			{
+				$sql_row = mysqli_fetch_array($sql_result);
+				$echo_buffer.= "---GEN_PUBLIC$counter=" . base64_encode($sql_row["public_key"]) . "---END$counter";
+				$counter++;
+			}
+
+			echo $echo_buffer;
+		}
+	}
+
+	// Log inbound IP activity
+	log_ip("AP", scale_trigger(100));
+	exit;
+}
+//***********************************************************************************
+//***********************************************************************************
+
 // Log IP even when not using any functions, just in case
 log_ip("AP", scale_trigger(10));
 ?>

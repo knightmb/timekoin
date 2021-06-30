@@ -1396,7 +1396,9 @@ if($_SESSION["valid_login"] == TRUE)
 						$_POST["pk_sent$counter"],
 						$_POST["pk_gen_total$counter"],
 						$_POST["tk_process_status$counter"],
-						$_POST["tk_start_stop$counter"]) . "')");
+						$_POST["tk_start_stop$counter"],
+						$_POST["easy_key$counter"],
+						$_POST["num_gen_peers$counter"]) . "')");
 				}
 
 				$counter++;
@@ -1421,18 +1423,20 @@ if($_SESSION["valid_login"] == TRUE)
 				$hashcode_permissions = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'hashcode" . $counter . "_permissions' LIMIT 1"),0,"field_data");
 
 				$body_text .= '<tr><td valign="bottom" align="right"><strong>Name: <input type="text" name="name'. $counter . '" size="15" value="' . $hashcode_name . '"/>
-				<br>Hashcode: <input type="text" name="hashcode'. $counter . '" size="15" value="' . $hashcode . '"/></strong></td>
-				<td><input type="checkbox" name="pk_balance'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_balance", TRUE) . '>pk_balance 
-				<input type="checkbox" name="pk_gen_amt'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_gen_amt", TRUE) . '>pk_gen_amt
-				<input type="checkbox" name="pk_gen_total'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_gen_total", TRUE) . '>pk_gen_total
-				<input type="checkbox" name="pk_history'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_history", TRUE) . '>pk_history<br>
-				<input type="checkbox" name="pk_recv'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_recv", TRUE) . '>pk_recv
-				<input type="checkbox" name="pk_sent'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_sent", TRUE) . '>pk_sent
-				<input type="checkbox" name="pk_valid'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_valid", TRUE) . '>pk_valid
-				<input type="checkbox" name="send_tk'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "send_tk", TRUE) . '>send_tk<br>
+				<br>Hashcode: <input type="text" name="hashcode'. $counter . '" size="15" value="' . $hashcode . '"/></strong></td><td>
+				<input type="checkbox" name="easy_key'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "easy_key", TRUE) . '>easy_key 
+				<input type="checkbox" name="num_gen_peers'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "num_gen_peers", TRUE) . '>num_gen_peers 
+				<input type="checkbox" name="pk_balance'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_balance", TRUE) . '>pk_balance 
+				<input type="checkbox" name="pk_gen_amt'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_gen_amt", TRUE) . '>pk_gen_amt<br>
+				<input type="checkbox" name="pk_gen_total'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_gen_total", TRUE) . '>pk_gen_total 
+				<input type="checkbox" name="pk_history'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_history", TRUE) . '>pk_history 
+				<input type="checkbox" name="pk_recv'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_recv", TRUE) . '>pk_recv 
+				<input type="checkbox" name="pk_sent'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_sent", TRUE) . '>pk_sent<br>
+				<input type="checkbox" name="pk_valid'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "pk_valid", TRUE) . '>pk_valid 
+				<input type="checkbox" name="send_tk'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "send_tk", TRUE) . '>send_tk 
+				<input type="checkbox" name="tk_process_status'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "tk_process_status", TRUE) . '>tk_process_status 
+				<input type="checkbox" name="tk_start_stop'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "tk_start_stop", TRUE) . '>tk_start_stop<br>
 				<input type="checkbox" name="tk_trans_total'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "tk_trans_total", TRUE) . '>tk_trans_total
-				<input type="checkbox" name="tk_process_status'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "tk_process_status", TRUE) . '>tk_process_status
-				<input type="checkbox" name="tk_start_stop'. $counter . '" value="1" ' . check_hashcode_permissions($hashcode_permissions, "tk_start_stop", TRUE) . '>tk_start_stop
 				</td></tr><tr><td colspan="2"><hr></td></tr>';
 
 				$counter++;
@@ -2538,7 +2542,6 @@ if($_SESSION["valid_login"] == TRUE)
 							$sql_result = mysqli_query($db_connect, $sql);
 							$sql_num_results = mysqli_num_rows($sql_result);
 							$my_private_key = my_private_key();
-							$my_public_key = my_public_key();
 
 							for ($i = 0; $i < $sql_num_results; $i++)
 							{
@@ -2548,11 +2551,11 @@ if($_SESSION["valid_login"] == TRUE)
 								{
 									if(send_timekoins($my_private_key, $my_public_key, $sql_row["public_key"], 1, "New Easy Key Fee") == FALSE)
 									{
-										write_log($ip_mode . "New Easy Key Fee Transaction Failed for Public Key:<br>" . base64_encode($sql_row["public_key"]),"GU");
+										write_log("New Easy Key Fee Transaction Failed for Public Key:<br>" . base64_encode($sql_row["public_key"]),"GU");
 									}
 									else
 									{
-										write_log($ip_mode . "New Easy Key Fee Sent to Public Key:<br>" . base64_encode($sql_row["public_key"]),"GU");
+										write_log("New Easy Key Fee Sent to Public Key:<br>" . base64_encode($sql_row["public_key"]),"GU");
 									}
 								}
 							}
@@ -2567,7 +2570,8 @@ if($_SESSION["valid_login"] == TRUE)
 							}
 							else
 							{
-								write_log($ip_mode . "Easy Key Transaction for Creation Failed to Send","GU");
+								$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' Creation Failed!<BR>Could Not Send Final Transaction!</strong></font>';
+								write_log("Easy Key Transaction for Creation Failed to Send","GU");
 							}
 						}
 						else
@@ -2993,7 +2997,14 @@ if($_SESSION["valid_login"] == TRUE)
 						$inside_message = find_string("---MSG=", "", $transaction_info, TRUE);				
 
 						// Everyone else
-						$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:150px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($sql_row["public_key_to"]) . '</p>';
+						if(base64_encode($sql_row["public_key_to"]) == EASY_KEY_PUBLIC_KEY)
+						{
+							$public_key_from = '<td class="style2"><font color="green">Your Easy Key Shortcut</font>';
+						}
+						else
+						{
+							$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:150px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($sql_row["public_key_to"]) . '</p>';
+						}
 
 						// How many cycles back did this take place?
 						$cycles_back = intval((time() - $sql_row["timestamp"]) / 300);

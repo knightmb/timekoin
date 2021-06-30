@@ -2176,7 +2176,7 @@ function check_for_updates($code_feedback = FALSE)
 
 	$update_check1 = 'Checking for Updates....<br><br>';
 
-	$poll_version = file_get_contents("https://timekoin.net/tkupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
+	$poll_version = file_get_contents("http://timekoin.net/tkupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
 
 	if($poll_version > TIMEKOIN_VERSION && empty($poll_version) == FALSE)
 	{
@@ -2191,7 +2191,7 @@ function check_for_updates($code_feedback = FALSE)
 	}
 	else
 	{
-		$update_check1 .= '<strong><font color="red">ERROR: Could Not Contact Secure Server https://timekoin.net</font></strong>';
+		$update_check1 .= '<strong><font color="red">ERROR: Could Not Contact the Server http://timekoin.net</font></strong>';
 	}
 
 	return $update_check1;
@@ -2228,7 +2228,7 @@ function check_update_script($script_name, $script, $php_script_file, $poll_vers
 {
 	$update_status_return = NULL;
 	
-	$poll_sha = file_get_contents("https://timekoin.net/tkupdates/v$poll_version/$script.sha", FALSE, $context, NULL, 64);
+	$poll_sha = file_get_contents("http://timekoin.net/tkupdates/v$poll_version/$script.sha", FALSE, $context, NULL, 64);
 
 	if(empty($poll_sha) == FALSE)
 	{
@@ -2253,7 +2253,7 @@ function check_update_script($script_name, $script, $php_script_file, $poll_vers
 //***********************************************************************************
 function get_update_script($php_script, $poll_version, $context)
 {
-	return file_get_contents("https://timekoin.net/tkupdates/v$poll_version/$php_script.txt", FALSE, $context, NULL);
+	return file_get_contents("http://timekoin.net/tkupdates/v$poll_version/$php_script.txt", FALSE, $context, NULL);
 }
 //***********************************************************************************
 //***********************************************************************************
@@ -2308,7 +2308,7 @@ function do_updates()
 	ini_set('user_agent', 'Timekoin Server (GUI) v' . TIMEKOIN_VERSION);
 	ini_set('default_socket_timeout', 10); // Timeout for request in seconds
 
-	$poll_version = file_get_contents("https://timekoin.net/tkupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
+	$poll_version = file_get_contents("http://timekoin.net/tkupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
 
 	$update_status = 'Starting Update Process...<br><br>';
 
@@ -2378,12 +2378,12 @@ function do_updates()
 		$update_status .= run_script_update("Function Storage (function.php)", "function", $poll_version, $context);
 		//****************************************************
 
-		$finish_message = file_get_contents("https://timekoin.net/tkupdates/v$poll_version/ZZZfinish.txt", FALSE, $context, NULL);
+		$finish_message = file_get_contents("http://timekoin.net/tkupdates/v$poll_version/ZZZfinish.txt", FALSE, $context, NULL);
 		$update_status .= '<br>' . $finish_message;
 	}
 	else
 	{
-		$update_status .= '<font color="red"><strong>ERROR: Could Not Contact Secure Server https://timekoin.net</strong></font>';
+		$update_status .= '<font color="red"><strong>ERROR: Could Not Contact the Server http://timekoin.net</strong></font>';
 	}
 
 	return $update_status;
@@ -2524,7 +2524,7 @@ function update_windows_port($new_port)
 }
 //***********************************************************************************
 //***********************************************************************************
-function generate_hashcode_permissions($pk_balance, $pk_gen_amt, $pk_recv, $send_tk, $pk_history, $pk_valid, $tk_trans_total, $pk_sent, $pk_gen_total, $tk_process_status, $tk_start_stop)
+function generate_hashcode_permissions($pk_balance = "", $pk_gen_amt = "", $pk_recv = "", $send_tk = "", $pk_history = "", $pk_valid = "", $tk_trans_total = "", $pk_sent = "", $pk_gen_total = "", $tk_process_status = "", $tk_start_stop = "", $easy_key = "", $num_gen_peers = "")
 {
 	$permissions_number = 0;
 
@@ -2539,12 +2539,56 @@ function generate_hashcode_permissions($pk_balance, $pk_gen_amt, $pk_recv, $send
 	if($pk_gen_total == 1) { $permissions_number += 256; }
 	if($tk_process_status == 1) { $permissions_number += 512; }
 	if($tk_start_stop == 1) { $permissions_number += 1024; }
+	if($easy_key == 1) { $permissions_number += 2048; }
+	if($num_gen_peers == 1) { $permissions_number += 4096; }	
 
 	return $permissions_number;
 }
 //***********************************************************************************
 function check_hashcode_permissions($permissions_number, $pk_api_check, $checkbox = FALSE)
 {
+	// num_gen_peers
+	if($pk_api_check == "num_gen_peers")
+	{ 
+		if($permissions_number >= 4096) // Permission Granted
+		{
+			if($checkbox == TRUE)
+			{
+				return "CHECKED";
+			}
+			else
+			{
+				return TRUE;
+			}
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	if($permissions_number - 4096 >= 0) { $permissions_number -= 4096; } // Subtract Active Permission
+
+	// easy_key
+	if($pk_api_check == "easy_key")
+	{ 
+		if($permissions_number >= 2048) // Permission Granted
+		{
+			if($checkbox == TRUE)
+			{
+				return "CHECKED";
+			}
+			else
+			{
+				return TRUE;
+			}
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	if($permissions_number - 2048 >= 0) { $permissions_number -= 2048; } // Subtract Active Permission
+
 	// tk_start_stop
 	if($pk_api_check == "tk_start_stop")
 	{ 

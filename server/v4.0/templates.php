@@ -432,7 +432,7 @@ function options_screen2()
 	</td><td></td>
 	<tr><td colspan="2"><hr></td></tr></table></FORM>
 	<table border="0"><tr>
-	<td style="width:215px" align="left"><FORM ACTION="index.php?menu=options&amp;db_update=home" METHOD="post"><input type="submit" name="Submit4" value="Database Update" /></FORM></td>
+	<td style="width:215px" align="left"><FORM ACTION="index.php?menu=options&amp;db_update=home" METHOD="post"><input type="submit" name="Submit4" value="Database Update" DISABLED/></FORM></td>
 	<td style="width:215px" align="right"><FORM ACTION="index.php?menu=options&amp;hashcode=manage" METHOD="post"><input type="submit" name="Submit3" value="Manage Hash Code Access" /></FORM></td>
 	<td style="width:215px" valign="bottom" align="right"><FORM ACTION="index.php?menu=options&amp;upgrade=check" METHOD="post"><input type="submit" name="Submit3" value="Check for Updates" /></FORM></td></tr>
 	<tr><td colspan="3"><hr></td></tr>

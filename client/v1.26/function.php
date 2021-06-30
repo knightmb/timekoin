@@ -939,7 +939,7 @@ function check_for_updates($code_feedback = FALSE)
 	}
 	else
 	{
-		$update_check1 .= '<strong>ERROR: Could Not Contact to Server http://timekoin.net</strong>';
+		$update_check1 .= '<strong>ERROR: Could Not Contact the Server http://timekoin.net</strong>';
 	}
 
 	return $update_check1;
@@ -1107,7 +1107,7 @@ function do_updates()
 	}
 	else
 	{
-		$update_status .= '<strong>ERROR: Could Not Contact Secure Server http://timekoin.net</strong>';
+		$update_status .= '<strong>ERROR: Could Not Contact the Server http://timekoin.net</strong>';
 	}
 
 	return $update_status;
