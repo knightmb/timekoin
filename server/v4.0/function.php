@@ -12,6 +12,7 @@ define("EASY_KEY_PUBLIC_KEY","LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS1UaW1la29pbitFYX
 error_reporting(E_ERROR | E_CORE_ERROR | E_COMPILE_ERROR); // Disable most error reporting except for fatal errors
 ini_set('display_errors', FALSE);
 //***********************************************************************************
+use mersenne_twister\twister;
 //***********************************************************************************
 if(function_exists('mysql_result') == FALSE)
 {
@@ -1110,8 +1111,18 @@ function TKFoundationSeed()
 //***********************************************************************************
 function scorePublicKey($public_key, $score_key = FALSE)
 {
-	$current_generation_block = transaction_cycle(0, TRUE);	
-	mt_srand(TKFoundationSeed() + $current_generation_block);
+	$current_generation_block = transaction_cycle(0, TRUE);
+
+	if(version_compare(PHP_VERSION, '7.1.0', '<') == TRUE)
+	{
+		require_once('mersenne_twister.php');// For Earlier PHP Versions (less than v7.1)
+		$twister1 = new twister(TKFoundationSeed() + $current_generation_block);
+		$mersenne_twister = TRUE;
+	}
+	else
+	{
+		mt_srand(TKFoundationSeed() + $current_generation_block);
+	}
 
 	$public_key_score = 0;
 	$tkrandom_num = 0;
@@ -1124,7 +1135,15 @@ function scorePublicKey($public_key, $score_key = FALSE)
 		// Output what is being used to score the keys
 		for ($i = 0; $i < 18; $i++)
 		{
-			$tkrandom_num = mt_rand(1, 35);
+			if($mersenne_twister == FALSE)
+			{
+				$tkrandom_num = mt_rand(1, 35);
+			}
+			else
+			{
+				$tkrandom_num = $twister1->rangeint(1, 35);
+			}
+
 			$output_score_key .= " [" . base_convert($tkrandom_num, 10, 36) . "=$tkrandom_num]";  // Base 10 to Base 36 conversion
 		}
 		
@@ -1133,7 +1152,15 @@ function scorePublicKey($public_key, $score_key = FALSE)
 
 	for ($i = 0; $i < 18; $i++)
 	{
-		$tkrandom_num = mt_rand(1, 35);
+		if($mersenne_twister == FALSE)
+		{
+			$tkrandom_num = mt_rand(1, 35);
+		}
+		else
+		{
+			$tkrandom_num = $twister1->rangeint(1, 35);
+		}		
+
 		$character = base_convert($tkrandom_num, 10, 36);  // Base 10 to Base 36 conversion
 		$public_key_score += getCharFreq($public_key, $character);
 	}
@@ -1221,8 +1248,25 @@ function election_cycle($when = 0, $ip_type = 1, $gen_peers_total = 0)
 		$str = strval($current_generation_cycle);
 		$last3_gen = intval($str[strlen($str)-3]);
 
-		mt_srand(TKFoundationSeed() + $current_generation_block);
-		$tk_random_number = mt_rand(0, 9);
+		if(version_compare(PHP_VERSION, '7.1.0', '<') == TRUE)
+		{
+			require_once('mersenne_twister.php');// For Earlier PHP Versions (less than v7.1)
+			$twister1 = new twister(TKFoundationSeed() + $current_generation_block);
+			$mersenne_twister = TRUE;
+		}
+		else
+		{
+			mt_srand(TKFoundationSeed() + $current_generation_block);
+		}
+
+		if($mersenne_twister == FALSE)
+		{
+			$tk_random_number = mt_rand(0, 9);
+		}
+		else
+		{
+			$tk_random_number = $twister1->rangeint(0, 9);
+		}
 
 		if($last3_gen + $tk_random_number > 16)
 		{
@@ -1279,10 +1323,29 @@ function election_cycle($when = 0, $ip_type = 1, $gen_peers_total = 0)
 		{
 			$last3_gen-= 5;
 		}
+		
 		// Transpose waveform 180 degrees from IPv4 Generation
-		mt_srand(TKFoundationSeed() + $current_generation_block);
-		$tk_random_number = mt_rand(0, 9);
-		$ipv6_gen_peer_adapt = mt_rand(0, $gen_peers_total);
+		if(version_compare(PHP_VERSION, '7.1.0', '<') == TRUE)
+		{
+			require_once('mersenne_twister.php');// For Earlier PHP Versions (less than v7.1)
+			$twister1 = new twister(TKFoundationSeed() + $current_generation_block);
+			$mersenne_twister = TRUE;
+		}
+		else
+		{		
+			mt_srand(TKFoundationSeed() + $current_generation_block);
+		}
+
+		if($mersenne_twister == FALSE)
+		{
+			$tk_random_number = mt_rand(0, 9);
+			$ipv6_gen_peer_adapt = mt_rand(0, $gen_peers_total);
+		}
+		else
+		{
+			$tk_random_number = $twister1->rangeint(0, 9);
+			$ipv6_gen_peer_adapt = $twister1->rangeint(0, $gen_peers_total);
+		}
 
 		// The more IPv6 Peers that Generate, the less often Peer Elections happen
 		if($last3_gen + $tk_random_number > 16)
@@ -1327,8 +1390,25 @@ function generation_cycle($when = 0)
 	$str = strval($current_generation_cycle);
 	$last3_gen = intval($str[strlen($str)-3]);
 
-	mt_srand(TKFoundationSeed() + $current_generation_block);
-	$tk_random_number = mt_rand(0, 9);
+	if(version_compare(PHP_VERSION, '7.1.0', '<') == TRUE)
+	{
+		require_once('mersenne_twister.php');// For Earlier PHP Versions (less than v7.1)
+		$twister1 = new twister(TKFoundationSeed() + $current_generation_block);
+		$mersenne_twister = TRUE;
+	}
+	else
+	{
+		mt_srand(TKFoundationSeed() + $current_generation_block);
+	}
+	
+	if($mersenne_twister == FALSE)
+	{
+		$tk_random_number = mt_rand(0, 9);
+	}
+	else
+	{
+		$tk_random_number = $twister1->rangeint(0, 9);
+	}
 
 	if($last3_gen + $tk_random_number < 6)
 	{
@@ -1440,15 +1520,44 @@ function unix_timestamp_to_human($timestamp = "", $default_timezone, $format = '
 function gen_simple_poll_test($ip_address, $domain, $subfolder, $port_number)
 {
 	$simple_poll_fail = FALSE; // Reset Variable
-	mt_srand(TKFoundationSeed() + transaction_cycle(0, TRUE));
+
+	if(version_compare(PHP_VERSION, '7.1.0', '<') == TRUE)
+	{
+		require_once('mersenne_twister.php');// For Earlier PHP Versions (less than v7.1)
+		$twister1 = new twister(TKFoundationSeed() + transaction_cycle(0, TRUE));
+		$mersenne_twister = TRUE;
+	}
+	else
+	{
+		mt_srand(TKFoundationSeed() + transaction_cycle(0, TRUE));
+	}
 
 	// Grab random Transaction Foundation Hash
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-	$rand_block = mt_rand(0,foundation_cycle(0, TRUE) - 5); // Range from Start to Last 5 Foundation Hash
+
+	if($mersenne_twister == FALSE)
+	{
+		 // Range from Start to Last 5 Foundation Hash
+		$rand_block = mt_rand(0,foundation_cycle(0, TRUE) - 5);
+	}
+	else
+	{
+		$rand_block = $twister1->rangeint(0,foundation_cycle(0, TRUE) - 5);
+	}
+	
 	$random_foundation_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_foundation` WHERE `block` = $rand_block LIMIT 1"),0,0);
 
 	// Grab random Transaction Hash
-	$rand_block2 = mt_rand(transaction_cycle((0 - transaction_cycle(0, TRUE)), TRUE), transaction_cycle(-1000, TRUE)); // Range from Start to Last 1000 Transaction Hash
+	if($mersenne_twister == FALSE)
+	{	
+		 // Range from Start to Last 1000 Transaction Hash
+		$rand_block2 = mt_rand(transaction_cycle((0 - transaction_cycle(0, TRUE)), TRUE), transaction_cycle(-1000, TRUE));
+	}
+	else
+	{
+		$rand_block2 = $twister1->rangeint(transaction_cycle((0 - transaction_cycle(0, TRUE)), TRUE), transaction_cycle(-1000, TRUE));
+	}
+
 	$rand_block2 = transaction_cycle(0 - $rand_block2);
 	$random_transaction_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_history` WHERE `timestamp` = $rand_block2 LIMIT 1"),0,0);
 	$rand_block2 = ($rand_block2 - TRANSACTION_EPOCH - 300) / 300;
@@ -2347,6 +2456,9 @@ function do_updates()
 		//****************************************************
 		$update_status .= 'Checking for <strong>Main Program</strong> Update...<br>';
 		$update_status .= run_script_update("Main Program (main.php)", "main", $poll_version, $context);
+		//****************************************************
+		$update_status .= 'Checking for <strong>Mersenne Twister Random Number Generator</strong> Update...<br>';
+		$update_status .= run_script_update("Mersenne Twister (mersenne_twister.php)", "mersenne_twister", $poll_version, $context);
 		//****************************************************
 		$update_status .= 'Checking for <strong>Peer List Manager</strong> Update...<br>';
 		$update_status .= run_script_update("Peer List Manager (peerlist.php)", "peerlist", $poll_version, $context);

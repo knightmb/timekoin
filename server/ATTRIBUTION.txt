@@ -2,6 +2,10 @@ This file contains all attributions to work(s) obtained from others and used in
 Timekoin.
 
 -==========================================================================-
+PHP-mersenne-twister v1.3.0
+https://github.com/ruafozy/php-mersenne-twister
+https://kingfisher.nfshost.com/sw/twister/
+-==========================================================================-
 MiniUPnP
 http://miniupnp.tuxfamily.org/
 

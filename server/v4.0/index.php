@@ -85,6 +85,7 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 	exit;
 }
 
+use mersenne_twister\twister;// For Versions Less than PHPv7.1
 if($_SESSION["valid_login"] == TRUE)
 {
 //****************************************************************************
@@ -2311,6 +2312,12 @@ if($_SESSION["valid_login"] == TRUE)
 			$total_generations = 0;
 			$max_cycles_ahead = 288;
 
+			if(version_compare(PHP_VERSION, '7.1.0', '<') == TRUE)
+			{
+				require_once 'mersenne_twister.php';
+				$mersenne_twister = TRUE;
+			}
+
 			for ($i = 1; $i < $max_cycles_ahead; $i++)
 			{
 				$current_generation_cycle = transaction_cycle($i);
@@ -2319,11 +2326,17 @@ if($_SESSION["valid_login"] == TRUE)
 				$last3_gen = $str[strlen($str)-3];
 
 				$current_generation_block = transaction_cycle($i, TRUE);
-				//TKRandom::seed($current_generation_block);
-				//$tk_random_number = TKRandom::num(0, 9);
 
-				mt_srand(TKFoundationSeed() + $current_generation_block);
-				$tk_random_number = mt_rand(0, 9);
+				if($mersenne_twister == FALSE)
+				{
+					mt_srand(TKFoundationSeed() + $current_generation_block);
+					$tk_random_number = mt_rand(0, 9);
+				}
+				else
+				{
+					$twister1 = new twister(TKFoundationSeed() + $current_generation_block);
+					$tk_random_number = $twister1->rangeint(0, 9);
+				}				
 
 				if($last3_gen + $tk_random_number < 6)
 				{
