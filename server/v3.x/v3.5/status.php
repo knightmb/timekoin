@@ -1,0 +1,14 @@
+<?PHP
+
+define("TIMEKOIN_DISABLED","0");
+define("FOUNDATION_DISABLED","0");
+define("GENERATION_DISABLED","0");
+define("GENPEER_DISABLED","0");
+define("PEERLIST_DISABLED","0");
+define("QUEUECLERK_DISABLED","0");
+define("TRANSCLERK_DISABLED","0");
+define("TREASURER_DISABLED","0");
+define("BALANCE_DISABLED","0");
+define("API_DISABLED","0");
+
+?>
