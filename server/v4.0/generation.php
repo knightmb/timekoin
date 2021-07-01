@@ -212,10 +212,10 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						if(empty($generation_key_crypt) == TRUE)
 						{
 							// Reverse Crypto Test is empty, create a new one.
-							// This is just the first 181 characters of the public key encrypted via the private key.
+							// This is just the first half characters of the public key encrypted via the private key.
 							// This is then stored as a data field that is easy to access and quickly output to any
 							// peer that is going to query this one as a potential generating peer.
-							$arr1 = str_split($my_public_key, 181);
+							$arr1 = str_split($my_public_key, round(strlen($my_public_key) / 2));
 							$encryptedPublicKey = tk_encrypt($my_private_key, $arr1[0]);
 							$encryptedPublicKey = base64_encode($encryptedPublicKey);
 							
@@ -298,7 +298,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 								}
 							}
 
-							if($election_payment == FALSE)
+							if($election_payment == FALSE && $sql_row["public_key"] != $my_public_key)
 							{
 								if(send_timekoins($my_private_key, $my_public_key, $sql_row["public_key"], $gen_peers_total, "New Election Fee") == FALSE)
 								{
@@ -341,10 +341,10 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						if(empty($generation_key_crypt) == TRUE)
 						{
 							// Reverse Crypto Test is empty, create a new one.
-							// This is just the first 181 characters of the public key encrypted via the private key.
+							// This is just the first half characters of the public key encrypted via the private key.
 							// This is then stored as a data field that is easy to access and quickly output to any
 							// peer that is going to query this one as a potential generating peer.
-							$arr1 = str_split($my_public_key, 181);
+							$arr1 = str_split($my_public_key, round(strlen($my_public_key) / 2));
 							$encryptedPublicKey = tk_encrypt($my_private_key, $arr1[0]);
 							$encryptedPublicKey = base64_encode($encryptedPublicKey);
 							
@@ -405,7 +405,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						$creation_time = $current_generation_cycle + 1;
 
 						//Not found, add it to transaction queue
-						$arr1 = str_split($my_public_key, 181);
+						$arr1 = str_split($my_public_key, round(strlen($my_public_key) / 2));
 
 						$encryptedData1 = tk_encrypt($my_private_key, $arr1[0]);
 
@@ -496,7 +496,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 							// This is just the first 181 characters of the public key encrypted via the private key.
 							// This is then stored as a data field that is easy to access and quickly output to any
 							// peer that is going to query this one as a potential generating peer.
-							$arr1 = str_split($my_public_key, 181);
+							$arr1 = str_split($my_public_key, round(strlen($my_public_key) / 2));
 							$encryptedPublicKey = tk_encrypt($my_private_key, $arr1[0]);
 							$encryptedPublicKey = base64_encode($encryptedPublicKey);
 							
@@ -579,7 +579,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 								}
 							}
 
-							if($election_payment == FALSE)
+							if($election_payment == FALSE && $sql_row["public_key"] != $my_public_key)
 							{
 								if(send_timekoins($my_private_key, $my_public_key, $sql_row["public_key"], $gen_peers_total, "New Election Fee") == FALSE)
 								{
@@ -626,7 +626,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 							// This is just the first 181 characters of the public key encrypted via the private key.
 							// This is then stored as a data field that is easy to access and quickly output to any
 							// peer that is going to query this one as a potential generating peer.
-							$arr1 = str_split($my_public_key, 181);
+							$arr1 = str_split($my_public_key, round(strlen($my_public_key) / 2));
 							$encryptedPublicKey = tk_encrypt($my_private_key, $arr1[0]);
 							$encryptedPublicKey = base64_encode($encryptedPublicKey);
 							
@@ -687,7 +687,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						$creation_time = $current_generation_cycle + 1;
 
 						//Not found, add it to transaction queue
-						$arr1 = str_split($my_public_key, 181);
+						$arr1 = str_split($my_public_key, round(strlen($my_public_key) / 2));
 
 						$encryptedData1 = tk_encrypt($my_private_key, $arr1[0]);
 

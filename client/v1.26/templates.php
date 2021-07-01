@@ -518,8 +518,8 @@ function options_screen()
 	if($_GET["newkeys"] == "generate")
 	{
 		// Offer Confirmation Screen
-		$confirm_message = '<strong><font color="red">Generating New Keys will delete the old keys in the database.</font><br>Be sure to make backups if you intend on keeping any balance associated with the current keys.<br><font color="blue">Continue?</font></strong>';
-		$form_action = '<FORM ACTION="index.php?menu=options&amp;newkeys=confirm" METHOD="post">';
+		$confirm_message = '<strong><font color="red">Generating New Keys will delete<br>the old keys in the database.</font><br>Be sure to make backups if you intend<br>on keeping any balance associated with the current keys.<br><font color="blue">Continue?</font></strong>';
+		$form_action = '<FORM ACTION="index.php?menu=options&amp;newkeys=confirm" METHOD="post"><strong>Bits Size [1,536 to 15,360]</strong> (Caution: High Values Take a Lot of Time to Generate!) <input type="number" name="new_key_bits" min="1536" max="15360" size="6" value="1536"/><br><br>';
 	}
 	else
 	{
@@ -878,7 +878,7 @@ function backup_body($private_key = "", $public_key = "", $cancel_private = FALS
 	{
 		// Redo menu to show cancel or complete buttons
 		$form_action = '<FORM ACTION="index.php?menu=backup&amp;dorestore=private" METHOD="post">';
-		$are_you_sure = '<br><font color="red"><strong>This will over-write the Private Key<br> for your server. Are you sure?</strong></font>';
+		$are_you_sure = '<br><font color="red"><strong>This will over-write the Private Key<br> for your client. Are you sure?</strong></font>';
 	}
 	else
 	{
@@ -889,7 +889,7 @@ function backup_body($private_key = "", $public_key = "", $cancel_private = FALS
 	{
 		// Redo menu to show cancel or complete buttons
 		$form_action2 = '<FORM ACTION="index.php?menu=backup&amp;dorestore=public" METHOD="post">';
-		$are_you_sure2 = '<br><font color="red"><strong>This will over-write the Public Key<br> for your server. Are you sure?</strong></font>';		
+		$are_you_sure2 = '<br><font color="red"><strong>This will over-write the Public Key<br> for your client. Are you sure?</strong></font>';		
 	}
 	else
 	{

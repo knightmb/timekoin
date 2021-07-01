@@ -805,9 +805,12 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["newkeys"] == "confirm")
 		{
-			if(generate_new_keys() == TRUE)
+			set_time_limit(300);
+			$time1 = time();
+
+			if(generate_new_keys(intval($_POST["new_key_bits"])) == TRUE)
 			{
-				$body_text .= '<font color="green"><strong>New Private &amp; Public Key Pair Generated!</strong></font><br>';
+				$body_text .= '<font color="green"><strong>New Private &amp; Public Key Pair Generated! (It Took ' . (time() - $time1) . ' Second(s) To Generate)</strong></font><br>';
 			}
 			else
 			{

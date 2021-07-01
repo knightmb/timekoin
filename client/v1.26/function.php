@@ -699,7 +699,7 @@ function send_timekoins($my_private_key = "", $my_public_key = "", $send_to_publ
 	ini_set('default_socket_timeout', 3); // Timeout for request in seconds
 
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-	$arr1 = str_split($send_to_public_key, 181);
+	$arr1 = str_split($send_to_public_key, round(strlen($send_to_public_key) / 2));
 	$encryptedData1 = tk_encrypt($my_private_key, $arr1[0]);
 	$encryptedData64_1 = base64_encode($encryptedData1);	
 
@@ -870,12 +870,12 @@ function call_script($script = "", $priority = 1, $plugin = FALSE)
 }
 //***********************************************************************************
 //***********************************************************************************	
-function generate_new_keys()
+function generate_new_keys($bits = 1536)
 {
 	require_once('RSA.php');
 
 	$rsa = new Crypt_RSA();
-	extract($rsa->createKey(1536));
+	extract($rsa->createKey($bits));
 
 	if(empty($privatekey) == FALSE && empty($publickey) == FALSE)
 	{

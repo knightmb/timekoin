@@ -136,7 +136,7 @@ CREATE TABLE IF NOT EXISTS `new_peers_list` (
 
 CREATE TABLE IF NOT EXISTS `options` (
   `field_name` varchar(32) NOT NULL,
-  `field_data` varchar(256) NOT NULL
+  `field_data` varchar(4096) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 --
@@ -169,9 +169,9 @@ INSERT INTO `options` (`field_name`, `field_data`) VALUES
 CREATE TABLE IF NOT EXISTS `transaction_queue` (
   `timestamp` bigint(20) unsigned NOT NULL,
   `public_key` text NOT NULL,
-  `crypt_data1` varchar(256) NOT NULL,
-  `crypt_data2` varchar(256) NOT NULL,
-  `crypt_data3` varchar(256) NOT NULL,
+  `crypt_data1` varchar(4096) NOT NULL,
+  `crypt_data2` varchar(4096) NOT NULL,
+  `crypt_data3` varchar(4096) NOT NULL,
   `hash` varchar(64) NOT NULL,
   `attribute` varchar(1) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;

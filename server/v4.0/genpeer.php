@@ -529,7 +529,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		election_cycle(6) == TRUE) // Don't queue election request until 1-6 cycles before election (30 minutes)
 	{
 		$network_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
-
+		$my_public_key = my_public_key();
 		$sql = "SELECT * FROM `transaction_queue` WHERE `attribute` = 'R'";
 		$sql_result = mysqli_query($db_connect, $sql);
 		$sql_num_results = mysqli_num_rows($sql_result);
@@ -616,8 +616,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							$IP_exist2 = mysql_result(mysqli_query($db_connect, "SELECT * FROM `generating_peer_queue` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,0);
 
 							// Calculate public key half-crypt-hash
-							$arr1 = str_split($public_key, 181);
-							
+							$arr1 = str_split($public_key, round(strlen($public_key) / 2));
+
 							if($network_mode == 3) // IPv6 Only Server
 							{
 								// Running IPv6 Only Mode, use gateway server to act as proxy poll check
@@ -672,7 +672,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							else
 							{
 								// Poll the IPv4 address that was encrypted to check for valid Timekoin server
-								$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 256, "genpeer.php?action=gen_key_crypt"));
+								$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 4096, "genpeer.php?action=gen_key_crypt"));
 								$gen_key_crypt = tk_decrypt($public_key, $gen_key_crypt);
 								$gateway_voucher = FALSE;
 							}
@@ -749,11 +749,11 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 									$pay_this_public_key = $payment_sql_row["public_key"];
 									$sql_fee_result = mysql_result(mysqli_query($db_connect, "SELECT crypt_data3 FROM `transaction_history` WHERE `timestamp` >= '$pre_transaction_cycle' AND `public_key_from` = '$public_key' AND `public_key_to` = '$pay_this_public_key' LIMIT 1"));
 									$transaction_info = tk_decrypt($public_key, base64_decode($sql_fee_result));
-									$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
-									if($transaction_amount_sent == "") { $transaction_amount_sent = 0; }
+									$transaction_amount_sent = intval(find_string("AMOUNT=", "---TIME", $transaction_info));
 									
-									if($transaction_amount_sent < $gen_peers_total)
+									if($transaction_amount_sent < $gen_peers_total && $public_key != $pay_this_public_key)
 									{
+										write_log("IPv4 Generation Fee ($gen_peers_total)TK Was NOT Paid to Public Key:<BR>" . base64_encode($pay_this_public_key), "GP");
 										$all_generating_peers_paid = FALSE;
 										break;
 									}
@@ -769,7 +769,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 									write_log("IPv4 Generation Fee ($gen_peers_total)TK Has NOT Been Paid to All Generating Peers by Public Key:<BR>" . base64_encode($public_key), "GP");
 								}
 							}
-							else if(my_public_key() == $public_key)
+							else if($my_public_key == $public_key)
 							{
 								// My own public key goes in without checking
 								mysqli_query($db_connect, "INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
@@ -847,7 +847,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							$IP_exist1 = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,1);
 
 							// Calculate public key half-crypt-hash
-							$arr1 = str_split($public_key, 181);
+							$arr1 = str_split($public_key, round(strlen($public_key) / 2));
 
 							if($network_mode == 3) // IPv6 Only Server
 							{
@@ -903,7 +903,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							else
 							{
 								// Poll the IPv4 address that was encrypted to check for valid Timekoin server
-								$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 256, "genpeer.php?action=gen_key_crypt"));
+								$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 4096, "genpeer.php?action=gen_key_crypt"));
 								$gen_key_crypt = tk_decrypt($public_key, $gen_key_crypt);
 								$gateway_voucher = FALSE;
 							}
@@ -960,7 +960,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 									write_log("IPv4 New Generation Peer IP Address ($peer_ip) was updated for Public Key: " . base64_encode($public_key), "GP");
 								}
 							}
-							else if(my_public_key() == $public_key) // This is my own public key, automatic update
+							else if($my_public_key == $public_key) // This is my own public key, automatic update
 							{
 								if(election_cycle(1) == TRUE) // Don't update myself until right before the peer election
 								{
@@ -1021,7 +1021,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		election_cycle(6, 2, $gen_peers_total) == TRUE) // Don't queue election request until 1-6 cycles before election (30 minutes)
 	{
 		$network_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
-
+		$my_public_key = my_public_key();
 		$sql = "SELECT * FROM `transaction_queue` WHERE `attribute` = 'R'";
 		$sql_result = mysqli_query($db_connect, $sql);
 		$sql_num_results = mysqli_num_rows($sql_result);
@@ -1106,7 +1106,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							$IP_exist2 = mysql_result(mysqli_query($db_connect, "SELECT * FROM `generating_peer_queue` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,0);
 
 							// Calculate public key half-crypt-hash
-							$arr1 = str_split($public_key, 181);
+							$arr1 = str_split($public_key, round(strlen($public_key) / 2));
 
 							if($network_mode == 2) // IPv4 Only Server
 							{
@@ -1162,7 +1162,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							else
 							{
 								// Poll the IPv6 address that was encrypted to check for valid Timekoin server
-								$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 256, "genpeer.php?action=gen_key_crypt"));
+								$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 4096, "genpeer.php?action=gen_key_crypt"));
 								$gen_key_crypt = tk_decrypt($public_key, $gen_key_crypt);
 								$gateway_voucher = FALSE;
 							}
@@ -1239,11 +1239,11 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 									$pay_this_public_key = $payment_sql_row["public_key"];
 									$sql_fee_result = mysql_result(mysqli_query($db_connect, "SELECT crypt_data3 FROM `transaction_history` WHERE `timestamp` >= '$pre_transaction_cycle' AND `public_key_from` = '$public_key' AND `public_key_to` = '$pay_this_public_key' LIMIT 1"));
 									$transaction_info = tk_decrypt($public_key, base64_decode($sql_fee_result));
-									$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
-									if($transaction_amount_sent == "") { $transaction_amount_sent = 0; }
+									$transaction_amount_sent = intval(find_string("AMOUNT=", "---TIME", $transaction_info));
 									
-									if($transaction_amount_sent < $gen_peers_total)
+									if($transaction_amount_sent < $gen_peers_total && $public_key != $pay_this_public_key)									
 									{
+										write_log("IPv6 Generation Fee ($gen_peers_total)TK Was NOT Paid to Public Key:<BR>" . base64_encode($pay_this_public_key), "GP");
 										$all_generating_peers_paid = FALSE;
 										break;
 									}
@@ -1259,7 +1259,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 									write_log("IPv6 Generation Fee ($gen_peers_total)TK Has NOT Been Paid to All Generating Peers by Public Key:<BR>" . base64_encode($public_key), "GP");
 								}								
 							}
-							else if(my_public_key() == $public_key)
+							else if($my_public_key == $public_key)
 							{
 								mysqli_query($db_connect, "INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
 								write_log("IPv6 Generation Peer Queue List was updated with My Public Key", "GP");
@@ -1336,7 +1336,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							$IP_exist1 = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,1);
 
 							// Calculate public key half-crypt-hash
-							$arr1 = str_split($public_key, 181);
+							$arr1 = str_split($public_key, round(strlen($public_key) / 2));
 
 							if($network_mode == 2) // IPv4 Only Server
 							{
@@ -1392,7 +1392,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							else
 							{
 								// Poll the IPv6 address that was encrypted to check for valid Timekoin server
-								$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 256, "genpeer.php?action=gen_key_crypt"));
+								$gen_key_crypt = base64_decode(poll_peer($peer_ip, $peer_domain, $peer_subfolder, $peer_port_number, 4096, "genpeer.php?action=gen_key_crypt"));
 								$gen_key_crypt = tk_decrypt($public_key, $gen_key_crypt);
 								$gateway_voucher = FALSE;
 							}
@@ -1449,7 +1449,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 									write_log("IPv6 New Generation Peer IP Address ($peer_ip) was updated for Public Key: " . base64_encode($public_key), "GP");
 								}
 							}
-							else if(my_public_key() == $public_key) // This is my own public key, automatic update
+							else if($my_public_key == $public_key) // This is my own public key, automatic update
 							{
 								if(election_cycle(1) == TRUE) // Don't update myself until right before the peer election
 								{

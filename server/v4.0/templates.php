@@ -275,8 +275,8 @@ function options_screen()
 	if($_GET["newkeys"] == "generate")
 	{
 		// Offer Confirmation Screen
-		$confirm_message = '<strong><font color="red">Generating New Keys will delete the old keys in the database.</font><br>Be sure to make backups if you intend on keeping any balance associated with the current keys.<br><font color="blue">Continue?</font></strong>';
-		$form_action = '<FORM ACTION="index.php?menu=options&amp;newkeys=confirm" METHOD="post">';
+		$confirm_message = '<strong><font color="red">Generating New Keys will delete the old keys in the database.</font><br>Be sure to make backups if you intend<br>on keeping any balance associated with the current keys.<br><br><font color="blue">Continue?</font></strong>';
+		$form_action = '<FORM ACTION="index.php?menu=options&amp;newkeys=confirm" METHOD="post"><strong>Bits Size [1,536 to 15,360]</strong> (Caution: High Values Take a Lot of Time to Generate!) <input type="number" name="new_key_bits" min="1536" max="15360" size="6" value="1536"/><br><br>';
 	}
 	else
 	{
@@ -856,7 +856,7 @@ function generation_body($generate_currency = "")
 		<li>Once elected, your server will create currency during generation cycles. Generation cycles occur at pseudo-random times. 
 		Use the <a href="index.php?menu=generation&amp;generations=show"><font color="blue"><strong>Generation Calendar</strong></font></a> to see the upcoming generation cycles for the next 24 hours.</li>
 		<li>All generating servers collect the fees to run <font color="green"><strong>Peer Elections</font></strong> and to create <font color="green"><strong>Easy Key</font></strong> shortcuts for other users. 
-		This helps fund the generating servers for providing the work and storage within the Timekoin network. The current election fee is <font color="blue"><strong>' . num_gen_peers() . '</strong></font> TK.</li>
+		This helps fund the generating servers for providing the work and storage within the Timekoin network. The current election fee is <font color="blue"><strong>' . num_gen_peers() . '</strong></font> TK per unique public key.</li>
 		<li>The server may continue to generate currency as long as it stays online. 
 		If the server does not generate currency for <font color="blue"><strong>8</strong></font> hours, the Timekoin network assumes it has gone offline and the server key will be removed from the Generating Peer List. 
 		Once the server comes back online, it will need to be re-elected before generation can begin again.</li>

@@ -1383,7 +1383,7 @@ function db_cache_balance($my_public_key)
 //***********************************************************************************
 function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $amount, $message, $custom_timestamp = FALSE)
 {
-	$arr1 = str_split($send_to_public_key, 181);
+	$arr1 = str_split($send_to_public_key, round(strlen($send_to_public_key) / 2));
 
 	$encryptedData1 = tk_encrypt($my_private_key, $arr1[0]);
 	$encryptedData64_1 = base64_encode($encryptedData1);	
@@ -1969,7 +1969,6 @@ function initialization_database()
 	// Auto Detect IP Address on Start if Empty
 	auto_update_IP_address(TRUE);
 //***********************************************************************************
-
 	return 0;
 }
 //***********************************************************************************
@@ -2125,12 +2124,12 @@ function activate($component = "SYSTEM", $on_or_off = 1)
 }
 //***********************************************************************************
 //***********************************************************************************	
-function generate_new_keys()
+function generate_new_keys($bits = 1536)
 {
 	require_once('RSA.php');
 
 	$rsa = new Crypt_RSA();
-	extract($rsa->createKey(1536));
+	extract($rsa->createKey($bits));
 
 	if(empty($privatekey) == FALSE && empty($publickey) == FALSE)
 	{
