@@ -196,6 +196,15 @@ function tk_encrypt($key = "", $crypt_data = "")
 	if(function_exists('openssl_private_encrypt') == TRUE)
 	{
 		openssl_private_encrypt($crypt_data, $encrypted_data, $key, OPENSSL_PKCS1_PADDING);
+
+		if(empty($encrypted_data) == TRUE)
+		{
+			require_once('RSA.php');
+			$rsa = new Crypt_RSA();
+			$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
+			$rsa->loadKey($key);
+			$encrypted_data = $rsa->encrypt($crypt_data);
+		}
 	}
 	else
 	{
