@@ -1351,7 +1351,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["newkeys"] == "confirm")
 		{
-			set_time_limit(300);
+			set_time_limit(999);
 			$time1 = time();
 			if(generate_new_keys(intval($_POST["new_key_bits"])) == TRUE)
 			{
