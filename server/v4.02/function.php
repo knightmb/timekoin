@@ -1121,6 +1121,9 @@ function TKFoundationSeed()
 //***********************************************************************************
 function scorePublicKey($public_key, $score_key = FALSE)
 {
+	// Get the last 343 characters of the public key to make it fair for those using longer or shorter public keys
+	$public_key = substr($public_key, -343);
+
 	$current_generation_block = transaction_cycle(0, TRUE);
 
 	if(version_compare(PHP_VERSION, '7.1.0', '<') == TRUE)
