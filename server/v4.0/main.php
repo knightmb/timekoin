@@ -159,7 +159,7 @@ while(1) // Begin Infinite Loop :)
 	// Do a random time sync check and report any errors to the user
 	if(mt_rand(1,100) == 50)
 	{
-		$poll_peer = intval(filter_sql(file_get_contents("http://timekoin.net/time.php", FALSE, $context, NULL, 12)));
+		$poll_peer = intval(filter_sql(file_get_contents("https://timekoin.net/time.php", FALSE, $context, NULL, 12)));
 		$my_time = time();
 
 		if($poll_peer != 0)
