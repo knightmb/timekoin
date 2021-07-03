@@ -14,7 +14,7 @@ as that peer and create a transaction that is fake or changed. Any attempts to
 alter the transaction data will fail because the key provided with it will no
 longer work.
 
-Timekoin uses 1,536 bit encryption to create the transactions and
+Timekoin uses default 1,536 bit encryption to create the transactions and
 SHA256 hashing both inside and outside the transaction to provide multiple
 layers of anti-tampering protection wrapped in each other. Trying to tamper with
 any of the 3 points results in the collapse of the entire transaction data.
@@ -22,7 +22,7 @@ any of the 3 points results in the collapse of the entire transaction data.
 The software requires these components before installing.
 
 1. Web Server (Apache, IIS, etc.)
-2. PHP5 for the Web Server, including the mySQL, GMP, and
+2. PHP5 for the Web Server, including the mySQLi, GMP, and
 *OpenSSL* module if possible
 3. mySQL or MariaDB Database Server (v5 or higher, free community version works just fine)
 
