@@ -930,7 +930,7 @@ function check_for_updates($code_feedback = FALSE)
 	
 	$update_check1 = 'Checking for Updates....<br><br>';
 
-	$poll_version = file_get_contents("https://timekoin.net/tkcliupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
+	$poll_version = file_get_contents("http://timekoin.net/tkcliupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
 
 	if($poll_version > TIMEKOIN_VERSION && empty($poll_version) == FALSE)
 	{
@@ -948,7 +948,7 @@ function check_for_updates($code_feedback = FALSE)
 	}
 	else
 	{
-		$update_check1 .= '<strong>ERROR: Could Not Contact the Server https://timekoin.net</strong>';
+		$update_check1 .= '<strong>ERROR: Could Not Contact the Server http://timekoin.net</strong>';
 	}
 
 	return $update_check1;
@@ -985,7 +985,7 @@ function check_update_script($script_name = "", $script = "", $php_script_file =
 {
 	$update_status_return = NULL;
 	
-	$poll_sha = file_get_contents("https://timekoin.net/tkcliupdates/v$poll_version/$script.sha", FALSE, $context, NULL, 64);
+	$poll_sha = file_get_contents("http://timekoin.net/tkcliupdates/v$poll_version/$script.sha", FALSE, $context, NULL, 64);
 
 	if(empty($poll_sha) == FALSE)
 	{
@@ -1010,7 +1010,7 @@ function check_update_script($script_name = "", $script = "", $php_script_file =
 //***********************************************************************************
 function get_update_script($php_script = "", $poll_version = "", $context = "")
 {
-	return file_get_contents("https://timekoin.net/tkcliupdates/v$poll_version/$php_script.txt", FALSE, $context, NULL);
+	return file_get_contents("http://timekoin.net/tkcliupdates/v$poll_version/$php_script.txt", FALSE, $context, NULL);
 }
 //***********************************************************************************
 //***********************************************************************************
@@ -1065,7 +1065,7 @@ function do_updates()
 	ini_set('user_agent', 'Timekoin Client (GUI) v' . TIMEKOIN_VERSION);
 	ini_set('default_socket_timeout', 10); // Timeout for request in seconds
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-	$poll_version = file_get_contents("https://timekoin.net/tkcliupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
+	$poll_version = file_get_contents("http://timekoin.net/tkcliupdates/" . NEXT_VERSION, FALSE, $context, NULL, 10);
 
 	$update_status = 'Starting Update Process...<br><br>';
 
@@ -1108,7 +1108,7 @@ function do_updates()
 		$update_status .= 'Checking for <strong>Function Storage</strong> Update...<br>';
 		$update_status .= run_script_update("Function Storage (function.php)", "function", $poll_version, $context);
 		//****************************************************
-		$finish_message = file_get_contents("https://timekoin.net/tkcliupdates/v$poll_version/ZZZfinish.txt", FALSE, $context, NULL);
+		$finish_message = file_get_contents("http://timekoin.net/tkcliupdates/v$poll_version/ZZZfinish.txt", FALSE, $context, NULL);
 		$update_status .= '<br>' . $finish_message;
 
 		// Reset available update alert
@@ -1116,7 +1116,7 @@ function do_updates()
 	}
 	else
 	{
-		$update_status .= '<strong>ERROR: Could Not Contact the Server https://timekoin.net</strong>';
+		$update_status .= '<strong>ERROR: Could Not Contact the Server http://timekoin.net</strong>';
 	}
 
 	return $update_status;
