@@ -59,7 +59,7 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 				{
 					$sql_row = mysqli_fetch_array($sql_result);
 
-					$plugin_file = find_string("---file=", "---enable", $sql_row["field_data"]);		
+					$plugin_file = find_string("---file=", "---enable", $sql_row["field_data"]);
 					$plugin_enable = intval(find_string("---enable=", "---show", $sql_row["field_data"]));
 					$plugin_service = find_string("---service=", "---end", $sql_row["field_data"]);
 

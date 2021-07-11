@@ -379,15 +379,15 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 		//Scale the amount of transaction cycles to check based on the last peer performance reading
 		if($peer_transaction_performance <= 10)
 		{
-			if($hash_check_counter < 400) // Cap limit 400
+			if($hash_check_counter < 100) // Cap limit 100
 			{
 				$new_peer_poll_blocks = $hash_check_counter + 1;
 			}
 			else
 			{
 				// Upper Limit Reached
-				// Really super fast peers? Keep at 400, just in case.
-				$new_peer_poll_blocks = 400;
+				// Really super fast peers? Keep at 100, just in case.
+				$new_peer_poll_blocks = 100;
 			}
 		}
 		else

@@ -589,8 +589,8 @@ function count_transaction_hash()
 {
 	// Check server balance via custom memory index
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-	$count_transaction_hash = mysql_result(mysqli_query($db_connect, "SELECT * FROM `balance_index` WHERE `public_key_hash` = 'count_transaction_hash' LIMIT 1"),0,"balance");
-	$count_transaction_hash_last = mysql_result(mysqli_query($db_connect, "SELECT * FROM `balance_index` WHERE `public_key_hash` = 'count_transaction_hash' LIMIT 1"),0,"block");
+	$count_transaction_hash = mysql_result(mysqli_query($db_connect, "SELECT balance FROM `balance_index` WHERE `public_key_hash` = 'count_transaction_hash' LIMIT 1"));
+	$count_transaction_hash_last = mysql_result(mysqli_query($db_connect, "SELECT block FROM `balance_index` WHERE `public_key_hash` = 'count_transaction_hash' LIMIT 1"));
 
 	if($count_transaction_hash == "")
 	{
@@ -598,7 +598,7 @@ function count_transaction_hash()
 		mysqli_query($db_connect, "INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`) VALUES ('0', 'count_transaction_hash', '0')");
 
 		// Update record with the latest total
-		$total_trans_hash = mysql_result(mysqli_query($db_connect, "SELECT COUNT(attribute) FROM `transaction_history` USE INDEX(attribute) WHERE `attribute` = 'H'"),0);
+		$total_trans_hash = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_history` USE INDEX(attribute) WHERE `attribute` = 'H'"));
 		mysqli_query($db_connect, "UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$total_trans_hash' WHERE `balance_index`.`public_key_hash` = 'count_transaction_hash' LIMIT 1");
 	}
 	else
@@ -606,7 +606,7 @@ function count_transaction_hash()
 		if(time() - $count_transaction_hash_last > 300) // 300s cache time
 		{
 			// Update new hash count and cache time
-			$total_trans_hash = mysql_result(mysqli_query($db_connect, "SELECT COUNT(attribute) FROM `transaction_history` USE INDEX(attribute) WHERE `attribute` = 'H'"),0);
+			$total_trans_hash = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_history` USE INDEX(attribute) WHERE `attribute` = 'H'"));
 			mysqli_query($db_connect, "UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$total_trans_hash' WHERE `balance_index`.`public_key_hash` = 'count_transaction_hash' LIMIT 1");
 		}
 		else
@@ -2245,7 +2245,7 @@ function activate($component = "SYSTEM", $on_or_off = 1)
 	return FALSE;
 }
 //***********************************************************************************
-//***********************************************************************************	
+//***********************************************************************************
 function generate_new_keys($bits = 1536)
 {
 	require_once('RSA.php');
@@ -2286,7 +2286,7 @@ function generate_new_keys($bits = 1536)
 
 	return 0;
 }
-//***********************************************************************************	
+//***********************************************************************************
 //***********************************************************************************
 function check_for_updates($code_feedback = FALSE)
 {

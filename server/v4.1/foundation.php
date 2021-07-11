@@ -361,11 +361,17 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 			$number_seed.=	getCharFreq($TK_foundation_seed_hash, 9);
 
 			// Save new seed number
-			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$number_seed' WHERE `main_loop_status`.`field_name` = 'TKFoundationSeed' LIMIT 1");
+			if(mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$number_seed' WHERE `main_loop_status`.`field_name` = 'TKFoundationSeed' LIMIT 1") == FALSE)
+			{
+				write_log("Database ERROR Saving Network Seed via Transaction Foundation #$TK_foundation_seed_block", "FO");
+			}
 		}
 		else
 		{
-			write_log("Missing Transaction Foundation #$TK_foundation_seed_block to Build TK Foundation Seed", "FO");
+			if(rand(1,4) == 4)// Spam this error less
+			{
+				write_log("Missing Transaction Foundation #$TK_foundation_seed_block to Build TK Foundation Seed", "FO");
+			}
 		}
 	}
 //***********************************************************************************
