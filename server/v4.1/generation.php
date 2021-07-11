@@ -261,11 +261,12 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 					// Pay all the generating peers a fee to enter the peer election.
 					// Total Servers for Generating Peers.
 					$gen_peers_total = num_gen_peers();
+					$gen_group_peers_total = num_gen_peers(FALSE, TRUE);
 				
 					// Check your server balance to make sure server can afford to create these transactions
 					$current_balance = db_cache_balance($my_public_key);
 
-					if($current_balance >= $gen_peers_total * $gen_peers_total)
+					if($current_balance >= $gen_peers_total * $gen_group_peers_total)
 					{
 						$sql = "SELECT public_key FROM `generating_peer_list` GROUP BY `public_key`";
 						$sql2 = "SELECT crypt_data1, crypt_data2 FROM `my_transaction_queue`";						
@@ -313,7 +314,10 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 					}
 					else
 					{
-						write_log($ip_mode . "Server Balance of ($current_balance) is too low to pay ($gen_peers_total)TK to all generating peers.","G");
+						if(rand(1,3) == 3)// Spam this less
+						{
+							write_log($ip_mode . "Server Balance of ($current_balance) is too low to pay ($gen_peers_total)TK to all unique generating peers.","G");
+						}
 					}
 				}
 				//**********************************************************************

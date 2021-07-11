@@ -855,7 +855,7 @@ function generation_body($generate_currency = "")
 		do this automatically provided you have enough total balance to cover the fee.</li>
 		<li>Once elected, your server will create currency during generation cycles. Generation cycles occur at pseudo-random times. 
 		Use the <a href="index.php?menu=generation&amp;generations=show"><font color="blue"><strong>Generation Calendar</strong></font></a> to see the upcoming generation cycles for the next 24 hours.</li>
-		<li>All generating servers collect the fees to run <font color="green"><strong>Peer Elections</font></strong> and to create <font color="green"><strong>Easy Key</font></strong> shortcuts for other users. 
+		<li>All generating servers collect the fees to run <font color="green"><strong>Peer Elections</strong></font> and to create <font color="green"><strong>Easy Key</strong></font> shortcuts for other users. 
 		This helps fund the generating servers for providing the work and storage within the Timekoin network. The current election fee is <font color="blue"><strong>' . num_gen_peers() . '</strong></font> TK per unique public key.</li>
 		<li>The server may continue to generate currency as long as it stays online. 
 		If the server does not generate currency for <font color="blue"><strong>8</strong></font> hours, the Timekoin network assumes it has gone offline and the server key will be removed from the Generating Peer List. 

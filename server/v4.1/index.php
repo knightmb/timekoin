@@ -2121,7 +2121,9 @@ if($_SESSION["valid_login"] == TRUE)
 		}
 
 		// Next Election Calculator
-		$max_cycles_ahead = 9999;
+		$max_cycles_ahead = 576;
+		$ipv4_election_time = '<strong>IPv4 - <font color="blue">+2 Days</font><br>';
+		$ipv6_election_time = 'IPv6 - <font color="blue">+2 Days</font></strong>';
 
 		for ($i = 0; $i < $max_cycles_ahead; $i++)
 		{
@@ -2129,10 +2131,12 @@ if($_SESSION["valid_login"] == TRUE)
 			
 			if(election_cycle($i) == TRUE)
 			{
-				$time_election = '<strong>IPv4 - <font color="blue">' . tk_time_convert($current_generation_cycle - time()) . '</font><br>';
+				$ipv4_election_time = '<strong>IPv4 - <font color="blue">' . tk_time_convert($current_generation_cycle - time()) . '</font><br>';
 				break;
 			}
 		}
+
+		$time_election = $ipv4_election_time;
 
 		// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
 		$gen_peers_total = num_gen_peers(TRUE);
@@ -2143,10 +2147,12 @@ if($_SESSION["valid_login"] == TRUE)
 			
 			if(election_cycle($i, 2, $gen_peers_total) == TRUE)
 			{
-				$time_election.= 'IPv6 - <font color="blue">' . tk_time_convert($current_generation_cycle - time());
+				$ipv6_election_time = 'IPv6 - <font color="blue">' . tk_time_convert($current_generation_cycle - time()) . '</font></strong>';
 				break;
 			}
 		}		
+
+		$time_election.= $ipv6_election_time;
 
 		for ($i = 0; $i < $max_cycles_ahead; $i++)
 		{
@@ -2154,7 +2160,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			if(generation_cycle($i) == TRUE)
 			{
-				$time_generate = '<font color="blue"><strong>' . tk_time_convert($current_generation_cycle - time());
+				$time_generate = '<font color="blue"><strong>' . tk_time_convert($current_generation_cycle - time()) . '</strong></font>';
 				break;
 			}
 		}
@@ -2171,8 +2177,8 @@ if($_SESSION["valid_login"] == TRUE)
 			Timekoin will attempt to auto-detect the <font color="blue">Generation IP</font> when the field is left blank upon service starting.<br><br>
 			There also exist a setting in the system tab to auto-update the server IP if it changes frequently.<br><br>
 			You can manually update this field if the IP address detected is incorrect.<br><br>
-			Next Peer Election<br>' . $time_election . '</strong></font><br><br>
-			Currency Creation in<br>' . $time_generate . '</strong></font>';
+			Next Peer Election<br>' . $time_election . '<br><br>
+			Currency Creation in<br>' . $time_generate;
 
 		if($_GET["firewall"] == "tool")
 		{

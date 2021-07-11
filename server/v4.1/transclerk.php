@@ -884,7 +884,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 									$internal_public_key_to == $transaction_public_key_to)
 								{
 									// Continue with duplicate record test
-									$found_duplicate = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+									$found_duplicate = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"));
 								}
 								else
 								{
@@ -899,7 +899,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 								if($one_hash_limit == 1)
 								{
 									// First Hash in Transaction Cycle Data
-									$found_duplicate = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+									$found_duplicate = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `timestamp` = '$transaction_timestamp' AND `hash` = '$transaction_hash' LIMIT 1"));
 								}
 								else
 								{
@@ -1214,6 +1214,9 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 	} // End if/then check for processing 4 or more records - live database mode
 	
 	//***********************************************************************************	
+
+	// Clear variable from RAM
+	unset($sql_result);
 
 } // End if/then time check
 
