@@ -335,6 +335,8 @@ if($sql_num_results > 0)
 	mysqli_query($db_connect, "UPDATE `options` SET `field_data` = 'PROC' WHERE `field_name` = 'transaction_history_hash' LIMIT 1");
 	mysqli_query($db_connect, "UPDATE `options` SET `field_data` = 'PROC' WHERE `field_name` = 'transaction_queue_hash' LIMIT 1");	
 
+	$generation_cycle = generation_cycle();
+
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
 		$sql_row = mysqli_fetch_array($sql_result);
@@ -346,19 +348,19 @@ if($sql_num_results > 0)
 		if($sql_row["attribute"] == "G") // Currency Generation Transaction
 		{
 			// Random generation time that can be duplicated across all servers
-			if(generation_cycle() == TRUE)
+			if($generation_cycle == TRUE)
 			{
 				// Generating Peers are limited to 100,000 transactions lifetime per public key
-				$generation_records_total = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_history` WHERE `public_key_to` = '$public_key' AND `attribute` = 'G'"),0);
+				$generation_records_total = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY COUNT(*) FROM `transaction_history` WHERE `public_key_to` = '$public_key' AND `attribute` = 'G'"));
 
 				if($generation_records_total >= 100000)
 				{
-					write_log("Public Key has hit 100,000 generating transaction limit:<BR>" . base64_encode($public_key), "G");
+					write_log("Public Key Has Reached the 100,000 Generating Transaction Lifetime Limit:<BR>" . base64_encode($public_key), "G");
 				}
 				else
 				{
 					// Is this public key allowed to generate currency?
-					$generation_public_key = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),0,0);			
+					$generation_public_key = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),0,0);			
 					
 					if(empty($generation_public_key) == TRUE)
 					{
@@ -369,14 +371,14 @@ if($sql_num_results > 0)
 					else
 					{
 						// Check to make sure there is not a duplicate generation transaction already
-						$found_public_key_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `attribute` = 'G' AND `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle LIMIT 1"),0,0);
+						$found_public_key_queue = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY timestamp FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `attribute` = 'G' AND `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle LIMIT 1"),0,0);
 
 						if(empty($found_public_key_queue) == TRUE)
 						{
 							// Check to make sure enough time has passed since this public key joined the network to allow currency generation
 							// Default is 1 Hour or 3600 seconds
-							$join_peer_list = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,0);
-							$join_peer_list2 = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),1,0);
+							$join_peer_list = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,0);
+							$join_peer_list2 = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),1,0);
 
 							if(empty($join_peer_list2) == TRUE)
 							{
@@ -431,7 +433,7 @@ if($sql_num_results > 0)
 									$time_created == $transaction_timestamp) // Check various parts of the generation transaction
 								{
 									// Public key not found, insert into final transaction history
-									$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from`, `public_key_to` ,`crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
+									$sql = "INSERT HIGH_PRIORITY INTO `transaction_history` (`timestamp` ,`public_key_from`, `public_key_to` ,`crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
 										VALUES ($time_created, '$public_key', '$public_key', '$crypt1', '$crypt2', '$crypt3', '$hash_check', 'G')";
 
 									if(mysqli_query($db_connect, $sql) == FALSE)
@@ -504,7 +506,7 @@ if($sql_num_results > 0)
 		if($sql_row["attribute"] == "T") // Regular Transaction
 		{
 			// Check to make sure there is not a duplicate transaction already
-			$found_public_key_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `hash` = '$hash_check' LIMIT 1"),0,0);
+			$found_public_key_queue = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY timestamp FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `hash` = '$hash_check' LIMIT 1"),0,0);
 
 			if(empty($found_public_key_queue) == TRUE)
 			{
@@ -545,7 +547,7 @@ if($sql_num_results > 0)
 
 						if(strlen($public_key) > 300 && strlen($public_key_to) > 300 && $public_key !== $public_key_to) // Filter to/from self public keys
 						{
-							$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from` , `public_key_to` , `crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
+							$sql = "INSERT HIGH_PRIORITY INTO `transaction_history` (`timestamp` ,`public_key_from` , `public_key_to` , `crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
 							VALUES ($time_created, '$public_key', '$public_key_to' , '$crypt1', '$crypt2', '$crypt3', '$hash_check', 'T')";
 
 							if($public_key_to !== $easy_key_public_key)
@@ -588,7 +590,7 @@ if($sql_num_results > 0)
 								{
 									// Have all the generating peers been paid the Easy Key Fee?
 									$pre_transaction_cycle = transaction_cycle(-10); // Check within the previous 45 minutes
-									$payment_sql = "SELECT public_key FROM `generating_peer_list` GROUP BY `public_key`";
+									$payment_sql = "SELECT HIGH_PRIORITY public_key FROM `generating_peer_list` GROUP BY `public_key`";
 									$payment_sql_result = mysqli_query($db_connect, $payment_sql);
 									$payment_sql_num_results = mysqli_num_rows($payment_sql_result);
 									$all_generating_peers_paid = TRUE;
@@ -600,7 +602,7 @@ if($sql_num_results > 0)
 										
 										if($pay_this_public_key !== $my_public_key)// You don't pay yourself
 										{
-											$sql_fee_result = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `timestamp` >= '$pre_transaction_cycle' AND `public_key_from` = '$public_key' AND `public_key_to` = '$pay_this_public_key' LIMIT 1"));
+											$sql_fee_result = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY timestamp FROM `transaction_history` WHERE `timestamp` >= '$pre_transaction_cycle' AND `public_key_from` = '$public_key' AND `public_key_to` = '$pay_this_public_key' LIMIT 1"));
 
 											if(empty($sql_fee_result) == TRUE)
 											{
@@ -716,7 +718,6 @@ else
 		mysqli_query($db_connect, "DELETE QUICK FROM `transaction_queue` WHERE `transaction_queue`.`timestamp` < $previous_transaction_cycle");
 	}
 }
-
 //***********************************************************************************	
 // Check to see if it is time to write a hash of the last cycle transactions
 
@@ -728,7 +729,7 @@ if(empty($current_hash) == TRUE)
 {
 	if(empty($past_hash) == FALSE)//If the past cycle hash is missing, can't move forward without it.
 	{
-		//A hash from the previous generation cycle does not exist yet, so create it
+		// A hash from the previous generation cycle does not exist yet, so create it
 		$sql = "SELECT timestamp, hash FROM `transaction_history` WHERE `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle ORDER BY `timestamp`, `hash` ASC";
 
 		$sql_result = mysqli_query($db_connect, $sql);
@@ -750,7 +751,7 @@ if(empty($current_hash) == TRUE)
 			// Transaction hash
 			$hash = hash('sha256', $hash);
 
-			$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from` ,`public_key_to` ,`crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
+			$sql = "INSERT HIGH_PRIORITY INTO `transaction_history` (`timestamp` ,`public_key_from` ,`public_key_to` ,`crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
 			VALUES ('$current_transaction_cycle', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$hash', 'H')";
 			mysqli_query($db_connect, $sql);
 
@@ -765,6 +766,10 @@ if(empty($current_hash) == TRUE)
 	} // Pass hash check for existance
 
 } // End Empty Hash Check
+
+// Clear variable from RAM
+unset($sql_result);
+unset($sql_result2);
 //***********************************************************************************
 //***********************************************************************************
 $loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,0);
