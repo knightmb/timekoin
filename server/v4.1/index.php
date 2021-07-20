@@ -543,7 +543,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$body_string = $body_string . '</table>';
 
-		$text_bar = '<table border="0"><tr><td style="width:260px"><strong>Current Server Balance: <font color="green">' . number_format($display_balance) . '</font></strong></td>
+		$text_bar = '<table border="0"><tr><td style="width:260px"><strong>Current Server Balance: <font color="green">' . number_format($display_balance) . '</font> TK</strong></td>
 			<td style="width:180px"><strong>Peer Time: <font color="blue">' . time() . '</font></strong></td>
 			<td style="width:180px"><strong><font color="#827f00">' . tk_time_convert(transaction_cycle(1) - time()) . '</font> until next cycle</strong></td></tr>
 			<tr><td align="left" colspan="3"><strong>Transaction History:</strong>&nbsp;
@@ -2616,7 +2616,7 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 		}
 
-		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong>Current Server Balance: <font color="green">' . number_format($display_balance) . '</font></strong></td></tr>
+		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong>Current Server Balance: <font color="green">' . number_format($display_balance) . '</font> TK</strong></td></tr>
 		<tr><td><strong><font color="green">My Public Key</font> to receive:</strong></td></tr>
 		<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
 

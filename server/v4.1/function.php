@@ -1923,7 +1923,7 @@ function auto_update_IP_address($new_start = FALSE)
 		}
 	}
 
-	$poll_IP = filter_sql(poll_peer(NULL, 'timekoin.net', NULL, 80, 46, "ipv4.php"));
+	$poll_IP = filter_sql(poll_peer(NULL, 'ipv4.timekoin.net', NULL, 80, 46, "ipv4.php"));
 
 	if(empty($generation_IPv4) == TRUE) // IP Field Empty
 	{

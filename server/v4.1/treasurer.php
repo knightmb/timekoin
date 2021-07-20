@@ -506,7 +506,7 @@ if($sql_num_results > 0)
 		if($sql_row["attribute"] == "T") // Regular Transaction
 		{
 			// Check to make sure there is not a duplicate transaction already
-			$found_public_key_queue = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY timestamp FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `hash` = '$hash_check' LIMIT 1"),0,0);
+			$found_public_key_queue = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY timestamp FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `hash` = '$hash_check' LIMIT 1"));
 
 			if(empty($found_public_key_queue) == TRUE)
 			{
@@ -770,6 +770,7 @@ if(empty($current_hash) == TRUE)
 // Clear variable from RAM
 unset($sql_result);
 unset($sql_result2);
+unset($payment_sql_result);
 //***********************************************************************************
 //***********************************************************************************
 $loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,0);

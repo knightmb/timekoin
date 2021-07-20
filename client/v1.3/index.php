@@ -161,7 +161,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$update_available = NULL;
 		}
 
-		$text_bar = '<table border="0"><tr><td style="width:325px"><strong>Current Billfold Balance: <font color="green">' . $display_balance_GUI . '</font></strong></td></tr>
+		$text_bar = '<table border="0"><tr><td style="width:325px"><strong>Current Billfold Balance: <font color="green">' . $display_balance_GUI . '</font> TK</strong></td></tr>
 			<tr>' . $update_available . '</table>';
 
 		$quick_info = 'This section will contain helpful information about each tab in the software.';
@@ -1379,7 +1379,7 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 		}		
 
-		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong>Current Billfold Balance: <font color="green">' . $display_balance . '</font></strong></td></tr>
+		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong>Current Billfold Balance: <font color="green">' . $display_balance . '</font> TK</strong></td></tr>
 			<tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
 			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
 

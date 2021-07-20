@@ -190,7 +190,7 @@ if($_SESSION["valid_login"] == FALSE)
 					}
 				} // One Shot Amount Match Transfer
 
-				if($tx_type == "repeatamount")
+				if($tx_type == "repeatamount" || $tx_type == "randomamount")
 				{
 					$tx_key3 = find_string("---key3=", "---amount", $sql_row["field_data"]);
 					$tx_key3 = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key3' LIMIT 1"));
@@ -201,16 +201,29 @@ if($_SESSION["valid_login"] == FALSE)
 					// Check allowed 180 seconds before and 60 seconds after transaction cycle.
 					if((transaction_cycle(1) - time()) > 180 && (time() - transaction_cycle(0)) >= 60)
 					{
-						if(check_crypt_balance($tx_key2) >= $amount_match) // Check for valid balance
+						$key2_balance = check_crypt_balance($tx_key2);
+						if($key2_balance >= $amount_match) // Check for valid balance
 						{
 							// Create Transaction
-							if(send_timekoins($tx_key1, $tx_key2, $tx_key3, $tx_amount, NULL) == TRUE)
+							if($tx_amount == "Random")
 							{
-								write_log("Auto Transfer Task ($tx_name) Has Completed.", "T");
+								$tx_amount = rand(1, $key2_balance);
+								
+								if(send_timekoins($tx_key1, $tx_key2, $tx_key3, $tx_amount, NULL) == TRUE)
+								{
+									write_log("Auto Transfer Task Random ($tx_name) Has Completed.", "T");
+								}
+							}
+							else
+							{
+								if(send_timekoins($tx_key1, $tx_key2, $tx_key3, $tx_amount, NULL) == TRUE)
+								{
+									write_log("Auto Transfer Task ($tx_name) Has Completed.", "T");
+								}
 							}
 						}
 					}
-				} // Repeating Amount Match Transfer
+				} // Repeating & Random Amount Match Transfer
 
 			} // Check if enabled
 
@@ -288,6 +301,11 @@ if($_SESSION["valid_login"] == TRUE)
 			$tx_key3 = find_string("---key3=", "---amount", $taskname_data);
 		}
 
+		if($tx_type == "randomamount")
+		{
+			$tx_key3 = find_string("---key3=", "---amount", $taskname_data);
+		}
+
 		// Delete Keys
 		mysqli_query($db_connect, "DELETE FROM `my_keys` WHERE `my_keys`.`field_name` = '$tx_key1'");
 		mysqli_query($db_connect, "DELETE FROM `my_keys` WHERE `my_keys`.`field_name` = '$tx_key2'");
@@ -321,6 +339,7 @@ if($_SESSION["valid_login"] == TRUE)
 	<option value="repeatdelay">Repeating Countdown Delay</option>
 	<option value="oneamount">One Time Amount Equal or Greater Than --></option>
 	<option value="repeatamount">Repeating Amount Equal or Greater Than --></option>
+	<option value="randomamount">Random Amount Equal or Greather Than --></option>
 	</select><input type="text" size="10" name="amount_match" /></td></tr>
 	<tr><td>
 	<strong><font color="blue">From Private Key:</font></strong><br>
@@ -398,7 +417,8 @@ if($_SESSION["valid_login"] == TRUE)
 	<strong>One Time Delay</strong> transfers countdown and self-disable after doing one transaction.<br><br>
 	<strong>Repeating Delay</strong> transfers will reset after doing one transaction and begin another countdown.<br><br>
 	<strong>One Time Amount Match</strong> transfers will do one transaction after the key balance is equal to or greater than the target balance.<br><br>
-	<strong>Repeating Amount Match</strong> transfer will do one transaction every transaction cycle when the key balance remains equal to or greater than the target balance';
+	<strong>Repeating Amount Match</strong> transfer will do one transaction every transaction cycle when the key balance remains equal to or greater than the target balance.<br><br>
+	<strong>Random Amount Match</strong> transfer will do one random value transaction between 1 and the full server balance every transaction cycle when the key balance remains equal to or greater than the target balance.';
 
 		home_screen("Auto Currency Transfer", NULL, $body_string, $quick_info , 0, TRUE);
 		exit;
@@ -537,6 +557,15 @@ if($_SESSION["valid_login"] == TRUE)
 			('auto_currency_transfer_$record_number', '---name=$taskname---enable=0---type=$type---key1=$autotx1---key2=$autotx2---key3=$autotx3---amount=$amount---amount_match=$amount_match---end')";
 		}		
 
+		if($type == "randomamount") // Repeating random amount between 1 and server full balance transfer when amount reaches target
+		{
+			if($amount_match <= 0) { $amount_match = 1; } // No zero amount allowed
+			$amount = "Random";
+			
+			$sql = "INSERT INTO `options` (`field_name`, `field_data`) VALUES 
+			('auto_currency_transfer_$record_number', '---name=$taskname---enable=0---type=$type---key1=$autotx1---key2=$autotx2---key3=$autotx3---amount=$amount---amount_match=$amount_match---end')";
+		}
+
 		if(mysqli_query($db_connect, $sql) == TRUE)
 		{
 			// Option Record Insert Complete, now store keys
@@ -627,6 +656,16 @@ function autotx_home()
 			$tx_conditions = "Amount >= $amount_match";
 		}
 
+		if($tx_type == "randomamount")
+		{
+			$tx_key3 = find_string("---key3=", "---amount", $sql_row["field_data"]);
+			$tx_key3 = base64_encode(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key3' LIMIT 1")));
+			$tx_amount = find_string("---amount=", "---amount_match", $sql_row["field_data"]);
+			$amount_match = find_string("---amount_match=", "---end", $sql_row["field_data"]);
+			$tx_type = "Random Repeating<br>Amount Match";
+			$tx_conditions = "Amount >= $amount_match";
+		}		
+
 		if($tx_enable == TRUE)
 		{
 			$tx_toggle = '<FORM ACTION="autotransfer.php?task=disable" METHOD="post"><font color="blue"><strong>Enabled</strong></font><br><input type="submit" name="Submit'.$i.'" value="Disable Here" />
@@ -677,10 +716,11 @@ function autotx_home()
 	$body_string = autotx_home();
 
 	$quick_info = 'Auto Transfer task are scanned every minute.<br><br>
-		<strong>One Time Delay</strong> transfers countdown and self-disable after doing one transaction.<br><br>
-		<strong>Repeating Delay</strong> transfers will reset after doing one transaction and begin another countdown.<br><br>
-		<strong>One Time Amount Match</strong> transfers will do one transaction after the key balance is equal to or greater than the target balance.<br><br>
-		<strong>Repeating Amount Match</strong> transfer will do one transaction every transaction cycle when the key balance remains equal to or greater than the target balance.';
+	<strong>One Time Delay</strong> transfers countdown and self-disable after doing one transaction.<br><br>
+	<strong>Repeating Delay</strong> transfers will reset after doing one transaction and begin another countdown.<br><br>
+	<strong>One Time Amount Match</strong> transfers will do one transaction after the key balance is equal to or greater than the target balance.<br><br>
+	<strong>Repeating Amount Match</strong> transfer will do one transaction every transaction cycle when the key balance remains equal to or greater than the target balance.<br><br>
+	<strong>Random Amount Match</strong> transfer will do one random value transaction between 1 and the full server balance every transaction cycle when the key balance remains equal to or greater than the target balance.';
 
 	home_screen("Auto Currency Transfer", $text_bar, $body_string, $quick_info , 0, TRUE);
 	exit; // All done processing
