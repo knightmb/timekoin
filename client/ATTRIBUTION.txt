@@ -2,10 +2,6 @@ This file contains all attributions to work(s) obtained from others and used in
 Timekoin.
 
 -==========================================================================-
-PHP-mersenne-twister v1.3.0
-https://github.com/ruafozy/php-mersenne-twister
-https://kingfisher.nfshost.com/sw/twister/
--==========================================================================-
 AES implementation in PHP
 (c) Chris Veness 2005-2011 www.movable-type.co.uk/scripts
 Right of free use is granted for all commercial or non-commercial use providing this

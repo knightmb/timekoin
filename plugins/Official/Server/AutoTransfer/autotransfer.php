@@ -418,7 +418,7 @@ if($_SESSION["valid_login"] == TRUE)
 	<strong>Repeating Delay</strong> transfers will reset after doing one transaction and begin another countdown.<br><br>
 	<strong>One Time Amount Match</strong> transfers will do one transaction after the key balance is equal to or greater than the target balance.<br><br>
 	<strong>Repeating Amount Match</strong> transfer will do one transaction every transaction cycle when the key balance remains equal to or greater than the target balance.<br><br>
-	<strong>Random Amount Match</strong> transfer will do one random value transaction between 1 and the full server balance every transaction cycle when the key balance remains equal to or greater than the target balance.';
+	<strong>Random Amount Match</strong> transfer will do one random value transaction between 1 and the full key balance every transaction cycle when the key balance remains equal to or greater than the target balance.';
 
 		home_screen("Auto Currency Transfer", NULL, $body_string, $quick_info , 0, TRUE);
 		exit;
@@ -720,7 +720,7 @@ function autotx_home()
 	<strong>Repeating Delay</strong> transfers will reset after doing one transaction and begin another countdown.<br><br>
 	<strong>One Time Amount Match</strong> transfers will do one transaction after the key balance is equal to or greater than the target balance.<br><br>
 	<strong>Repeating Amount Match</strong> transfer will do one transaction every transaction cycle when the key balance remains equal to or greater than the target balance.<br><br>
-	<strong>Random Amount Match</strong> transfer will do one random value transaction between 1 and the full server balance every transaction cycle when the key balance remains equal to or greater than the target balance.';
+	<strong>Random Amount Match</strong> transfer will do one random value transaction between 1 and the full key balance every transaction cycle when the key balance remains equal to or greater than the target balance.';
 
 	home_screen("Auto Currency Transfer", $text_bar, $body_string, $quick_info , 0, TRUE);
 	exit; // All done processing
