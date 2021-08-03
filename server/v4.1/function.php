@@ -1102,6 +1102,50 @@ function peer_gen_amount($public_key)
 }
 //***********************************************************************************
 //***********************************************************************************
+function gen_lifetime_transactions($public_key, $high_priority = FALSE)
+{
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);	
+
+	// Double md5 to keep key balances and lifetime transaction counts separate
+	$public_key_hash = hash('md5', $public_key);
+	$public_key_hash = hash('md5', $public_key_hash);
+	$previous_foundation_block = foundation_cycle(-2, TRUE);
+	$previous_foundation_block_time = foundation_cycle(-2);
+
+	$generation_records_total = mysql_result(mysqli_query($db_connect, "SELECT balance FROM `balance_index` WHERE `public_key_hash` = '$public_key_hash' AND `block` = '$previous_foundation_block' LIMIT 1"));
+	$generation_records_total2;
+
+	if($high_priority == TRUE)
+	{
+		$high_priority = "HIGH_PRIORITY";
+	}
+	else
+	{
+		$high_priority = "";
+	}
+
+	if($generation_records_total == "")
+	{
+		// No cache exist yet, create a new one
+		$generation_records_total = mysql_result(mysqli_query($db_connect, "SELECT $high_priority COUNT(*) FROM `transaction_history` WHERE `timestamp` <= $previous_foundation_block_time AND `public_key_to` = '$public_key' AND `attribute` = 'G'"));
+
+		// Insert new Cache Total
+		$sql = "INSERT $high_priority INTO `balance_index` (`block`, `public_key_hash`, `balance`) VALUES ('$previous_foundation_block', '$public_key_hash', '$generation_records_total')";
+		mysqli_query($db_connect, $sql);
+
+		// Find the remaining transaction counts
+		$generation_records_total2 = mysql_result(mysqli_query($db_connect, "SELECT $high_priority COUNT(*) FROM `transaction_history` WHERE `timestamp` > $previous_foundation_block_time AND `public_key_to` = '$public_key' AND `attribute` = 'G'"));
+	}
+	else
+	{
+		// Use recent cache to speed up count
+		$generation_records_total2 = mysql_result(mysqli_query($db_connect, "SELECT $high_priority COUNT(*) FROM `transaction_history` WHERE `timestamp` > $previous_foundation_block_time AND `public_key_to` = '$public_key' AND `attribute` = 'G'"));
+	}
+
+	return $generation_records_total + $generation_records_total2;
+}
+//***********************************************************************************
+//***********************************************************************************
 function getCharFreq($str, $chr = FALSE)
 {
 	$c = Array();
@@ -1238,8 +1282,17 @@ function tk_time_convert($time)
 }
 //***********************************************************************************
 //***********************************************************************************
-function election_cycle($when = 0, $ip_type = 1, $gen_peers_total = 0)
+function election_cycle($when = 0, $ip_type = 1, $gen_peers_total = 0, $plugin_seed = FALSE)
 {
+	if($plugin_seed == FALSE)
+	{
+		$TKFoundationSeed = TKFoundationSeed();
+	}
+	else
+	{
+		$TKFoundationSeed = $plugin_seed;
+	}
+	
 	if($ip_type == 1)
 	{
 		// IPv4 Election Cycle Checking
@@ -1264,12 +1317,12 @@ function election_cycle($when = 0, $ip_type = 1, $gen_peers_total = 0)
 		if(version_compare(PHP_VERSION, '7.1.0', '<') == TRUE)
 		{
 			require_once('mersenne_twister.php');// For Earlier PHP Versions (less than v7.1)
-			$twister1 = new twister(TKFoundationSeed() + $current_generation_block);
+			$twister1 = new twister($TKFoundationSeed + $current_generation_block);
 			$mersenne_twister = TRUE;
 		}
 		else
 		{
-			mt_srand(TKFoundationSeed() + $current_generation_block);
+			mt_srand($TKFoundationSeed + $current_generation_block);
 		}
 
 		if($mersenne_twister == FALSE)
@@ -1341,12 +1394,12 @@ function election_cycle($when = 0, $ip_type = 1, $gen_peers_total = 0)
 		if(version_compare(PHP_VERSION, '7.1.0', '<') == TRUE)
 		{
 			require_once('mersenne_twister.php');// For Earlier PHP Versions (less than v7.1)
-			$twister1 = new twister(TKFoundationSeed() + $current_generation_block);
+			$twister1 = new twister($TKFoundationSeed + $current_generation_block);
 			$mersenne_twister = TRUE;
 		}
 		else
 		{		
-			mt_srand(TKFoundationSeed() + $current_generation_block);
+			mt_srand($TKFoundationSeed + $current_generation_block);
 		}
 
 		if($mersenne_twister == FALSE)

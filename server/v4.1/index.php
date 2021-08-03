@@ -543,14 +543,18 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$body_string = $body_string . '</table>';
 
+		$generation_records_total = gen_lifetime_transactions($my_public_key);
+
 		$text_bar = '<table border="0"><tr><td style="width:260px"><strong>Current Server Balance: <font color="green">' . number_format($display_balance) . '</font> TK</strong></td>
 			<td style="width:180px"><strong>Peer Time: <font color="blue">' . time() . '</font></strong></td>
 			<td style="width:180px"><strong><font color="#827f00">' . tk_time_convert(transaction_cycle(1) - time()) . '</font> until next cycle</strong></td></tr>
-			<tr><td align="left" colspan="3"><strong>Transaction History:</strong>&nbsp;
-			' . trans_percent_status() . '</td></tr>
+			<tr><td align="left" colspan="2"><strong>Transaction History:</strong>&nbsp;
+			' . trans_percent_status() . '</td><td><strong><font color="green">' . number_format($generation_records_total) . '</font> Generations</strong></td></tr>
 			' . $update_available . $firewall_blocked . $time_sync_error . '</table>';
 
-		$quick_info = 'Check the Status of any Timekoin Server process.';
+		$quick_info = 'Check the Status of any Timekoin Server process.<br><br>
+		<strong>Peer Time:</strong> The current clock shared by all servers.<br><br>
+		<strong>Generations:</strong> The number of currency creation events this server has generated before it hits the lifetime limit of 100,000 transactions.';
 
 		$home_update = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
 
@@ -783,14 +787,14 @@ if($_SESSION["valid_login"] == TRUE)
 			{
 				// Manually add a peer
 				$body_string .= '<div class="table"><FORM ACTION="index.php?menu=peerlist&amp;save=newpeer" METHOD="post">
-		<table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
-		<th>Domain</th><th>Subfolder</th><th>Port Number</th><th></th><th></th></tr>
-		<tr><td class="style2"><input type="text" name="edit_ip" size="30" /></td>
-		<td class="style2"><input type="text" name="edit_domain" size="20" /></td>
-		<td class="style2"><input type="text" name="edit_subfolder" size="8" /></td>
-		<td class="style2"><input type="text" name="edit_port" size="5" /></td>			 
-		<td><input type="image" src="img/save-icon.gif" title="Save New Peer" name="submit1" border="0"></td>
-		<td></td></tr></table></FORM></div>';
+				<table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
+				<th>Domain</th><th>Subfolder</th><th>Port Number</th><th></th><th></th></tr>
+				<tr><td class="style2"><input type="text" name="edit_ip" size="25" /></td>
+				<td class="style2"><input type="text" name="edit_domain" size="20" /></td>
+				<td class="style2"><input type="text" name="edit_subfolder" size="8" /></td>
+				<td class="style2"><input type="text" name="edit_port" size="5" /></td>			 
+				<td><input type="image" src="img/save-icon.gif" title="Save New Peer" name="submit1" border="0"></td>
+				<td></td></tr></table></FORM></div>';
 			}
 			else if($_GET["type"] == "firstcontact")
 			{
@@ -799,7 +803,7 @@ if($_SESSION["valid_login"] == TRUE)
 				$sql_num_results = mysqli_num_rows($sql_result) + 2;
 				$counter = 1;
 				$body_string .= '<FORM ACTION="index.php?menu=peerlist&amp;save=firstcontact" METHOD="post">
-					<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
+				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
 				<th>Domain</th><th>Subfolder</th><th>Port Number</th><th></th><th></th></tr>';
 
 				for ($i = 0; $i < $sql_num_results; $i++)
@@ -843,7 +847,7 @@ if($_SESSION["valid_login"] == TRUE)
 				$body_string .= '<FORM ACTION="index.php?menu=peerlist&amp;save=peer" METHOD="post">
 				<table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
 				<th>Domain</th><th>Subfolder</th><th>Port Number</th><th></th><th></th></tr>
-				<tr><td class="style2"><input type="text" name="edit_ip" size="30" value="' . $sql_row["IP_Address"] . '" /><br><br>
+				<tr><td class="style2"><input type="text" name="edit_ip" size="25" value="' . $sql_row["IP_Address"] . '" /><br><br>
 				<select name="perm_peer"><option value="expires" ' . $perm_peer2 . '>Purge When Inactive</option><option value="perm" ' . $perm_peer1 . '>Permanent Peer</select></td>
 				<td class="style2" valign="top"><input type="text" name="edit_domain" size="20" value="' . $sql_row["domain"] . '" /></td>
 				<td class="style2" valign="top"><input type="text" name="edit_subfolder" size="8" value="' . $sql_row["subfolder"] . '" /></td>
@@ -2124,12 +2128,13 @@ if($_SESSION["valid_login"] == TRUE)
 		$max_cycles_ahead = 576;
 		$ipv4_election_time = '<strong>IPv4 - <font color="blue">+2 Days</font><br>';
 		$ipv6_election_time = 'IPv6 - <font color="blue">+2 Days</font></strong>';
+		$TKFoundationSeed = TKFoundationSeed();
 
 		for ($i = 0; $i < $max_cycles_ahead; $i++)
 		{
 			$current_generation_cycle = transaction_cycle($i);
 			
-			if(election_cycle($i) == TRUE)
+			if(election_cycle($i, 1, 0, $TKFoundationSeed) == TRUE)
 			{
 				$ipv4_election_time = '<strong>IPv4 - <font color="blue">' . tk_time_convert($current_generation_cycle - time()) . '</font><br>';
 				break;
@@ -2145,7 +2150,7 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			$current_generation_cycle = transaction_cycle($i);
 			
-			if(election_cycle($i, 2, $gen_peers_total) == TRUE)
+			if(election_cycle($i, 2, $gen_peers_total, $TKFoundationSeed) == TRUE)
 			{
 				$ipv6_election_time = 'IPv6 - <font color="blue">' . tk_time_convert($current_generation_cycle - time()) . '</font></strong>';
 				break;
@@ -2282,7 +2287,7 @@ if($_SESSION["valid_login"] == TRUE)
 			{
 				$current_generation_cycle = transaction_cycle($i);
 
-				if(election_cycle($i) == TRUE)
+				if(election_cycle($i, 1, 0, $TKFoundationSeed) == TRUE)
 				{
 					$body_string.= '<br><font color="blue">Election Event</font> at ' . transaction_cycle($i) . ' - ' . unix_timestamp_to_human(transaction_cycle($i), $user_timezone);
 					$total_elections++;
@@ -2295,7 +2300,7 @@ if($_SESSION["valid_login"] == TRUE)
 			{
 				$current_generation_cycle = transaction_cycle($i);
 
-				if(election_cycle($i, 2, $gen_peers_total) == TRUE)
+				if(election_cycle($i, 2, $gen_peers_total, $TKFoundationSeed) == TRUE)
 				{
 					$body_string2.= '<br><font color="blue">Election Event</font> at ' . transaction_cycle($i) . ' - ' . unix_timestamp_to_human(transaction_cycle($i), $user_timezone);
 					$total_ipv6_elections++;
@@ -2324,6 +2329,8 @@ if($_SESSION["valid_login"] == TRUE)
 				$mersenne_twister = TRUE;
 			}
 
+			//$TKFoundationSeed = TKFoundationSeed();
+
 			for ($i = 1; $i < $max_cycles_ahead; $i++)
 			{
 				$current_generation_cycle = transaction_cycle($i);
@@ -2335,12 +2342,12 @@ if($_SESSION["valid_login"] == TRUE)
 
 				if($mersenne_twister == FALSE)
 				{
-					mt_srand(TKFoundationSeed() + $current_generation_block);
+					mt_srand($TKFoundationSeed + $current_generation_block);
 					$tk_random_number = mt_rand(0, 9);
 				}
 				else
 				{
-					$twister1 = new twister(TKFoundationSeed() + $current_generation_block);
+					$twister1 = new twister($TKFoundationSeed + $current_generation_block);
 					$tk_random_number = $twister1->rangeint(0, 9);
 				}				
 

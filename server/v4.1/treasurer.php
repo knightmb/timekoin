@@ -351,7 +351,7 @@ if($sql_num_results > 0)
 			if($generation_cycle == TRUE)
 			{
 				// Generating Peers are limited to 100,000 transactions lifetime per public key
-				$generation_records_total = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY COUNT(*) FROM `transaction_history` WHERE `public_key_to` = '$public_key' AND `attribute` = 'G'"));
+				$generation_records_total = gen_lifetime_transactions($public_key, TRUE);
 
 				if($generation_records_total >= 100000)
 				{

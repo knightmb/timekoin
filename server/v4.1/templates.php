@@ -856,24 +856,26 @@ function generation_body($generate_currency = "")
 		<li>Once elected, your server will create currency during generation cycles. Generation cycles occur at pseudo-random times. 
 		Use the <a href="index.php?menu=generation&amp;generations=show"><font color="blue"><strong>Generation Calendar</strong></font></a> to see the upcoming generation cycles for the next 24 hours.</li>
 		<li>All generating servers collect the fees to run <font color="green"><strong>Peer Elections</strong></font> and to create <font color="green"><strong>Easy Key</strong></font> shortcuts for other users. 
-		This helps fund the generating servers for providing the work and storage within the Timekoin network. The current election fee is <font color="blue"><strong>' . num_gen_peers() . '</strong></font> TK per unique public key.</li>
+		This helps fund the generating servers for providing the work and storage within the Timekoin network. The current election fee is <font color="blue"><strong>' . num_gen_peers() . '</strong></font> TK per unique public key, <font color="blue"><strong>' . number_format(num_gen_peers() * num_gen_peers(FALSE, TRUE))  . '</strong></font> TK total.</li>
 		<li>The server may continue to generate currency as long as it stays online. 
 		If the server does not generate currency for <font color="blue"><strong>8</strong></font> hours, the Timekoin network assumes it has gone offline and the server key will be removed from the Generating Peer List. 
 		Once the server comes back online, it will need to be re-elected before generation can begin again.</li>
+		<li>All Timekoin servers have a lifetime generation limit of <font color="blue"><strong>100,000</strong></font> transactions tied to the public key.<br>
+		After this limit is reached, they can not generate anymore currency but can continue to collect fees for network processing like normal. A new server key can be generated to start the process over again if desired.</li>
 		</ol>
 		<strong>Generation Amount Schedule</strong><br>
 		The amount a server can generate is directly related to the length of time it has been online and generating currency in the Timekoin network.<br>
 		<table border="0" cellpadding="2"><tr><td><I>Time Generating</I></td><td><I>Currency per Generation Cycle</I></td></tr>
-		<tr><td>0 - 1 week</td><td><font color="green"><strong>1</strong></font></td></tr>
-		<tr><td>1 - 2 weeks</td><td><font color="green"><strong>2</strong></font></td></tr>
-		<tr><td>2 - 4 weeks</td><td><font color="green"><strong>3</strong></font></td></tr>
-		<tr><td>4 - 8 weeks</td><td><font color="green"><strong>4</strong></font></td></tr>
-		<tr><td>8 - 16 weeks</td><td><font color="green"><strong>5</strong></font></td></tr>
-		<tr><td>16 - 32 weeks</td><td><font color="green"><strong>6</strong></font></td></tr>
-		<tr><td>32 - 64 weeks</td><td><font color="green"><strong>7</strong></font></td></tr>
-		<tr><td>64 - 128 weeks</td><td><font color="green"><strong>8</strong></font></td></tr>
-		<tr><td>128 - 256 weeks</td><td><font color="green"><strong>9</strong></font></td></tr>
-		<tr><td>256 or more weeks</td><td><font color="green"><strong>10</strong></font></td></tr>
+		<tr><td>0 - 7 days</td><td><font color="green"><strong>1</strong></font></td></tr>
+		<tr><td>7 - 14 days</td><td><font color="green"><strong>2</strong></font></td></tr>
+		<tr><td>14 - 28 days</td><td><font color="green"><strong>3</strong></font></td></tr>
+		<tr><td>28 - 56 days</td><td><font color="green"><strong>4</strong></font></td></tr>
+		<tr><td>56 - 112 days</td><td><font color="green"><strong>5</strong></font></td></tr>
+		<tr><td>112 - 224 days</td><td><font color="green"><strong>6</strong></font></td></tr>
+		<tr><td>224 - 448 days</td><td><font color="green"><strong>7</strong></font></td></tr>
+		<tr><td>448 - 896 days</td><td><font color="green"><strong>8</strong></font></td></tr>
+		<tr><td>896 - 1792 days</td><td><font color="green"><strong>9</strong></font></td></tr>
+		<tr><td>1792 or more days</td><td><font color="green"><strong>10</strong></font></td></tr>
 		</table><br>';
 	}
     
