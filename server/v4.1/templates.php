@@ -48,7 +48,7 @@ Password: <input type="password" size="20" name="timekoin_password" />
 } 
 //***********************************************************
 //***********************************************************
-function home_screen($contents = "", $select_bar = "", $body = "", $quick_info = "", $refresh = 0, $plugin_reference = FALSE)
+function home_screen($contents = "", $select_bar = "", $body = "", $quick_info = "", $refresh = 0, $plugin_reference = FALSE, $plugin_tab_name = "")
 {
 	$home;
 	$options;
@@ -115,6 +115,7 @@ function home_screen($contents = "", $select_bar = "", $body = "", $quick_info =
 	$sql_result = mysqli_query($db_connect, $sql);
 	$sql_num_results = mysqli_num_rows($sql_result);
 	$plugin_output;
+	$plugin_tab_active;
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
@@ -125,15 +126,24 @@ function home_screen($contents = "", $select_bar = "", $body = "", $quick_info =
 		$plugin_enable = intval(find_string("---enable=", "---show", $sql_row["field_data"]));
 		$plugin_show = intval(find_string("---show=", "---name", $sql_row["field_data"]));
 
+		if($plugin_tab_name == $plugin_tab)
+		{
+			$plugin_tab_active = 'class="active"';
+		}
+		else
+		{
+			$plugin_tab_active = "";
+		}
+
 		if($plugin_enable == TRUE && $plugin_show == TRUE)
 		{
 			if($plugin_reference == TRUE)
 			{
-				$plugin_output .= '<li><a href="' . $plugin_file . '">' . $plugin_tab . '</a></li>';
+				$plugin_output.= '<li><a href="' . $plugin_file . '" '.  $plugin_tab_active . '>' . $plugin_tab . '</a></li>';
 			}
 			else
 			{
-				$plugin_output .= '<li><a href="plugins/' . $plugin_file . '">' . $plugin_tab . '</a></li>';
+				$plugin_output.= '<li><a href="plugins/' . $plugin_file . '" '.  $plugin_tab_active . '>' . $plugin_tab . '</a></li>';
 			}
 		}
 	}	
@@ -141,30 +151,30 @@ function home_screen($contents = "", $select_bar = "", $body = "", $quick_info =
 	if($plugin_reference == TRUE)
 	{
 		$menu_output = '<li><a href="../index.php?menu=home" ' . $home . '>Home</a></li>';		
-if(check_standard_tab_settings($standard_settings_number, 1) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=peerlist" ' . $peerlist . '>Peerlist</a></li>'; }
-if(check_standard_tab_settings($standard_settings_number, 2) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=queue" ' . $queue . '>Transaction Queue</a></li>'; }
-if(check_standard_tab_settings($standard_settings_number, 4) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=send" ' . $send . '>Send / Receive</a></li>'; }
-if(check_standard_tab_settings($standard_settings_number, 8) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=history" ' . $history . '>History</a></li>'; }
-if(check_standard_tab_settings($standard_settings_number, 16) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=generation" ' . $generation . '>Generation</a></li>'; }
-if(check_standard_tab_settings($standard_settings_number, 32) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=system" ' . $system . '>System</a></li>'; }
+		if(check_standard_tab_settings($standard_settings_number, 1) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=peerlist" ' . $peerlist . '>Peerlist</a></li>'; }
+		if(check_standard_tab_settings($standard_settings_number, 2) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=queue" ' . $queue . '>Transaction Queue</a></li>'; }
+		if(check_standard_tab_settings($standard_settings_number, 4) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=send" ' . $send . '>Send / Receive</a></li>'; }
+		if(check_standard_tab_settings($standard_settings_number, 8) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=history" ' . $history . '>History</a></li>'; }
+		if(check_standard_tab_settings($standard_settings_number, 16) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=generation" ' . $generation . '>Generation</a></li>'; }
+		if(check_standard_tab_settings($standard_settings_number, 32) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=system" ' . $system . '>System</a></li>'; }
 		$menu_output .= '<li><a href="../index.php?menu=options" ' . $options . '>Options</a></li>';
-if(check_standard_tab_settings($standard_settings_number, 64) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=backup" ' . $backup . ' onclick="return confirm(\'This will load your private key! Only view this over your Private Network or SSL if accessing remotely from the Internet. Continue?\');">Backup</a></li>'; }
-if(check_standard_tab_settings($standard_settings_number, 128) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=tools" ' . $tools . '>Tools</a></li>'; }
+		if(check_standard_tab_settings($standard_settings_number, 64) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=backup" ' . $backup . ' onclick="return confirm(\'This will load your private key! Only view this over your Private Network or SSL if accessing remotely from the Internet. Continue?\');">Backup</a></li>'; }
+		if(check_standard_tab_settings($standard_settings_number, 128) == TRUE) { $menu_output .= '<li><a href="../index.php?menu=tools" ' . $tools . '>Tools</a></li>'; }
 		$menu_output .= $plugin_output;
 		$menu_output .= '<li><a href="../index.php?menu=logoff">Log Out</a></li>';
 	}
 	else
 	{
 		$menu_output = '<li><a href="index.php?menu=home" ' . $home . '>Home</a></li>';		
-if(check_standard_tab_settings($standard_settings_number, 1) == TRUE) { $menu_output .= '<li><a href="index.php?menu=peerlist" ' . $peerlist . '>Peerlist</a></li>'; }
-if(check_standard_tab_settings($standard_settings_number, 2) == TRUE) { $menu_output .= '<li><a href="index.php?menu=queue" ' . $queue . '>Transaction Queue</a></li>'; }
-if(check_standard_tab_settings($standard_settings_number, 4) == TRUE) { $menu_output .= '<li><a href="index.php?menu=send" ' . $send . '>Send / Receive</a></li>'; }
-if(check_standard_tab_settings($standard_settings_number, 8) == TRUE) { $menu_output .= '<li><a href="index.php?menu=history" ' . $history . '>History</a></li>'; }
-if(check_standard_tab_settings($standard_settings_number, 16) == TRUE) { $menu_output .= '<li><a href="index.php?menu=generation" ' . $generation . '>Generation</a></li>'; }
-if(check_standard_tab_settings($standard_settings_number, 32) == TRUE) { $menu_output .= '<li><a href="index.php?menu=system" ' . $system . '>System</a></li>'; }
+		if(check_standard_tab_settings($standard_settings_number, 1) == TRUE) { $menu_output .= '<li><a href="index.php?menu=peerlist" ' . $peerlist . '>Peerlist</a></li>'; }
+		if(check_standard_tab_settings($standard_settings_number, 2) == TRUE) { $menu_output .= '<li><a href="index.php?menu=queue" ' . $queue . '>Transaction Queue</a></li>'; }
+		if(check_standard_tab_settings($standard_settings_number, 4) == TRUE) { $menu_output .= '<li><a href="index.php?menu=send" ' . $send . '>Send / Receive</a></li>'; }
+		if(check_standard_tab_settings($standard_settings_number, 8) == TRUE) { $menu_output .= '<li><a href="index.php?menu=history" ' . $history . '>History</a></li>'; }
+		if(check_standard_tab_settings($standard_settings_number, 16) == TRUE) { $menu_output .= '<li><a href="index.php?menu=generation" ' . $generation . '>Generation</a></li>'; }
+		if(check_standard_tab_settings($standard_settings_number, 32) == TRUE) { $menu_output .= '<li><a href="index.php?menu=system" ' . $system . '>System</a></li>'; }
 		$menu_output .= '<li><a href="index.php?menu=options" ' . $options . '>Options</a></li>';
-if(check_standard_tab_settings($standard_settings_number, 64) == TRUE) { $menu_output .= '<li><a href="index.php?menu=backup" ' . $backup . ' onclick="return confirm(\'This will load your private key! Only view this over your Private Network or SSL if accessing remotely from the Internet. Continue?\');">Backup</a></li>'; }
-if(check_standard_tab_settings($standard_settings_number, 128) == TRUE) { $menu_output .= '<li><a href="index.php?menu=tools" ' . $tools . '>Tools</a></li>'; }
+		if(check_standard_tab_settings($standard_settings_number, 64) == TRUE) { $menu_output .= '<li><a href="index.php?menu=backup" ' . $backup . ' onclick="return confirm(\'This will load your private key! Only view this over your Private Network or SSL if accessing remotely from the Internet. Continue?\');">Backup</a></li>'; }
+		if(check_standard_tab_settings($standard_settings_number, 128) == TRUE) { $menu_output .= '<li><a href="index.php?menu=tools" ' . $tools . '>Tools</a></li>'; }
 		$menu_output .= $plugin_output;
 		$menu_output .= '<li><a href="index.php?menu=logoff">Log Out</a></li>';
 	}
@@ -276,7 +286,7 @@ function options_screen()
 	{
 		// Offer Confirmation Screen
 		$confirm_message = '<strong><font color="red">Generating New Keys will delete the old keys in the database.</font><br>Be sure to make backups if you intend<br>on keeping any balance associated with the current keys.<br><br><font color="blue">Continue?</font></strong>';
-		$form_action = '<FORM ACTION="index.php?menu=options&amp;newkeys=confirm" METHOD="post"><strong>Bits Size [1,536 to 15,360]</strong> (Caution: High Values Take a Lot of Time to Generate!) <input type="number" name="new_key_bits" min="1536" max="17408" size="6" value="1536"/><br><br>';
+		$form_action = '<FORM ACTION="index.php?menu=options&amp;newkeys=confirm" METHOD="post"><strong>Bits Size [1,536 to 17,408]</strong> (Caution: High Values Take a Lot of Time to Create New Keys!) <input type="number" name="new_key_bits" min="1536" max="17408" size="6" value="1536"/><br><br>';
 	}
 	else
 	{

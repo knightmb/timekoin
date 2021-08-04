@@ -319,11 +319,17 @@ function my_domain()
 function modify_peer_grade($ip_address, $domain, $subfolder, $port_number, $grade)
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-	$peer_failure = mysql_result(mysqli_query($db_connect, "SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1"),0,0);
-	
-	if($peer_failure < 50000) // Don't change anything over 50,000 as it is reserved for peers where failure grade is not used
+	$peer_failure = mysql_result(mysqli_query($db_connect, "SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1"));
+	$join_peer_list = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1"));
+
+	if($join_peer_list > 0) // Don't change anything for permanent peers
 	{
-		$peer_failure += $grade;
+		$peer_failure+= $grade;
+
+		// Range adjustment for first contact and gateway peers
+		if($peer_failure > 63500 && $peer_failure < 64000) { return; }
+		if($peer_failure > 64500 && $peer_failure < 65000) { return; }		
+		
 		if($peer_failure >= 0)
 		{
 			mysqli_query($db_connect, "UPDATE `active_peer_list` SET `failed_sent_heartbeat` = $peer_failure WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
@@ -967,6 +973,29 @@ function easy_key_lookup($easy_key = "")
 	}
 
 	return; // No match found
+}
+//***********************************************************************************
+//***********************************************************************************
+function easy_key_reverse_lookup($public_key = "", $find_next = 1, $expire_timestamp = FALSE)
+{
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+
+	// Look back as far as 3 Months (26,298 Transaction Cycles or 7,889,400 Seconds)
+	$month_back_cycles = transaction_cycle(-26298);
+	$easy_key_public_key = base64_decode(EASY_KEY_PUBLIC_KEY);
+
+	if($expire_timestamp == TRUE)
+	{
+		$timestamp = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `timestamp` >= $month_back_cycles AND `public_key_to` = '$easy_key_public_key' AND `public_key_from` = '$public_key' ORDER BY `transaction_history`.`timestamp` ASC LIMIT $find_next"),($find_next - 1),0);
+		return $timestamp; // Return timestamp for creation to calculate expiration date
+	}
+	else
+	{
+		$crypt_data3 = mysql_result(mysqli_query($db_connect, "SELECT crypt_data3 FROM `transaction_history` WHERE `timestamp` >= $month_back_cycles AND `public_key_to` = '$easy_key_public_key' AND `public_key_from` = '$public_key' ORDER BY `transaction_history`.`timestamp` ASC LIMIT $find_next"),($find_next - 1),0);
+		$transaction_data = tk_decrypt($public_key, base64_decode($crypt_data3));
+		$transaction_message = find_string("---MSG=", "", $transaction_data, TRUE);
+		return $transaction_message; // Matching Easy Key to Public Key
+	}
 }
 //***********************************************************************************
 //***********************************************************************************

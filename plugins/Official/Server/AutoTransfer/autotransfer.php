@@ -420,7 +420,7 @@ if($_SESSION["valid_login"] == TRUE)
 	<strong>Repeating Amount Match</strong> transfer will do one transaction every transaction cycle when the key balance remains equal to or greater than the target balance.<br><br>
 	<strong>Random Amount Match</strong> transfer will do one random value transaction between 1 and the full key balance every transaction cycle when the key balance remains equal to or greater than the target balance.';
 
-		home_screen("Auto Currency Transfer", NULL, $body_string, $quick_info , 0, TRUE);
+		home_screen("Auto Currency Transfer", NULL, $body_string, $quick_info , 0, TRUE, "AutoTX");
 		exit;
 	}
 
@@ -722,7 +722,7 @@ function autotx_home()
 	<strong>Repeating Amount Match</strong> transfer will do one transaction every transaction cycle when the key balance remains equal to or greater than the target balance.<br><br>
 	<strong>Random Amount Match</strong> transfer will do one random value transaction between 1 and the full key balance every transaction cycle when the key balance remains equal to or greater than the target balance.';
 
-	home_screen("Auto Currency Transfer", $text_bar, $body_string, $quick_info , 0, TRUE);
+	home_screen("Auto Currency Transfer", $text_bar, $body_string, $quick_info , 0, TRUE, "AutoTX");
 	exit; // All done processing
 }
 

@@ -964,15 +964,17 @@ if($_SESSION["valid_login"] == TRUE)
 					$gen_peer = NULL;
 				}
 
-				if($sql_row[$failed_column_name] == 65535)
+				if($sql_row[$failed_column_name] >= 65000)
 				{
 					// First Contact Peer
-					$failure_score = "First<br>Contact";
+					$joined = 'First<br>Contact';
+					$failure_score = $sql_row[$failed_column_name] - 65000;
 				}
-				else if($sql_row[$failed_column_name] == 65534)
+				else if($sql_row[$failed_column_name] >= 64000 && $sql_row[$failed_column_name] < 64500)
 				{
-					// First Contact Peer
-					$failure_score = "Gateway";
+					// Gateway Peer
+					$joined = 'Gateway';
+					$failure_score = $sql_row[$failed_column_name] - 64000;
 				}
 				else
 				{
@@ -2329,8 +2331,6 @@ if($_SESSION["valid_login"] == TRUE)
 				$mersenne_twister = TRUE;
 			}
 
-			//$TKFoundationSeed = TKFoundationSeed();
-
 			for ($i = 1; $i < $max_cycles_ahead; $i++)
 			{
 				$current_generation_cycle = transaction_cycle($i);
@@ -2418,8 +2418,8 @@ if($_SESSION["valid_login"] == TRUE)
 						$display_balance = db_cache_balance($my_public_key);
 						$body_string = send_receive_body($public_key_64, $send_amount, TRUE, NULL, $message);
 						$body_string .= '<hr><font color="blue"><strong>This public key is valid.</strong></font><br>
-							<font color="red"><strong>There is no way to recover Timekoins sent to the wrong public key.</strong></font><br>
-							<font color="blue"><strong>Click "Send Timekoins" to send now.</strong></font><br><br>';
+						<font color="red"><strong>There is no way to recover Timekoins sent to the wrong public key.</strong></font><br>
+						<font color="blue"><strong>Click "Send Timekoins" to send now.</strong></font><br><br>';
 					}
 				} // End self check
 			} // End balance check
@@ -2623,9 +2623,22 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 		}
 
+		$counter = 1;
+		$easy_key_lookup = easy_key_reverse_lookup($my_public_key, $counter);
+		$easy_key_list;
+
+		while($easy_key_lookup != "")
+		{
+			$easy_key_lookup_expire = easy_key_reverse_lookup($my_public_key, $counter, TRUE); // Add 3 Months or 7,889,400 seconds to results
+			$easy_key_list.= '<strong>Easy Key: [<font color="blue">' . $easy_key_lookup . '</font>] <font color="red">Expires:</font> ' . unix_timestamp_to_human($easy_key_lookup_expire + 7889400, $user_timezone) . '</strong><br>';
+
+			$counter++;
+			$easy_key_lookup = easy_key_reverse_lookup($my_public_key, $counter);
+		}
+
 		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong>Current Server Balance: <font color="green">' . number_format($display_balance) . '</font> TK</strong></td></tr>
 		<tr><td><strong><font color="green">My Public Key</font> to receive:</strong></td></tr>
-		<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
+		<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>' . $easy_key_list;
 
 		home_screen('Send / Receive Timekoins', $text_bar, $body_string , $quick_info);
 		exit;

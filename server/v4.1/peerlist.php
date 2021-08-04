@@ -143,12 +143,28 @@ if($_GET["action"] == "poll_failure")
 	if(empty($domain) == TRUE)
 	{
 		// No Domain, IP Only
-		echo mysql_result(mysqli_query($db_connect, "SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip' AND `subfolder` = '$subfolder' AND `port_number` = $port LIMIT 1"),0,0);
+		$failure_score = mysql_result(mysqli_query($db_connect, "SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip' AND `subfolder` = '$subfolder' AND `port_number` = $port LIMIT 1"));
 	}
 	else
 	{
 		// Domain
-		echo mysql_result(mysqli_query($db_connect, "SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port LIMIT 1"),0,0);
+		$failure_score = mysql_result(mysqli_query($db_connect, "SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port LIMIT 1"));
+	}
+
+	if($failure_score >= 65000)
+	{
+		// First Contact Server
+		echo ($failure_score - 65000);
+	}
+	else if($failure_score >= 64000 && $failure_score < 64500)
+	{
+		// Gateway Server
+		echo ($failure_score - 64000);
+	}
+	else
+	{
+		// Regular Server
+		echo $failure_score;
 	}
 
 	log_ip("PL", 1);
@@ -553,7 +569,7 @@ if($active_peers == 0 && $new_peers == 0)
 
 		// Insert into database as first contact server(s)
 		$sql = "INSERT INTO `active_peer_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`last_heartbeat`, `join_peer_list`, `failed_sent_heartbeat`)
-		VALUES ('$peer_ip', '$peer_domain', '$peer_subfolder', '$peer_port_number', " . time() . ", " . time() . ", 65535)";
+		VALUES ('$peer_ip', '$peer_domain', '$peer_subfolder', '$peer_port_number', " . time() . ", " . time() . ", 65000)";
 
 		mysqli_query($db_connect, $sql);
 	}	
@@ -1021,12 +1037,12 @@ if($new_peers_numbers < $max_new_peers && mt_rand(1,3) == 2)//Randomize a little
 	
 	// Grab random Transaction Foundation Hash
 	$rand_block = rand(0,foundation_cycle(0, TRUE) - 5); // Range from Start to Last 5 Foundation Hash
-	$random_foundation_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_foundation` WHERE `block` = $rand_block LIMIT 1"),0,0);
+	$random_foundation_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_foundation` WHERE `block` = $rand_block LIMIT 1"));
 	
 	// Grab random Transaction Hash
 	$rand_block2 = rand(transaction_cycle((0 - transaction_cycle(0, TRUE)), TRUE), transaction_cycle(-1000, TRUE)); // Range from Start to Last 1000 Transaction Hash
 	$rand_block2 = transaction_cycle(0 - $rand_block2);
-	$random_transaction_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_history` WHERE `timestamp` = $rand_block2 LIMIT 1"),0,0);
+	$random_transaction_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_history` WHERE `timestamp` = $rand_block2 LIMIT 1"));
 	$rand_block2 = ($rand_block2 - TRANSACTION_EPOCH - 300) / 300;
 
 	for ($i = 0; $i < $sql_num_results; $i++)
@@ -1095,7 +1111,7 @@ if($new_peers_numbers < $max_new_peers && mt_rand(1,3) == 2)//Randomize a little
 				if($poll_peer == 1)
 				{
 					// This is a gateway peer, change it status over to gateway peer
-					mysqli_query($db_connect, "UPDATE `active_peer_list` SET `failed_sent_heartbeat` = '65534' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
+					mysqli_query($db_connect, "UPDATE `active_peer_list` SET `failed_sent_heartbeat` = '64000' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 				}
 			}			
 		}
@@ -1172,15 +1188,15 @@ if($new_peers_numbers < $max_new_peers && mt_rand(1,3) == 2)//Randomize a little
 					// Is it valid?
 					if($poll_peer == $random_foundation_hash)
 					{
-						//Got a response from an active Timekoin server (-2 to failure score)
-						modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -2);
+						//Got a response from an active Timekoin server (-3 to failure score)
+						modify_peer_grade($ip_address, $domain, $subfolder, $port_number, -3);
 						//Update Heartbeat Time
 						mysqli_query($db_connect, "UPDATE `active_peer_list` SET `last_heartbeat` = '" . time() . "' WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
 					}
 					else
 					{
-						//Wrong Response? (+3 failure score)
-						modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 3);
+						//Wrong Response? (+4 failure score)
+						modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 4);
 					}
 				}
 			}
@@ -1194,8 +1210,8 @@ if($new_peers_numbers < $max_new_peers && mt_rand(1,3) == 2)//Randomize a little
 				// Is it valid?
 				if(empty($poll_peer) == TRUE)
 				{
-					//No response, record polling failure for future reference (+3 failure score)
-					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 3);
+					//No response, record polling failure for future reference (+2 failure score)
+					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 2);
 				}
 				else
 				{
@@ -1219,9 +1235,16 @@ if($new_peers_numbers < $max_new_peers && mt_rand(1,3) == 2)//Randomize a little
 	} // End for Loop
 
 	// Remove all active peers that are offline for more than 5 minutes or have a high failure score
-	$peer_failure_grade = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,0);
+	$peer_failure_grade = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"));
+	// 5 Minute timeout failure
 	mysqli_query($db_connect, "DELETE QUICK FROM `active_peer_list` WHERE `last_heartbeat` < " . (time() - 300) . " AND `join_peer_list` != 0");
-	mysqli_query($db_connect, "DELETE QUICK FROM `active_peer_list` WHERE `failed_sent_heartbeat` >= $peer_failure_grade AND `failed_sent_heartbeat` < 60000 AND `join_peer_list` != 0");
+	// Normal peer failure score
+	mysqli_query($db_connect, "DELETE QUICK FROM `active_peer_list` WHERE `failed_sent_heartbeat` >= $peer_failure_grade AND `failed_sent_heartbeat` < 1000");
+	// First Contact & Gateway peer failure score
+	$first_contact_failure = $peer_failure_grade + 65000;
+	$gateway_failure = $peer_failure_grade + 64000;
+	mysqli_query($db_connect, "DELETE QUICK FROM `active_peer_list` WHERE `failed_sent_heartbeat` >= $first_contact_failure");
+	mysqli_query($db_connect, "DELETE QUICK FROM `active_peer_list` WHERE `failed_sent_heartbeat` >= $gateway_failure AND `failed_sent_heartbeat` < 64500");
 
 //***********************************************************************************
 //***********************************************************************************
