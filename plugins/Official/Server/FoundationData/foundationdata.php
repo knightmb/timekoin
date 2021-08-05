@@ -85,7 +85,7 @@ if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 	// Does the screen need to refresh every X seconds? 0 = Disable	
 	$update = 0; 
 
-	home_screen($section_string, $text_bar, $body_string, $quick_info , $update, TRUE);
+	home_screen($section_string, $text_bar, $body_string, $quick_info , $update, TRUE, "Trans Data");
 	// The last variable TRUE is important to have Timekoin re-adjust pathing to make sure
 	// menus and screens come up properly.
 

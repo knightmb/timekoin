@@ -31,12 +31,12 @@ include '../configuration.php';// Path to files already used by Timekoin
 $db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
 // Avoid stacking this many times
-$already_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'example_service.php' LIMIT 1"),0,0);
+$already_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'example_service.php' LIMIT 1"));
 
 if($already_active == "")
 {
 	// Creating Status State - Timekoin Looks for the filename
-	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('example_service.php', '0')"); // Offline
+	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`) VALUES ('example_service.php', '0')"); // Offline
 }
 else
 {
@@ -46,10 +46,12 @@ else
 
 while(1) // Begin Infinite Loop :)
 {
-	// Are we to remain active?
-	$timekoin_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"),0,0);
+	set_time_limit(99); // Reset Timeout - Failsafe
 
-	if($timekoin_active == FALSE)
+	// Are we to remain active?
+	$timekoin_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"));
+
+	if($timekoin_active == "")
 	{
 		// Begin Shutdown
 		mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'example_service.php' LIMIT 1");

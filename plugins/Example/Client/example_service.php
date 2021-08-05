@@ -20,27 +20,6 @@ include 'templates.php';// Path to files already used by Timekoin
 include 'function.php';// Path to files already used by Timekoin
 include 'configuration.php';// Path to files already used by Timekoin
 
-//***********************************************************************************
-if(function_exists('mysql_result') == FALSE)
-{
-	function mysql_result($result, $number = 0, $field = 0)
-	{
-		$sql_num_results = mysqli_num_rows($result);
-
-		if($sql_num_results <= $number)
-		{
-			return NULL;
-		}
-		else
-		{
-			mysqli_data_seek($result, $number);
-			$row = mysqli_fetch_array($result);
-			return $row[$field];
-		}
-	}
-}
-//***********************************************************************************
-
 // Make DB Connection
 $db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
