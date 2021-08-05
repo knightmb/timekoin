@@ -4,8 +4,8 @@ include 'status.php';
 define("TRANSACTION_EPOCH","1338576300"); // Epoch timestamp: 1338576300
 define("ARBITRARY_KEY","01110100011010010110110101100101"); // Space filler for non-encryption data
 define("SHA256TEST","8c49a2b56ebd8fc49a17956dc529943eb0d73c00ee6eafa5d8b3ba1274eb3ea4"); // Known SHA256 Test Result
-define("TIMEKOIN_VERSION","4.1"); // This Timekoin Software Version
-define("NEXT_VERSION","next_version7.txt"); // What file to check for future versions
+define("TIMEKOIN_VERSION","4.05"); // This Timekoin Software Version
+define("NEXT_VERSION","next_version6.txt"); // What file to check for future versions
 // Easy Key Blackhole Public Key
 define("EASY_KEY_PUBLIC_KEY","LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS1UaW1la29pbitFYXN5K0tleStibGFjaytob2xlK2FkZHJlc3MrV3ViYmErbHViYmErZHViK2R1YitSaWtraSt0aWtraSt0YXZpK2JpdGNoK0FuZCt0aGF0cyt0aGUrd2F5K3RoZStuZXdzK2dvZXMrSGl0K3RoZStzYWNrK0phY2srVWgrb2grc29tZXJzYXVsdCtqdW1wK0FpZHMrU2h1bStzaHVtK3NobGlwcGVkeStkb3ArR3Jhc3MrdGFzdGVzK2JhZCtObytqdW1waW5nK2luK3RoZStzZXdlcitCdXJnZXIrdGltZStSdWJiZXIrYmFieStiYWJieStCdW5rZXJzK1llYWgrc2F5K3RoYXQrYWxsK3RoZSt0aW1lK1RpbWVrb2luK0Vhc3krS2V5LS0tLS1FTkQgUFVCTElDIEtFWS0tLS0t");
 
@@ -319,17 +319,11 @@ function my_domain()
 function modify_peer_grade($ip_address, $domain, $subfolder, $port_number, $grade)
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-	$peer_failure = mysql_result(mysqli_query($db_connect, "SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1"));
-	$join_peer_list = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1"));
-
-	if($join_peer_list > 0) // Don't change anything for permanent peers
+	$peer_failure = mysql_result(mysqli_query($db_connect, "SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1"),0,0);
+	
+	if($peer_failure < 50000) // Don't change anything over 50,000 as it is reserved for peers where failure grade is not used
 	{
-		$peer_failure+= $grade;
-
-		// Range adjustment for first contact and gateway peers
-		if($peer_failure > 63500 && $peer_failure < 64000) { return; }
-		if($peer_failure > 64500 && $peer_failure < 65000) { return; }		
-		
+		$peer_failure += $grade;
 		if($peer_failure >= 0)
 		{
 			mysqli_query($db_connect, "UPDATE `active_peer_list` SET `failed_sent_heartbeat` = $peer_failure WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1");
@@ -976,29 +970,6 @@ function easy_key_lookup($easy_key = "")
 }
 //***********************************************************************************
 //***********************************************************************************
-function easy_key_reverse_lookup($public_key = "", $find_next = 1, $expire_timestamp = FALSE)
-{
-	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-
-	// Look back as far as 3 Months (26,298 Transaction Cycles or 7,889,400 Seconds)
-	$month_back_cycles = transaction_cycle(-26298);
-	$easy_key_public_key = base64_decode(EASY_KEY_PUBLIC_KEY);
-
-	if($expire_timestamp == TRUE)
-	{
-		$timestamp = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `timestamp` >= $month_back_cycles AND `public_key_to` = '$easy_key_public_key' AND `public_key_from` = '$public_key' ORDER BY `transaction_history`.`timestamp` ASC LIMIT $find_next"),($find_next - 1),0);
-		return $timestamp; // Return timestamp for creation to calculate expiration date
-	}
-	else
-	{
-		$crypt_data3 = mysql_result(mysqli_query($db_connect, "SELECT crypt_data3 FROM `transaction_history` WHERE `timestamp` >= $month_back_cycles AND `public_key_to` = '$easy_key_public_key' AND `public_key_from` = '$public_key' ORDER BY `transaction_history`.`timestamp` ASC LIMIT $find_next"),($find_next - 1),0);
-		$transaction_data = tk_decrypt($public_key, base64_decode($crypt_data3));
-		$transaction_message = find_string("---MSG=", "", $transaction_data, TRUE);
-		return $transaction_message; // Matching Easy Key to Public Key
-	}
-}
-//***********************************************************************************
-//***********************************************************************************
 function peer_gen_amount($public_key)
 {
 	// 1 week = 604,800 seconds
@@ -1128,50 +1099,6 @@ function peer_gen_amount($public_key)
 	}
 
 	return $amount + $amount2;
-}
-//***********************************************************************************
-//***********************************************************************************
-function gen_lifetime_transactions($public_key, $high_priority = FALSE)
-{
-	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);	
-
-	// Double md5 to keep key balances and lifetime transaction counts separate
-	$public_key_hash = hash('md5', $public_key);
-	$public_key_hash = hash('md5', $public_key_hash);
-	$previous_foundation_block = foundation_cycle(-2, TRUE);
-	$previous_foundation_block_time = foundation_cycle(-2);
-
-	$generation_records_total = mysql_result(mysqli_query($db_connect, "SELECT balance FROM `balance_index` WHERE `public_key_hash` = '$public_key_hash' AND `block` = '$previous_foundation_block' LIMIT 1"));
-	$generation_records_total2;
-
-	if($high_priority == TRUE)
-	{
-		$high_priority = "HIGH_PRIORITY";
-	}
-	else
-	{
-		$high_priority = "";
-	}
-
-	if($generation_records_total == "")
-	{
-		// No cache exist yet, create a new one
-		$generation_records_total = mysql_result(mysqli_query($db_connect, "SELECT $high_priority COUNT(*) FROM `transaction_history` WHERE `timestamp` <= $previous_foundation_block_time AND `public_key_to` = '$public_key' AND `attribute` = 'G'"));
-
-		// Insert new Cache Total
-		$sql = "INSERT $high_priority INTO `balance_index` (`block`, `public_key_hash`, `balance`) VALUES ('$previous_foundation_block', '$public_key_hash', '$generation_records_total')";
-		mysqli_query($db_connect, $sql);
-
-		// Find the remaining transaction counts
-		$generation_records_total2 = mysql_result(mysqli_query($db_connect, "SELECT $high_priority COUNT(*) FROM `transaction_history` WHERE `timestamp` > $previous_foundation_block_time AND `public_key_to` = '$public_key' AND `attribute` = 'G'"));
-	}
-	else
-	{
-		// Use recent cache to speed up count
-		$generation_records_total2 = mysql_result(mysqli_query($db_connect, "SELECT $high_priority COUNT(*) FROM `transaction_history` WHERE `timestamp` > $previous_foundation_block_time AND `public_key_to` = '$public_key' AND `attribute` = 'G'"));
-	}
-
-	return $generation_records_total + $generation_records_total2;
 }
 //***********************************************************************************
 //***********************************************************************************
@@ -1311,17 +1238,8 @@ function tk_time_convert($time)
 }
 //***********************************************************************************
 //***********************************************************************************
-function election_cycle($when = 0, $ip_type = 1, $gen_peers_total = 0, $plugin_seed = FALSE)
+function election_cycle($when = 0, $ip_type = 1, $gen_peers_total = 0)
 {
-	if($plugin_seed == FALSE)
-	{
-		$TKFoundationSeed = TKFoundationSeed();
-	}
-	else
-	{
-		$TKFoundationSeed = $plugin_seed;
-	}
-	
 	if($ip_type == 1)
 	{
 		// IPv4 Election Cycle Checking
@@ -1346,12 +1264,12 @@ function election_cycle($when = 0, $ip_type = 1, $gen_peers_total = 0, $plugin_s
 		if(version_compare(PHP_VERSION, '7.1.0', '<') == TRUE)
 		{
 			require_once('mersenne_twister.php');// For Earlier PHP Versions (less than v7.1)
-			$twister1 = new twister($TKFoundationSeed + $current_generation_block);
+			$twister1 = new twister(TKFoundationSeed() + $current_generation_block);
 			$mersenne_twister = TRUE;
 		}
 		else
 		{
-			mt_srand($TKFoundationSeed + $current_generation_block);
+			mt_srand(TKFoundationSeed() + $current_generation_block);
 		}
 
 		if($mersenne_twister == FALSE)
@@ -1423,12 +1341,12 @@ function election_cycle($when = 0, $ip_type = 1, $gen_peers_total = 0, $plugin_s
 		if(version_compare(PHP_VERSION, '7.1.0', '<') == TRUE)
 		{
 			require_once('mersenne_twister.php');// For Earlier PHP Versions (less than v7.1)
-			$twister1 = new twister($TKFoundationSeed + $current_generation_block);
+			$twister1 = new twister(TKFoundationSeed() + $current_generation_block);
 			$mersenne_twister = TRUE;
 		}
 		else
 		{		
-			mt_srand($TKFoundationSeed + $current_generation_block);
+			mt_srand(TKFoundationSeed() + $current_generation_block);
 		}
 
 		if($mersenne_twister == FALSE)
@@ -2005,7 +1923,7 @@ function auto_update_IP_address($new_start = FALSE)
 		}
 	}
 
-	$poll_IP = filter_sql(poll_peer(NULL, 'ipv4.timekoin.net', NULL, 80, 46, "ipv4.php"));
+	$poll_IP = filter_sql(poll_peer(NULL, 'timekoin.net', NULL, 80, 46, "ipv4.php"));
 
 	if(empty($generation_IPv4) == TRUE) // IP Field Empty
 	{
@@ -2064,7 +1982,7 @@ function auto_update_IP_address($new_start = FALSE)
 function initialization_database()
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-
+	
 	// Clear IP Activity and Banlist for next start
 	mysqli_query($db_connect, "TRUNCATE TABLE `ip_activity`");
 	mysqli_query($db_connect, "TRUNCATE TABLE `ip_banlist`");
@@ -2075,11 +1993,12 @@ function initialization_database()
 
 	// Record when started
 	mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . time() . "' WHERE `options`.`field_name` = 'timekoin_start_time' LIMIT 1");
-	// Main Loop Status & Active Options Setup
+// Main Loop Status & Active Options Setup
+
 	// Truncate to Free RAM
 	mysqli_query($db_connect, "TRUNCATE TABLE `main_loop_status`");
 	$time = time();
-	//**************************************
+//**************************************
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('balance_last_heartbeat', '1')");	
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('foundation_last_heartbeat', '1')");
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('generation_last_heartbeat', '1')");
@@ -2106,8 +2025,8 @@ function initialization_database()
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('transaction_history_block_check', '0')");
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('update_available', '0')");
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('TKFoundationSeed', '0')");
-	//**************************************
-	// Copy values from Database to RAM Database
+//**************************************
+// Copy values from Database to RAM Database
 	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'allow_ambient_peer_restart' LIMIT 1"),0,0);
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('allow_ambient_peer_restart', '$db_to_RAM')");
 
@@ -2140,8 +2059,8 @@ function initialization_database()
 
 	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0);
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('network_mode', '$db_to_RAM')");	
-	//**************************************
-	//***********************************************************************************
+//**************************************
+//***********************************************************************************
 	// Check that the TK Foundation Seed is set in memory
 	// Do we have a valid and recent transaction foundation to access?
 	$TK_foundation_seed_block = foundation_cycle(-2, TRUE);
@@ -2168,10 +2087,10 @@ function initialization_database()
 	{
 		write_log("Missing Transaction Foundation #$TK_foundation_seed_block to Build TK Foundation Seed", "MA");
 	}
-	//***********************************************************************************
+//***********************************************************************************
 	// Auto Detect IP Address on Start if Empty
 	auto_update_IP_address(TRUE);
-	//***********************************************************************************
+//***********************************************************************************
 	return 0;
 }
 //***********************************************************************************
@@ -2521,6 +2440,21 @@ function do_updates()
 		$update_status .= 'Checking for <strong>CSS Template</strong> Update...<br>';
 		$update_status .= run_script_update("CSS Template (admin.css)", "admin.css", $poll_version, $context, 0, "css");
 		//****************************************************
+		// Graphic Files Update
+		$update_status .= 'Checking for <strong>Graphic File bg-center-column.jpg</strong> Update...<br>';
+		$update_status .= run_script_update("Graphic File (bg-center-column.jpg)", "bg-center-column.jpg", $poll_version, $context, 0, "img");
+
+		$update_status .= 'Checking for <strong>Graphic File timekoin_blue.png</strong> Update...<br>';
+		$update_status .= run_script_update("Graphic File (timekoin_blue.png)", "timekoin_blue.png", $poll_version, $context, 0, "img");
+
+		$update_status .= 'Checking for <strong>Graphic File timekoin_green.png</strong> Update...<br>';
+		$update_status .= run_script_update("Graphic File (timekoin_green.png)", "timekoin_green.png", $poll_version, $context, 0, "img");
+
+		$update_status .= 'Checking for <strong>Graphic File timekoin_logo_80.png</strong> Update...<br>';
+		$update_status .= run_script_update("Graphic File (timekoin_logo_80.png)", "timekoin_logo_80.png", $poll_version, $context, 0, "img");
+
+		$update_status .= 'Checking for <strong>Graphic File timekoin_logo.png</strong> Update...<br>';
+		$update_status .= run_script_update("Graphic File (timekoin_logo.png)", "timekoin_logo.png", $poll_version, $context, 0, "img");
 		//****************************************************
 		$update_status .= 'Checking for <strong>RSA Code</strong> Update...<br>';
 		$update_status .= run_script_update("RSA Code (RSA.php)", "RSA", $poll_version, $context);
