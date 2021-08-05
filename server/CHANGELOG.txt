@@ -1,5 +1,20 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 4.1 (Released 2021-8-5)
+============================================
+- Peerlist fix for immortal peers that were gateway or first contact, proper failure scoring to kick peers
+- GUI update for 1024 pixel width screen
+- Easy Keys registered to server listed on the Send / Receive tab with expiration date information
+- GUI visual tweak for server plugins to active tab of the same name, updated autotransfer plugin as an example
+- Fixed width issue on Peerlist tab when manually adding new peers or editing existing peers
+- Added Generations Total to the Home Screen, showing how many generation transactions your server has already completed against it's lifetime total of the 100,000 limit
+- Further optimize transaction processing speed for generation currency (Raspberry Pi users will notice)
+- Updated Generation tab to offer better info and clear up amount confusion based on time generating
+- Speed up Generation and Election calendar checking (again, Raspberry Pi users will notice)
+- Minor fix for calculating election fees to join the generation peers pool
+- Compress images with help from tinypng.com to reduce graphic file sizes by half
+- The entire back-end of Timekoin has been re-worked so it is compatible with any version of PHP v5.x or higher, but PHP v7.x or higher is recommended for security reasons
+
 Timekoin Server - 4.0 (Released 2021-6-30)
 ============================================
 - The entire back-end of Timekoin has been re-worked so it is no longer compatible with any version less than PHP v7.2 now
