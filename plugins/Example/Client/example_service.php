@@ -24,12 +24,12 @@ include 'configuration.php';// Path to files already used by Timekoin
 $db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
 // Avoid stacking this many times
-$already_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `data_cache` WHERE `field_name` = 'TKCS_example_service.php' LIMIT 1"),0,"field_data");
+$already_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `data_cache` WHERE `field_name` = 'TKCS_example_service.php' LIMIT 1"));
 
 if($already_active == "")
 {
 	// Creating Status State - Timekoin Looks for the filename
-	mysqli_query($db_connect, "INSERT INTO `data_cache` (`field_name` ,`field_data`)VALUES ('TKCS_example_service.php', '1')"); // Active
+	mysqli_query($db_connect, "INSERT INTO `data_cache` (`field_name` ,`field_data`) VALUES ('TKCS_example_service.php', '1')"); // Active
 }
 else
 {
@@ -40,7 +40,7 @@ else
 while(1) // Begin Infinite Loop :)
 {
 	// Are we to remain active?
-	$tkclient_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `data_cache` WHERE `field_name` = 'TKCS_example_service.php' LIMIT 1"),0,"field_data");
+	$tkclient_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `data_cache` WHERE `field_name` = 'TKCS_example_service.php' LIMIT 1"));
 
 	if($tkclient_active == "")
 	{

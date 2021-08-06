@@ -70,7 +70,7 @@ Password: <input type="password" name="timekoin_password" />
 } 
 //***********************************************************
 //***********************************************************
-function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0, $plugin_reference = FALSE)
+function home_screen($contents, $select_bar, $body, $quick_info, $refresh = 0, $plugin_reference = FALSE, $plugin_tab_name = "")
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
@@ -362,6 +362,7 @@ g_graph = new Graph(
 	$sql_result = mysqli_query($db_connect, $sql);
 	$sql_num_results = mysqli_num_rows($sql_result);
 	$plugin_output;
+	$plugin_tab_active;
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
@@ -372,15 +373,24 @@ g_graph = new Graph(
 		$plugin_enable = intval(find_string("---enable=", "---show", $sql_row["field_data"]));
 		$plugin_show = intval(find_string("---show=", "---name", $sql_row["field_data"]));
 
+		if($plugin_tab_name == $plugin_tab)
+		{
+			$plugin_tab_active = 'class="active"';
+		}
+		else
+		{
+			$plugin_tab_active = "";
+		}
+
 		if($plugin_enable == TRUE && $plugin_show == TRUE)
 		{
 			if($plugin_reference == TRUE)
 			{
-				$plugin_output .= '<li><a href="' . $plugin_file . '">' . $plugin_tab . '</a></li>';
+				$plugin_output .= '<li><a href="' . $plugin_file . '" '.  $plugin_tab_active . '>' . $plugin_tab . '</a></li>';
 			}
 			else
 			{
-				$plugin_output .= '<li><a href="plugins/' . $plugin_file . '">' . $plugin_tab . '</a></li>';
+				$plugin_output .= '<li><a href="plugins/' . $plugin_file . '" '.  $plugin_tab_active . '>' . $plugin_tab . '</a></li>';
 			}
 		}
 	}	

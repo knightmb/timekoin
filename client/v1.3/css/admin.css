@@ -36,13 +36,13 @@ input.text {
 	}
 /* main container */
 #main {
-	width:992px;
+	width:1024px;
 	margin:0 auto;
 	}
 /* header */
 #header {
 	position:relative;
-	width:992px;
+	width:1024px;
 	height:43px;
 	}
 /* site logo */
@@ -100,7 +100,7 @@ a.logo {
 /* middle */
 #middle {
 	float:left;
-	width:973px;
+	width:1005px;
 	background:#fff;
 	border: 1px solid #b9b9b9;
 	border-radius: 7px;
@@ -126,7 +126,7 @@ a.logo {
 /* center column */
 #center-column {
 	float:left;
-	width:695px;
+	width:727px;
 	background:url(../img/bg-center-column.jpg) top left no-repeat;
 	-webkit-background-size: cover;
 	-moz-background-size: cover;
@@ -291,13 +291,13 @@ ul.nav li:last-child {border:none;}
 div.table {
 	float:left;
 	position:relative;
-	width:695px;
+	width:727px;
 	margin:0 0 37px 0;
 	}
 table.listing {
 	border-bottom:1px solid #9097A9;
 	background:#9097A9;
-	width:694px;
+	width:726px;
 	padding:0;
 	margin:0;
 	border:1px solid #9097A9;
