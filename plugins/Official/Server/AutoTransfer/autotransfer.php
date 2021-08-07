@@ -56,7 +56,7 @@ if($_SESSION["valid_login"] == FALSE)
 	if($already_active == "")
 	{
 		// Creating Status State - Timekoin Looks for the filename
-		mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('autotransfer.php', '0')"); // Offline
+		mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`) VALUES ('autotransfer.php', '0')"); // Offline
 	}
 	else if($already_active > 0)
 	{
@@ -448,7 +448,7 @@ if($_SESSION["valid_login"] == TRUE)
 		if(empty($easy_key) == FALSE)
 		{
 			// Look up destination public key from Easy Key database
-			$easy_key = filter_sql(easy_key_lookup($easy_key)); // Filter SQL just in case
+			$easy_key = easy_key_lookup($easy_key); // Filter SQL just in case
 
 			if(empty($easy_key) == TRUE)
 			{
@@ -709,9 +709,9 @@ function autotx_home()
 	}
 
 	$text_bar = '<FORM ACTION="autotransfer.php?font=public_key" METHOD="post">
-		<table border="0" cellspacing="4">
-		<tr><td><strong>Default Public Key Font Size</strong></td>
-		<td><input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" /><input type="submit" name="Submit3" value="Save" /></td></tr></table></FORM>';
+	<table border="0" cellspacing="4">
+	<tr><td><strong>Default Public Key Font Size</strong></td>
+	<td><input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" /><input type="submit" name="Submit3" value="Save" /></td></tr></table></FORM>';
 
 	$body_string = autotx_home();
 
