@@ -621,7 +621,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							if($network_mode == 3) // IPv6 Only Server
 							{
 								// Running IPv6 Only Mode, use gateway server to act as proxy poll check
-								$gen_sql = "SELECT IP_Address, domain, subfolder, port_number FROM `active_peer_list` WHERE `failed_sent_heartbeat` = 65534 ORDER BY RAND() LIMIT 1";
+								$gen_sql = "SELECT IP_Address, domain, subfolder, port_number FROM `active_peer_list` WHERE `failed_sent_heartbeat` >= 64000 AND `failed_sent_heartbeat` < 64500 ORDER BY RAND() LIMIT 1";
 								$gen_sql_row = mysqli_fetch_array(mysqli_query($db_connect, $gen_sql));
 
 								$gateway_IP = $gen_sql_row["IP_Address"];
@@ -852,7 +852,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							if($network_mode == 3) // IPv6 Only Server
 							{
 								// Running IPv6 Only Mode, use gateway server to act as proxy poll check
-								$gen_sql = "SELECT IP_Address, domain, subfolder, port_number FROM `active_peer_list` WHERE `failed_sent_heartbeat` = 65534 ORDER BY RAND() LIMIT 1";
+								$gen_sql = "SELECT IP_Address, domain, subfolder, port_number FROM `active_peer_list` WHERE `failed_sent_heartbeat` >= 64000 AND `failed_sent_heartbeat` < 64500 ORDER BY RAND() LIMIT 1";
 								$gen_sql_row = mysqli_fetch_array(mysqli_query($db_connect, $gen_sql));
 
 								$gateway_IP = $gen_sql_row["IP_Address"];
@@ -1111,7 +1111,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							if($network_mode == 2) // IPv4 Only Server
 							{
 								// Running IPv4 Only Mode, use gateway server to act as proxy poll check
-								$gen_sql = "SELECT IP_Address, domain, subfolder, port_number FROM `active_peer_list` WHERE `failed_sent_heartbeat` = 65534 ORDER BY RAND() LIMIT 1";
+								$gen_sql = "SELECT IP_Address, domain, subfolder, port_number FROM `active_peer_list` WHERE `failed_sent_heartbeat` >= 64000 AND `failed_sent_heartbeat` < 64500 ORDER BY RAND() LIMIT 1";
 								$gen_sql_row = mysqli_fetch_array(mysqli_query($db_connect, $gen_sql));
 
 								$gateway_IP = $gen_sql_row["IP_Address"];
@@ -1341,7 +1341,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							if($network_mode == 2) // IPv4 Only Server
 							{
 								// Running IPv4 Only Mode, use gateway server to act as proxy poll check
-								$gen_sql = "SELECT IP_Address, domain, subfolder, port_number FROM `active_peer_list` WHERE `failed_sent_heartbeat` = 65534 ORDER BY RAND() LIMIT 1";
+								$gen_sql = "SELECT IP_Address, domain, subfolder, port_number FROM `active_peer_list` WHERE `failed_sent_heartbeat` >= 64000 AND `failed_sent_heartbeat` < 64500 ORDER BY RAND() LIMIT 1";
 								$gen_sql_row = mysqli_fetch_array(mysqli_query($db_connect, $gen_sql));
 
 								$gateway_IP = $gen_sql_row["IP_Address"];

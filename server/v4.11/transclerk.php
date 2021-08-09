@@ -118,7 +118,7 @@ else
 
 ini_set('default_socket_timeout', 3); // Timeout for request in seconds
 ini_set('user_agent', 'Timekoin Server (Transclerk) v' . TIMEKOIN_VERSION);
-$sql_max_allowed_packet = mysql_result(mysqli_query($db_connect, "SHOW VARIABLES LIKE 'max_allowed_packet'"),0,1);
+$sql_max_allowed_packet = intval(mysql_result(mysqli_query($db_connect, "SHOW VARIABLES LIKE 'max_allowed_packet'"),0,1));
 
 while(1) // Begin Infinite Loop
 {
@@ -744,27 +744,28 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 												if(empty($found_duplicate) == TRUE)
 												{
-													// Limit Max Query String to $sql_max_allowed_packet
+													// Limit Max Query String to $sql_max_allowed_packet - The start of the query is 153 characters long
 													// Many DB have this limit by default and most users may not know how to set it higher :(
-													if(strlen($super_peer_insert . ",('$transaction_timestamp', '" . filter_public_key($transaction_public_key_from) . "', '" . filter_public_key($transaction_public_key_to) . "', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')") <= $sql_max_allowed_packet)
+													if(153 + strlen($super_peer_insert . ",('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')") < $sql_max_allowed_packet)
 													{
-														// Query still under 1MB in size
+														// Query still under max_allowed_packet in size
 														$super_peer_record_count++;
 
 														if($super_peer_record_count == 1)
 														{
-															$super_peer_insert = "('$transaction_timestamp', '" . filter_public_key($transaction_public_key_from) . "', '" . filter_public_key($transaction_public_key_to) . "', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
+															$super_peer_insert = "('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
 														}
 														else
 														{
-															$super_peer_insert.= ",('$transaction_timestamp', '" . filter_public_key($transaction_public_key_from) . "', '" . filter_public_key($transaction_public_key_to) . "', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
+															$super_peer_insert.= ",('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
 														}
 													}
 													else
 													{
 														// Max query size reached, write to database
-														// Do mass record insert
-														if(mysqli_query($db_connect, "INSERT INTO `transaction_history` (`timestamp`,`public_key_from`,`public_key_to`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`) VALUES " . $super_peer_insert) == TRUE)
+														$super_peer_full_query = "INSERT INTO `transaction_history` (`timestamp`,`public_key_from`,`public_key_to`,`crypt_data1`,`crypt_data2`,`crypt_data3`, `hash`, `attribute`) VALUES " . $super_peer_insert;
+
+														if(mysqli_query($db_connect, $super_peer_full_query) == TRUE)
 														{
 															write_log("Wrote $super_peer_record_count Records From SUPER Peer: $ip_address$domain:$port_number/$subfolder", "TC");
 														}
@@ -775,12 +776,13 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 														// Clear variable from RAM
 														unset($super_peer_insert);
+														unset($super_peer_full_query);
 
 														// Reset Record Counter
 														$super_peer_record_count = 1;
 
 														// Start New INSERT Query
-														$super_peer_insert.= "('$transaction_timestamp', '" . filter_public_key($transaction_public_key_from) . "', '" . filter_public_key($transaction_public_key_to) . "', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
+														$super_peer_insert.= "('$transaction_timestamp', '$transaction_public_key_from', '$transaction_public_key_to', '$transaction_crypt1', '$transaction_crypt2' , '$transaction_crypt3', '$transaction_hash' , '$transaction_attribute')";
 													}
 												}
 											}

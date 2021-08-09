@@ -107,7 +107,7 @@ if($_GET["action"] == "reverse_queue")
 				if($transaction_hash == $crypt_hash_check)
 				{
 					// Hash check good, check for duplicate transaction already in queue
-					$hash_match = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_queue` WHERE `timestamp`= $transaction_timestamp AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+					$hash_match = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_queue` WHERE `timestamp`= $transaction_timestamp AND `hash` = '$transaction_hash' LIMIT 1"));
 				}
 				else
 				{
@@ -386,7 +386,7 @@ if($_GET["action"] == "input_transaction")
 				if($transaction_hash == $crypt_hash_check)
 				{
 					// Hash check good, check for duplicate transaction already in queue
-					$hash_match = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_queue` WHERE `timestamp`= $transaction_timestamp AND `hash` = '$transaction_hash' LIMIT 1"),0,0);
+					$hash_match = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_queue` WHERE `timestamp`= $transaction_timestamp AND `hash` = '$transaction_hash' LIMIT 1"));
 				}
 				else
 				{
@@ -1114,7 +1114,31 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 //***********************************************************************************
 if($process_clone == FALSE)
 {
-	$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,0);
+	// Clear any duplicate transactions
+	if(rand(1,4) == 4) // Randomize to avoid DB spamming
+	{
+		$sql = "SELECT public_key, hash FROM `transaction_queue`";
+		$sql_result = mysqli_query($db_connect, $sql);
+		$sql_num_results = mysqli_num_rows($sql_result);
+		
+		for ($i = 0; $i < $sql_num_results; $i++)
+		{
+			$sql_row = mysqli_fetch_array($sql_result);
+			$hash = $sql_row["hash"];
+			$public_key = $sql_row["public_key"];
+
+			// Is there more than one of this hash?
+			$duplicate_hash = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_queue` WHERE `public_key` = '$public_key' AND `hash` = '$hash' LIMIT 2"),1,0);
+
+			if($duplicate_hash != "")
+			{
+				// Timestamp was valid, remove duplicate
+				mysqli_query($db_connect, "DELETE FROM `transaction_queue` WHERE `public_key` = '$public_key' AND `hash` = '$hash' LIMIT 1");
+			}
+		}
+	}
+
+	$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"));
 
 	// Check script status
 	if($loop_active == 3)
