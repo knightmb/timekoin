@@ -256,7 +256,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 				// Example: 10 peers generating, each peer must be paid 10 TK, for a total of 100 TK
 				// to enter the current peer election.
 				// If you lose the peer election, you have to pay to try again next election cycle.
-				if(election_cycle(9) == TRUE) // 45 Minutes ahead
+				if(election_cycle(9) == TRUE && $update_generation_IP == FALSE) // 45 Minutes ahead
 				{
 					// Pay all the generating peers a fee to enter the peer election.
 					// Total Servers for Generating Peers.
@@ -541,7 +541,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 				// Example: 10 peers generating, each peer must be paid 10 TK, for a total of 100 TK
 				// to enter the current peer election.
 				// If you lose the peer election, you have to pay to try again next election cycle.
-				if(election_cycle(9, 2, $gen_peers_total) == TRUE) // 45 Minutes ahead
+				if(election_cycle(9, 2, $gen_peers_total) == TRUE && $update_generation_IP == FALSE) // 45 Minutes ahead
 				{
 					// Pay all the generating peers a fee to enter the peer election.
 					// Total Servers for Generating Peers.

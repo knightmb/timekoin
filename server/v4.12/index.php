@@ -2590,7 +2590,7 @@ if($_SESSION["valid_login"] == TRUE)
 							
 							// Finally, send transaction to Easy Key Blackhole Address
 							// with a 45 Minute Delay
-							if(send_timekoins($my_private_key, $my_public_key, base64_decode(EASY_KEY_PUBLIC_KEY), 1, $new_easy_key, (time() + 2700)) == TRUE)
+							if(send_timekoins($my_private_key, $my_public_key, base64_decode(EASY_KEY_PUBLIC_KEY), 1, $new_easy_key, transaction_cycle(9)) == TRUE)
 							{
 								$body_string = '<BR><BR><font color="green"><strong>Easy Key [' . $new_easy_key . '] Has Been Submitted to the Timekoin Network!</font><BR><BR>
 								Your Easy Key Should be Active Within 45 Minutes.<BR>

@@ -425,14 +425,19 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 	{
 		//50% over more of the active peers have a different gen list, start comparing your
 		//gen list with one that is different
-		$generation_peer_list_no_sync = intval(mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'generation_peer_list_no_sync' LIMIT 1"),0,"field_data"));
-		if($generation_peer_list_no_sync > 20)
+		$generation_peer_list_no_sync = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_peer_list_no_sync' LIMIT 1")));
+		$rebuild_generation_list = FALSE;
+
+		if($generation_peer_list_no_sync > 6)
 		{
 			// Our generation peer list is out of sync for a long time, clear list to start over
 			mysqli_query($db_connect, "TRUNCATE TABLE `generating_peer_list`");
 
 			// Reset out of sync counter
 			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'generation_peer_list_no_sync' LIMIT 1");
+
+			// Flag to rebuild list from majority of peers
+			$rebuild_generation_list = TRUE;
 
 			write_log("Generation Peer List has Become Stale, Attemping to Purge and Rebuild.", "GP");
 		}
@@ -442,72 +447,116 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$generation_peer_list_no_sync' WHERE `main_loop_status`.`field_name` = 'generation_peer_list_no_sync' LIMIT 1");
 		}
 
-		$i = mt_rand(1, $gen_list_hash_different); // Select Random Peer from Disagree List
-		$ip_address = $hash_different["ip_address$i"];
-		$domain = $hash_different["domain$i"];
-		$subfolder = $hash_different["subfolder$i"];
-		$port_number = $hash_different["port_number$i"];
-
-		$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 90000, "genpeer.php?action=gen_peer_list"));
-
-		if(empty($poll_peer) == TRUE)
+		if($rebuild_generation_list == TRUE)
 		{
-			// Add failure points to the peer in case further issues
-			modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 4);
-		}
+			$i = mt_rand(1, $gen_list_hash_different); // Select Random Peer from Disagree List
+			$ip_address = $hash_different["ip_address$i"];
+			$domain = $hash_different["domain$i"];
+			$subfolder = $hash_different["subfolder$i"];
+			$port_number = $hash_different["port_number$i"];
 
-		$match_number = 1;
-		$gen_peer_public_key = "Start";
+			$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 1000000, "genpeer.php?action=gen_peer_list"));
 
-		$counter = 0;
-
-		while(empty($gen_peer_public_key) == FALSE)
-		{
-			if($counter > 150) // Peer should never give more than 150 peers at a time
+			if(empty($poll_peer) == TRUE)
 			{
-				// Too many loops for peers, something is wrong or peer
-				// is giving out garbage information, break from loop
-				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 5);
-				break;
+				$gen_peer_public_key = NULL;
+
+				// Add failure points to the peer in case further issues
+				modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 4);
 			}
-			
-			$gen_peer_public_key = find_string("-----public_key$match_number=", "-----join$match_number", $poll_peer);
-			$gen_peer_join_peer_list = find_string("-----join$match_number=", "-----last$match_number", $poll_peer);
-			$gen_peer_last_generation = find_string("-----last$match_number=", "-----ip$match_number", $poll_peer);
-			$gen_peer_IP = find_string("-----ip$match_number=", "-----END$match_number", $poll_peer);
-
-			$gen_peer_public_key = filter_sql(base64_decode($gen_peer_public_key));
-
-			// Compress IPv6 Address to avoid match confusion in Database
-			if(ipv6_test($gen_peer_IP) == TRUE)
+			else
 			{
-				$gen_peer_IP = ipv6_compress($gen_peer_IP);
+				$match_number = 1;
+				$gen_peer_public_key = "Start";
+				$counter = 0;
+				$no_new_gen_peers = TRUE;
 			}
 
-			//Check if this public key is already in our peer list
-			$public_key_match = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$gen_peer_public_key' AND `join_peer_list` = '$gen_peer_join_peer_list' AND `IP_Address` = '$gen_peer_IP' LIMIT 1"),0,0);
-
-			if(empty($public_key_match) == TRUE)
+			while(empty($gen_peer_public_key) == FALSE)
 			{
-				// No match in database to this public key
-				if(strlen($gen_peer_public_key) > 256 && empty($gen_peer_public_key) == FALSE && empty($gen_peer_IP) == FALSE && $gen_peer_join_peer_list <= $current_generation_cycle && $gen_peer_join_peer_list > TRANSACTION_EPOCH)
+				$gen_peer_public_key = find_string("-----public_key$match_number=", "-----join$match_number", $poll_peer);
+				$gen_peer_join_peer_list = find_string("-----join$match_number=", "-----last$match_number", $poll_peer);
+				$gen_peer_last_generation = find_string("-----last$match_number=", "-----ip$match_number", $poll_peer);
+				$gen_peer_IP = find_string("-----ip$match_number=", "-----END$match_number", $poll_peer);
+
+				if($counter > 150 && empty($gen_peer_public_key) == FALSE) // Peer should never give more than 150 peers at a time
 				{
-					$sql = "INSERT INTO `generating_peer_list` (`public_key`,`join_peer_list`,`last_generation`,`IP_Address`)
-					VALUES ('$gen_peer_public_key', '$gen_peer_join_peer_list', '$gen_peer_last_generation', '$gen_peer_IP')";
-					mysqli_query($db_connect, $sql);
+					// Too many peers, something is wrong or peer
+					// is giving out garbage information, break from loop
+					modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 5);
+					break;
 				}
-			}
 
-			$counter++;
-			$match_number++;
+				if($counter > 150 && empty($gen_peer_public_key) == TRUE)
+				{
+					if($no_new_gen_peers == TRUE)
+					{
+						// No more new peers to add, exit loop
+						break;
+					} 
 
-		} // End While Loop
+					// Max 150 Gen Peers reached, poll for more
+					$i = mt_rand(1, $gen_list_hash_different); // Select Random Peer from Disagree List
+					$ip_address = $hash_different["ip_address$i"];
+					$domain = $hash_different["domain$i"];
+					$subfolder = $hash_different["subfolder$i"];
+					$port_number = $hash_different["port_number$i"];
 
-		// Update Generation Peer List Hash
-		$generating_hash = generation_peer_hash();
+					$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 1000000, "genpeer.php?action=gen_peer_list"));
 
-		// Store in database for quick reference from database
-		mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$generating_hash' WHERE `options`.`field_name` = 'generating_peers_hash' LIMIT 1");
+					if(empty($poll_peer) == TRUE)
+					{
+						$gen_peer_public_key = NULL;
+
+						// Add failure points to the peer in case further issues
+						modify_peer_grade($ip_address, $domain, $subfolder, $port_number, 4);
+					}
+					else
+					{
+						// Reset Count Variables
+						$match_number = 1;
+						$gen_peer_public_key = "Start";
+						$counter = 0;
+						$no_new_gen_peers = TRUE;
+					}
+				}
+
+				$gen_peer_public_key = filter_sql(base64_decode($gen_peer_public_key));
+
+				// Compress IPv6 Address to avoid match confusion in Database
+				if(ipv6_test($gen_peer_IP) == TRUE)
+				{
+					$gen_peer_IP = ipv6_compress($gen_peer_IP);
+				}
+
+				//Check if this public key is already in our peer list
+				$public_key_match = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$gen_peer_public_key' AND `join_peer_list` = '$gen_peer_join_peer_list' AND `IP_Address` = '$gen_peer_IP' LIMIT 1"));
+
+				if(empty($public_key_match) == TRUE)
+				{
+					// No match in database to this public key
+					if(strlen($gen_peer_public_key) > 256 && empty($gen_peer_public_key) == FALSE && empty($gen_peer_IP) == FALSE && $gen_peer_join_peer_list <= $current_generation_cycle && $gen_peer_join_peer_list > TRANSACTION_EPOCH)
+					{
+						$sql = "INSERT INTO `generating_peer_list` (`public_key`,`join_peer_list`,`last_generation`,`IP_Address`)
+						VALUES ('$gen_peer_public_key', '$gen_peer_join_peer_list', '$gen_peer_last_generation', '$gen_peer_IP')";
+						mysqli_query($db_connect, $sql);
+
+						$no_new_gen_peers = FALSE;
+					}
+				}
+
+				$counter++;
+				$match_number++;
+
+			} // End While Loop
+
+			// Update Generation Peer List Hash
+			$generating_hash = generation_peer_hash();
+
+			// Store in database for quick reference from database
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$generating_hash' WHERE `options`.`field_name` = 'generating_peers_hash' LIMIT 1");
+
+		} // End Rebuild Generation List Check
 
 	} // End Compare Tallies
 	else
