@@ -993,12 +993,12 @@ function backup_body($private_key = "", $public_key = "", $cancel_private = FALS
 	}
 
 	return $form_action . '<table border="0" cellpadding="6"><tr><td colspan="2"><strong><font color="blue">Restore Private Key</font></strong></td></tr>
-	<tr><td colspan="2"><textarea name="restore_private_key" rows="5" cols="75">' . $private_key . '</textarea></td></tr>
+	<tr><td colspan="2"><textarea name="restore_private_key" rows="5" cols="90">' . $private_key . '</textarea></td></tr>
 	<tr><td><input type="submit" value="Restore Private Key"/>' . $are_you_sure . '</td></tr>
 	<tr><td colspan="2"><hr></td></tr></table></FORM>
 	' . $form_action2 . '<table border="0" cellpadding="6">
 	<tr><td colspan="2"><strong><font color="green">Restore Public Key</font></strong></td></tr>
-	<tr><td colspan="2"><textarea name="restore_public_key" rows="5" cols="75">' . $public_key . '</textarea></td></tr>
+	<tr><td colspan="2"><textarea name="restore_public_key" rows="5" cols="90">' . $public_key . '</textarea></td></tr>
 	<tr><td><input type="submit" value="Restore Public Key"/>' . $are_you_sure2 . '</td></tr></table></FORM>';
 }
 //***********************************************************

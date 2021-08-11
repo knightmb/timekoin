@@ -3571,6 +3571,26 @@ if($_SESSION["valid_login"] == TRUE)
 		$my_private_key = my_private_key();
 		$my_public_key = my_public_key();
 
+		$clipboard_copy = '<script>
+		function myPrivateKey()
+		{
+			var copyText = document.getElementById("current_private_key");
+			copyText.select();
+			copyText.setSelectionRange(0, 99999)
+			document.execCommand("copy");
+			var tooltip = document.getElementById("myTooltip");
+			tooltip.innerHTML = "Copy Complete!";
+		}
+		function myPublicKey()
+		{
+			var copyText = document.getElementById("current_public_key");
+			copyText.select();
+			copyText.setSelectionRange(0, 99999)
+			document.execCommand("copy");
+			var tooltip = document.getElementById("myTooltip2");
+			tooltip.innerHTML = "Copy Complete!";
+		}</script>';
+
 		if($_GET["restore"] == "private" && empty($_POST["restore_private_key"]) == FALSE)
 		{
 			$body_string = backup_body($_POST["restore_private_key"], NULL, TRUE, NULL);
@@ -3586,17 +3606,19 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$body_string .= $server_message;
 
-		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong><font color="blue">Private Key</font> to send transactions:</strong></td></tr>
-			<tr><td><textarea readonly="readonly" rows="8" cols="75">' . base64_encode($my_private_key) . '</textarea></td></tr></table>
-			<table border="0" cellpadding="6"><tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
-			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
+		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong><font color="blue">Private Key</font> to encrypt transactions:</strong></td></tr>
+		<tr><td><textarea id="current_private_key" readonly="readonly" rows="8" cols="90">' . base64_encode($my_private_key) . '</textarea><br>
+		<button title="Copy Private Key to Clipboard" onclick="myPrivateKey()"><span id="myTooltip">Copy Private Key</span></button></td></tr></table>
+		<table border="0" cellpadding="6"><tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
+		<tr><td><textarea id="current_public_key" readonly="readonly" rows="6" cols="90">' . base64_encode($my_public_key) . '</textarea><br>
+		<button title="Copy Public Key to Clipboard" onclick="myPublicKey()"><span id="myTooltip2">Copy Public Key</span></button></td></tr></table>';
 
-		$quick_info = '<strong>Do Not</strong> share your Private Key with anyone for any reason.<br><br>
-			The Private Key encrypts all transactions from your server.<br><br>
-			You should make a backup of both keys in case you want to transfer your balance to a new server or restore from a server failure.<br><br>
-			Save both keys in a password protected text file or external device that you can secure (CD, Flash Drive, Printed Paper, etc.)';
+		$quick_info = '<strong>Do Not</strong> share your <strong>Private Key</strong> with anyone for any reason.<br><br>
+		The <strong>Private Key</strong> encrypts all transactions from your server.<br><br>
+		You should make a backup of both keys in case you want to transfer your balance to a new server or restore from a server failure.<br><br>
+		Save both keys in a password protected text file or external device that you can secure (CD, Flash Drive, Printed Paper, etc.)';
 
-		home_screen('Backup &amp; Restore Keys', $text_bar, $body_string , $quick_info);
+		home_screen('Backup &amp; Restore Keys', $clipboard_copy . $text_bar, $body_string , $quick_info);
 		exit;		
 	}
 //****************************************************************************
