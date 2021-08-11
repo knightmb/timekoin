@@ -291,6 +291,7 @@ function options_screen()
 	else
 	{
 		$form_action = '<FORM ACTION="index.php?menu=options&amp;newkeys=generate" METHOD="post">';
+		$create_storage_key_button = '<td><FORM ACTION="index.php?menu=options&amp;storage_key=new" METHOD="post"><input type="submit" name="Submit3" value="Create Storage Keys" /></FORM></td>';
 	}
 	
 	return '<FORM ACTION="index.php?menu=options&amp;password=change" METHOD="post">
@@ -305,9 +306,10 @@ function options_screen()
 	New Password: <input type="password" name="new_password" /><br>
 	Confirm Password: <input type="password" name="confirm_password" /><br><br>
 	<input type="submit" name="Submit" value="Change" />
-	</td></tr></table></FORM>
-	<table border="0"><tr><td style="width:630px" valign="bottom" align="right">' . $confirm_message . $form_action .'
-	<input type="submit" name="Submit2" value="Generate New Keys" /></FORM></td></tr>
+	</td></tr></table></FORM><hr>
+	<table border="0"><tr>' . $create_storage_key_button . '
+	<td style="width:700px" valign="bottom" align="right">' . $confirm_message . $form_action .'
+	<input type="submit" name="Submit2" value="Generate New Server Keys" /></FORM></td></tr>
 	</table>';
 } 
 //***********************************************************

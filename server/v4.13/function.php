@@ -2344,12 +2344,20 @@ function activate($component = "SYSTEM", $on_or_off = 1)
 }
 //***********************************************************************************
 //***********************************************************************************
-function generate_new_keys($bits = 1536)
+function generate_new_keys($bits = 1536, $return_keys_instead = FALSE)
 {
 	require_once('RSA.php');
 
 	$rsa = new Crypt_RSA();
 	extract($rsa->createKey($bits));
+
+	if($return_keys_instead == TRUE)
+	{
+		$keys = array();
+		$keys[0] = $privatekey;
+		$keys[1] = $publickey;
+		return $keys;
+	}
 
 	if(empty($privatekey) == FALSE && empty($publickey) == FALSE)
 	{

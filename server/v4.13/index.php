@@ -1718,6 +1718,66 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 		}
 
+		if($_GET["storage_key"] == "new")
+		{
+			$bits_level = intval($_POST["crypt_bits"]);
+
+			if($bits_level == "")
+			{
+				$bits_level = 1536;
+			}
+			else
+			{
+				// Create New Key Pair
+				set_time_limit(999);
+				if($bits_level < 1536) { $bits_level = 1536; }
+				$time1 = time();
+				$keys = generate_new_keys($bits_level, TRUE);
+				$new_private_key = base64_encode($keys[0]);
+				$new_public_key = base64_encode($keys[1]);
+				$message = '<br><font color="green"><strong>New Private &amp; Public Key Pair Generated! (It Took ' . (time() - $time1) . ' Second(s) To Create)</strong></font>';
+			}
+
+			$clipboard_copy = '<script>
+			function myPrivateKey()
+			{
+				var copyText = document.getElementById("current_private_key");
+				copyText.select();
+				copyText.setSelectionRange(0, 99999)
+				document.execCommand("copy");
+				var tooltip = document.getElementById("myTooltip");
+				tooltip.innerHTML = "Copy Complete!";
+			}
+			function myPublicKey()
+			{
+				var copyText = document.getElementById("current_public_key");
+				copyText.select();
+				copyText.setSelectionRange(0, 99999)
+				document.execCommand("copy");
+				var tooltip = document.getElementById("myTooltip2");
+				tooltip.innerHTML = "Copy Complete!";
+			}</script>';
+
+			$body_string = '<FORM ACTION="index.php?menu=options&amp;storage_key=new" METHOD="post">
+			<strong>Bits Size [1,536 to 17,408]</strong> (Caution: High Values Take a Lot of Time to Create New Keys!)<br>
+			<input type="number" name="crypt_bits" min="1536" max="17408" size="6" value="' . $bits_level . '"/>
+			<input type="submit" name="Submit" value="Create New Key Pair" /></FORM><br>' . $clipboard_copy . '
+			<strong><font color="blue">New Private Key</font></strong><br>
+			<textarea id="current_private_key" rows="10" cols="90" READONLY>' . $new_private_key . '</textarea><br>
+			<button title="Copy Private Key to Clipboard" onclick="myPrivateKey()"><span id="myTooltip">Copy Private Key</span></button><hr>
+			<strong><font color="green">New Public Key</font></strong><br>
+			<textarea id="current_public_key" rows="8" cols="90" READONLY>' . $new_public_key . '</textarea><br>
+			<button title="Copy Public Key to Clipboard" onclick="myPublicKey()"><span id="myTooltip2">Copy Public Key</span></button><br>' . $message;
+
+			$quick_info = '<strong>Storage Keys</strong> can be created to store a balance offline.<br><br>
+			<strong>Do Not</strong> share your <strong>Private Key</strong> with anyone for any reason.<br><br>
+			The <strong>Private Key</strong> encrypts all transactions for the given <strong>Public Key</strong>.<br><br>
+			Save both keys in a password protected text file or external device that you can secure (CD, Flash Drive, Printed Paper, etc.)';
+
+			home_screen("Options &amp; Personal Settings", '<strong><font color="purple">Create New Storage Keys</font></strong>', $body_string , $quick_info);
+			exit;
+		}
+
 		if($_GET["upgrade"] == "check" || $_GET["upgrade"] == "doupgrade")
 		{
 			$quick_info = 'This will check with the Timekoin website for any software updates that can be installed.';
@@ -1735,7 +1795,8 @@ if($_SESSION["valid_login"] == TRUE)
 		{		
 			$quick_info = 'You may change the username and password individually or at the same time.
 			<br><br>Remember that usernames and passwords are Case Sensitive.
-			<br><br><strong>Generate New Keys</strong> will create a new random key pair and save it in the database.
+			<br><br><strong>Generate New Server Keys</strong> will create a new random key pair and save it in the database.
+			<br><br><strong>Create Storage Keys</strong> will create a new random key pair that you can copy to a file for offline storage.
 			<br><br><strong>Check for Updates</strong> will check for any program updates that can be downloaded directly into Timekoin.
 			<br><br><strong>Hash Code</strong> is a private code you create for any external program or server that request access to more advanced features of your Timekoin server.
 			<br><br><strong>Super Peer Limit</strong> controls how many transaction cycles other peers will download in bulk.';
@@ -2636,9 +2697,21 @@ if($_SESSION["valid_login"] == TRUE)
 			$easy_key_lookup = easy_key_reverse_lookup($my_public_key, $counter);
 		}
 
-		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong>Current Server Balance: <font color="green">' . number_format($display_balance) . '</font> TK</strong></td></tr>
+		$clipboard_copy = '<script>
+		function myPublicKey()
+		{
+			var copyText = document.getElementById("current_public_key");
+			copyText.select();
+			copyText.setSelectionRange(0, 99999)
+			document.execCommand("copy");
+			var tooltip = document.getElementById("myTooltip2");
+			tooltip.innerHTML = "Copy Complete!";
+		}</script>';
+
+		$text_bar = $clipboard_copy . '<table border="0" cellpadding="6"><tr><td><strong>Current Server Balance: <font color="green">' . number_format($display_balance) . '</font> TK</strong></td></tr>
 		<tr><td><strong><font color="green">My Public Key</font> to receive:</strong></td></tr>
-		<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>' . $easy_key_list;
+		<tr><td><textarea id="current_public_key" rows="6" cols="90" READONLY>' . base64_encode($my_public_key) . '</textarea><br>
+		<button title="Copy Public Key to Clipboard" onclick="myPublicKey()"><span id="myTooltip2">Copy Public Key</span></button></td></tr></table>' . $easy_key_list;
 
 		home_screen('Send / Receive Timekoins', $text_bar, $body_string , $quick_info);
 		exit;
