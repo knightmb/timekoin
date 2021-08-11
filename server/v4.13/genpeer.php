@@ -1221,7 +1221,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							{
 								// Check if the hostname and IP fields actually match
 								// and not made up or unrelated.
-								$dns_ip = gethostbyname($peer_domain);
+								$dns_ip = gethostbyname6($peer_domain);
 								
 								if($dns_ip != $peer_ip)
 								{
@@ -1451,7 +1451,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							{
 								// Check if the hostname and IP fields actually match
 								// and not made up or unrelated.
-								$dns_ip = gethostbyname($peer_domain);
+								$dns_ip = gethostbyname6($peer_domain);
 								
 								if($dns_ip != $peer_ip)
 								{
