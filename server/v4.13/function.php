@@ -17,7 +17,7 @@ use mersenne_twister\twister;
 //***********************************************************************************
 if(function_exists('mysql_result') == FALSE)
 {
-	function mysql_result($result, $number = 0, $field = 0)
+	function mysql_result($result = "", $number = 0, $field = 0)
 	{
 		$sql_num_results = mysqli_num_rows($result);
 
@@ -51,7 +51,7 @@ function gethostbyname6($host = "")
 }
 //***********************************************************************************	
 //***********************************************************************************
-function ip_banned($ip)
+function ip_banned($ip = "")
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	
@@ -70,7 +70,7 @@ function ip_banned($ip)
 }
 //***********************************************************************************
 //***********************************************************************************
-function filter_sql($string)
+function filter_sql($string = "")
 {
 	// Filter symbols that might lead to an SQL injection attack
 	$symbols = array("'", "%", "*", "`");
@@ -80,7 +80,7 @@ function filter_sql($string)
 }
 //***********************************************************************************
 //***********************************************************************************
-function log_ip($attribute, $multiple = 1, $super_peer_check = FALSE)
+function log_ip($attribute = "", $multiple = 1, $super_peer_check = FALSE)
 {
 	if($_SERVER['REMOTE_ADDR'] == "::1" || $_SERVER['REMOTE_ADDR'] == "127.0.0.1")
 	{
@@ -99,7 +99,7 @@ function log_ip($attribute, $multiple = 1, $super_peer_check = FALSE)
 		{
 			// Only count 1 in 4 IP for Super Peer Transaction Clerk to avoid
 			// accidental banning of peers accessing high volume data.
-			if(mt_rand(1,4) != 4)
+			if(mt_rand(0,4) != 4)
 			{
 				return;
 			}
@@ -125,19 +125,19 @@ function log_ip($attribute, $multiple = 1, $super_peer_check = FALSE)
 	return;
 }
 //***********************************************************************************
-function scale_trigger($trigger = 100)
+function scale_trigger($trigger = 500)
 {
 	// Scale the amount of copies of the IP based on the trigger set.
 	// So for example, a trigger of 1 means that one event can trigger flood protection.
 	// A trigger of 2 means 2 events will trigger flood protection. So only half as many
 	// IP copies are returned in this function.
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-	$request_max = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'server_request_max' LIMIT 1"),0,0);
+	$request_max = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'server_request_max' LIMIT 1"));
 
 	return intval($request_max / $trigger);
 }
 //***********************************************************************************
-function find_string($start_tag, $end_tag, $full_string, $end_match = FALSE)
+function find_string($start_tag = "", $end_tag = "", $full_string = "", $end_match = FALSE)
 {
 	if($end_match == FALSE)
 	{	
@@ -152,7 +152,7 @@ function find_string($start_tag, $end_tag, $full_string, $end_match = FALSE)
 }
 //***********************************************************************************
 //***********************************************************************************
-function write_log($message, $type)
+function write_log($message = "", $type = "")
 {
 	// Write Log Entry
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);	
@@ -274,7 +274,7 @@ function queue_hash()
 	return 0;
 }
 //***********************************************************************************
-function filter_public_key($public_key)
+function filter_public_key($public_key = "")
 {
 	if($public_key != ARBITRARY_KEY)
 	{
@@ -333,7 +333,7 @@ function my_domain()
 	return mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,0);
 }
 //***********************************************************************************
-function modify_peer_grade($ip_address, $domain, $subfolder, $port_number, $grade)
+function modify_peer_grade($ip_address = "", $domain = "", $subfolder = "", $port_number = "", $grade = "")
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	$peer_failure = mysql_result(mysqli_query($db_connect, "SELECT failed_sent_heartbeat FROM `active_peer_list` WHERE `IP_Address` = '$ip_address' AND `domain` = '$domain' AND `subfolder` = '$subfolder' AND `port_number` = $port_number LIMIT 1"));
@@ -355,7 +355,7 @@ function modify_peer_grade($ip_address, $domain, $subfolder, $port_number, $grad
 	return;
 }
 //***********************************************************************************
-function poll_peer($ip_address, $domain, $subfolder, $port_number, $max_length, $poll_string, $custom_context = "")
+function poll_peer($ip_address = "", $domain = "", $subfolder = "", $port_number = "", $max_length = "", $poll_string = "", $custom_context = "")
 {
 	if(empty($custom_context) == TRUE)
 	{
@@ -408,7 +408,7 @@ function poll_peer($ip_address, $domain, $subfolder, $port_number, $max_length, 
 }
 //***********************************************************************************
 //***********************************************************************************
-function call_script($script, $priority = 1, $plugin = FALSE, $web_server_call = FALSE)
+function call_script($script = "", $priority = 1, $plugin = FALSE, $web_server_call = FALSE)
 {
 	if($web_server_call == TRUE)
 	{
@@ -483,7 +483,7 @@ function call_script($script, $priority = 1, $plugin = FALSE, $web_server_call =
 	return;
 }
 //***********************************************************************************
-function clone_script($script)
+function clone_script($script = "")
 {
 	// No Properly working PHP CLI Extensions for some odd reason, call from web server instead
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
@@ -651,7 +651,7 @@ function reset_transaction_hash_count()
 }
 //***********************************************************************************
 //***********************************************************************************
-function tk_encrypt($key, $crypt_data)
+function tk_encrypt($key = "", $crypt_data = "")
 {
 	if(function_exists('openssl_private_encrypt') == TRUE)
 	{
@@ -694,7 +694,7 @@ function set_decrypt_mode()
 }
 //***********************************************************************************
 //***********************************************************************************
-function tk_decrypt($key, $crypt_data, $skip_openssl_check = FALSE)
+function tk_decrypt($key = "", $crypt_data = "", $skip_openssl_check = FALSE)
 {
 	$decrypt;
 
@@ -728,7 +728,7 @@ function tk_decrypt($key, $crypt_data, $skip_openssl_check = FALSE)
 }
 //***********************************************************************************
 //***********************************************************************************
-function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0)
+function check_crypt_balance_range($public_key = "", $block_start = 0, $block_end = 0)
 {
 	set_decrypt_mode(); // Figure out which decrypt method can be best used
 
@@ -832,7 +832,7 @@ function check_crypt_balance_range($public_key, $block_start = 0, $block_end = 0
 }
 //***********************************************************************************
 //***********************************************************************************
-function check_crypt_balance($public_key)
+function check_crypt_balance($public_key = "")
 {
 	if(empty($public_key) == TRUE)
 	{
@@ -1016,7 +1016,7 @@ function easy_key_reverse_lookup($public_key = "", $find_next = 1, $expire_times
 }
 //***********************************************************************************
 //***********************************************************************************
-function peer_gen_amount($public_key)
+function peer_gen_amount($public_key = "")
 {
 	// 1 week = 604,800 seconds
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
@@ -1148,7 +1148,7 @@ function peer_gen_amount($public_key)
 }
 //***********************************************************************************
 //***********************************************************************************
-function gen_lifetime_transactions($public_key, $high_priority = FALSE)
+function gen_lifetime_transactions($public_key = "", $high_priority = FALSE)
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);	
 
@@ -1192,7 +1192,7 @@ function gen_lifetime_transactions($public_key, $high_priority = FALSE)
 }
 //***********************************************************************************
 //***********************************************************************************
-function getCharFreq($str, $chr = FALSE)
+function getCharFreq($str = "", $chr = FALSE)
 {
 	$c = Array();
 	if($chr !== FALSE) return substr_count($str, $chr);
@@ -1209,7 +1209,7 @@ function TKFoundationSeed()
 }
 //***********************************************************************************
 //***********************************************************************************
-function scorePublicKey($public_key, $score_key = FALSE)
+function scorePublicKey($public_key = "", $score_key = FALSE)
 {
 	// Get the last 343 characters of the public key to make it fair for those using longer or shorter public keys
 	$public_key = substr($public_key, -343);
@@ -1272,7 +1272,7 @@ function scorePublicKey($public_key, $score_key = FALSE)
 }
 //***********************************************************************************
 //***********************************************************************************
-function tk_time_convert($time)
+function tk_time_convert($time = "")
 {
 	if($time < 0)
 	{
@@ -1536,7 +1536,7 @@ function generation_cycle($when = 0)
 }
 //***********************************************************************************
 //***********************************************************************************
-function db_cache_balance($my_public_key)
+function db_cache_balance($my_public_key = "")
 {
 	// Check server balance via custom memory index
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
@@ -1573,7 +1573,7 @@ function db_cache_balance($my_public_key)
 }
 //***********************************************************************************
 //***********************************************************************************
-function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $amount, $message, $custom_timestamp = FALSE)
+function send_timekoins($my_private_key = "", $my_public_key = "", $send_to_public_key = "", $amount = "", $message = "", $custom_timestamp = FALSE)
 {
 	$arr1 = str_split($send_to_public_key, round(strlen($send_to_public_key) / 2));
 
@@ -1618,7 +1618,7 @@ function send_timekoins($my_private_key, $my_public_key, $send_to_public_key, $a
 }
 //***********************************************************************************
 //***********************************************************************************
-function unix_timestamp_to_human($timestamp = "", $default_timezone, $format = 'D d M Y - H:i:s')
+function unix_timestamp_to_human($timestamp = "", $default_timezone = "", $format = 'D d M Y - H:i:s')
 {
 	if(empty($default_timezone) == FALSE)
 	{	
@@ -1629,7 +1629,7 @@ function unix_timestamp_to_human($timestamp = "", $default_timezone, $format = '
 	return ($timestamp) ? date($format, $timestamp) : date($format, $timestamp);
 }
 //***********************************************************************************
-function gen_simple_poll_test($ip_address, $domain, $subfolder, $port_number)
+function gen_simple_poll_test($ip_address = "", $domain = "", $subfolder = "", $port_number = "")
 {
 	$simple_poll_fail = FALSE; // Reset Variable
 
@@ -1950,7 +1950,7 @@ function is_private_ip($ip, $ignore = FALSE)
 	return $result;
 }
 //***********************************************************************************
-function is_domain_valid($domain)
+function is_domain_valid($domain = "")
 {
 	$result = TRUE;
 	
@@ -2425,7 +2425,7 @@ function check_for_updates($code_feedback = FALSE)
 }
 //***********************************************************************************
 //***********************************************************************************
-function install_update_script($script_name, $script_file)
+function install_update_script($script_name = "", $script_file = "")
 {
 	$fh = fopen($script_name, 'w');
 
@@ -2451,7 +2451,7 @@ function install_update_script($script_name, $script_file)
 }
 //***********************************************************************************
 //***********************************************************************************
-function check_update_script($script_name, $script, $php_script_file, $poll_version, $context)
+function check_update_script($script_name = "", $script = "", $php_script_file = "", $poll_version = "", $context = "")
 {
 	$update_status_return = NULL;
 	
@@ -2478,13 +2478,13 @@ function check_update_script($script_name, $script, $php_script_file, $poll_vers
 }
 //***********************************************************************************
 //***********************************************************************************
-function get_update_script($php_script, $poll_version, $context)
+function get_update_script($php_script = "", $poll_version = "", $context = "")
 {
 	return file_get_contents("http://timekoin.net/tkupdates/v$poll_version/$php_script.txt", FALSE, $context, NULL);
 }
 //***********************************************************************************
 //***********************************************************************************
-function run_script_update($script_name, $script_php, $poll_version, $context, $php_format = 1, $sub_folder = "")
+function run_script_update($script_name = "", $script_php = "", $poll_version = "", $context = "", $php_format = 1, $sub_folder = "")
 {
 	$php_file = get_update_script($script_php, $poll_version, $context);
 	
@@ -2620,7 +2620,7 @@ function do_updates()
 }
 //***********************************************************************************
 //***********************************************************************************
-function plugin_check_for_updates($http_url, $ssl_enable = FALSE)
+function plugin_check_for_updates($http_url = "", $ssl_enable = FALSE)
 {
 	// Example Usage
 	//
@@ -2643,7 +2643,7 @@ function plugin_check_for_updates($http_url, $ssl_enable = FALSE)
 	}
 }
 //***********************************************************************************
-function plugin_download_update($http_url, $http_url_sha256, $ssl_enable = FALSE, $plugin_file)
+function plugin_download_update($http_url = "", $http_url_sha256 = "", $ssl_enable = FALSE, $plugin_file = "")
 {
 	// Example Usage
 	//
@@ -2721,7 +2721,7 @@ function plugin_download_update($http_url, $http_url_sha256, $ssl_enable = FALSE
 	return FALSE;
 }
 //***********************************************************************************
-function update_windows_port($new_port)
+function update_windows_port($new_port = "")
 {
 	// Update the pms_config.ini file if it exist
 	if(file_exists("../../pms_config.ini") == TRUE)
@@ -2775,7 +2775,7 @@ function generate_hashcode_permissions($pk_balance = "", $pk_gen_amt = "", $pk_r
 	return $permissions_number;
 }
 //***********************************************************************************
-function check_hashcode_permissions($permissions_number, $pk_api_check, $checkbox = FALSE)
+function check_hashcode_permissions($permissions_number = "", $pk_api_check = "", $checkbox = FALSE)
 {
 	// num_gen_peers
 	if($pk_api_check == "num_gen_peers")
@@ -3054,7 +3054,7 @@ function check_hashcode_permissions($permissions_number, $pk_api_check, $checkbo
 }
 //***********************************************************************************
 //***********************************************************************************
-function standard_tab_settings($peerlist, $trans_queue, $send_receive, $history, $generation, $system, $backup, $tools)
+function standard_tab_settings($peerlist = "", $trans_queue = "", $send_receive = "", $history = "", $generation = "", $system = "", $backup = "", $tools = "")
 {
 	$permissions_number = 0;
 
@@ -3071,7 +3071,7 @@ function standard_tab_settings($peerlist, $trans_queue, $send_receive, $history,
 }
 //***********************************************************************************
 //***********************************************************************************
-function check_standard_tab_settings($permissions_number, $standard_tab)
+function check_standard_tab_settings($permissions_number = "", $standard_tab = "")
 {
 // Tools Tab
 	if($permissions_number - 256 >= 0) { $permissions_number -= 256; } // Subtract Active Permission
@@ -3190,7 +3190,7 @@ function check_standard_tab_settings($permissions_number, $standard_tab)
 }
 //***********************************************************************************
 //***********************************************************************************
-function file_upload($http_file_name)
+function file_upload($http_file_name = "")
 {
 	$user_file_upload = strtolower(basename($_FILES[$http_file_name]['name']));
 
@@ -3207,7 +3207,7 @@ function file_upload($http_file_name)
 }
 //***********************************************************************************
 //***********************************************************************************
-function read_plugin($filename)
+function read_plugin($filename = "")
 {
 	$handle = fopen($filename, "r");
 	$contents = stream_get_contents($handle);
@@ -3216,7 +3216,7 @@ function read_plugin($filename)
 }
 //***********************************************************************************
 //***********************************************************************************
-function ipv6_test($ip_address)
+function ipv6_test($ip_address = "")
 {
 	if(filter_var($ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
 	{
@@ -3228,7 +3228,7 @@ function ipv6_test($ip_address)
 }
 //***********************************************************************************
 //***********************************************************************************
-function ipv6_compress($ip_address)
+function ipv6_compress($ip_address = "")
 {
 	if(filter_var($ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
 	{
@@ -3240,7 +3240,7 @@ function ipv6_compress($ip_address)
 }
 //***********************************************************************************
 //***********************************************************************************
-function find_v4_gen_key($my_public_key)
+function find_v4_gen_key($my_public_key = "")
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	$sql = "SELECT IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
@@ -3263,7 +3263,7 @@ function find_v4_gen_key($my_public_key)
 }
 //***********************************************************************************
 //***********************************************************************************
-function find_v6_gen_key($my_public_key)
+function find_v6_gen_key($my_public_key = "")
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	$sql = "SELECT IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
@@ -3286,7 +3286,7 @@ function find_v6_gen_key($my_public_key)
 }
 //***********************************************************************************
 //***********************************************************************************
-function find_v4_gen_IP($my_public_key)
+function find_v4_gen_IP($my_public_key = "")
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	$sql = "SELECT IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
@@ -3309,7 +3309,7 @@ function find_v4_gen_IP($my_public_key)
 }
 //***********************************************************************************
 //***********************************************************************************
-function find_v6_gen_IP($my_public_key)
+function find_v6_gen_IP($my_public_key = "")
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	$sql = "SELECT IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
@@ -3332,7 +3332,7 @@ function find_v6_gen_IP($my_public_key)
 }
 //***********************************************************************************
 //***********************************************************************************
-function find_v4_gen_join($my_public_key)
+function find_v4_gen_join($my_public_key = "")
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	$sql = "SELECT join_peer_list, IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";
@@ -3355,7 +3355,7 @@ function find_v4_gen_join($my_public_key)
 }
 //***********************************************************************************
 //***********************************************************************************
-function find_v6_gen_join($my_public_key)
+function find_v6_gen_join($my_public_key = "")
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	$sql = "SELECT join_peer_list, IP_Address FROM `generating_peer_list` WHERE `public_key` = '$my_public_key'";

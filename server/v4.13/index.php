@@ -1243,7 +1243,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$quick_info = '<strong>Start</strong> will activate all Timekoin Processing.<br><br>
 		<strong>Stop</strong> will halt Timekoin from further processing.<br><br>
-		<strong>Max Peer Query</strong> is the per 10 seconds limit imposed on each individual peer before being banned for 24 hours.<br><br>
+		<strong>Max Peer Query</strong> is the per 10 seconds limit imposed on each individual peer before being banned for 24 hours. A value of <strong>0</strong> means no limit.<br><br>
 		<strong>Local Server Port</strong> is the real port used by the web server when running CLI mode disabled. This should be blank unless the local server port is different from the public server port.<br><br>
 		<strong>CLI Mode</strong> controls if the Timekoin processing is run within the web server (disable) or independently via the command line interface (enable).<br><br>
 		<strong>Allow LAN Peers</strong> controls if LAN peers will be allowed to populate the peer list.<br><br>

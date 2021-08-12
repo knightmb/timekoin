@@ -78,7 +78,7 @@ if($_GET["action"] == "elect_gen_peer_valid")
 	$gen_IP = filter_sql($_POST["gen_IP"]);
 	$gen_public_key = base64_decode(filter_sql($_POST["public_key"]));
 
-	$peer_valid = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `generating_peer_queue` WHERE `public_key` = '$gen_public_key' AND `IP_Address` = '$gen_IP' LIMIT 1"),0,0);
+	$peer_valid = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `generating_peer_queue` WHERE `public_key` = '$gen_public_key' AND `IP_Address` = '$gen_IP' LIMIT 1"));
 
 	if($peer_valid > 1)
 	{
@@ -1221,7 +1221,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							{
 								// Check if the hostname and IP fields actually match
 								// and not made up or unrelated.
-								$dns_ip = gethostbyname6($peer_domain);
+								$dns_ip = ipv6_compress(gethostbyname6($peer_domain));
 								
 								if($dns_ip != $peer_ip)
 								{
@@ -1451,7 +1451,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							{
 								// Check if the hostname and IP fields actually match
 								// and not made up or unrelated.
-								$dns_ip = gethostbyname6($peer_domain);
+								$dns_ip = ipv6_compress(gethostbyname6($peer_domain));
 								
 								if($dns_ip != $peer_ip)
 								{

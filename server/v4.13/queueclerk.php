@@ -80,7 +80,7 @@ if($_GET["action"] == "reverse_queue")
 		else if($connected_peer_check == "")
 		{
 			// Don't allow flood/spam data from unknown peers
-			log_ip("QU", scale_trigger(20));
+			log_ip("QU", scale_trigger(100));
 			exit;
 		}
 
@@ -376,7 +376,7 @@ if($_GET["action"] == "input_transaction")
 			{
 				write_log("Queue Hash Data MisMatch from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: $transaction_public_key", "QC");
 				$hash_match = "mismatch";
-				log_ip("QU", scale_trigger(10));
+				log_ip("QU", scale_trigger(100));
 			}
 			else
 			{
@@ -393,7 +393,7 @@ if($_GET["action"] == "input_transaction")
 					// Ok, something is very wrong here...
 					write_log("Crypt Field Hash Check Failed from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: $transaction_public_key", "QC");
 					$hash_match = "mismatch";
-					log_ip("QU", scale_trigger(5));
+					log_ip("QU", scale_trigger(100));
 				}
 			}
 		}
@@ -402,7 +402,7 @@ if($_GET["action"] == "input_transaction")
 			// A qhash is required to verify the transaction
 			write_log("Queue Hash Data Empty from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: $transaction_public_key", "QC");
 			$hash_match = "mismatch";
-			log_ip("QU", scale_trigger(10));
+			log_ip("QU", scale_trigger(100));
 		}
 
 		$transaction_public_key = filter_sql(base64_decode($transaction_public_key));
@@ -499,13 +499,13 @@ if($_GET["action"] == "input_transaction")
 				else
 				{
 					write_log("More Than 100 Transactions Trying to Queue from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
-					log_ip("QU", scale_trigger(5));
+					log_ip("QU", scale_trigger(100));
 				}
 			}
 			else
 			{
 				write_log("Invalid Transaction Queue Data Discarded from IP: " . $_SERVER['REMOTE_ADDR'] . " for Public Key: " . base64_encode($transaction_public_key), "QC");
-				log_ip("QU", scale_trigger(5));
+				log_ip("QU", scale_trigger(100));
 			}
 
 		} // End Duplicate & Timestamp check
@@ -521,15 +521,15 @@ if($_GET["action"] == "input_transaction")
 	//to help prevent direct Transaction spamming
 	if($transaction_attribute == "T")
 	{
-		log_ip("QU", scale_trigger(100));
+		log_ip("QU", scale_trigger(200));
 	}
 	else if($transaction_attribute == "G")
 	{
-		log_ip("QU", scale_trigger(3));
+		log_ip("QU", scale_trigger(100));
 	}
 	else
 	{
-		log_ip("QU", scale_trigger(25));
+		log_ip("QU", scale_trigger(100));
 	}
 
 	exit;

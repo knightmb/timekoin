@@ -38,7 +38,7 @@ if($_GET["action"] == "super_peer")
 	echo mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'super_peer' LIMIT 1"),0,0);
 
 	// Log inbound IP activity
-	log_ip("TC", scale_trigger(200));
+	log_ip("TC", 1);
 	exit;
 }
 //***********************************************************************************
@@ -53,7 +53,7 @@ if($_GET["action"] == "block_hash" && $_GET["block_number"] >= 0)
 	echo mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_history` WHERE `timestamp` = $block_number LIMIT 1"),0,0);
 
 	// Log inbound IP activity
-	log_ip("TC", scale_trigger(500));
+	log_ip("TC", 1);
 	exit;
 }
 //***********************************************************************************
@@ -90,7 +90,7 @@ if($_GET["action"] == "transaction_data" && $_GET["block_number"] >= 0)
 	}
 
 	// Log inbound IP activity
-	log_ip("TC", scale_trigger(500), TRUE);
+	log_ip("TC", 1, TRUE);
 	exit;
 }
 //***********************************************************************************

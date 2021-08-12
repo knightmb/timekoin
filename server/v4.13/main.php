@@ -190,7 +190,7 @@ while(1) // Begin Infinite Loop :)
 	//*****************************************************************************************************
 	//*****************************************************************************************************
 	// Check for spamming IPs
-		$request_max = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'server_request_max' LIMIT 1"),0,0);
+		$request_max = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'server_request_max' LIMIT 1"));
 
 		$sql = "SELECT ip, attribute FROM `ip_activity` WHERE `timestamp` >= " . (time() - 10) . " GROUP BY `ip`";
 		$sql_result = mysqli_query($db_connect, $sql);

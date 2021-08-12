@@ -260,7 +260,7 @@ if($_GET["action"] == "join")
 	}
 
 	// Log inbound IP activity
-	log_ip("PL", scale_trigger(200));
+	log_ip("PL", 1);
 	exit;
 }
 //***********************************************************************************
@@ -459,7 +459,7 @@ if($_GET["action"] == "exchange")
 	} // Full Server Check
 
 	// Log inbound IP activity
-	log_ip("PL", scale_trigger(200));
+	log_ip("PL", 1);
 	exit;
 }
 //***********************************************************************************
