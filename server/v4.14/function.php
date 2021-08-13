@@ -2196,7 +2196,7 @@ function initialization_database()
 function activate($component = "SYSTEM", $on_or_off = 1)
 {
 	// Turn the entire or a single script on or off
-	$build_file = '<?PHP ';
+	$build_file = '<?PHP';
 
 	// Check what the current constants are
 	if($component != "TIMEKOINSYSTEM")	{ $build_file = $build_file . ' define("TIMEKOIN_DISABLED","' . TIMEKOIN_DISABLED . '"); '; }
@@ -2219,7 +2219,16 @@ function activate($component = "SYSTEM", $on_or_off = 1)
 			}
 			else
 			{
-				$build_file = $build_file . ' define("TIMEKOIN_DISABLED","0"); ';
+				$build_file = '<?PHP define("TIMEKOIN_DISABLED","0"); ';
+				$build_file.= ' define("FOUNDATION_DISABLED","0"); ';
+				$build_file.= ' define("GENERATION_DISABLED","0"); ';
+				$build_file.= ' define("GENPEER_DISABLED","0"); ';
+				$build_file.= ' define("PEERLIST_DISABLED","0"); ';
+				$build_file.= ' define("QUEUECLERK_DISABLED","0"); ';
+				$build_file.= ' define("TRANSCLERK_DISABLED","0"); ';
+				$build_file.= ' define("TREASURER_DISABLED","0"); ';
+				$build_file.= ' define("BALANCE_DISABLED","0"); ';
+				$build_file.= ' define("API_DISABLED","0"); ';
 			}
 			break;
 

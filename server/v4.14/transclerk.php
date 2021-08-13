@@ -174,12 +174,12 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 	{
 		// Start by inserting the beginning arbitrary transaction from which all others will hash against 
 		$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from` ,`public_key_to` ,`crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
-	VALUES ('" . TRANSACTION_EPOCH . "', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', 'B')";
+		VALUES ('" . TRANSACTION_EPOCH . "', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', 'B')";
 	
 		if(mysqli_query($db_connect, $sql) == TRUE)
 		{
-			// Lock Treasurer script to prevent transaction processing during the initial phase
-			activate(TREASURER, 0);
+			// Lock the System to prevent transaction processing during the initial phase
+			activate(TIMEKOINSYSTEM, 0);
 		}
 	}
 //***********************************************************************************
@@ -232,8 +232,8 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			if($hash_check == SHA256TEST)
 			{
 				// Passed final hash checking.
-				// Unlock Treasurer script to allow live processing
-				activate(TREASURER, 1);
+				// Unlock System to allow live processing
+				activate(TIMEKOINSYSTEM, 1);
 				
 				// Start a transaction history rebuild from this since a new database is going to be far
 				// behind the history of the other active peers
@@ -362,7 +362,10 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 	} // End number of results check
 	else
 	{
-		write_log("No Active Peers to Poll", "TC");
+		if(rand(1,10) == 10)// Randomize to spam less
+		{
+			write_log("No Active Peers to Poll", "TC");
+		}
 		$trans_list_hash_different = 0;
 		$trans_list_hash_match = 0;
 	}
