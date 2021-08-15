@@ -2608,7 +2608,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$peer_election = FALSE;
 			$gen_peer_queue_num = intval(mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_queue`")));
 
-			if(election_cycle(9) == TRUE ||
+			if((election_cycle(9) == TRUE ||
 				election_cycle(8) == TRUE ||
 				election_cycle(7) == TRUE ||
 				election_cycle(6) == TRUE ||
@@ -2627,7 +2627,7 @@ if($_SESSION["valid_login"] == TRUE)
 				election_cycle(3, 2, $gen_peers_total) == TRUE ||
 				election_cycle(2, 2, $gen_peers_total) == TRUE ||
 				election_cycle(1, 2, $gen_peers_total) == TRUE ||
-				election_cycle(0, 2, $gen_peers_total) == TRUE && $gen_peer_queue_num > 0)
+				election_cycle(0, 2, $gen_peers_total) == TRUE) && $gen_peer_queue_num > 0)
 			{
 				// Don't create an Easy Key right before a peer election
 				// or it will throw up the fees since a new server appears in the list
