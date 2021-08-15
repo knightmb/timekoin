@@ -260,13 +260,13 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 				{
 					// Pay all the generating peers a fee to enter the peer election.
 					// Total Servers for Generating Peers.
-					$gen_peers_total = num_gen_peers();
+					$gen_peers_total_for_fee = num_gen_peers();
 					$gen_group_peers_total = num_gen_peers(FALSE, TRUE);
 				
 					// Check your server balance to make sure server can afford to create these transactions
 					$current_balance = db_cache_balance($my_public_key);
 
-					if($current_balance >= $gen_peers_total * $gen_group_peers_total)
+					if($current_balance >= $gen_peers_total_for_fee * $gen_group_peers_total)
 					{
 						$sql = "SELECT public_key FROM `generating_peer_list` GROUP BY `public_key`";
 						$sql2 = "SELECT crypt_data1, crypt_data2 FROM `my_transaction_queue`";						
@@ -301,13 +301,13 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 
 							if($election_payment == FALSE && $sql_row["public_key"] != $my_public_key)
 							{
-								if(send_timekoins($my_private_key, $my_public_key, $sql_row["public_key"], $gen_peers_total, "New Election Fee") == FALSE)
+								if(send_timekoins($my_private_key, $my_public_key, $sql_row["public_key"], $gen_peers_total_for_fee, "New Election Fee") == FALSE)
 								{
-									write_log($ip_mode . "Creating Election Fee Transaction ($gen_peers_total)TK Failed for Public Key:<br>" . base64_encode($sql_row["public_key"]),"G");
+									write_log($ip_mode . "Creating Election Fee Transaction ($gen_peers_total_for_fee)TK Failed for Public Key:<br>" . base64_encode($sql_row["public_key"]),"G");
 								}
 								else
 								{
-									write_log($ip_mode . "Election Fee for ($gen_peers_total)TK Sent to Public Key:<br>" . base64_encode($sql_row["public_key"]),"G");
+									write_log($ip_mode . "Election Fee for ($gen_peers_total_for_fee)TK Sent to Public Key:<br>" . base64_encode($sql_row["public_key"]),"G");
 								}
 							}
 						}
@@ -316,7 +316,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 					{
 						if(rand(1,4) == 2)// Spam this less
 						{
-							write_log($ip_mode . "Server Balance of ($current_balance) is too low to pay ($gen_peers_total)TK to all unique generating peers.","G");
+							write_log($ip_mode . "Server Balance of ($current_balance) is too low to pay ($gen_peers_total_for_fee)TK to all unique generating peers.","G");
 						}
 					}
 				}
@@ -545,13 +545,13 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 				{
 					// Pay all the generating peers a fee to enter the peer election.
 					// Total Servers for Generating Peers.
-					$gen_peers_total = num_gen_peers();
+					$gen_peers_total_for_fee = num_gen_peers();
 					$gen_group_peers_total = num_gen_peers(FALSE, TRUE);
 
 					// Check your server balance to make sure server can afford to create these transactions
 					$current_balance = db_cache_balance($my_public_key);
 
-					if($current_balance >= $gen_peers_total * $gen_group_peers_total)
+					if($current_balance >= $gen_peers_total_for_fee * $gen_group_peers_total)
 					{
 						$sql = "SELECT public_key FROM `generating_peer_list` GROUP BY `public_key`";
 						$sql2 = "SELECT crypt_data1, crypt_data2 FROM `my_transaction_queue`";
@@ -586,13 +586,13 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 
 							if($election_payment == FALSE && $sql_row["public_key"] != $my_public_key)
 							{
-								if(send_timekoins($my_private_key, $my_public_key, $sql_row["public_key"], $gen_peers_total, "New Election Fee") == FALSE)
+								if(send_timekoins($my_private_key, $my_public_key, $sql_row["public_key"], $gen_peers_total_for_fee, "New Election Fee") == FALSE)
 								{
-									write_log($ip_mode . "Creating Election Fee Transaction ($gen_peers_total)TK Failed for Public Key:<br>" . base64_encode($sql_row["public_key"]),"G");
+									write_log($ip_mode . "Creating Election Fee Transaction ($gen_peers_total_for_fee)TK Failed for Public Key:<br>" . base64_encode($sql_row["public_key"]),"G");
 								}
 								else
 								{
-									write_log($ip_mode . "Election Fee for ($gen_peers_total)TK Sent to Public Key:<br>" . base64_encode($sql_row["public_key"]),"G");
+									write_log($ip_mode . "Election Fee for ($gen_peers_total_for_fee)TK Sent to Public Key:<br>" . base64_encode($sql_row["public_key"]),"G");
 								}
 							}
 						}
@@ -601,7 +601,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 					{
 						if(rand(1,4) == 2)// Spam this less
 						{						
-							write_log($ip_mode . "Server Balance of ($current_balance) is too low to pay ($gen_peers_total)TK to all unique generating peers.","G");
+							write_log($ip_mode . "Server Balance of ($current_balance) is too low to pay ($gen_peers_total_for_fee)TK to all unique generating peers.","G");
 						}
 					}
 				}

@@ -291,9 +291,13 @@ function filter_public_key($public_key = "")
 function perm_peer_mode()
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-	$perm_peer_priority = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'perm_peer_priority' LIMIT 1"),0,0));
+	$perm_peer_priority = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'perm_peer_priority' LIMIT 1")));
 
 	if($perm_peer_priority == 1)
+	{
+		return "(SELECT * FROM `active_peer_list` WHERE `join_peer_list` = 0 ORDER BY RAND()) UNION (SELECT * FROM `active_peer_list` ORDER BY RAND())";
+	}
+	else if($perm_peer_priority == 2)
 	{
 		return "SELECT * FROM `active_peer_list` WHERE `join_peer_list` = 0 ORDER BY RAND()";
 	}

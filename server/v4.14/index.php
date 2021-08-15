@@ -1061,6 +1061,15 @@ if($_SESSION["valid_login"] == TRUE)
 	{
 		if($_GET["server_settings"] == "change")
 		{
+			if($_POST["perm_peer_priority2"] == 2)
+			{
+				$perm_peer_priority = 2;// Legacy Mode
+			}
+			else
+			{
+				$perm_peer_priority = $_POST["perm_peer_priority"];// New Mode
+			}
+
 			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["network_mode"] . "' WHERE `options`.`field_name` = 'network_mode' LIMIT 1");
 			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["network_mode"] . "' WHERE `main_loop_status`.`field_name` = 'network_mode' LIMIT 1");
 			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["max_peers"] . "' WHERE `options`.`field_name` = 'max_active_peers' LIMIT 1");
@@ -1081,8 +1090,8 @@ if($_SESSION["valid_login"] == TRUE)
 			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["trans_history_check"] . "' WHERE `main_loop_status`.`field_name` = 'trans_history_check' LIMIT 1");
 			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["super_peer"] . "' WHERE `options`.`field_name` = 'super_peer' LIMIT 1");
 			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["super_peer"] . "' WHERE `main_loop_status`.`field_name` = 'super_peer' LIMIT 1");
-			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["perm_peer_priority"] . "' WHERE `options`.`field_name` = 'perm_peer_priority' LIMIT 1");
-			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["perm_peer_priority"] . "' WHERE `main_loop_status`.`field_name` = 'perm_peer_priority' LIMIT 1");			
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$perm_peer_priority' WHERE `options`.`field_name` = 'perm_peer_priority' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$perm_peer_priority' WHERE `main_loop_status`.`field_name` = 'perm_peer_priority' LIMIT 1");			
 			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["auto_update_IP"] . "' WHERE `options`.`field_name` = 'auto_update_generation_IP' LIMIT 1");
 			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["auto_update_IP"] . "' WHERE `main_loop_status`.`field_name` = 'auto_update_generation_IP' LIMIT 1");			
 
@@ -1666,6 +1675,8 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			if($_GET["install"] == "1")
 			{
+				set_time_limit(9999);
+
 				$text_bar = '<strong><font color="blue">Administrator Username & Password for Database Server Needed to Update</font></strong>';
 				$quick_info = 'Update your Timekoin Database to use new features.<br><br><strong><font color="red">WARNING:</font></strong><br>
 				Always make sure you are connected to the server via SSL or Local Network to avoid sending any username or password info in the clear over the Internet.';
@@ -1673,35 +1684,27 @@ if($_SESSION["valid_login"] == TRUE)
 				$admin_username = $_POST["root_username"];
 				$admin_password = $_POST["root_password"];
 
-				$sql = "CREATE TABLE IF NOT EXISTS `quantum_balance_index` (
-				  `public_key_hash` varchar(32) NOT NULL,
-				  `max_foundation` int(11) unsigned NOT NULL,
-				  `balance` bigint(20) unsigned NOT NULL,
-				  KEY `qbi_index` (`public_key_hash`(4))
-				) ENGINE=MyISAM DEFAULT CHARSET=utf8;";
+				$sql = "ALTER TABLE `timekoin`.`transaction_history` DROP INDEX `hash`, ADD INDEX `hash` (`hash`(8)) USING BTREE;";
+				$sql2 = "ALTER TABLE `timekoin`.`transaction_history` DROP INDEX `attribute`, ADD INDEX `attribute` (`attribute`(1)) USING BTREE;";
 
-				if(mysqli_connect(MYSQL_IP,$admin_username,$admin_password) == FALSE)
-				{
-					$body_text = '<font color="red"><strong>Could Not Connect To Database</strong></font>';
-				}
-				
-				if(mysqli_select_db(MYSQL_DATABASE) == FALSE)
-				{
-					$body_text = '<font color="red"><strong>Could Not Select Database</strong></font>';
-				}
+				$admin_db_connect = mysqli_connect(MYSQL_IP,$admin_username,$admin_password,MYSQL_DATABASE);
 
-				if(mysqli_query($db_connect, $sql) == TRUE)
+				if($admin_db_connect == FALSE)
 				{
-					// Insert Place holder data for later checking
-					mysqli_query($db_connect, "INSERT INTO `quantum_balance_index` (`public_key_hash` ,`max_foundation` ,`balance`)VALUES ('', '1', '')");
-
-					$body_text = '<font color="green"><strong>Quantum Database Index Install Complete!</strong></font>';
+					$body_text = '<font color="red"><strong>Could Not Connect To Database!</strong></font>';
 				}
 				else
 				{
-					$body_text = '<font color="red"><strong>FAILED: Quantum Database Index Install</strong></font>';
+					if(mysqli_query($admin_db_connect, $sql) == TRUE && mysqli_query($admin_db_connect, $sql2) == TRUE)
+					{
+						$body_text = '<font color="green"><strong>Transaction History Index Size Increase Complete!</strong></font>';
+					}
+					else
+					{
+						$body_text = '<font color="red"><strong>FAILED: Transaction History Index Size Increase</strong></font>';
+					}
 				}
-
+				
 				$body_text.= '<br><br><FORM ACTION="index.php?menu=options&amp;db_update=home" METHOD="post"><input type="submit" name="submit" value="Database Update" /></FORM>';
 
 				home_screen("Database Update", $text_bar, $body_text , $quick_info);
@@ -1709,7 +1712,14 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 			else
 			{
-				$text_bar = '<strong><font color="blue">Administrator Username & Password for Database Server Needed to Update</font></strong>';
+				$text_bar = '<strong><font color="blue">Administrator Username & Password for Database Server Needed to Update</font><br>
+				<font color="red">Do Not Run This On A Live System. Stop Timekoin First!</font><br>
+				This update can take a very long time on slower systems, expect a browser timeout.<br>
+				If that happens, the update will continue in the background as long as you do not reboot the system or database server.<br>
+				You can leave and return to this Database Update page to check on the status of the install.<br>
+				<font color="red">Do Not Start Another Install if the first one has not finished!</font><br><br>
+				This update increases the index size for the Transaction History.<br>
+				This will speed up processing very large batches of transactions from the network queue.</strong>';
 				$quick_info = 'Update your Timekoin Database to use new features.<br><br><strong><font color="red">WARNING:</font></strong><br>
 				Always make sure you are connected to the server via SSL or Local Network to avoid sending any username or password info in the clear over the Internet.';
 
@@ -2593,95 +2603,132 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["easy_key"] == "create")
 		{
-			$new_easy_key = $_POST["new_easy_key"];
-			$easy_key_lookup = easy_key_lookup($new_easy_key);
-			$create_check = FALSE;
+			// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
+			$gen_peers_total = num_gen_peers(TRUE);
+			$peer_election = FALSE;
+			$gen_peer_queue_num = intval(mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_queue`")));
 
-			if($easy_key_lookup == "")
+			if(election_cycle(9) == TRUE ||
+				election_cycle(8) == TRUE ||
+				election_cycle(7) == TRUE ||
+				election_cycle(6) == TRUE ||
+				election_cycle(5) == TRUE ||
+				election_cycle(4) == TRUE ||
+				election_cycle(3) == TRUE ||
+				election_cycle(2) == TRUE ||
+				election_cycle(1) == TRUE ||
+				election_cycle(0) == TRUE ||
+				election_cycle(9, 2, $gen_peers_total) == TRUE ||
+				election_cycle(8, 2, $gen_peers_total) == TRUE ||
+				election_cycle(7, 2, $gen_peers_total) == TRUE ||
+				election_cycle(6, 2, $gen_peers_total) == TRUE ||
+				election_cycle(5, 2, $gen_peers_total) == TRUE ||
+				election_cycle(4, 2, $gen_peers_total) == TRUE ||
+				election_cycle(3, 2, $gen_peers_total) == TRUE ||
+				election_cycle(2, 2, $gen_peers_total) == TRUE ||
+				election_cycle(1, 2, $gen_peers_total) == TRUE ||
+				election_cycle(0, 2, $gen_peers_total) == TRUE && $gen_peer_queue_num > 0)
 			{
-				// None exist, let's create it
-				$create_check = TRUE;
+				// Don't create an Easy Key right before a peer election
+				// or it will throw up the fees since a new server appears in the list
+				$body_string = '<BR><BR><font color="red"><strong>A Peer Election is About to Start!<br>
+				You must wait until it is finished as that will change the network fee.</strong></font>';
+				$peer_election = TRUE;
 			}
-			else
+
+			if($peer_election == FALSE)
 			{
-				// One already exist, is it ours?
-				if($easy_key_lookup == $my_public_key)
+				$new_easy_key = $_POST["new_easy_key"];
+				$easy_key_lookup = easy_key_lookup($new_easy_key);
+				$create_check = FALSE;
+
+				if($easy_key_lookup == "")
 				{
-					// Going to renew our existing easy key
+					// None exist, let's create it
 					$create_check = TRUE;
 				}
-			}
-
-			if($create_check == TRUE)
-			{
-				if(strlen($new_easy_key) >= 1 && strlen($new_easy_key) <= 64)
+				else
 				{
-					$old_strlen = strlen($new_easy_key);
-					$new_easy_key = filter_sql($new_easy_key);
-					$symbols = array("|", "?", "="); // SQL + URL
-					$new_easy_key = str_replace($symbols, "", $new_easy_key);
-
-					if($old_strlen == strlen($new_easy_key))
+					// One already exist, is it ours?
+					if($easy_key_lookup == $my_public_key)
 					{
-						// All checks complete for valid input, check if server has enough TK
-						// to purchase the Easy Key
-						if(db_cache_balance($my_public_key) >= (num_gen_peers(FALSE, TRUE) + 1))
+						// Going to renew our existing easy key
+						$create_check = TRUE;
+					}
+				}
+
+				if($create_check == TRUE)
+				{
+					if(strlen($new_easy_key) >= 1 && strlen($new_easy_key) <= 64)
+					{
+						$old_strlen = strlen($new_easy_key);
+						$new_easy_key = filter_sql($new_easy_key);
+						$symbols = array("|", "?", "="); // SQL + URL
+						$new_easy_key = str_replace($symbols, "", $new_easy_key);
+
+						if($old_strlen == strlen($new_easy_key))
 						{
-							$sql = "SELECT public_key FROM `generating_peer_list` GROUP BY `public_key`";
-							$sql_result = mysqli_query($db_connect, $sql);
-							$sql_num_results = mysqli_num_rows($sql_result);
-							$my_private_key = my_private_key();
-
-							for ($i = 0; $i < $sql_num_results; $i++)
+							// All checks complete for valid input, check if server has enough TK
+							// to purchase the Easy Key
+							if(db_cache_balance($my_public_key) >= (num_gen_peers(FALSE, TRUE) + 1))
 							{
-								$sql_row = mysqli_fetch_array($sql_result);
+								$sql = "SELECT public_key FROM `generating_peer_list` GROUP BY `public_key`";
+								$sql_result = mysqli_query($db_connect, $sql);
+								$sql_num_results = mysqli_num_rows($sql_result);
+								$my_private_key = my_private_key();
 
-								if($sql_row["public_key"] != $my_public_key)
+								for ($i = 0; $i < $sql_num_results; $i++)
 								{
-									if(send_timekoins($my_private_key, $my_public_key, $sql_row["public_key"], 1, "New Easy Key Fee") == FALSE)
+									$sql_row = mysqli_fetch_array($sql_result);
+
+									if($sql_row["public_key"] != $my_public_key)
 									{
-										write_log("New Easy Key Fee Transaction Failed for Public Key:<br>" . base64_encode($sql_row["public_key"]),"GU");
-									}
-									else
-									{
-										write_log("New Easy Key Fee Sent to Public Key:<br>" . base64_encode($sql_row["public_key"]),"GU");
+										if(send_timekoins($my_private_key, $my_public_key, $sql_row["public_key"], 1, "New Easy Key Fee") == FALSE)
+										{
+											write_log("New Easy Key Fee Transaction Failed for Public Key:<br>" . base64_encode($sql_row["public_key"]),"GU");
+										}
+										else
+										{
+											write_log("New Easy Key Fee Sent to Public Key:<br>" . base64_encode($sql_row["public_key"]),"GU");
+										}
 									}
 								}
-							}
-							
-							// Finally, send transaction to Easy Key Blackhole Address
-							// with a 45 Minute Delay
-							if(send_timekoins($my_private_key, $my_public_key, base64_decode(EASY_KEY_PUBLIC_KEY), 1, $new_easy_key, transaction_cycle(9)) == TRUE)
-							{
-								$body_string = '<BR><BR><font color="green"><strong>Easy Key [' . $new_easy_key . '] Has Been Submitted to the Timekoin Network!</font><BR><BR>
-								Your Easy Key Should be Active Within 45 Minutes.<BR>
-								If You Are Renewing Your Key Before it Expires, then Expect No Delay.</strong>';
+								
+								// Finally, send transaction to Easy Key Blackhole Address
+								// with a 45 Minute Delay
+								if(send_timekoins($my_private_key, $my_public_key, base64_decode(EASY_KEY_PUBLIC_KEY), 1, $new_easy_key, transaction_cycle(9)) == TRUE)
+								{
+									$body_string = '<BR><BR><font color="green"><strong>Easy Key [' . $new_easy_key . '] Has Been Submitted to the Timekoin Network!</font><BR><BR>
+									Your Easy Key Should be Active Within 45 Minutes.<BR>
+									If You Are Renewing Your Key Before it Expires, then Expect No Delay.</strong>';
+								}
+								else
+								{
+									$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' Creation Failed!<BR>Could Not Send Final Transaction!</strong></font>';
+									write_log("Easy Key Transaction for Creation Failed to Send","GU");
+								}
 							}
 							else
 							{
-								$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' Creation Failed!<BR>Could Not Send Final Transaction!</strong></font>';
-								write_log("Easy Key Transaction for Creation Failed to Send","GU");
+								$body_string = '<BR><BR><font color="red"><strong>Creation Fee of [' . (num_gen_peers(FALSE, TRUE) + 1) . '] TK Needed to Create This Easy Key!</strong></font>';
 							}
 						}
 						else
 						{
-							$body_string = '<BR><BR><font color="red"><strong>Creation Fee of [' . (num_gen_peers(FALSE, TRUE) + 1) . '] TK Needed to Create This Easy Key!</strong></font>';
+							$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' Has Invalid Characters!</strong></font>';
 						}
 					}
 					else
 					{
-						$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' Has Invalid Characters!</strong></font>';
+						$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' Character Length Incorrect!</strong></font>';
 					}
 				}
 				else
 				{
-					$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' Character Length Incorrect!</strong></font>';
+					$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' is Taken Already!</strong></font>';
 				}
-			}
-			else
-			{
-				$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' is Taken Already!</strong></font>';
-			}
+
+			}// Peer Election Check
 		}
 
 		$counter = 1;

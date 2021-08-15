@@ -89,7 +89,7 @@ $next_transaction_cycle = transaction_cycle(1);
 $my_public_key = my_public_key();
 $easy_key_public_key = base64_decode(EASY_KEY_PUBLIC_KEY);
 $sql = "(SELECT * FROM `my_transaction_queue` WHERE `public_key` = '$my_public_key' AND `timestamp` < '" . time() . "' ORDER BY `my_transaction_queue`.`timestamp` ASC) 
-	UNION (SELECT * FROM `my_transaction_queue` WHERE `public_key` != '$my_public_key' AND `timestamp` < '" . time() . "' ORDER BY `my_transaction_queue`.`timestamp` ASC) LIMIT 1000";
+	UNION (SELECT * FROM `my_transaction_queue` WHERE `public_key` != '$my_public_key' AND `timestamp` < '" . time() . "' ORDER BY `my_transaction_queue`.`timestamp` ASC LIMIT 1000)";
 
 $sql_result = mysqli_query($db_connect, $sql);
 $sql_num_results = mysqli_num_rows($sql_result);
@@ -100,7 +100,7 @@ if($sql_num_results > 0)
 	// Not allowed 150 seconds before and 15 seconds after transaction cycle.
 	if(($next_transaction_cycle - time()) > 150 && (time() - $current_transaction_cycle) > 15)
 	{
-		$firewall_blocked = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'firewall_blocked_peer' LIMIT 1"),0,0));
+		$firewall_blocked = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'firewall_blocked_peer' LIMIT 1")));
 		
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
@@ -119,7 +119,7 @@ if($sql_num_results > 0)
 			$public_key_to = $public_key_to_1 . $public_key_to_2;
 
 			$found_transaction_history = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `public_key_from` = '$public_key' 
-				AND `public_key_to` = '$public_key_to' AND `hash` = '$hash_check' LIMIT 1"),0,0);
+				AND `public_key_to` = '$public_key_to' AND `hash` = '$hash_check' LIMIT 1"));
 
 			if(empty($found_transaction_history) == FALSE)
 			{
@@ -328,7 +328,9 @@ if($sql_num_results > 0)
 	$time_start = time();
 	$record_insert_counter = 0;
 	$record_failure_counter = 0;
-
+	$previous_transaction_key = "";
+	$previous_transaction_key_balance = 0;
+	
 	// Special set the Transaction History Hash + Queue Hash so that slower peers don't confuse faster peers that poll
 	// this hash if they complete before this peer does. This saves bandwidth and CPU overall since
 	// it stops unnecessary polling until completion.
@@ -532,8 +534,19 @@ if($sql_num_results > 0)
 					$amount_valid = FALSE;
 				}
 
+				if($previous_transaction_key === $public_key)
+				{
+					// This key did a transaction earlier, use the RAM balance instead of a DB Lookup
+					$transaction_key_balance = $previous_transaction_key_balance;
+				}
+				else
+				{
+					// Fresh Balance Lookup
+					$transaction_key_balance = check_crypt_balance($public_key);
+				}
+
 				// Validate transaction against known public key balance
-				if(check_crypt_balance($public_key) >= $transaction_amount_sent && $transaction_amount_sent > 0 && $amount_valid == TRUE)
+				if($transaction_key_balance >= $transaction_amount_sent && $transaction_amount_sent > 0 && $amount_valid == TRUE)
 				{
 					// Balance checks out...
 					// Check hash value for tampering of crypt1, crypt2, or crypt3 fields
@@ -562,6 +575,10 @@ if($sql_num_results > 0)
 								else
 								{
 									$record_insert_counter++;
+
+									// Record Public Key & Balance in RAM for future compares if multiple exist from the same public key
+									$previous_transaction_key = $public_key;
+									$previous_transaction_key_balance = $transaction_key_balance - $transaction_amount_sent;									
 								}							
 							}
 							else
@@ -624,7 +641,12 @@ if($sql_num_results > 0)
 										}
 										else
 										{
+											// Successful Insert
 											$record_insert_counter++;
+
+											// Record Public Key & Balance in RAM for future compares if multiple exist from the same public key
+											$previous_transaction_key = $public_key;
+											$previous_transaction_key_balance = $transaction_key_balance - $transaction_amount_sent;
 										}
 									}
 									else

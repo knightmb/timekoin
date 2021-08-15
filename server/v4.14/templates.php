@@ -444,7 +444,7 @@ function options_screen2()
 	</td><td></td>
 	<tr><td colspan="2"><hr></td></tr></table></FORM>
 	<table border="0"><tr>
-	<td style="width:215px" align="left"><FORM ACTION="index.php?menu=options&amp;db_update=home" METHOD="post"><input type="submit" name="Submit4" value="Database Update" DISABLED/></FORM></td>
+	<td style="width:215px" align="left"><FORM ACTION="index.php?menu=options&amp;db_update=home" METHOD="post"><input type="submit" name="Submit4" value="Database Update"/></FORM></td>
 	<td style="width:215px" align="right"><FORM ACTION="index.php?menu=options&amp;hashcode=manage" METHOD="post"><input type="submit" name="Submit3" value="Manage Hash Code Access" /></FORM></td>
 	<td style="width:215px" valign="bottom" align="right"><FORM ACTION="index.php?menu=options&amp;upgrade=check" METHOD="post"><input type="submit" name="Submit3" value="Check for Updates" /></FORM></td></tr>
 	<tr><td colspan="3"><hr></td></tr>
@@ -603,23 +603,25 @@ function options_screen6()
 function options_screen7()
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-	$qbi_index = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `quantum_balance_index` LIMIT 1"),0);
+	$hash_index_name = mysql_result(mysqli_query($db_connect, "SHOW INDEX FROM transaction_history FROM timekoin"),3,4);		
+	$hash_index_size = intval(mysql_result(mysqli_query($db_connect, "SHOW INDEX FROM transaction_history FROM timekoin"),3,7));
 
-	if($qbi_index > 0)
+	if($hash_index_name == "hash" && $hash_index_size >= 8)
 	{
-		//QBI Exist
-		$qbi_exist = '<strong><font color="green">INSTALLED</font></strong><br>';
+		// Hash index increase exist
+		$db_update_exist = '<strong><font color="green">INDEX INCREASE INSTALLED</font></strong><br>';
+		$disable_update = 'DISABLED';
 	}
 	else
 	{
-		$qbi_exist = '<strong><font color="red">NOT INSTALLED</font></strong><br>';
+		$db_update_exist = '<strong><font color="red">INDEX SIZE UNCHANGED</font></strong><br>';
 	}
 
 	return '<table border="1"><tr>
-	<td style="width:250px" align="right"><FORM ACTION="index.php?menu=options&amp;db_update=home&amp;install=1" METHOD="post">' . $qbi_exist . '
+	<td style="width:250px" align="right"><FORM ACTION="index.php?menu=options&amp;db_update=home&amp;install=1" METHOD="post">' . $db_update_exist . '
 	Username: <input type="text" name="root_username" size="16" value="root" /><br>
 	Password: <input type="password" name="root_password" size="16" value="" /><br><br>
-	<input type="submit" name="submit" value="Install Quantum Database Index" /></FORM></td>
+	<input type="submit" name="submit" value="Increase Index Size" ' . $disable_update . ' /></FORM></td>
 	</tr>
 	</table>';
 } 
@@ -690,7 +692,7 @@ function system_screen()
 		$gen_hash = '<font color="red">' . $gen_hash . '</font>';
 	}
 
-	if($perm_peer_priority == 1)
+	if($perm_peer_priority == 1 || $perm_peer_priority == 2)
 	{
 		$perm_peer_priority_1 = "SELECTED";
 	}
@@ -782,6 +784,7 @@ function system_screen()
 	$db_size = mysql_result(mysqli_query($db_connect, "SELECT CONCAT(SUM(ROUND(((DATA_LENGTH + INDEX_LENGTH - DATA_FREE) / 1024 / 1024),2)),\" MB\") AS Size FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA LIKE '" . MYSQL_DATABASE . "'"),0);
 
 	$html_return = '<FORM ACTION="index.php?menu=system&amp;server_settings=change" METHOD="post">
+	<input type="hidden" name="perm_peer_priority2" value="' . $perm_peer_priority . '">
 	<table border="0"><tr><td align="right" style="width:325px">
 	Maximum Active Peers: <input type="text" name="max_peers" size="3" value="' . $max . '"/><br>
 	Maximum Reserve Peers: <input type="text" name="max_new_peers" size="3" value="' . $new . '"/><br><br>
