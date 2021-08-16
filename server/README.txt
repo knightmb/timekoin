@@ -22,7 +22,7 @@ any of the 3 points results in the collapse of the entire transaction data.
 The software requires these components before installing.
 
 1. Web Server (Apache, IIS, etc.)
-2. PHP5 for the Web Server, including the CLI, mySQLi, GMP
+2. PHP5 or higher for the Web Server (+PHP7 recommend), including the CLI, mySQLi, GMP
 extensions (OpenSSL optional but recommended for speed)
 3. mySQL (or drop in MariaDB) Database Server (v5 or higher, free community 
 version works just fine)
@@ -39,8 +39,8 @@ far as we know.
 
 1.  Checklist Requirements:
 
-	A. Verify that your web server has installed, PHP5 (with CLI,
-mySQL, GMP) modules installed, and that you have access to your mySQL server
+	A. Verify that your web server has installed, PHP5 or higher (with CLI,
+mySQLi, GMP) modules installed, and that you have access to your mySQL server
 to create new databases, set user permissions, etc. It's also important that you
 have the ability to modify access rights on your web server as some of the
 software will need execution privileges to function properly.

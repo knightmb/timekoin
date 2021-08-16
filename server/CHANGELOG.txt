@@ -1,5 +1,26 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 4.14 (Released 2021-8-15)
+============================================
+- Trying to create an Easy Key during an election will fail with a warning until the election is over
+- Fixed Permanent Peer Priority setting causing outbound polling issues when no Permanent Peer is assigned to the Peerlist
+- Enabled "Database Update" button in the Options Tab for TK server to upgrade the database to larger index sizes within Timekoin
+- Added RAM cache logic to Treasurer process when processing a large batch of transactions for the same public key that polls the database less and speeds up balance checking
+- Updated default sql template for TK server to include new index sizes for transaction history table
+- Updated logic for new servers with a blank transaction history to start building quicker
+- Fixed activation issue related new servers and a blank transaction history database if you stop it before it does the testing phase
+- Fix for generating peer that changes IP and sends a network request to update the new change but was also paying all the generating servers as thought it was an election when not required
+- Fix timing issue for Easy Key on Windows servers that prevents the final creation of the shortcut after making payment for the shortcut
+- Updated Generation Peer Manager with better logic for consulting peers when comparing generation list of public keys
+- Fixed a rare (and long known, but could not previously replicate) bug during a super peer connection that can cause the transaction clerk to shutdown its database connection requiring a restart to restore
+- Fixed servers not able to find gateway peers when polling from ipv4 to ipv6 networks or vice-versa
+- Added duplicate clearing check to the transaction queue during heavy data exchanges with large numbers of active peers (+50 usually)
+- Better flood protection logic to prevent normal peers from getting banned from your server by accident
+- Memory safe all functions for PHP +v7.x and higher to fit new PHP security model
+- Added button to generate offline key pairs in the "Options" tab for offline storage of separate keys & balance
+- Added copy to clipboard buttons for Timekoin server "backup" tab to help with browser issues that don't select all the key data when manually trying to copy keys for backup purposes
+- Domains with ipv6 address were failing look-ups because the original function only output ipv4 address, new function created to address this issue.
+
 Timekoin Server - 4.1 (Released 2021-8-5)
 ============================================
 - Peerlist fix for immortal peers that were gateway or first contact, proper failure scoring to kick peers

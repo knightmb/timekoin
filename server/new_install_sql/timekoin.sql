@@ -182,7 +182,7 @@ INSERT INTO `options` (`field_name`, `field_data`) VALUES
 ('allow_ambient_peer_restart', '0'),
 ('allow_LAN_peers', '0'),
 ('auto_update_generation_IP', '1'),
-('cli_mode', '0'),
+('cli_mode', '1'),
 ('cli_port', ''),
 ('default_timezone', ''),
 ('first_contact_server', '---ip=---domain=timekoin.net---subfolder=timekoin---port=80---end'),
