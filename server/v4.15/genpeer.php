@@ -586,6 +586,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		if($sql_num_results > 0)
 		{
 			$gen_peers_total = num_gen_peers();
+			$gen_peers_total_payment = $gen_peers_total;
 
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
@@ -800,9 +801,9 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 									$transaction_info = tk_decrypt($public_key, base64_decode($sql_fee_result));
 									$transaction_amount_sent = intval(find_string("AMOUNT=", "---TIME", $transaction_info));
 									
-									if($transaction_amount_sent < $gen_peers_total && $public_key != $pay_this_public_key)
+									if($transaction_amount_sent < $gen_peers_total_payment && $public_key != $pay_this_public_key)
 									{
-										write_log("IPv4 Generation Fee ($gen_peers_total)TK Was NOT Paid to Public Key:<BR>" . base64_encode($pay_this_public_key), "GP");
+										write_log("IPv4 Generation Fee ($gen_peers_total_payment)TK Was NOT Paid to Public Key:<BR>" . base64_encode($pay_this_public_key), "GP");
 										$all_generating_peers_paid = FALSE;
 										break;
 									}
@@ -815,7 +816,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								}
 								else
 								{
-									write_log("IPv4 Generation Fee ($gen_peers_total)TK Has NOT Been Paid to All Generating Peers by Public Key:<BR>" . base64_encode($public_key), "GP");
+									write_log("IPv4 Generation Fee ($gen_peers_total_payment)TK Has NOT Been Paid to All Generating Peers by Public Key:<BR>" . base64_encode($public_key), "GP");
 								}
 							}
 							else if($my_public_key == $public_key)
@@ -1061,6 +1062,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 	// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
 	$gen_peers_total = num_gen_peers(TRUE);
+	$gen_peers_total_payment = num_gen_peers();//ipv6 uses a different generation peers total
 
 	if(election_cycle(1, 2, $gen_peers_total) == TRUE ||
 		election_cycle(2, 2, $gen_peers_total) == TRUE ||
@@ -1280,7 +1282,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								$payment_sql_result = mysqli_query($db_connect, $payment_sql);
 								$payment_sql_num_results = mysqli_num_rows($payment_sql_result);
 								$all_generating_peers_paid = TRUE;
-
+								
 								for ($i_pay = 0; $i_pay < $payment_sql_num_results; $i_pay++)
 								{
 									$payment_sql_row = mysqli_fetch_array($payment_sql_result);
@@ -1290,9 +1292,9 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 									$transaction_info = tk_decrypt($public_key, base64_decode($sql_fee_result));
 									$transaction_amount_sent = intval(find_string("AMOUNT=", "---TIME", $transaction_info));
 									
-									if($transaction_amount_sent < $gen_peers_total && $public_key != $pay_this_public_key)									
+									if($transaction_amount_sent < $gen_peers_total_payment && $public_key != $pay_this_public_key)									
 									{
-										write_log("IPv6 Generation Fee ($gen_peers_total)TK Was NOT Paid to Public Key:<BR>" . base64_encode($pay_this_public_key), "GP");
+										write_log("IPv6 Generation Fee ($gen_peers_total_payment)TK Was NOT Paid to Public Key:<BR>" . base64_encode($pay_this_public_key), "GP");
 										$all_generating_peers_paid = FALSE;
 										break;
 									}
@@ -1305,7 +1307,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								}
 								else
 								{
-									write_log("IPv6 Generation Fee ($gen_peers_total)TK Has NOT Been Paid to All Generating Peers by Public Key:<BR>" . base64_encode($public_key), "GP");
+									write_log("IPv6 Generation Fee ($gen_peers_total_payment)TK Has NOT Been Paid to All Generating Peers by Public Key:<BR>" . base64_encode($public_key), "GP");
 								}								
 							}
 							else if($my_public_key == $public_key)
