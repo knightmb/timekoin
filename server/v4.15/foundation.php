@@ -340,39 +340,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 	if($TK_foundation_seed == 0)
 	{
 		// Missing TK Foundation Seed, Create a New One
-		// Do we have a valid and recent transaction foundation to access?
-		$TK_foundation_seed_block = foundation_cycle(-2, TRUE);
-		$TK_foundation_seed_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_foundation` WHERE `block` = $TK_foundation_seed_block LIMIT 1"),0,0);
-		
-		if(empty($TK_foundation_seed_hash) == FALSE)
-		{
-			write_log("Re-calculating Network Seed via Transaction Foundation #$TK_foundation_seed_block", "FO");
-
-			// Create a number from the hash to seed the TK random number generator
-			$number_seed = NULL;
-			$number_seed.=	getCharFreq($TK_foundation_seed_hash, 1);
-			$number_seed.=	getCharFreq($TK_foundation_seed_hash, 2);
-			$number_seed.=	getCharFreq($TK_foundation_seed_hash, 3);
-			$number_seed.=	getCharFreq($TK_foundation_seed_hash, 4);
-			$number_seed.=	getCharFreq($TK_foundation_seed_hash, 5);
-			$number_seed.=	getCharFreq($TK_foundation_seed_hash, 6);
-			$number_seed.=	getCharFreq($TK_foundation_seed_hash, 7);
-			$number_seed.=	getCharFreq($TK_foundation_seed_hash, 8);
-			$number_seed.=	getCharFreq($TK_foundation_seed_hash, 9);
-
-			// Save new seed number
-			if(mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$number_seed' WHERE `main_loop_status`.`field_name` = 'TKFoundationSeed' LIMIT 1") == FALSE)
-			{
-				write_log("Database ERROR Saving Network Seed via Transaction Foundation #$TK_foundation_seed_block", "FO");
-			}
-		}
-		else
-		{
-			if(rand(1,4) == 4)// Spam this error less
-			{
-				write_log("Missing Transaction Foundation #$TK_foundation_seed_block to Build TK Foundation Seed", "FO");
-			}
-		}
+		TK_foundation_seed();
 	}
 //***********************************************************************************
 // How many foundation blocks exist?

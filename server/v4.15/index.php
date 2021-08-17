@@ -2236,7 +2236,7 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			$current_generation_cycle = transaction_cycle($i);
 
-			if(generation_cycle($i) == TRUE)
+			if(generation_cycle($i, $TKFoundationSeed) == TRUE)
 			{
 				$time_generate = '<font color="blue"><strong>' . tk_time_convert($current_generation_cycle - time()) . '</strong></font>';
 				break;
@@ -2353,6 +2353,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$total_elections = 0;
 			$max_cycles_ahead = 576;
 			$total_ipv6_elections = 0;
+			
 			// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
 			$gen_peers_total = num_gen_peers(TRUE);
 
@@ -2381,7 +2382,6 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 
 			$body_string2 = '<strong>Total IPv6 Peer Elections in the Next ' . $max_cycles_ahead . ' Transaction Cycles :</strong> <font color="blue"><strong>' . $total_ipv6_elections . '</strong></font><br>' . $body_string2 . '<br><br>';
-
 			$body_string = '<strong>Total IPv4 Peer Elections in the Next ' . $max_cycles_ahead . ' Transaction Cycles :</strong> <font color="blue"><strong>' . $total_elections . '</strong></font><br>' . $body_string;
 			$body_string.= $body_string2;
 			
@@ -2396,31 +2396,14 @@ if($_SESSION["valid_login"] == TRUE)
 			$total_generations = 0;
 			$max_cycles_ahead = 288;
 
-			if(version_compare(PHP_VERSION, '7.1.0', '<') == TRUE)
-			{
-				require_once 'mersenne_twister.php';
-				$mersenne_twister = TRUE;
-			}
-
 			for ($i = 1; $i < $max_cycles_ahead; $i++)
 			{
 				$current_generation_cycle = transaction_cycle($i);
 				
 				$str = strval($current_generation_cycle);
 				$last3_gen = $str[strlen($str)-3];
-
 				$current_generation_block = transaction_cycle($i, TRUE);
-
-				if($mersenne_twister == FALSE)
-				{
-					mt_srand($TKFoundationSeed + $current_generation_block);
-					$tk_random_number = mt_rand(0, 9);
-				}
-				else
-				{
-					$twister1 = new twister($TKFoundationSeed + $current_generation_block);
-					$tk_random_number = $twister1->rangeint(0, 9);
-				}				
+				$tk_random_number = TKRandom(0, 9, $TKFoundationSeed + $current_generation_block);
 
 				if($last3_gen + $tk_random_number < 6)
 				{

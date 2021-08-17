@@ -1213,6 +1213,36 @@ function TKFoundationSeed()
 }
 //***********************************************************************************
 //***********************************************************************************
+function TKRandom($range_start = 0, $range_end = 1, $custom_seed = "")
+{
+	if(version_compare(PHP_VERSION, '7.1.0', '<') == TRUE)
+	{
+		require_once 'mersenne_twister.php';
+		$require_mersenne_twister = TRUE;
+	}
+
+	if($custom_seed == "")
+	{
+		$custom_seed = TKFoundationSeed();
+	}
+
+	if($require_mersenne_twister == FALSE)
+	{
+		// Standard PHP v7.1.0 or higher
+		mt_srand($custom_seed);
+		$tk_random_number = mt_rand($range_start, $range_end);
+	}
+	else
+	{
+		// PHP less that v7.1.0 - custom code Mersenne Twister
+		$twister1 = new twister($custom_seed);
+		$tk_random_number = $twister1->rangeint($range_start, $range_end);
+	}
+
+	return $tk_random_number;
+}
+//***********************************************************************************
+//***********************************************************************************
 function scorePublicKey($public_key = "", $score_key = FALSE)
 {
 	// Get the last 343 characters of the public key to make it fair for those using longer or shorter public keys
@@ -1486,8 +1516,13 @@ function election_cycle($when = 0, $ip_type = 1, $gen_peers_total = 0, $plugin_s
 }
 //***********************************************************************************
 //***********************************************************************************
-function generation_cycle($when = 0)
+function generation_cycle($when = 0, $custom_seed = "")
 {
+	if($custom_seed == "")
+	{
+		$custom_seed = TKFoundationSeed();
+	}
+
 	// Check if currency generation should take place now or
 	// so many cycles ahead in the future
 	if($when == 0)
@@ -1506,25 +1541,7 @@ function generation_cycle($when = 0)
 	$str = strval($current_generation_cycle);
 	$last3_gen = intval($str[strlen($str)-3]);
 
-	if(version_compare(PHP_VERSION, '7.1.0', '<') == TRUE)
-	{
-		require_once('mersenne_twister.php');// For Earlier PHP Versions (less than v7.1)
-		$twister1 = new twister(TKFoundationSeed() + $current_generation_block);
-		$mersenne_twister = TRUE;
-	}
-	else
-	{
-		mt_srand(TKFoundationSeed() + $current_generation_block);
-	}
-	
-	if($mersenne_twister == FALSE)
-	{
-		$tk_random_number = mt_rand(0, 9);
-	}
-	else
-	{
-		$tk_random_number = $twister1->rangeint(0, 9);
-	}
+	$tk_random_number = TKRandom(0, 9, $custom_seed + $current_generation_block);
 
 	if($last3_gen + $tk_random_number < 6)
 	{
@@ -1636,46 +1653,19 @@ function unix_timestamp_to_human($timestamp = "", $default_timezone = "", $forma
 function gen_simple_poll_test($ip_address = "", $domain = "", $subfolder = "", $port_number = "")
 {
 	$simple_poll_fail = FALSE; // Reset Variable
-
-	if(version_compare(PHP_VERSION, '7.1.0', '<') == TRUE)
-	{
-		require_once('mersenne_twister.php');// For Earlier PHP Versions (less than v7.1)
-		$twister1 = new twister(TKFoundationSeed() + transaction_cycle(0, TRUE));
-		$mersenne_twister = TRUE;
-	}
-	else
-	{
-		mt_srand(TKFoundationSeed() + transaction_cycle(0, TRUE));
-	}
-
-	// Grab random Transaction Foundation Hash
+	$custom_seed = TKFoundationSeed() + transaction_cycle(0, TRUE);
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
-	if($mersenne_twister == FALSE)
-	{
-		 // Range from Start to Last 5 Foundation Hash
-		$rand_block = mt_rand(0,foundation_cycle(0, TRUE) - 5);
-	}
-	else
-	{
-		$rand_block = $twister1->rangeint(0,foundation_cycle(0, TRUE) - 5);
-	}
-	
-	$random_foundation_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_foundation` WHERE `block` = $rand_block LIMIT 1"),0,0);
+	// Grab random Transaction Foundation Hash
+	// Range from Start to Last 5 Foundation Hash
+	$rand_block = TKRandom(0,foundation_cycle(0, TRUE) - 5, $custom_seed);
+	$random_foundation_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_foundation` WHERE `block` = $rand_block LIMIT 1"));
 
 	// Grab random Transaction Hash
-	if($mersenne_twister == FALSE)
-	{	
-		 // Range from Start to Last 1000 Transaction Hash
-		$rand_block2 = mt_rand(transaction_cycle((0 - transaction_cycle(0, TRUE)), TRUE), transaction_cycle(-1000, TRUE));
-	}
-	else
-	{
-		$rand_block2 = $twister1->rangeint(transaction_cycle((0 - transaction_cycle(0, TRUE)), TRUE), transaction_cycle(-1000, TRUE));
-	}
-
+	// Range from Start to Last 1000 Transaction Hash
+	$rand_block2 = TKRandom(transaction_cycle((0 - transaction_cycle(0, TRUE)), TRUE), transaction_cycle(-1000, TRUE), $custom_seed);
 	$rand_block2 = transaction_cycle(0 - $rand_block2);
-	$random_transaction_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_history` WHERE `timestamp` = $rand_block2 LIMIT 1"),0,0);
+	$random_transaction_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_history` WHERE `timestamp` = $rand_block2 LIMIT 1"));
 	$rand_block2 = ($rand_block2 - TRANSACTION_EPOCH - 300) / 300;
 
 	if(empty($random_foundation_hash) == FALSE) // Make sure we had one to compare first
@@ -2082,6 +2072,49 @@ function auto_update_IP_address($new_start = FALSE)
 	}	
 }
 //***********************************************************************************
+//***********************************************************************************
+function TK_foundation_seed()
+{
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+
+	// Do we have a valid and recent transaction foundation to access?
+	$TK_foundation_seed_block = foundation_cycle(-2, TRUE);
+	$TK_foundation_seed_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_foundation` WHERE `block` = $TK_foundation_seed_block LIMIT 1"));
+
+	if(empty($TK_foundation_seed_hash) == FALSE)
+	{
+		write_log("Re-calculating Network Seed via Transaction Foundation #$TK_foundation_seed_block", "FO");
+
+		// Create a number from the hash to seed the TK random number generator
+		$number_seed = NULL;
+		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 1);
+		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 2);
+		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 3);
+		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 4);
+		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 5);
+		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 6);
+		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 7);
+		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 8);
+		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 9);
+
+		$sql = "UPDATE `main_loop_status` SET `field_data` = '$number_seed' WHERE `main_loop_status`.`field_name` = 'TKFoundationSeed' LIMIT 1";
+
+		// Save new seed number
+		if(mysqli_query($db_connect, $sql) == FALSE)
+		{
+			write_log("Database ERROR Saving Network Seed via Transaction Foundation #$TK_foundation_seed_block", "FO");
+		}
+	}
+	else
+	{
+		if(rand(1,4) == 4)// Spam this error less
+		{
+			write_log("Missing Transaction Foundation #$TK_foundation_seed_block to Build TK Foundation Seed", "FO");
+		}
+	}
+}
+//***********************************************************************************
+//***********************************************************************************
 function initialization_database()
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
@@ -2161,34 +2194,9 @@ function initialization_database()
 
 	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0);
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('network_mode', '$db_to_RAM')");	
-	//**************************************
 	//***********************************************************************************
-	// Check that the TK Foundation Seed is set in memory
-	// Do we have a valid and recent transaction foundation to access?
-	$TK_foundation_seed_block = foundation_cycle(-2, TRUE);
-	$TK_foundation_seed_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_foundation` WHERE `block` = $TK_foundation_seed_block LIMIT 1"),0,0);
-	
-	if(empty($TK_foundation_seed_hash) == FALSE)
-	{
-		// Create a number from the hash to seed the TK random number generator
-		$number_seed = NULL;
-		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 1);
-		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 2);
-		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 3);
-		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 4);
-		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 5);
-		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 6);
-		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 7);
-		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 8);
-		$number_seed.=	getCharFreq($TK_foundation_seed_hash, 9);
-
-		// Save new seed number
-		mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$number_seed' WHERE `main_loop_status`.`field_name` = 'TKFoundationSeed' LIMIT 1");
-	}
-	else
-	{
-		write_log("Missing Transaction Foundation #$TK_foundation_seed_block to Build TK Foundation Seed", "MA");
-	}
+	// Create the TK Foundation Seed in memory
+	TK_foundation_seed();
 	//***********************************************************************************
 	// Auto Detect IP Address on Start if Empty
 	auto_update_IP_address(TRUE);
