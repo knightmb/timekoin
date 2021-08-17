@@ -687,6 +687,10 @@ function system_screen()
 	{
 		$gen_hash = '<font color="green">' . $gen_hash . '</font>';
 	}
+	else if($gen_list_no_sync > 0 && $gen_list_no_sync < 3)
+	{
+		$gen_hash = '<font color="darkorange">' . $gen_hash . '</font>';
+	}
 	else
 	{
 		$gen_hash = '<font color="red">' . $gen_hash . '</font>';
