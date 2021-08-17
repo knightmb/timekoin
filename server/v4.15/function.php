@@ -3211,19 +3211,52 @@ function check_standard_tab_settings($permissions_number = "", $standard_tab = "
 }
 //***********************************************************************************
 //***********************************************************************************
-function file_upload($http_file_name = "")
+function file_upload($http_file_name = "", $keys_file = FALSE)
 {
-	$user_file_upload = strtolower(basename($_FILES[$http_file_name]['name']));
-
-	if(move_uploaded_file($_FILES[$http_file_name]['tmp_name'], "plugins/" . $user_file_upload) == TRUE)
+	if($keys_file == FALSE)
 	{
-		// Upload successful
-		return $user_file_upload;
+		// Plugin File
+		$user_file_upload = strtolower(basename($_FILES[$http_file_name]['name']));
+
+		if(move_uploaded_file($_FILES[$http_file_name]['tmp_name'], "plugins/" . $user_file_upload) == TRUE)
+		{
+			// Upload successful
+			return $user_file_upload;
+		}
+		else
+		{
+			// Error during upload
+			return FALSE;
+		}
 	}
 	else
 	{
-		// Error during upload
-		return FALSE;
+		// Keys File
+		$user_file_upload = "key_restore_" . mt_rand(0,1000000) . ".txt";
+		
+		if(move_uploaded_file($_FILES[$http_file_name]['tmp_name'], "plugins/" . $user_file_upload) == TRUE)
+		{
+			// Upload successful
+			$handle = fopen("plugins/" . $user_file_upload, "r");
+			$contents = stream_get_contents($handle);
+			fclose($handle);
+			
+			if(unlink("plugins/" . $user_file_upload) == TRUE)
+			{
+				// Have file contents, now delete copy from disk for security reasons
+				return $contents;
+			}
+			else
+			{
+				// Could not delete file, keys might be stolen if left on the server drive
+				return 1;
+			}
+		}
+		else
+		{
+			// Error during upload
+			return FALSE;
+		}
 	}	
 }
 //***********************************************************************************
@@ -3398,5 +3431,140 @@ function find_v6_gen_join($my_public_key = "")
 	return;
 }
 //***********************************************************************************
+//***********************************************************************************
+function create_new_easy_key($my_private_key = "", $my_public_key = "", $new_easy_key = "")
+{
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);	
 
+	// Check the electoin schedule, current genreating peers and calculate
+	// how long it will take to create the easy key shortcut.
+	if(strlen($new_easy_key) >= 1 && strlen($new_easy_key) <= 64)
+	{
+		$old_strlen = strlen($new_easy_key);
+		$new_easy_key = filter_sql($new_easy_key);
+		$symbols = array("|", "?", "="); // SQL + URL
+		$new_easy_key = str_replace($symbols, "", $new_easy_key);
+
+		if($old_strlen == strlen($new_easy_key))
+		{
+			// Does the easy key already exist?
+			$easy_key_lookup = easy_key_lookup($new_easy_key);
+			$create_check = FALSE;
+
+			if($easy_key_lookup == "")
+			{
+				// None exist, let's create it
+				$create_check = TRUE;
+			}
+			else
+			{
+				// One already exist, is it ours?
+				if($easy_key_lookup == $my_public_key)
+				{
+					// Going to renew our existing easy key
+					$create_check = TRUE;
+				}
+			}
+
+			if($create_check == TRUE)
+			{
+				// All checks complete for valid input, check if server has enough TK
+				// to purchase the Easy Key
+				$num_gen_peers = num_gen_peers(FALSE, TRUE); // Number of unique peer public keys
+			
+				if(db_cache_balance($my_public_key) >= ($num_gen_peers + 1))
+				{
+					$gen_peer_queue_num = intval(mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_queue`")));
+					$delay_calcuation = round($num_gen_peers / 100);
+					if($delay_calcuation == 0) { $delay_calcuation = 1; }// Range check
+					$final_transaction_delay = $delay_calcuation + 1;
+
+					if($gen_peer_queue_num > 0)
+					{
+						// An Election is going to start soon, how long until it is finished?
+						$e_counter = 9;
+					
+						// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
+						$gen_peers_total = num_gen_peers(TRUE);// For ipv6
+
+						while($e_counter >= 0)
+						{
+							if(election_cycle($e_counter) == TRUE || election_cycle($e_counter, 2, $gen_peers_total) == TRUE)
+							{
+								// An election will take place in the next X amount of transaction cycles
+								break;
+							}
+							
+							$e_counter--;
+						}
+
+						// How many transactions cycles will it takes to send to all generating servers and then follow up with
+						// the final transaction for the new Easy Key?						
+						if($e_counter < $final_transaction_delay && $e_counter >= 0)
+						{
+							// The election will take place before the key can pushed into the network.
+							return 5;
+						}						
+					}
+					
+					$sql = "SELECT public_key FROM `generating_peer_list` GROUP BY `public_key`";
+					$sql_result = mysqli_query($db_connect, $sql);
+					$sql_num_results = mysqli_num_rows($sql_result);
+
+					for ($i = 0; $i < $sql_num_results; $i++)
+					{
+						$sql_row = mysqli_fetch_array($sql_result);
+
+						if($sql_row["public_key"] != $my_public_key)
+						{
+							if(send_timekoins($my_private_key, $my_public_key, $sql_row["public_key"], 1, "New Easy Key Fee") == FALSE)
+							{
+								write_log("New Easy Key Fee Transaction Failed for Public Key:<br>" . base64_encode($sql_row["public_key"]),"GU");
+								return 6;
+							}
+							else
+							{
+								write_log("New Easy Key Fee Sent to Public Key:<br>" . base64_encode($sql_row["public_key"]),"GU");
+							}
+						}
+					}
+					
+					// Finally, send transaction to Easy Key Blackhole Address
+					// with a X Minutes Delay
+					if(send_timekoins($my_private_key, $my_public_key, base64_decode(EASY_KEY_PUBLIC_KEY), 1, $new_easy_key, transaction_cycle($final_transaction_delay)) == TRUE)
+					{
+						// Return how many seconds to wait until key is active
+						return $final_transaction_delay * 300;
+					}
+					else
+					{
+						write_log("Easy Key Transaction for Creation Failed to Send","GU");
+						return 7;
+					}
+				}
+				else
+				{
+					// Key does not have enough balance to pay for the key
+					return 4;
+				}
+			}
+			else
+			{
+				// Easy Key Already Taken
+				return 3;
+			}
+		}
+		else
+		{
+			return 2; // Invalid Characters in Easy Key
+		}
+	}
+	else
+	{
+		return 1; // Wrong Character Length Easy Key
+	}
+
+	return 0; // Unknown Error
+}
+//***********************************************************************************
 ?>

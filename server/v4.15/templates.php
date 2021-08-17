@@ -978,31 +978,31 @@ function backup_body($private_key = "", $public_key = "", $cancel_private = FALS
 	if($cancel_private == TRUE)
 	{
 		// Redo menu to show cancel or complete buttons
-		$form_action = '<FORM ACTION="index.php?menu=backup&amp;dorestore=private" METHOD="post">';
+		$form_action = '<FORM ACTION="index.php?menu=backup&amp;dorestore=private#11111" METHOD="post">';
 		$are_you_sure = '<br><font color="red"><strong>This will over-write the Private Key<br> for your server. Are you sure?</strong></font>';
 	}
 	else
 	{
-		$form_action = '<FORM ACTION="index.php?menu=backup&amp;restore=private" METHOD="post">';
+		$form_action = '<FORM ACTION="index.php?menu=backup&amp;restore=private#11111" METHOD="post">';
 	}
 
 	if($cancel_public == TRUE)
 	{
 		// Redo menu to show cancel or complete buttons
-		$form_action2 = '<FORM ACTION="index.php?menu=backup&amp;dorestore=public" METHOD="post">';
+		$form_action2 = '<FORM ACTION="index.php?menu=backup&amp;dorestore=public#22222" METHOD="post">';
 		$are_you_sure2 = '<br><font color="red"><strong>This will over-write the Public Key<br> for your server. Are you sure?</strong></font>';		
 	}
 	else
 	{
-		$form_action2 = '<FORM ACTION="index.php?menu=backup&amp;restore=public" METHOD="post">';
+		$form_action2 = '<FORM ACTION="index.php?menu=backup&amp;restore=public#22222" METHOD="post">';
 	}
 
-	return $form_action . '<table border="0" cellpadding="6"><tr><td colspan="2"><strong><font color="blue">Restore Private Key</font></strong></td></tr>
+	return $form_action . '<table border="0" cellpadding="6"><tr><td colspan="2"><strong><h9 id="11111"></h9><font color="blue">Restore Single Private Key</font></strong></td></tr>
 	<tr><td colspan="2"><textarea name="restore_private_key" rows="5" cols="90">' . $private_key . '</textarea></td></tr>
 	<tr><td><input type="submit" value="Restore Private Key"/>' . $are_you_sure . '</td></tr>
 	<tr><td colspan="2"><hr></td></tr></table></FORM>
 	' . $form_action2 . '<table border="0" cellpadding="6">
-	<tr><td colspan="2"><strong><font color="green">Restore Public Key</font></strong></td></tr>
+	<tr><td colspan="2"><strong><h9 id="22222"></h9><font color="green">Restore Single Public Key</font></strong></td></tr>
 	<tr><td colspan="2"><textarea name="restore_public_key" rows="5" cols="90">' . $public_key . '</textarea></td></tr>
 	<tr><td><input type="submit" value="Restore Public Key"/>' . $are_you_sure2 . '</td></tr></table></FORM>';
 }

@@ -2586,133 +2586,56 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["easy_key"] == "create")
 		{
-			// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
-			$gen_peers_total = num_gen_peers(TRUE);
-			$peer_election = FALSE;
-			$gen_peer_queue_num = intval(mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `generating_peer_queue`")));
+			$new_easy_key = $_POST["new_easy_key"];
+			$create_easy_key = create_new_easy_key(my_private_key(), $my_public_key, $new_easy_key);
+			$body_string;
 
-			if((election_cycle(9) == TRUE ||
-				election_cycle(8) == TRUE ||
-				election_cycle(7) == TRUE ||
-				election_cycle(6) == TRUE ||
-				election_cycle(5) == TRUE ||
-				election_cycle(4) == TRUE ||
-				election_cycle(3) == TRUE ||
-				election_cycle(2) == TRUE ||
-				election_cycle(1) == TRUE ||
-				election_cycle(0) == TRUE ||
-				election_cycle(9, 2, $gen_peers_total) == TRUE ||
-				election_cycle(8, 2, $gen_peers_total) == TRUE ||
-				election_cycle(7, 2, $gen_peers_total) == TRUE ||
-				election_cycle(6, 2, $gen_peers_total) == TRUE ||
-				election_cycle(5, 2, $gen_peers_total) == TRUE ||
-				election_cycle(4, 2, $gen_peers_total) == TRUE ||
-				election_cycle(3, 2, $gen_peers_total) == TRUE ||
-				election_cycle(2, 2, $gen_peers_total) == TRUE ||
-				election_cycle(1, 2, $gen_peers_total) == TRUE ||
-				election_cycle(0, 2, $gen_peers_total) == TRUE) && $gen_peer_queue_num > 0)
+			if($create_easy_key > 300)// Success time will always be at least more than 1 transaction cycle
 			{
-				// Don't create an Easy Key right before a peer election
-				// or it will throw up the fees since a new server appears in the list
-				$body_string = '<BR><BR><font color="red"><strong>A Peer Election is About to Start!<br>
-				You must wait until it is finished as that will change the network fee.</strong></font>';
-				$peer_election = TRUE;
+				$seconds_to_minutes = round($create_easy_key / 60);
+				$body_string = '<BR><BR><font color="green"><strong>Easy Key [' . $new_easy_key . '] Has Been Submitted to the Timekoin Network!</font><BR><BR>
+				Your Easy Key Should be Active Within ' . $seconds_to_minutes . ' Minutes.<BR>
+				If You Are Renewing Your Key Before it Expires, then Expect No Delay.</strong>';
 			}
-
-			if($peer_election == FALSE)
+			else
 			{
-				$new_easy_key = $_POST["new_easy_key"];
-				$easy_key_lookup = easy_key_lookup($new_easy_key);
-				$create_check = FALSE;
-
-				if($easy_key_lookup == "")
+				switch($create_easy_key)
 				{
-					// None exist, let's create it
-					$create_check = TRUE;
+					case 1:
+					$body_string = '<BR><BR><font color="red"><strong>Easy Key: [' . $new_easy_key . '] is Too Short or Too Long!</strong></font>';
+					break;
+
+					case 2:
+					$body_string = '<BR><BR><font color="red"><strong>Easy Key: [' . $new_easy_key . '] Has Invalid Characters!</strong></font>';
+					break;
+
+					case 3:
+					$body_string = '<BR><BR><font color="red"><strong>Easy Key: [' . $new_easy_key . '] is Taken Already!</strong></font>';
+					break;
+
+					case 4:
+					$body_string = '<BR><BR><font color="red"><strong>Creation Fee of [' . (num_gen_peers(FALSE, TRUE) + 1) . '] TK Needed to Create This Easy Key!</strong></font>';
+					break;
+
+					case 5:
+					$body_string = '<BR><BR><font color="red"><strong>A Peer Election is About to Start!<br>You must wait until it is finished as that will change the network fee.</strong></font>';
+					break;
+
+					case 6:
+					$body_string = '<BR><BR><font color="red"><strong>New Easy Key Fee Transaction Failed to Send to a Public Key</strong></font>';
+					break;
+
+					case 7:
+					$body_string = '<BR><BR><font color="red"><strong>Easy Key Transaction for Creation Failed to Send</strong></font>';
+					break;					
+
+					default:
+					$body_string = '<BR><BR><font color="red"><strong>Easy Key: [' . $new_easy_key . '] Unknown ERROR!</strong></font>';
+					break;
 				}
-				else
-				{
-					// One already exist, is it ours?
-					if($easy_key_lookup == $my_public_key)
-					{
-						// Going to renew our existing easy key
-						$create_check = TRUE;
-					}
-				}
-
-				if($create_check == TRUE)
-				{
-					if(strlen($new_easy_key) >= 1 && strlen($new_easy_key) <= 64)
-					{
-						$old_strlen = strlen($new_easy_key);
-						$new_easy_key = filter_sql($new_easy_key);
-						$symbols = array("|", "?", "="); // SQL + URL
-						$new_easy_key = str_replace($symbols, "", $new_easy_key);
-
-						if($old_strlen == strlen($new_easy_key))
-						{
-							// All checks complete for valid input, check if server has enough TK
-							// to purchase the Easy Key
-							if(db_cache_balance($my_public_key) >= (num_gen_peers(FALSE, TRUE) + 1))
-							{
-								$sql = "SELECT public_key FROM `generating_peer_list` GROUP BY `public_key`";
-								$sql_result = mysqli_query($db_connect, $sql);
-								$sql_num_results = mysqli_num_rows($sql_result);
-								$my_private_key = my_private_key();
-
-								for ($i = 0; $i < $sql_num_results; $i++)
-								{
-									$sql_row = mysqli_fetch_array($sql_result);
-
-									if($sql_row["public_key"] != $my_public_key)
-									{
-										if(send_timekoins($my_private_key, $my_public_key, $sql_row["public_key"], 1, "New Easy Key Fee") == FALSE)
-										{
-											write_log("New Easy Key Fee Transaction Failed for Public Key:<br>" . base64_encode($sql_row["public_key"]),"GU");
-										}
-										else
-										{
-											write_log("New Easy Key Fee Sent to Public Key:<br>" . base64_encode($sql_row["public_key"]),"GU");
-										}
-									}
-								}
-								
-								// Finally, send transaction to Easy Key Blackhole Address
-								// with a 45 Minute Delay
-								if(send_timekoins($my_private_key, $my_public_key, base64_decode(EASY_KEY_PUBLIC_KEY), 1, $new_easy_key, transaction_cycle(9)) == TRUE)
-								{
-									$body_string = '<BR><BR><font color="green"><strong>Easy Key [' . $new_easy_key . '] Has Been Submitted to the Timekoin Network!</font><BR><BR>
-									Your Easy Key Should be Active Within 45 Minutes.<BR>
-									If You Are Renewing Your Key Before it Expires, then Expect No Delay.</strong>';
-								}
-								else
-								{
-									$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' Creation Failed!<BR>Could Not Send Final Transaction!</strong></font>';
-									write_log("Easy Key Transaction for Creation Failed to Send","GU");
-								}
-							}
-							else
-							{
-								$body_string = '<BR><BR><font color="red"><strong>Creation Fee of [' . (num_gen_peers(FALSE, TRUE) + 1) . '] TK Needed to Create This Easy Key!</strong></font>';
-							}
-						}
-						else
-						{
-							$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' Has Invalid Characters!</strong></font>';
-						}
-					}
-					else
-					{
-						$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' Character Length Incorrect!</strong></font>';
-					}
-				}
-				else
-				{
-					$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' is Taken Already!</strong></font>';
-				}
-
-			}// Peer Election Check
-		}
+			}
+			
+		}// Easy Key Creation
 
 		$counter = 1;
 		$easy_key_lookup = easy_key_reverse_lookup($my_public_key, $counter);
@@ -3646,11 +3569,11 @@ if($_SESSION["valid_login"] == TRUE)
 				// Blank reverse crypto data field
 				mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");				
 				
-				$server_message = '<br><font color="blue"><strong>Private Key Restore Complete!</strong></font><br><br>';
+				$key_message = '<font color="green"><strong>*** Private Key Restore Complete! ***</strong></font><br>';
 			}
 			else
 			{
-				$server_message = '<br><font color="red"><strong>Private Key Restore FAILED!</strong></font><br><br>';
+				$key_message = '<font color="red"><strong>Private Key Restore FAILED!</strong></font><br>';
 			}
 		}
 
@@ -3663,11 +3586,11 @@ if($_SESSION["valid_login"] == TRUE)
 				// Blank reverse crypto data field
 				mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
 
-				$server_message = '<br><font color="blue"><strong>Public Key Restore Complete!</strong></font><br><br>';
+				$key_message = '<font color="green"><strong>*** Public Key Restore Complete! ***</strong></font><br>';
 			}
 			else
 			{
-				$server_message = '<br><font color="red"><strong>Public Key Restore FAILED!</strong></font><br><br>';
+				$key_message = '<font color="red"><strong>Public Key Restore FAILED!</strong></font><br>';
 			}
 		}
 
@@ -3707,19 +3630,97 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string = backup_body();
 		}
 
-		$body_string .= $server_message;
+		if($_GET["keys"] == "download")
+		{
+			$my_generation_IP = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"));
+			$my_generation_IP_v6 = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP_v6' LIMIT 1"));			
+			$symbols = array(".", ":");
+
+			if(empty($my_generation_IP) == FALSE)
+			{
+				$my_generation_IP = str_replace($symbols, "_", $my_generation_IP);
+				$my_generation_IP = 'ipv4-' . $my_generation_IP . '-';
+			}
+
+			if(empty($my_generation_IP_v6) == FALSE)
+			{
+				$my_generation_IP_v6 = str_replace($symbols, "_", $my_generation_IP_v6);
+				$my_generation_IP_v6 = 'ipv6-' . $my_generation_IP_v6;
+			}
+
+			$content = '---TKPRIVATEKEY=' . base64_encode($my_private_key) . '---ENDTKPRIVATEKEY' . "\n\r";
+			$content.= '---TKPUBLICKEY=' . base64_encode($my_public_key) . '---ENDTKPUBLICKEY';			
+			$length = strlen($content);
+			header('Content-Description: File Transfer');
+			header('Content-Type: text/plain');
+			header('Content-Disposition: attachment; filename=TK-Server-Keys-' . $my_generation_IP . $my_generation_IP_v6 . '.txt');
+			header('Content-Transfer-Encoding: binary');
+			header('Content-Length: ' . $length);
+			header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+			header('Expires: 0');
+			header('Pragma: public');
+			echo $content;
+			exit;
+		}
+
+		if($_GET["keys"] == "restore")
+		{
+			// Restore Server Private & Public Keys
+			$new_server_keys = file_upload("key_file", TRUE);
+			if($new_server_keys != 1)
+			{
+				$restore_private_key = find_string("---TKPRIVATEKEY=", "---ENDTKPRIVATEKEY", $new_server_keys);
+				$restore_public_key = find_string("---TKPUBLICKEY=", "---ENDTKPUBLICKEY", $new_server_keys);
+
+				if(empty($restore_private_key) == FALSE && empty($restore_public_key) == FALSE)
+				{
+					$sql = "UPDATE `my_keys` SET `field_data` = '" . base64_decode($restore_private_key) . "' WHERE `my_keys`.`field_name` = 'server_private_key' LIMIT 1";
+					$sql2 = "UPDATE `my_keys` SET `field_data` = '" . base64_decode($restore_public_key) . "' WHERE `my_keys`.`field_name` = 'server_public_key' LIMIT 1";
+
+					if(mysqli_query($db_connect, $sql) == TRUE && mysqli_query($db_connect, $sql2) == TRUE)
+					{
+						// Blank reverse crypto data field
+						mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
+						$key_message = '<br><font color="green"><strong>Private & Public Key Restore Complete!</strong></font><br>';
+
+						$my_private_key = base64_decode($restore_private_key);
+						$my_public_key = base64_decode($restore_public_key);
+					}
+					else
+					{
+						$key_message = '<font color="red"><strong>PRIVATE & PUBLIC KEY RESTORE FAILED!</strong></font><br>';
+					}
+				}
+				else
+				{
+					$key_message = '<font color="red"><strong>COULD NOT FIND THE PRIVATE & PUBLIC KEYS</strong></font><br>';
+				}
+			}
+			else
+			{
+				// Delete Error, Alert User!
+				$key_message = '<font color="red"><strong>SECURITY ISSUE! The Key File Was NOT Deleted After Upload.<br>You Will Need to Manually Delete It From the Plugins Folder.</strong></font><br>';
+			}
+		}
 
 		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong><font color="blue">Private Key</font> to encrypt transactions:</strong></td></tr>
 		<tr><td><textarea id="current_private_key" readonly="readonly" rows="8" cols="90">' . base64_encode($my_private_key) . '</textarea><br>
 		<button title="Copy Private Key to Clipboard" onclick="myPrivateKey()"><span id="myTooltip">Copy Private Key</span></button></td></tr></table>
-		<table border="0" cellpadding="6"><tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
-		<tr><td><textarea id="current_public_key" readonly="readonly" rows="6" cols="90">' . base64_encode($my_public_key) . '</textarea><br>
-		<button title="Copy Public Key to Clipboard" onclick="myPublicKey()"><span id="myTooltip2">Copy Public Key</span></button></td></tr></table>';
+		<table border="0" cellpadding="6"><tr><td colspan="2"><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
+		<tr><td colspan="2"><textarea id="current_public_key" readonly="readonly" rows="6" cols="90">' . base64_encode($my_public_key) . '</textarea><br>
+		<button title="Copy Public Key to Clipboard" onclick="myPublicKey()"><span id="myTooltip2">Copy Public Key</span></button></td></tr>
+		<tr><td colspan="2"><hr></td></tr><tr><td><FORM ACTION="index.php?menu=backup&amp;keys=download" METHOD="post"><input type="submit" value="Download Keys"/></FORM></td>
+		<td>' . $key_message . '<strong>Use the Browse Button to Select the Key File to Restore</strong><br><br>
+		<FORM ENCTYPE="multipart/form-data" METHOD="POST" ACTION="index.php?menu=backup&amp;keys=restore">
+		<INPUT NAME="key_file" TYPE="file" SIZE=32><br><br>
+		<input type="submit" name="SubmitNew" value="Restore Keys" onclick="return confirm(\'This Will Over-Write Your Existing Private & Public Keys. Continue?\');" /></FORM>
+		</td></tr></table>';
 
 		$quick_info = '<strong>Do Not</strong> share your <strong>Private Key</strong> with anyone for any reason.<br><br>
 		The <strong>Private Key</strong> encrypts all transactions from your server.<br><br>
 		You should make a backup of both keys in case you want to transfer your balance to a new server or restore from a server failure.<br><br>
-		Save both keys in a password protected text file or external device that you can secure (CD, Flash Drive, Printed Paper, etc.)';
+		<strong><font color="blue">Download Keys</font></strong> will create a text file that can be used to restore the keys on this or a different server.<br><br>
+		Save both keys in a password protected document or external device that you can secure (CD, Flash Drive, Printed Paper, etc.)';
 
 		home_screen('Backup &amp; Restore Keys', $clipboard_copy . $text_bar, $body_string , $quick_info);
 		exit;		
