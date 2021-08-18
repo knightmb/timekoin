@@ -724,6 +724,28 @@ function tk_client_task()
 			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '1' WHERE `options`.`field_name` = 'update_available' LIMIT 1");
 		}
 	}
+
+	// Trim old activity logs to prevent database from filling up too much space
+	// Retain last X number of activity logs
+	if(mt_rand(1,500) == 100) // Randomize a little to save DB usage
+	{
+		$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+		$activity_log_max = 1000;
+		$activity_log_count = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `activity_logs`"));
+
+		if($activity_log_count > $activity_log_max)
+		{
+			// Trim the oldest records
+			mysqli_query($db_connect, "DELETE FROM `activity_logs` ORDER BY `timestamp` ASC LIMIT " . ($activity_log_count - $activity_log_max) . "");
+
+			// Optimize Table to Reclaim Space
+			mysqli_query($db_connect, "OPTIMIZE TABLE `activity_logs`");
+
+			// Log Activity Log Maintenance
+			write_log("Activity Log Purged of the Last [" . ($activity_log_count - $activity_log_max) . "] Oldest Records", "GU");
+		}
+	}
+
 	return;
 }
 //***********************************************************************************

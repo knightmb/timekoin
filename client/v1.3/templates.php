@@ -530,6 +530,7 @@ function options_screen()
 	else
 	{
 		$form_action = '<FORM ACTION="index.php?menu=options&amp;newkeys=generate" METHOD="post">';
+		$create_storage_key_button = '<FORM ACTION="index.php?menu=options&amp;storage_key=new" METHOD="post"><input type="submit" name="Submit3" value="Create Storage Keys" /></FORM>';
 	}
 	
 return '<FORM ACTION="index.php?menu=options&amp;password=change" METHOD="post">
@@ -549,10 +550,10 @@ Current Password: <input type="password" name="current_password" /><br>
 New Password: <input type="password" name="new_password" /><br>
 Confirm Password: <input type="password" name="confirm_password" /><br><br>
 <input type="submit" onclick="showWait()" name="Submit" value="Change" />
-</td><td align="right" valign="top">' . $disable_crypt_checkbox . '</td></tr></table></FORM>
-<table border="0"><tr><td style="width:350px"></td>
-<td valign="bottom" align="right" style="width:325px">' . $confirm_message . $form_action .'
-<input type="submit" onclick="showWait()" name="Submit2" value="Generate New Keys" onclick="showWait()" /></FORM></td></tr>
+</td><td align="right" valign="top">' . $disable_crypt_checkbox . '</td></tr></table></FORM><hr>
+<table border="0"><tr><td>' . $create_storage_key_button . '</td>
+<td valign="bottom" align="right" style="width:100%">' . $confirm_message . $form_action .'
+<input type="submit" name="Submit2" value="Generate New Keys" onclick="showWait()" /></FORM></td></tr>
 </table>';
 } 
 //***********************************************************

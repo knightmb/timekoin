@@ -102,7 +102,7 @@ function write_log($message = "", $type = "")
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	// Write Log Entry
-	mysqli_query($db_connect, "INSERT DELAYED INTO `activity_logs` (`timestamp` ,`log` ,`attribute`)	
+	mysqli_query($db_connect, "INSERT LOW_PRIORITY INTO `activity_logs` (`timestamp` ,`log` ,`attribute`)	
 		VALUES ('" . time() . "', '" . substr($message, 0, 256) . "', '$type')");
 	return;
 }
@@ -180,6 +180,13 @@ function poll_peer($ip_address = "", $domain = "", $subfolder = "", $port_number
 
 	if(empty($domain) == TRUE)
 	{
+		if(filter_var($ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) == TRUE)
+		{
+			// IP Address is IPv6
+			// Fix up the format for proper polling
+			$ip_address = "[" . $ip_address . "]";
+		}
+		
 		$site_address = $ip_address;
 	}
 	else
@@ -899,19 +906,28 @@ function call_script($script = "", $priority = 1, $plugin = FALSE)
 }
 //***********************************************************************************
 //***********************************************************************************	
-function generate_new_keys($bits = 1536)
+function generate_new_keys($bits = 1536, $return_keys_instead = FALSE)
 {
 	require_once('RSA.php');
 
 	$rsa = new Crypt_RSA();
 	extract($rsa->createKey($bits));
 
+	if($return_keys_instead == TRUE)
+	{
+		$keys = array();
+		$keys[0] = $privatekey;
+		$keys[1] = $publickey;
+		return $keys;
+	}
+
 	if(empty($privatekey) == FALSE && empty($publickey) == FALSE)
 	{
+		$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+		
 		$symbols = array("\r");
 		$new_publickey = str_replace($symbols, "", $publickey);
 		$new_privatekey = str_replace($symbols, "", $privatekey);
-		$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
 		$sql = "UPDATE `my_keys` SET `field_data` = '$new_privatekey' WHERE `my_keys`.`field_name` = 'server_private_key' LIMIT 1";
 
@@ -922,9 +938,6 @@ function generate_new_keys($bits = 1536)
 			
 			if(mysqli_query($db_connect, $sql) == TRUE)
 			{
-				// Blank reverse crypto data field
-				mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
-
 				// Public Key Update Success				
 				return 1;
 			}

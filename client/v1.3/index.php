@@ -414,11 +414,11 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			if($_GET["type"] == "new")
 			{
-				// Manually add a peer
+				// Manually add a new peer
 				$body_string = '<FORM ACTION="index.php?menu=peerlist&amp;save=newpeer" METHOD="post">
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
 				<th>Domain</th><th>Subfolder</th><th>Port Number</th><th>Code</th><th></th><th></th></tr><tr>
-				<td class="style2"><input type="text" name="edit_ip" size="13" /></td>
+				<td class="style2"><input type="text" name="edit_ip" size="22" /></td>
 				<td class="style2"><input type="text" name="edit_domain" size="14" /></td>
 				<td class="style2"><input type="text" name="edit_subfolder" size="10" /></td>
 				<td class="style2"><input type="text" name="edit_port" size="5" /></td>
@@ -479,7 +479,7 @@ if($_SESSION["valid_login"] == TRUE)
 				$body_string = '<FORM ACTION="index.php?menu=peerlist&amp;save=peer" METHOD="post">
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0"><tr><th>IP Address</th>
 				<th>Domain</th><th>Subfolder</th><th>Port Number</th><th>Code</th><th></th><th></th></tr><tr>
-				<td class="style2"><input type="text" name="edit_ip" size="13" value="' . $sql_row["IP_Address"] . '" /><br><br>
+				<td class="style2"><input type="text" name="edit_ip" size="22" value="' . $sql_row["IP_Address"] . '" /><br><br>
 				<select name="perm_peer"><option value="expires" ' . $perm_peer2 . '>Purge When Inactive</option><option value="perm" ' . $perm_peer1 . '>Permanent Peer</select></td>
 				<td class="style2" valign="top"><input type="text" name="edit_domain" size="14" value="' . $sql_row["domain"] . '" /></td>
 				<td class="style2" valign="top"><input type="text" name="edit_subfolder" size="10" value="' . $sql_row["subfolder"] . '" /></td>
@@ -557,9 +557,9 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 
 				$body_string .= '<tr>
-				 <td class="style2"><p style="word-wrap:break-word; width:90px; font-size:11px;">' . $permanent1 . $sql_row["IP_Address"] . $permanent2 . '</p></td>
+				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["IP_Address"] . $permanent2 . '</p></td>
 				 <td class="style2"><p style="word-wrap:break-word; width:155px; font-size:11px;">' . $permanent1 . $sql_row["domain"] . $permanent2 . '</p></td>
-				 <td class="style2"><p style="word-wrap:break-word; width:60px; font-size:11px;">' . $permanent1 . $sql_row["subfolder"] . $permanent2 . '</p></td>
+				 <td class="style2"><p style="word-wrap:break-word; width:80px; font-size:11px;">' . $permanent1 . $sql_row["subfolder"] . $permanent2 . '</p></td>
 				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $sql_row["port_number"] . $permanent2 . '</p></td>
 				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $last_heartbeat . $permanent2 . '</p></td>
 				 <td class="style2"><p style="word-wrap:break-word; font-size:11px;">' . $permanent1 . $joined . $permanent2 . '</p></td>';
@@ -1047,6 +1047,66 @@ if($_SESSION["valid_login"] == TRUE)
 		<br><i><strong>Note:</strong> First time creating password, use the same password in all three fields.</i>
 		<br><br><strong>Generate New Keys</strong> will create a new random key pair and save it in the database.
 		<br><br><strong>Check for Updates</strong> will check for any program updates that can be downloaded directly into Timekoin.';
+
+		if($_GET["storage_key"] == "new")
+		{
+			$bits_level = intval($_POST["crypt_bits"]);
+
+			if($bits_level == "")
+			{
+				$bits_level = 1536;
+			}
+			else
+			{
+				// Create New Key Pair
+				set_time_limit(999);
+				if($bits_level < 1536) { $bits_level = 1536; }
+				$time1 = time();
+				$keys = generate_new_keys($bits_level, TRUE);
+				$new_private_key = base64_encode($keys[0]);
+				$new_public_key = base64_encode($keys[1]);
+				$message = '<br><font color="green"><strong>New Private &amp; Public Key Pair Generated! (It Took ' . (time() - $time1) . ' Second(s) To Create)</strong></font>';
+			}
+
+			$clipboard_copy = '<script>
+			function myPrivateKey()
+			{
+				var copyText = document.getElementById("current_private_key");
+				copyText.select();
+				copyText.setSelectionRange(0, 99999)
+				document.execCommand("copy");
+				var tooltip = document.getElementById("myTooltip");
+				tooltip.innerHTML = "Copy Complete!";
+			}
+			function myPublicKey()
+			{
+				var copyText = document.getElementById("current_public_key");
+				copyText.select();
+				copyText.setSelectionRange(0, 99999)
+				document.execCommand("copy");
+				var tooltip = document.getElementById("myTooltip2");
+				tooltip.innerHTML = "Copy Complete!";
+			}</script>';
+
+			$body_string = '<FORM ACTION="index.php?menu=options&amp;storage_key=new" METHOD="post">
+			<strong>Bits Size [1,536 to 17,408]</strong> (Caution: High Values Take a Lot of Time to Create New Keys!)<br>
+			<input type="number" name="crypt_bits" min="1536" max="17408" size="6" value="' . $bits_level . '"/>
+			<input type="submit" name="Submit" value="Create New Key Pair" /></FORM><br>' . $clipboard_copy . '
+			<strong><font color="blue">New Private Key</font></strong><br>
+			<textarea id="current_private_key" rows="10" cols="90" READONLY>' . $new_private_key . '</textarea><br>
+			<button title="Copy Private Key to Clipboard" onclick="myPrivateKey()"><span id="myTooltip">Copy Private Key</span></button><hr>
+			<strong><font color="green">New Public Key</font></strong><br>
+			<textarea id="current_public_key" rows="8" cols="90" READONLY>' . $new_public_key . '</textarea><br>
+			<button title="Copy Public Key to Clipboard" onclick="myPublicKey()"><span id="myTooltip2">Copy Public Key</span></button><br>' . $message;
+
+			$quick_info = '<strong>Storage Keys</strong> can be created to store a balance offline.<br><br>
+			<strong>Do Not</strong> share your <strong>Private Key</strong> with anyone for any reason.<br><br>
+			The <strong>Private Key</strong> encrypts all transactions for the given <strong>Public Key</strong>.<br><br>
+			Save both keys in a password protected document or external device that you can secure (CD, Flash Drive, Printed Paper, etc.)';
+
+			home_screen("Options &amp; Personal Settings", '<strong><font color="purple">Create New Storage Keys</font></strong>', $body_string , $quick_info);
+			exit;
+		}
 
 		if($_GET["upgrade"] == "check" || $_GET["upgrade"] == "doupgrade")
 		{
