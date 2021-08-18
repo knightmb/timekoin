@@ -1,10 +1,25 @@
 Timekoin Client - Change Log
 
+Timekoin Client - 1.3 (Released 2021-8-18)
+===========================================
+- TK Client GUI updated to show Easy Keys on the Send tab just like TK Server
+- Update algorithms that work with Easy Key look-ups and Creation task
+- Fix for TK Client not able to poll ipv6 peers
+- Added button to "Create Storage Keys" under the Options Tab
+- Added activity log cleaner to avoid log table from growing forever
+- Updated mysql language for activity logs to no longer use delayed inserts as it won't be supported in future sql versions
+- Minor code cleanup
+- Fixed encrypted key detection when switching imports between an encrypted private key and non-encrypted private key
+- Added copy to clipboard buttons for relevant tab areas
+- Added file import and export ability for client keys
+- GUI updates for Client v1.3
+- Plugin example updates for Client v1.3
+- Update client db template for TK Client v1.3
+
 Timekoin Client - 1.26 (Released 2021-6-30)
 ===========================================
 - Updated to work with PHP v7.2 and higher
 - Updated to work with new Easy Key system
-
 
 Timekoin Client - 1.25 (Released 2014-2-12)
 ===========================================
