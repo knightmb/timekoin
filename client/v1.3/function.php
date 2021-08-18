@@ -317,10 +317,10 @@ function easy_key_lookup($easy_key = "")
 		$code = $sql_row["code"];
 		$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 4096, "api.php?action=easy_key&hash=$code", $context));
 
-		if($poll_peer === 0)
+		if($poll_peer == "0")
 		{
 			// No Easy Key exist by that Name
-			return 0;
+			return "0";
 		}
 
 		if(strlen($poll_peer) > 300)
@@ -828,7 +828,7 @@ function send_timekoins($my_private_key = "", $my_public_key = "", $send_to_publ
 function unix_timestamp_to_human($timestamp = "", $format = 'D d M Y - H:i:s')
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-	$default_timezone = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"),0,"field_data");
+	$default_timezone = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"));
 
 	if(empty($default_timezone) == FALSE)
 	{	
@@ -1225,7 +1225,6 @@ function check_standard_tab_settings($permissions_number = "", $standard_tab = "
 			return FALSE;
 		}
 	}
-
 // Backup Tab
 	if($permissions_number - 128 >= 0) { $permissions_number -= 128; } // Subtract Active Permission
 	if($standard_tab == 64)
@@ -1239,7 +1238,6 @@ function check_standard_tab_settings($permissions_number = "", $standard_tab = "
 			return FALSE;
 		}
 	}
-
 // System Tab
 	if($permissions_number - 64 >= 0) { $permissions_number -= 64; } // Subtract Active Permission
 	if($standard_tab == 32)
@@ -1253,7 +1251,6 @@ function check_standard_tab_settings($permissions_number = "", $standard_tab = "
 			return FALSE;
 		}
 	}	
-	
 // Address Tab
 	if($permissions_number - 32 >= 0) { $permissions_number -= 32; } // Subtract Active Permission
 	if($standard_tab == 16)
@@ -1267,7 +1264,6 @@ function check_standard_tab_settings($permissions_number = "", $standard_tab = "
 			return FALSE;
 		}
 	}
-	
 // History Tab
 	if($permissions_number - 16 >= 0) { $permissions_number -= 16; } // Subtract Active Permission
 	if($standard_tab == 8)
@@ -1281,7 +1277,6 @@ function check_standard_tab_settings($permissions_number = "", $standard_tab = "
 			return FALSE;
 		}
 	}
-	
 // Send / Receive Queue Tab
 	if($permissions_number - 8 >= 0) { $permissions_number -= 8; } // Subtract Active Permission
 	if($standard_tab == 4)
@@ -1295,7 +1290,6 @@ function check_standard_tab_settings($permissions_number = "", $standard_tab = "
 			return FALSE;
 		}
 	}
-	
 // Transaction Queue Tab
 	if($permissions_number - 4 >= 0) { $permissions_number -= 4; } // Subtract Active Permission
 	if($standard_tab == 2)
@@ -1309,7 +1303,6 @@ function check_standard_tab_settings($permissions_number = "", $standard_tab = "
 			return FALSE;
 		}
 	}
-	
 // Peerlist Tab
 	if($permissions_number - 2 >= 0) { $permissions_number -= 2; } // Subtract Active Permission
 	if($standard_tab == 1)
@@ -1385,6 +1378,118 @@ function read_plugin($filename = "")
 	return $contents;
 }
 //***********************************************************************************
+function create_new_easy_key($my_private_key = "", $my_public_key = "", $new_easy_key = "")
+{
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);	
+
+	// Check the electoin schedule, current genreating peers and calculate
+	// how long it will take to create the easy key shortcut.
+	if(strlen($new_easy_key) >= 1 && strlen($new_easy_key) <= 64)
+	{
+		$old_strlen = strlen($new_easy_key);
+		$new_easy_key = filter_sql($new_easy_key);
+		$symbols = array("|", "?", "="); // SQL + URL
+		$new_easy_key = str_replace($symbols, "", $new_easy_key);
+
+		if($old_strlen == strlen($new_easy_key))
+		{
+			// Does the easy key already exist?
+			$easy_key_lookup = easy_key_lookup($new_easy_key);
+			$create_check = FALSE;
+
+			if($easy_key_lookup == "")
+			{
+				// None exist, let's create it
+				$create_check = TRUE;
+			}
+			else
+			{
+				// One already exist, is it ours?
+				if($easy_key_lookup == base64_encode($my_public_key))
+				{
+					// Going to renew our existing easy key
+					$create_check = TRUE;
+				}
+			}
+
+			if($create_check == TRUE)
+			{
+				// All checks complete for valid input, check if server has enough TK
+				// to purchase the Easy Key
+				$num_gen_peers = num_gen_peers(FALSE, TRUE); // Number of unique peer public keys
+			
+				if(db_cache_balance($my_public_key) >= ($num_gen_peers + 1))
+				{
+					$delay_calcuation = round($num_gen_peers / 100);
+					if($delay_calcuation == 0) { $delay_calcuation = 1; }// Range check
+					$final_transaction_delay = $delay_calcuation + 1;
+					$gen_public_keys = num_gen_peers(TRUE, TRUE);
+
+					if(empty($gen_public_keys) == FALSE)
+					{
+						$gen_peer_public_key = "Start";
+						$counter = 1;
+						$my_private_key = my_private_key();
+
+						while(empty($gen_peer_public_key) == FALSE)
+						{
+							$gen_peer_public_key = find_string("---GEN_PUBLIC$counter=", "---END$counter", $gen_public_keys);
+							$gen_peer_public_key = filter_sql(base64_decode($gen_peer_public_key));
+
+							if($gen_peer_public_key != $my_public_key && $gen_peer_public_key != "")
+							{
+								if(send_timekoins($my_private_key, $my_public_key, $gen_peer_public_key, 1, "New Easy Key Fee") == FALSE)
+								{
+									write_log("New Easy Key Fee Transaction Failed for Public Key:<br>" . base64_encode($gen_peer_public_key),"GU");
+									return 6;
+								}
+								else
+								{
+									write_log("New Easy Key Fee Sent to Public Key:<br>" . base64_encode($gen_peer_public_key),"GU");
+								}
+							}
+
+							$counter++;
+						}
+					}
+
+					// Finally, send transaction to Easy Key Blackhole Address
+					// with a X Minutes Delay
+					if(send_timekoins($my_private_key, $my_public_key, base64_decode(EASY_KEY_PUBLIC_KEY), 1, $new_easy_key, transaction_cycle($final_transaction_delay)) == TRUE)
+					{
+						// Return how many seconds to wait until key is active
+						return $final_transaction_delay * 300;
+					}
+					else
+					{
+						write_log("Easy Key Transaction for Creation Failed to Send","GU");
+						return 7;
+					}
+				}
+				else
+				{
+					// Key does not have enough balance to pay for the key
+					return 4;
+				}
+			}
+			else
+			{
+				// Easy Key Already Taken
+				return 3;
+			}
+		}
+		else
+		{
+			return 2; // Invalid Characters in Easy Key
+		}
+	}
+	else
+	{
+		return 1; // Wrong Character Length Easy Key
+	}
+
+	return 0; // Unknown Error
+}
 //***********************************************************************************
 class Aes {
 	/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */

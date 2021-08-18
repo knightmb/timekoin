@@ -809,6 +809,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			if(generate_new_keys(intval($_POST["new_key_bits"])) == TRUE)
 			{
+				mysqli_query($db_connect, "DELETE FROM `options` WHERE `options`.`field_name` = 'private_key_crypt'");
 				$body_text .= '<font color="green"><strong>New Private &amp; Public Key Pair Generated! (It Took ' . (time() - $time1) . ' Second(s) To Generate)</strong></font><br>';
 			}
 			else
@@ -1342,107 +1343,56 @@ if($_SESSION["valid_login"] == TRUE)
 		if($_GET["easy_key"] == "create")
 		{
 			$new_easy_key = $_POST["new_easy_key"];
-			$easy_key_lookup = easy_key_lookup($new_easy_key);
-			$create_check = FALSE;
+			$create_easy_key = create_new_easy_key(my_private_key(), $my_public_key, $new_easy_key);
+			$body_string;
 
-			if($easy_key_lookup == "" || $easy_key_lookup === 0)
+			if($create_easy_key > 300)// Success time will always be at least more than 1 transaction cycle
 			{
-				// None exist, let's create it
-				$create_check = TRUE;
+				$seconds_to_minutes = round($create_easy_key / 60);
+				$body_string = '<BR><BR><font color="green"><strong>Easy Key [' . $new_easy_key . '] Has Been Submitted to the Timekoin Network!</font><BR><BR>
+				Your Easy Key Should be Active Within ' . $seconds_to_minutes . ' Minutes.<BR>
+				If You Are Renewing Your Key Before it Expires, then Expect No Delay.</strong>';
+
+				$e_key_time = transaction_cycle($create_easy_key / 300) + 7889400;// Creation time plus 3 Months
+				// Store Easy Key for later lookups
+				$sql = "INSERT INTO `options` (`field_name`, `field_data`) VALUES ('easy_key', 'easy_key=$new_easy_key---expires=$e_key_time---END')";
+				mysqli_query($db_connect, $sql);
 			}
 			else
 			{
-				// One already exist, is it ours?
-				if($easy_key_lookup == $my_public_key)
+				switch($create_easy_key)
 				{
-					// Going to renew our existing easy key
-					$create_check = TRUE;
+					case 1:
+					$body_string = '<BR><BR><font color="red"><strong>Easy Key: [' . $new_easy_key . '] is Too Short or Too Long!</strong></font>';
+					break;
+
+					case 2:
+					$body_string = '<BR><BR><font color="red"><strong>Easy Key: [' . $new_easy_key . '] Has Invalid Characters!</strong></font>';
+					break;
+
+					case 3:
+					$body_string = '<BR><BR><font color="red"><strong>Easy Key: [' . $new_easy_key . '] is Taken Already!</strong></font>';
+					break;
+
+					case 4:
+					$body_string = '<BR><BR><font color="red"><strong>Creation Fee of [' . (num_gen_peers(FALSE, TRUE) + 1) . '] TK Needed to Create This Easy Key!</strong></font>';
+					break;
+
+					case 6:
+					$body_string = '<BR><BR><font color="red"><strong>New Easy Key Fee Transaction Failed to Send to a Public Key</strong></font>';
+					break;
+
+					case 7:
+					$body_string = '<BR><BR><font color="red"><strong>Easy Key Transaction for Creation Failed to Send</strong></font>';
+					break;					
+
+					default:
+					$body_string = '<BR><BR><font color="red"><strong>Easy Key: [' . $new_easy_key . '] Unknown ERROR!</strong></font>';
+					break;
 				}
 			}
 
-			if($create_check == TRUE)
-			{
-				set_time_limit(999);// This might take a while
-				if(strlen($new_easy_key) >= 1 && strlen($new_easy_key) <= 64)
-				{
-					$old_strlen = strlen($new_easy_key);
-					$new_easy_key = filter_sql($new_easy_key);
-					$symbols = array("|", "?", "="); // SQL + URL
-					$new_easy_key = str_replace($symbols, "", $new_easy_key);
-
-					if($old_strlen == strlen($new_easy_key))
-					{
-						// All checks complete for valid input, check if server has enough TK
-						// to purchase the Easy Key
-						if(db_cache_balance($my_public_key) >= (num_gen_peers(TRUE) + 1))
-						{
-							$gen_public_keys = num_gen_peers(TRUE, TRUE);
-
-							if(empty($gen_public_keys) == FALSE)
-							{
-								$gen_peer_public_key = "Start";
-								$counter = 1;
-								$my_private_key = my_private_key();
-
-								while(empty($gen_peer_public_key) == FALSE)
-								{
-									$gen_peer_public_key = find_string("---GEN_PUBLIC$counter=", "---END$counter", $gen_public_keys);
-									$gen_peer_public_key = filter_sql(base64_decode($gen_peer_public_key));
-
-									if($gen_peer_public_key != $my_public_key)
-									{
-										if(send_timekoins($my_private_key, $my_public_key, $gen_peer_public_key, 1, "New Easy Key Fee") == FALSE)
-										{
-											write_log("New Easy Key Fee Transaction Failed for Public Key:<br>" . base64_encode($gen_peer_public_key),"GU");
-										}
-										else
-										{
-											write_log("New Easy Key Fee Sent to Public Key:<br>" . base64_encode($gen_peer_public_key),"GU");
-										}
-									}
-
-									$counter++;
-								}
-
-								// Finally, send transaction to Easy Key Blackhole Address
-								// with a 45 Minute Delay
-								if(send_timekoins($my_private_key, $my_public_key, base64_decode(EASY_KEY_PUBLIC_KEY), 1, $new_easy_key, transaction_cycle(9)) == TRUE)
-								{
-									$body_string = '<BR><BR><font color="green"><strong>Easy Key [' . $new_easy_key . '] Has Been Submitted to the Timekoin Network!</font><BR><BR>
-									Your Easy Key Should be Active Within 45 Minutes.<BR>
-									If You Are Renewing Your Key Before it Expires, then Expect No Delay.</strong>';
-								}
-								else
-								{
-									$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' Creation Failed!<BR>Could Not Send Final Transaction!</strong></font>';
-									write_log("Easy Key Transaction for Creation Failed to Send","GU");
-								}								
-							}
-							else
-							{
-								$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' Creation Failed!<BR>Could Gather Generating Public Keys!</strong></font>';
-							}
-						}
-						else
-						{
-							$body_string = '<BR><BR><font color="red"><strong>Creation Fee of [' . (num_gen_peers(TRUE) + 1) . '] TK Needed to Create This Easy Key!</strong></font>';
-						}
-					}
-					else
-					{
-						$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' Has Invalid Characters!</strong></font>';
-					}
-				}
-				else
-				{
-					$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' Character Length Incorrect!</strong></font>';
-				}
-			}
-			else
-			{
-				$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' is Taken Already!</strong></font>';
-			}
-		}
+		}// Easy Key Creation
 
 		$clipboard_copy = '<script>
 		function myPublicKey()
@@ -1455,10 +1405,40 @@ if($_SESSION["valid_login"] == TRUE)
 			tooltip.innerHTML = "Copy Complete!";
 		}</script>';
 
+		// Show all Easy Keys associated with this Client Public Key
+		$sql = "SELECT field_data  FROM `options` WHERE `field_name` = 'easy_key'";
+		$sql_result = mysqli_query($db_connect, $sql);
+		$sql_num_results = mysqli_num_rows($sql_result);
+		$clean_e_key_records = 9;
+
+		for ($i = 0; $i < $sql_num_results; $i++)
+		{
+			$sql_row = mysqli_fetch_array($sql_result);
+			$easy_key_data = $sql_row["field_data"];
+			$easy_key_name = find_string("easy_key=", "---expires", $easy_key_data);
+			$easy_key_expires = find_string("---expires=", "---END", $easy_key_data);
+			$easy_key_lookup = easy_key_lookup($easy_key_name);
+
+			// One exist, is it ours?
+			if($easy_key_lookup == base64_encode($my_public_key))
+			{
+				$easy_key_list.= '<br><strong>Easy Key: [<font color="blue">' . $easy_key_name . '</font>] <font color="red">Expires:</font> ' . unix_timestamp_to_human($easy_key_expires) . '</strong>';
+			}
+			else
+			{
+				// No match, should we delete this one?
+				if($sql_num_results > $clean_e_key_records && $easy_key_lookup == "0")
+				{
+					$sql = "DELETE FROM `options` WHERE `options`.`field_name` = 'easy_key' AND `options`.`field_data` = 'easy_key=$easy_key_name---expires=$easy_key_expires---END'";
+					mysqli_query($db_connect, $sql);
+				}
+			}
+		}
+
 		$text_bar = $clipboard_copy . '<table border="0" cellpadding="6"><tr><td><strong>Current Billfold Balance: <font color="green">' . $display_balance . '</font> TK</strong></td></tr>
 		<tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr></table>
 		<textarea id="current_public_key" readonly="readonly" rows="6" style="width: 100%; max-width: 100%;">' . base64_encode($my_public_key) . '</textarea><br>
-		<button title="Copy Public Key to Clipboard" onclick="myPublicKey()"><span id="myTooltip2">Copy Public Key</span></button>';
+		<button title="Copy Public Key to Clipboard" onclick="myPublicKey()"><span id="myTooltip2">Copy Public Key</span></button><br>' . $easy_key_list;
 
 		home_screen('Send / Receive Timekoins', $text_bar, $body_string , $quick_info);
 		exit;
