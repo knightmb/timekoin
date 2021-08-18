@@ -1,7 +1,7 @@
 <?PHP
 define("TRANSACTION_EPOCH","1338576300"); // Epoch timestamp: 1338576300
 define("TIMEKOIN_VERSION","1.3"); // This Timekoin Software Version
-define("NEXT_VERSION","tk_client_next_version4.txt"); // What file to check for future versions
+define("NEXT_VERSION","tk_client_next_version5.txt"); // What file to check for future versions
 // Easy Key Blackhole Public Key
 define("EASY_KEY_PUBLIC_KEY","LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS1UaW1la29pbitFYXN5K0tleStibGFjaytob2xlK2FkZHJlc3MrV3ViYmErbHViYmErZHViK2R1YitSaWtraSt0aWtraSt0YXZpK2JpdGNoK0FuZCt0aGF0cyt0aGUrd2F5K3RoZStuZXdzK2dvZXMrSGl0K3RoZStzYWNrK0phY2srVWgrb2grc29tZXJzYXVsdCtqdW1wK0FpZHMrU2h1bStzaHVtK3NobGlwcGVkeStkb3ArR3Jhc3MrdGFzdGVzK2JhZCtObytqdW1waW5nK2luK3RoZStzZXdlcitCdXJnZXIrdGltZStSdWJiZXIrYmFieStiYWJieStCdW5rZXJzK1llYWgrc2F5K3RoYXQrYWxsK3RoZSt0aW1lK1RpbWVrb2luK0Vhc3krS2V5LS0tLS1FTkQgUFVCTElDIEtFWS0tLS0t");
 
@@ -139,10 +139,30 @@ function my_public_key()
 	return mysql_result(mysqli_query($db_connect, "SELECT * FROM `my_keys` WHERE `field_name` = 'server_public_key' LIMIT 1"),0,1);
 }
 //***********************************************************************************
-function my_private_key()
+function my_private_key($encrypt_test = FALSE)
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-	return mysql_result(mysqli_query($db_connect, "SELECT * FROM `my_keys` WHERE `field_name` = 'server_private_key' LIMIT 1"),0,1);
+
+	if($encrypt_test == FALSE)
+	{
+		return mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `my_keys` WHERE `field_name` = 'server_private_key' LIMIT 1"));
+	}
+	else
+	{
+		$my_private_key = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `my_keys` WHERE `field_name` = 'server_private_key' LIMIT 1"));
+		$valid_key = find_string("-----BEGIN", "KEY-----", $my_private_key);
+
+		if(empty($valid_key) == TRUE)
+		{
+			// Private Key Encrypted
+			return TRUE;
+		}
+		else
+		{
+			// Private Key NOT Encrypted
+			return FALSE;
+		}
+	}
 }
 //***********************************************************************************
 function poll_peer($ip_address = "", $domain = "", $subfolder = "", $port_number = "", $max_length = "", $poll_string = "", $custom_context = "")
@@ -1295,19 +1315,52 @@ function check_standard_tab_settings($permissions_number = "", $standard_tab = "
 	return FALSE;
 }
 //***********************************************************************************
-function file_upload($http_file_name = "")
+function file_upload($http_file_name = "", $keys_file = FALSE)
 {
-	$user_file_upload = strtolower(basename($_FILES[$http_file_name]['name']));
-
-	if(move_uploaded_file($_FILES[$http_file_name]['tmp_name'], "plugins/" . $user_file_upload) == TRUE)
+	if($keys_file == FALSE)
 	{
-		// Upload successful
-		return $user_file_upload;
+		// Plugin File
+		$user_file_upload = strtolower(basename($_FILES[$http_file_name]['name']));
+
+		if(move_uploaded_file($_FILES[$http_file_name]['tmp_name'], "plugins/" . $user_file_upload) == TRUE)
+		{
+			// Upload successful
+			return $user_file_upload;
+		}
+		else
+		{
+			// Error during upload
+			return FALSE;
+		}
 	}
 	else
 	{
-		// Error during upload
-		return FALSE;
+		// Keys File
+		$user_file_upload = "key_restore_" . mt_rand(0,1000000) . ".txt";
+		
+		if(move_uploaded_file($_FILES[$http_file_name]['tmp_name'], "plugins/" . $user_file_upload) == TRUE)
+		{
+			// Upload successful
+			$handle = fopen("plugins/" . $user_file_upload, "r");
+			$contents = stream_get_contents($handle);
+			fclose($handle);
+			
+			if(unlink("plugins/" . $user_file_upload) == TRUE)
+			{
+				// Have file contents, now delete copy from disk for security reasons
+				return $contents;
+			}
+			else
+			{
+				// Could not delete file, keys might be stolen if left on the server drive
+				return 1;
+			}
+		}
+		else
+		{
+			// Error during upload
+			return FALSE;
+		}
 	}	
 }
 //***********************************************************************************

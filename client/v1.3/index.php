@@ -246,7 +246,7 @@ if($_SESSION["valid_login"] == TRUE)
 			<tr><th>Address Name</th><th>Easy Key</th><th>Full Public Key</th><th></th><th></th></tr>
 			<tr><td class="style2" valign="top"><input type="text" name="name" size="16" value="'.$_POST["name"].'" /></td>
 			<td class="style2" valign="top"><input type="text" name="easy_key" size="16" value="'.$easy_key.'" /><br>'.$easy_messasge.'</td>
-			<td class="style2"><textarea name="full_key" rows="6" cols="30"></textarea></td>			 
+			<td class="style2"><textarea name="full_key" rows="6" style="width: 100%; max-width: 100%;"></textarea></td>			 
 			<td valign="top"><input type="image" src="img/save-icon.gif" title="Save New Address" name="submit1" border="0"></td>
 			<td valign="top"></td></tr></table></div></FORM>';
 		}
@@ -296,7 +296,7 @@ if($_SESSION["valid_login"] == TRUE)
 			<tr><th>Address Name</th><th>Easy Key</th><th>Full Public Key</th><th></th><th></th></tr><tr>
 			<td class="style2" valign="top"><input type="text" name="name" size="16" value="' . $name . '"/></td>
 			<td class="style2" valign="top"><input type="text" name="easy_key" size="16" value="' . $easy_key . '" /><br>'.$easy_edit_messasge.'</td>
-			<td class="style2"><textarea name="full_key" rows="6" cols="30">' . $full_key . '</textarea></td>			 
+			<td class="style2"><textarea name="full_key" rows="6" style="width: 100%; max-width: 100%;">' . $full_key . '</textarea></td>			 
 			<td valign="top"><input type="image" src="img/edit-icon.gif" title="Edit Address" name="submit1" border="0"></td>
 			<td valign="top"></td></tr></table></div></FORM>';
 		}
@@ -618,7 +618,6 @@ if($_SESSION["valid_login"] == TRUE)
 		exit;
 	}	
 //****************************************************************************
-//****************************************************************************
 	if($_GET["menu"] == "options")
 	{
 		if($_GET["password"] == "change")
@@ -805,7 +804,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["newkeys"] == "confirm")
 		{
-			set_time_limit(300);
+			set_time_limit(999);
 			$time1 = time();
 
 			if(generate_new_keys(intval($_POST["new_key_bits"])) == TRUE)
@@ -1060,7 +1059,6 @@ if($_SESSION["valid_login"] == TRUE)
 		exit;
 	}	
 //****************************************************************************
-//****************************************************************************
 	if($_GET["menu"] == "send")
 	{
 		$my_public_key = my_public_key();
@@ -1253,9 +1251,16 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["easy_key"] == "new")
 		{
+			$easy_key_fee = num_gen_peers(TRUE) + 1;
+
+			if($easy_key_fee < 2)
+			{
+				$easy_key_fee = '<font color="red">No Network Response</font>';
+			}
+
 			$body_string = '<FORM ACTION="index.php?menu=send&amp;easy_key=create" METHOD="post">
 			<table border="0" cellpadding="6"><tr><td><font color="green"><strong>Create New Easy Key</strong></font></td></tr>
-			<tr><td><strong>Creation Fee: <font color="green">' . (num_gen_peers(TRUE) + 1) . ' TK</font></strong></td></tr>
+			<tr><td><strong>Creation Fee: <font color="green">' . $easy_key_fee . ' TK</font></strong></td></tr>
 			<tr><td><strong><font color="blue">New Easy Key</font></strong><BR>
 			<input type="text" maxlength="64" size="64" value="" name="new_easy_key" /></td></tr></table>
 			<input type="submit" value="Create New Easy Key" onclick="showWait()" /></FORM>';
@@ -1341,7 +1346,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 								// Finally, send transaction to Easy Key Blackhole Address
 								// with a 45 Minute Delay
-								if(send_timekoins($my_private_key, $my_public_key, base64_decode(EASY_KEY_PUBLIC_KEY), 1, $new_easy_key, (time() + 2700)) == TRUE)
+								if(send_timekoins($my_private_key, $my_public_key, base64_decode(EASY_KEY_PUBLIC_KEY), 1, $new_easy_key, transaction_cycle(9)) == TRUE)
 								{
 									$body_string = '<BR><BR><font color="green"><strong>Easy Key [' . $new_easy_key . '] Has Been Submitted to the Timekoin Network!</font><BR><BR>
 									Your Easy Key Should be Active Within 45 Minutes.<BR>
@@ -1377,11 +1382,23 @@ if($_SESSION["valid_login"] == TRUE)
 			{
 				$body_string = '<BR><BR><font color="red"><strong>Easy Key: ' . $_POST["new_easy_key"] . ' is Taken Already!</strong></font>';
 			}
-		}		
+		}
 
-		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong>Current Billfold Balance: <font color="green">' . $display_balance . '</font> TK</strong></td></tr>
-			<tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
-			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . base64_encode($my_public_key) . '</textarea></td></tr></table>';
+		$clipboard_copy = '<script>
+		function myPublicKey()
+		{
+			var copyText = document.getElementById("current_public_key");
+			copyText.select();
+			copyText.setSelectionRange(0, 99999)
+			document.execCommand("copy");
+			var tooltip = document.getElementById("myTooltip2");
+			tooltip.innerHTML = "Copy Complete!";
+		}</script>';
+
+		$text_bar = $clipboard_copy . '<table border="0" cellpadding="6"><tr><td><strong>Current Billfold Balance: <font color="green">' . $display_balance . '</font> TK</strong></td></tr>
+		<tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr></table>
+		<textarea id="current_public_key" readonly="readonly" rows="6" style="width: 100%; max-width: 100%;">' . base64_encode($my_public_key) . '</textarea><br>
+		<button title="Copy Public Key to Clipboard" onclick="myPublicKey()"><span id="myTooltip2">Copy Public Key</span></button>';
 
 		home_screen('Send / Receive Timekoins', $text_bar, $body_string , $quick_info);
 		exit;
@@ -1930,14 +1947,22 @@ if($_SESSION["valid_login"] == TRUE)
 
 			if(mysqli_query($db_connect, $sql) == TRUE)
 			{
-				// Blank reverse crypto data field
-				mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");				
-				
-				$server_message = '<br><font color="blue"><strong>Private Key Restore Complete!</strong></font><br><br>';
+				if(my_private_key(TRUE) == TRUE)
+				{
+					// Private Key Encrypted
+					mysqli_query($db_connect, "DELETE FROM `options` WHERE `options`.`field_name` = 'private_key_crypt'");
+					mysqli_query($db_connect, "INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('private_key_crypt', '1')");
+					$key_message = '<font color="green"><strong>*** <font color="red">Encrypted</font> Private Key Restore Complete! ***</strong></font><br>';
+				}
+				else
+				{
+					mysqli_query($db_connect, "DELETE FROM `options` WHERE `options`.`field_name` = 'private_key_crypt'");
+					$key_message = '<font color="green"><strong>*** Private Key Restore Complete! ***</strong></font><br>';
+				}
 			}
 			else
 			{
-				$server_message = '<br><font color="red"><strong>Private Key Restore FAILED!</strong></font><br><br>';
+				$key_message = '<font color="red"><strong>Private Key Restore FAILED!</strong></font><br>';
 			}
 		}
 
@@ -1947,26 +1972,41 @@ if($_SESSION["valid_login"] == TRUE)
 
 			if(mysqli_query($db_connect, $sql) == TRUE)
 			{
-				// Blank reverse crypto data field
-				mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
-
-				$server_message = '<br><font color="blue"><strong>Public Key Restore Complete!</strong></font><br><br>';
+				$key_message = '<font color="green"><strong>*** Public Key Restore Complete! ***</strong></font><br>';
 			}
 			else
 			{
-				$server_message = '<br><font color="red"><strong>Public Key Restore FAILED!</strong></font><br><br>';
+				$key_message = '<font color="red"><strong>Public Key Restore FAILED!</strong></font><br>';
 			}
 		}
 
 		$my_public_key = base64_encode(my_public_key());
 		$my_private_key = base64_encode(my_private_key());
 
-		$private_key_crypt = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'private_key_crypt' LIMIT 1"),0,1);
-
-		if($private_key_crypt == TRUE)
+		if(my_private_key(TRUE) == TRUE && $_GET["keys"] != "restore")
 		{
-			$key_encrypted = '<font color="red"><strong>WARNING:</strong></font> <font color="blue"><strong><i>Private Key Is Encrypted</i></strong></font>';
+			$key_encrypted = '<br><font color="red"><strong>WARNING:</strong></font> <font color="blue"><strong><i>Private Key Is Encrypted</i></strong></font>';
 		}
+
+		$clipboard_copy = '<script>
+		function myPrivateKey()
+		{
+			var copyText = document.getElementById("current_private_key");
+			copyText.select();
+			copyText.setSelectionRange(0, 99999)
+			document.execCommand("copy");
+			var tooltip = document.getElementById("myTooltip");
+			tooltip.innerHTML = "Copy Complete!";
+		}
+		function myPublicKey()
+		{
+			var copyText = document.getElementById("current_public_key");
+			copyText.select();
+			copyText.setSelectionRange(0, 99999)
+			document.execCommand("copy");
+			var tooltip = document.getElementById("myTooltip2");
+			tooltip.innerHTML = "Copy Complete!";
+		}</script>';
 
 		if($_GET["restore"] == "private" && empty($_POST["restore_private_key"]) == FALSE)
 		{
@@ -1981,20 +2021,92 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string = backup_body();
 		}
 
-		$body_string .= $server_message;
+		if($_GET["keys"] == "download")
+		{
+			$content = '---TKPRIVATEKEY=' . $my_private_key . '---ENDTKPRIVATEKEY' . "\n\r";
+			$content.= '---TKPUBLICKEY=' . $my_public_key . '---ENDTKPUBLICKEY';			
+			$length = strlen($content);
+			header('Content-Description: File Transfer');
+			header('Content-Type: text/plain');
+			header('Content-Disposition: attachment; filename=TK-Client-Keys.txt');
+			header('Content-Transfer-Encoding: binary');
+			header('Content-Length: ' . $length);
+			header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+			header('Expires: 0');
+			header('Pragma: public');
+			echo $content;
+			exit;
+		}
 
-		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong><font color="blue">Private Key</font> to send transactions:</strong><br>
-			' . $key_encrypted . '</td></tr>
-			<tr><td><textarea readonly="readonly" rows="8" cols="75">' . $my_private_key . '</textarea></td></tr></table>
-			<table border="0" cellpadding="6"><tr><td><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
-			<tr><td><textarea readonly="readonly" rows="6" cols="75">' . $my_public_key . '</textarea></td></tr></table>';
+		if($_GET["keys"] == "restore")
+		{
+			// Restore Server Private & Public Keys
+			$new_server_keys = file_upload("key_file", TRUE);
+			if($new_server_keys != 1)
+			{
+				$restore_private_key = find_string("---TKPRIVATEKEY=", "---ENDTKPRIVATEKEY", $new_server_keys);
+				$restore_public_key = find_string("---TKPUBLICKEY=", "---ENDTKPUBLICKEY", $new_server_keys);
 
-		$quick_info = '<strong>Do Not</strong> share your Private Key with anyone for any reason.<br><br>
-			The Private Key encrypts all your transactions.<br><br>
-			You should make a backup of both keys in case you want to transfer your balance to a new billfold or restore from a software failure.<br><br>
-			Save both keys in a password protected text file or external device that you can secure (CD, Flash Drive, Printed Paper, etc.)';
+				if(empty($restore_private_key) == FALSE && empty($restore_public_key) == FALSE)
+				{
+					$sql = "UPDATE `my_keys` SET `field_data` = '" . base64_decode($restore_private_key) . "' WHERE `my_keys`.`field_name` = 'server_private_key' LIMIT 1";
+					$sql2 = "UPDATE `my_keys` SET `field_data` = '" . base64_decode($restore_public_key) . "' WHERE `my_keys`.`field_name` = 'server_public_key' LIMIT 1";
 
-		home_screen('Backup &amp; Restore Keys', $text_bar, $body_string , $quick_info);
+					if(mysqli_query($db_connect, $sql) == TRUE && mysqli_query($db_connect, $sql2) == TRUE)
+					{
+						$my_private_key = $restore_private_key;
+						$my_public_key = $restore_public_key;
+
+						if(my_private_key(TRUE) == TRUE)
+						{
+							// Private Key Encrypted
+							mysqli_query($db_connect, "DELETE FROM `options` WHERE `options`.`field_name` = 'private_key_crypt'");
+							mysqli_query($db_connect, "INSERT INTO `options` (`field_name` ,`field_data`) VALUES ('private_key_crypt', '1')");
+							$key_message = '<font color="green"><strong>*** <font color="red">Encrypted</font> Private & Public Key Restore Complete! ***</strong></font><br>';
+						}
+						else
+						{
+							mysqli_query($db_connect, "DELETE FROM `options` WHERE `options`.`field_name` = 'private_key_crypt'");
+							$key_message = '<font color="green"><strong>*** Private & Public Key Restore Complete! ***</strong></font><br>';
+						}						
+					}
+					else
+					{
+						$key_message = '<font color="red"><strong>PRIVATE & PUBLIC KEY RESTORE FAILED!</strong></font><br>';
+					}
+				}
+				else
+				{
+					$key_message = '<font color="red"><strong>COULD NOT FIND THE PRIVATE & PUBLIC KEYS</strong></font><br>';
+				}
+			}
+			else
+			{
+				// Delete Error, Alert User!
+				$key_message = '<font color="red"><strong>SECURITY ISSUE! The Key File Was NOT Deleted After Upload.<br>You Will Need to Manually Delete It From the Plugins Folder.</strong></font><br>';
+			}
+		}
+
+		$text_bar = '<table border="0" cellpadding="6"><tr><td><strong><font color="blue">Private Key</font> to encrypt transactions:</strong>' . $key_encrypted . '</td></tr>
+		<tr><td style="width:672px"><textarea id="current_private_key" readonly="readonly" rows="8" style="width: 100%; max-width: 100%;">' . $my_private_key . '</textarea><br>
+		<button title="Copy Private Key to Clipboard" onclick="myPrivateKey()"><span id="myTooltip">Copy Private Key</span></button></td></tr></table>
+		<table border="0" cellpadding="6"><tr><td colspan="2"><strong><font color="green">Public Key</font> to receive:</strong></td></tr>
+		<tr><td colspan="2" style="width:672px"><textarea id="current_public_key" readonly="readonly" rows="6" style="width: 100%; max-width: 100%;">' . $my_public_key . '</textarea><br>
+		<button title="Copy Public Key to Clipboard" onclick="myPublicKey()"><span id="myTooltip2">Copy Public Key</span></button></td></tr>
+		<tr><td colspan="2"><hr></td></tr><tr><td><FORM ACTION="index.php?menu=backup&amp;keys=download" METHOD="post"><input type="submit" value="Download Keys"/></FORM></td>
+		<td>' . $key_message . '<strong>Use the Browse Button to Select the Key File to Restore</strong><br><br>
+		<FORM ENCTYPE="multipart/form-data" METHOD="POST" ACTION="index.php?menu=backup&amp;keys=restore">
+		<INPUT NAME="key_file" TYPE="file" SIZE=32><br><br>
+		<input type="submit" name="SubmitNew" value="Restore Keys" onclick="return confirm(\'This Will Over-Write Your Existing Private & Public Keys. Continue?\');" /></FORM>
+		</td></tr></table>';
+
+		$quick_info = '<strong>Do Not</strong> share your <strong>Private Key</strong> with anyone for any reason.<br><br>
+		The <strong>Private Key</strong> encrypts all transactions from your server.<br><br>
+		You should make a backup of both keys in case you want to transfer your balance to a new client or restore from a client failure.<br><br>
+		<strong><font color="blue">Download Keys</font></strong> will create a text file that can be used to restore the keys on this or a different client.<br><br>
+		Save both keys in a password protected document or external device that you can secure (CD, Flash Drive, Printed Paper, etc.)';
+
+		home_screen('Backup &amp; Restore Keys', $clipboard_copy . $text_bar, $body_string , $quick_info);
 		exit;		
 	}
 //****************************************************************************
