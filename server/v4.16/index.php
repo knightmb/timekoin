@@ -3681,7 +3681,7 @@ if($_SESSION["valid_login"] == TRUE)
 					{
 						// Blank reverse crypto data field
 						mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '' WHERE `options`.`field_name` = 'generation_key_crypt' LIMIT 1");
-						$key_message = '<br><font color="green"><strong>Private & Public Key Restore Complete!</strong></font><br>';
+						$key_message = '<font color="green"><strong>Private & Public Key Restore Complete!</strong></font><br>';
 
 						$my_private_key = base64_decode($restore_private_key);
 						$my_public_key = base64_decode($restore_public_key);

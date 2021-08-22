@@ -1,5 +1,11 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 4.15 (Released 2021-8-17)
+============================================
+- Created new function to handle Easy Key creation that has better logic for checking against future peer elections and scheduling transactions to avoid interference with a fail-safe user warning just in case it is not possible
+- Backup Tab can now export server keys to a file that can be used to restore the server keys to itself or another server. This can help eliminate human error or browser weirdness trying to manually copy and paste keys
+- Generation Peer manager uses wrong peer list count for payment checking for the ipv6 network, resulting in a slightly lower fee requirement
+
 Timekoin Server - 4.14 (Released 2021-8-15)
 ============================================
 - Trying to create an Easy Key during an election will fail with a warning until the election is over
