@@ -1,0 +1,68 @@
+This file contains all attributions to work(s) obtained from others and used in
+Timekoin.
+
+-==========================================================================-
+PHPMailer
+https://github.com/PHPMailer/PHPMailer
+
+This software is distributed under the LGPL 2.1 license, along with the GPL
+Cooperation Commitment. Please read LICENSE for information on the software
+availability and distribution.
+
+PHPMailer was originally written in 2001 by Brent R. Matzelle as a SourceForge project.
+Marcus Bointon (coolbru on SF) and Andy Prevost (codeworxtech) took over the project in 2004.
+Became an Apache incubator project on Google Code in 2010, managed by Jim Jagielski.
+Marcus created his fork on GitHub in 2008.
+Jim and Marcus decide to join forces and use GitHub as the canonical and official repo for PHPMailer in 2013.
+PHPMailer moves to the PHPMailer organisation on GitHub in 2013.
+-==========================================================================-
+AES implementation in PHP
+(c) Chris Veness 2005-2011 www.movable-type.co.uk/scripts
+Right of free use is granted for all commercial or non-commercial use providing this
+copyright notice is retainded. No warranty of any form is offered.
+
+Please consider donating to the code author as he has been a big help for the
+Timekoin Team.
+-==========================================================================-
+PHPSecLib
+
+RSA code for key pair creation, encrypt and decrypt functions used from this
+Pure PHP implementation.
+
+http://phpseclib.sourceforge.net/
+phpseclib is licensed with the MIT-license. By virtue of not being copyleft it's
+less restrictive than the GPL, which in turn, means that it's fully GPL
+compatible.
+
+Please consider donating to the code author as he has been a big help for the
+Timekoin Team.
+-==========================================================================- 
+Spinning Wait Icons by Andrew Davidson
+http://andrewdavidson.com/articles/spinning-wait-icons/
+
+These icons are licensed under a 
+Creative Commons Attribution-NonCommercial-ShareAlike 2.5 License.
+
+You are free to copy, distribute, display, and perform the work
+to make derivative works under the following conditions:
+
+Attribution. You must attribute the work in the manner specified by the author
+or licensor.
+Noncommercial. You may not use this work for commercial purposes.
+Share Alike. If you alter, transform, or build upon this work, you may
+distribute the resulting work only under a license identical to this one.
+
+For any reuse or distribution, you must make clear to others the license terms
+of this work.
+Any of these conditions can be waived if you get permission from the copyright
+holder.
+
+Your fair use and other rights are in no way affected by the above.
+
+View the full license here:
+http://creativecommons.org/licenses/by-nc-sa/2.5/
+-============================================================================-
+Client Interface CSS Template
+
+Developed by http://twitter.com/umutm (Umut Muhaddisoglu) 2008. 
+Updated for HTML5/CSS3 by http://mediagearhead.com (Giles Wells) 2010.
