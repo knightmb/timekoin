@@ -803,7 +803,6 @@ function tk_client_task()
 	}
 
 	// Repeat Task
-	sleep(1);
 	peer_list();
 	transaction_queue();
 	clean_inactive_accounts();
@@ -846,13 +845,13 @@ function tk_client_task()
 //***********************************************************************************
 if($_GET["task"] == "refresh")
 {
-	$refresh_header = '<meta http-equiv="refresh" content="' . rand(10,15) . '" />';
+	$refresh_header = '<meta http-equiv="refresh" content="' . rand(12,15) . '" />';
 
 	?>
 	<!DOCTYPE html>
 	<html>
 	<head>
-	<title>Timekoin Client Task</title>
+	<title>Timekoin Billfold Client Task</title>
 	</head>
 	<body>
 	</body>

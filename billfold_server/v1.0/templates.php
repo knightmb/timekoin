@@ -63,7 +63,7 @@ function login_screen($error_message = "")
 	<center><img src="img/timekoin_logo.png" alt="" /></center>
 	</div>
 	</div>
-	<div id="footer"><p>Timekoin Crypto Currency - <a href="http://timekoin.net">http://timekoin.net</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?></p></div>
+	<div id="footer"><p>Timekoin Cryptocurrency - <a href="http://timekoin.net">http://timekoin.net</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?></p></div>
 	</div>
 	</body>
 	</html>
@@ -161,7 +161,7 @@ function create_account_screen($error_message = "", $no_error = FALSE)
 	<center><img src="img/timekoin_logo.png" alt="" /></center>
 	</div>
 	</div>
-	<div id="footer"><p>Timekoin Crypto Currency - <a href="http://timekoin.net">http://timekoin.net</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?></p></div>
+	<div id="footer"><p>Timekoin Cryptocurrency - <a href="http://timekoin.net">http://timekoin.net</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?></p></div>
 	</div>
 	</body>
 	</html>
@@ -1329,7 +1329,7 @@ function confirm_screen($error_message = "")
 	<center><img src="img/timekoin_logo.png" alt="" /></center>
 	</div>
 	</div>
-	<div id="footer"><p>Timekoin Crypto Currency - <a href="http://timekoin.net">http://timekoin.net</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?></p></div>
+	<div id="footer"><p>Timekoin Cryptocurrency - <a href="http://timekoin.net">http://timekoin.net</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?></p></div>
 	</div>
 	</body>
 	</html>

@@ -8,8 +8,6 @@ session_start();
 
 if($_SESSION["valid_login"] == FALSE && $_GET["action"] != "login" && $_GET["action"] != "create_account" && $_GET["action"] != "do_create_account" && $_GET["action"] != "confirm_account")
 {
-	sleep(1); // One second delay to help prevent brute force attack
-
 	$_SESSION["valid_session"] = TRUE;
 
 	if($_SESSION["valid_session"] == TRUE)
@@ -18,6 +16,7 @@ if($_SESSION["valid_login"] == FALSE && $_GET["action"] != "login" && $_GET["act
 		login_screen();
 	}
 
+	sleep(1); // One second delay to help prevent brute force attack
 	exit;
 }
 
@@ -322,16 +321,15 @@ if($_SESSION["valid_login"] == TRUE)
 			<link rel="icon" type="image/x-icon" href="img/favicon.ico" />
 			<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
 			<script type="text/javascript">
-				window.onload = setupRefresh;
-
-				function setupRefresh() 
-				{
-					 setInterval("refreshFrame();", 10000);
-				}
-				function refreshFrame() 
-				{
-					parent.bottom_frame.location.reload();
-				}
+			window.onload = setupRefresh;
+			function setupRefresh() 
+			{
+				 setInterval("refreshFrame();", 10000);
+			}
+			function refreshFrame() 
+			{
+				parent.bottom_frame.location.reload();
+			}
 		  </script>
 		  </head>
 		  <frameset id="timekoin" rows="*,1">
@@ -354,7 +352,7 @@ if($_SESSION["valid_login"] == TRUE)
 		$body_string .= '<hr>';
 		$body_string .= '<strong>Timekoin Network - Total Amounts Sent per Cycle (Last 20 Cycles)</strong><br><canvas id="amount_total" width="690" height="400">Your Web Browser does not support HTML5 Canvas.</canvas>';
 
-		$display_balance = db_cache_balance(my_public_key($_SESSION["login_username"], $_SESSION["decrypt_password"]), 45, $_SESSION["login_username"]);
+		$display_balance = db_cache_balance(my_public_key($_SESSION["login_username"], $_SESSION["decrypt_password"]), 55, $_SESSION["login_username"]);
 		$home_update = default_settings($_SESSION["login_username"], $_SESSION["decrypt_password"], "refresh_realtime_home");
 
 		if($home_update < 60 && $home_update != 0) // Cap home updates refresh to 1 minute
@@ -364,12 +362,8 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($display_balance === "NA")
 		{
-			$home_update = 5;
-		}
-
-		if($display_balance === "NA")
-		{
 			$display_balance_GUI = '<font color="red">Waiting For Network</font>';
+			$home_update = 5;
 		}
 		else
 		{
@@ -581,7 +575,7 @@ if($_SESSION["valid_login"] == TRUE)
 				$body_string .= '<tr><td class="style2"><p style="word-wrap:break-word; width:175px; font-size:12px;">' . $address_book["name$i"] . 
 				' <a href="index.php?menu=history&amp;name_id=' . $address_book["id$i"] . '" title="' . $address_book["name$i"] . ' History"><img src="img/timekoin_history.png" style="float: right;"></a></p>
 				</td><td class="style1"><p style="word-wrap:break-word; width:175px; font-size:12px;">' . $address_book["easy_key$i"] . 
-				'</p></td><td class="style1"><p style="word-wrap:break-word; width:175px; font-size:' . $default_public_key_font . 'px;">' . $address_book["full_key$i"] . '</p></td>
+				'</p></td><td class="style1"><p style="word-wrap:break-word; width:225px; font-size:' . $default_public_key_font . 'px;">' . $address_book["full_key$i"] . '</p></td>
 				<td><a href="index.php?menu=address&amp;task=delete&amp;name_id=' . $address_book["id$i"] . '" title="Delete ' . $address_book["name$i"] . '" onclick="return confirm(\'Delete ' . $address_book["name$i"] . '?\');"><img src="img/hr.gif"></a></td>
 				<td><a href="index.php?menu=address&amp;task=edit&amp;name_id=' . $address_book["id$i"] . '" title="Edit ' . $address_book["name$i"] . '"><img src="img/edit-icon.gif"></a></td>
 				<td><a href="index.php?menu=send&amp;name_id=' . $address_book["id$i"] . '" title="Send Koins to ' . $address_book["name$i"] . '"><img src="img/timekoin_send.png"></a></td></tr>';
@@ -619,7 +613,6 @@ if($_SESSION["valid_login"] == TRUE)
 			{
 				// Save value in encrypted database
 				save_default_settings($_SESSION["login_username"], $_SESSION["decrypt_password"], "public_key_font_size", intval($_POST["font_size"]));
-
 				header("Location: index.php?menu=queue");
 				exit;
 			}
@@ -630,6 +623,7 @@ if($_SESSION["valid_login"] == TRUE)
 		}
 
 		$my_public_key = my_public_key($_SESSION["login_username"], $_SESSION["decrypt_password"]);
+		$default_timezone = default_settings($_SESSION["login_username"], $_SESSION["decrypt_password"], "default_timezone");
 
 		// Find the last X amount of transactions sent to this public key
 		$sql = "SELECT * FROM `transaction_queue` ORDER BY `transaction_queue`.`timestamp` DESC";
@@ -676,7 +670,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 					if(empty($address_name) == TRUE)
 					{
-						$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:175px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
+						$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:225px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
 					}
 					else
 					{
@@ -704,7 +698,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 						if(empty($address_name) == TRUE)
 						{
-							$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:195px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
+							$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:225px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
 						}
 						else
 						{
@@ -718,7 +712,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 				if(empty($address_name) == TRUE)
 				{
-					$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:195px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans) . '</p>';
+					$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:225px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans) . '</p>';
 				}
 				else
 				{
@@ -733,7 +727,7 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 
 			$body_string .= '<tr>
-			<td class="style2">' . unix_timestamp_to_human($sql_row["timestamp"]) . '</td>' 
+			<td class="style2">' . unix_timestamp_to_human($sql_row["timestamp"], $default_timezone) . '</td>' 
 			. $public_key_from . '</td>'
 			. $public_key_to . '</td>
 			<td class="style2">' . $transaction_amount . '</td></tr>';
@@ -755,6 +749,7 @@ if($_SESSION["valid_login"] == TRUE)
 	if($_GET["menu"] == "send" && $_SESSION["admin_login"] != TRUE)
 	{
 		$my_public_key = my_public_key($_SESSION["login_username"], $_SESSION["decrypt_password"]);
+		$default_timezone = default_settings($_SESSION["login_username"], $_SESSION["decrypt_password"], "default_timezone");
 
 		if($_GET["check"] == "key")
 		{
@@ -1122,7 +1117,7 @@ if($_SESSION["valid_login"] == TRUE)
 			// One exist, is it ours?
 			if($easy_key_lookup == base64_encode($my_public_key))
 			{
-				$easy_key_list.= '<br><strong>Easy Key: [<font color="blue">' . $easy_key_name . '</font>] <font color="red">Expires:</font> ' . unix_timestamp_to_human($easy_key_expires) . '</strong>';
+				$easy_key_list.= '<br><strong>Easy Key: [<font color="blue">' . $easy_key_name . '</font>] <font color="red">Expires:</font> ' . unix_timestamp_to_human($easy_key_expires, $default_timezone) . '</strong>';
 			}
 			else
 			{
@@ -1146,6 +1141,7 @@ if($_SESSION["valid_login"] == TRUE)
 	if($_GET["menu"] == "history" && $_SESSION["admin_login"] != TRUE)
 	{
 		$my_public_key = my_public_key($_SESSION["login_username"], $_SESSION["decrypt_password"]);
+		$default_timezone = default_settings($_SESSION["login_username"], $_SESSION["decrypt_password"], "default_timezone");
 		$address_name;
 
 		// Standard History View
@@ -1238,7 +1234,7 @@ if($_SESSION["valid_login"] == TRUE)
 					if($public_key_from == base64_encode($my_public_key))
 					{
 						// Self Generated
-						$public_key_from = '<td class="style2">Self Generated';
+						$public_key_from = '<td class="style2">My Public Key';
 					}
 					else
 					{
@@ -1255,11 +1251,11 @@ if($_SESSION["valid_login"] == TRUE)
 						}
 					}
 					$body_string .= '<tr>
-					<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($timestamp) . '</p></td>' 
+					<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($timestamp, $default_timezone) . '</p></td>' 
 					. $public_key_from . '</td>
 					<td class="style2"><p style="font-size: 11px;">' . $amount . '</p></td>
 					<td class="style2"><p style="font-size: 11px;">' . $verify . '</p></td>
-					<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $message . '</p></td></tr>';
+					<td class="style2"><p style="word-wrap:break-word; width:150px; font-size: 11px;">' . $message . '</p></td></tr>';
 				}
 				else
 				{
@@ -1269,11 +1265,11 @@ if($_SESSION["valid_login"] == TRUE)
 						$public_key_from = '<td class="style2"><font color="blue">' . $name . '</font>';
 
 						$body_string .= '<tr>
-						<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($timestamp) . '</p></td>' 
+						<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($timestamp, $default_timezone) . '</p></td>' 
 						. $public_key_from . '</td>
 						<td class="style2"><p style="font-size: 11px;">' . $amount . '</p></td>
 						<td class="style2"><p style="font-size: 11px;">' . $verify . '</p></td>
-						<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $message . '</p></td></tr>';						
+						<td class="style2"><p style="word-wrap:break-word; width:150px; font-size: 11px;">' . $message . '</p></td></tr>';						
 					}
 				}
 
@@ -1328,11 +1324,11 @@ if($_SESSION["valid_login"] == TRUE)
 					}
 
 					$body_string .= '<tr>
-					<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($timestamp) . '</p></td>' 
+					<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($timestamp, $default_timezone) . '</p></td>' 
 					. $public_key_to . '</td>
 					<td class="style2"><p style="font-size: 11px;">' . $amount . '</p></td>
 					<td class="style2"><p style="font-size: 11px;">' . $verify . '</p></td>
-					<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $message . '</p></td></tr>';					
+					<td class="style2"><p style="word-wrap:break-word; width:150px; font-size: 11px;">' . $message . '</p></td></tr>';					
 				}
 				else
 				{
@@ -1342,11 +1338,11 @@ if($_SESSION["valid_login"] == TRUE)
 						$public_key_to = '<td class="style2"><font color="blue">' . $name . '</font>';
 
 						$body_string .= '<tr>
-						<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($timestamp) . '</p></td>' 
+						<td class="style2"><p style="font-size: 11px;">' . unix_timestamp_to_human($timestamp, $default_timezone) . '</p></td>' 
 						. $public_key_to . '</td>
 						<td class="style2"><p style="font-size: 11px;">' . $amount . '</p></td>
 						<td class="style2"><p style="font-size: 11px;">' . $verify . '</p></td>
-						<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $message . '</p></td></tr>';						
+						<td class="style2"><p style="word-wrap:break-word; width:150px; font-size: 11px;">' . $message . '</p></td></tr>';						
 					}
 				}
 
@@ -1362,7 +1358,7 @@ if($_SESSION["valid_login"] == TRUE)
 		<table border="0" cellspacing="4"><tr><td><strong>Default Public Key Font Size</strong></td>
 		<td style="width:250px"><input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" /><input type="submit" name="Submit3" value="Save" /></td></tr></table></FORM>';
 
-		$quick_info = 'Verification Level represents how deep in the transaction history the transaction exist.<br><br>
+		$quick_info = 'Verification Level represents how deep in the history the transaction exist.<br><br>
 		The larger the number, the more time that all the peers have examined it and agree that it is a valid transaction.<br><br>
 		You can view up to 100 past transactions that have been <u>sent from</u> or <u>sent to</u> your Billfold.';
 
@@ -1460,10 +1456,20 @@ if($_SESSION["valid_login"] == TRUE)
 
 									// Update success, now change the session username
 									$_SESSION["login_username"] = $new_username;
-									$username_change = TRUE;									
+									$username_change = TRUE;
 								}
 
+							}
+							else
+							{
+								// Username Already Taken
+								$username_change = 2;
 							}						
+						}
+						else
+						{
+							// Username Already Taken
+							$username_change = 2;
 						}
 					}
 				}
@@ -1521,9 +1527,13 @@ if($_SESSION["valid_login"] == TRUE)
 
 			$body_text = options_screen2_user();
 
-			if($username_change == TRUE)
+			if($username_change == 1)
 			{
 				$body_text.= '<font color="blue"><strong>Username Change Complete!</strong></font><br>';
+			}
+			else if($username_change == 2)
+			{
+				$body_text.= '<strong><font color="red">ERROR: Username [ ' . $new_username . ' ] Has Been Taken!</font></strong><br>';
 			}
 			else
 			{
@@ -1842,16 +1852,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$display_balance = db_cache_balance(my_public_key());
 
-		if($display_balance === "NA")
-		{
-			$display_balance_GUI = '<font color="red">Waiting For Network</font>';
-		}
-		else
-		{
-			$display_balance_GUI = number_format($display_balance);
-		}
-
-		$update_available = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'update_available' LIMIT 1"),0,"field_data");
+		$update_available = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'update_available' LIMIT 1"));
 
 		if($update_available == TRUE)
 		{
@@ -1876,7 +1877,12 @@ if($_SESSION["valid_login"] == TRUE)
 		
 		if($display_balance === "NA")
 		{
+			$display_balance_GUI = '<font color="red">Waiting For Network</font>';
 			$home_update = 5;
+		}
+		else
+		{
+			$display_balance_GUI = number_format($display_balance);
 		}
 
 		home_screen("Home", $text_bar, $body_string, $quick_info , $home_update);
@@ -2018,7 +2024,7 @@ if($_SESSION["valid_login"] == TRUE)
 					$sql_row["name"] . 
 					' <a href="index.php?menu=history&amp;name_id=' . $sql_row["id"] . '" title="' . $sql_row["name"] . ' History"><img src="img/timekoin_history.png" style="float: right;"></a></p>
 					</td><td class="style1"><p style="word-wrap:break-word; width:175px; font-size:12px;">' . $sql_row["easy_key"] . 
-					'</p></td><td class="style1"><p style="word-wrap:break-word; width:175px; font-size:' . $default_public_key_font . 'px;">' . $sql_row["full_key"] . '</p></td>
+					'</p></td><td class="style1"><p style="word-wrap:break-word; width:225px; font-size:' . $default_public_key_font . 'px;">' . $sql_row["full_key"] . '</p></td>
 					<td><a href="index.php?menu=address&amp;task=delete&amp;name_id=' . $sql_row["id"] . '" title="Delete ' . $sql_row["name"] . '" onclick="return confirm(\'Delete ' . $sql_row["name"] . '?\');"><img src="img/hr.gif"></a></td>
 					<td><a href="index.php?menu=address&amp;task=edit&amp;name_id=' . $sql_row["id"] . '" title="Edit ' . $sql_row["name"] . '"><img src="img/edit-icon.gif"></a></td>
 					<td><a href="index.php?menu=send&amp;name_id=' . $sql_row["id"] . '" title="Send Koins to ' . $sql_row["name"] . '"><img src="img/timekoin_send.png"></a></td></tr>';
@@ -2356,7 +2362,8 @@ if($_SESSION["valid_login"] == TRUE)
 			if(empty($_POST["current_private_key_password"]) == FALSE && empty($_POST["new_private_key_password"]) == FALSE && empty($_POST["confirm_private_key_password"]) == FALSE)
 			{
 				// Encrypt Private Key for first time
-				$new_record_check = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'private_key_crypt' LIMIT 1"),0,0);
+				$new_record_check = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'private_key_crypt' LIMIT 1"));
+
 				if($new_record_check == "" && $_POST["new_private_key_password"] == $_POST["confirm_private_key_password"])
 				{
 					// Encrypted Private Key Marker does not exist, create it
@@ -3295,7 +3302,7 @@ if($_SESSION["valid_login"] == TRUE)
 					if($public_key_from == base64_encode($my_public_key))
 					{
 						// Self Generated
-						$public_key_from = '<td class="style2">Self Generated';
+						$public_key_from = '<td class="style2">My Public Key';
 					}
 					else
 					{
@@ -3316,7 +3323,7 @@ if($_SESSION["valid_login"] == TRUE)
 					. $public_key_from . '</td>
 					<td class="style2"><p style="font-size: 11px;">' . $amount . '</p></td>
 					<td class="style2"><p style="font-size: 11px;">' . $verify . '</p></td>
-					<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $message . '</p></td></tr>';
+					<td class="style2"><p style="word-wrap:break-word; width:150px; font-size: 11px;">' . $message . '</p></td></tr>';
 				}
 				else
 				{
@@ -3330,7 +3337,7 @@ if($_SESSION["valid_login"] == TRUE)
 						. $public_key_from . '</td>
 						<td class="style2"><p style="font-size: 11px;">' . $amount . '</p></td>
 						<td class="style2"><p style="font-size: 11px;">' . $verify . '</p></td>
-						<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $message . '</p></td></tr>';						
+						<td class="style2"><p style="word-wrap:break-word; width:150px; font-size: 11px;">' . $message . '</p></td></tr>';						
 					}
 				}
 
@@ -3389,7 +3396,7 @@ if($_SESSION["valid_login"] == TRUE)
 					. $public_key_to . '</td>
 					<td class="style2"><p style="font-size: 11px;">' . $amount . '</p></td>
 					<td class="style2"><p style="font-size: 11px;">' . $verify . '</p></td>
-					<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $message . '</p></td></tr>';					
+					<td class="style2"><p style="word-wrap:break-word; width:150px; font-size: 11px;">' . $message . '</p></td></tr>';					
 				}
 				else
 				{
@@ -3403,7 +3410,7 @@ if($_SESSION["valid_login"] == TRUE)
 						. $public_key_to . '</td>
 						<td class="style2"><p style="font-size: 11px;">' . $amount . '</p></td>
 						<td class="style2"><p style="font-size: 11px;">' . $verify . '</p></td>
-						<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $message . '</p></td></tr>';						
+						<td class="style2"><p style="word-wrap:break-word; width:150px; font-size: 11px;">' . $message . '</p></td></tr>';						
 					}
 				}
 
@@ -3419,7 +3426,7 @@ if($_SESSION["valid_login"] == TRUE)
 			<table border="0" cellspacing="4"><tr><td><strong>Default Public Key Font Size</strong></td>
 			<td style="width:250px"><input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" /><input type="submit" name="Submit3" value="Save" /></td></tr></table></FORM>';
 
-		$quick_info = 'Verification Level represents how deep in the transaction history the transaction exist.<br><br>
+		$quick_info = 'Verification Level represents how deep in the history the transaction exist.<br><br>
 			The larger the number, the more time that all the peers have examined it and agree that it is a valid transaction.<br><br>
 			You can view up to 100 past transactions that have been <u>sent from</u> or <u>sent to</u> your Billfold.';
 
@@ -3487,14 +3494,14 @@ if($_SESSION["valid_login"] == TRUE)
 				else
 				{
 					// Self Generated to someone else
-					$public_key_from = '<td class="style2"><font color="blue">Self Generated Transaction</font>';
+					$public_key_from = '<td class="style2"><font color="blue">My Public Key</font>';
 					
 					// Check if the key matches anyone in the address book
 					$address_name = mysql_result(mysqli_query($db_connect, "SELECT name FROM `address_book` WHERE `full_key` = '" . base64_encode($public_key_trans_to) . "'"),0,0);
 
 					if(empty($address_name) == TRUE)
 					{
-						$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:175px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
+						$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:225px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
 					}
 					else
 					{
@@ -3522,7 +3529,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 						if(empty($address_name) == TRUE)
 						{
-							$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:195px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
+							$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:225px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
 						}
 						else
 						{
@@ -3536,7 +3543,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 				if(empty($address_name) == TRUE)
 				{
-					$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:195px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans) . '</p>';
+					$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:225px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans) . '</p>';
 				}
 				else
 				{

@@ -920,10 +920,13 @@ function send_timekoins($my_private_key = "", $my_public_key = "", $send_to_publ
 }
 //***********************************************************************************
 //***********************************************************************************
-function unix_timestamp_to_human($timestamp = "", $format = 'D d M Y - H:i:s')
+function unix_timestamp_to_human($timestamp = "", $default_timezone = "", $format = 'D d M Y - H:i:s')
 {
-	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-	$default_timezone = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"));
+	if($default_timezone == "")
+	{
+		$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+		$default_timezone = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'default_timezone' LIMIT 1"));
+	}
 
 	if(empty($default_timezone) == FALSE)
 	{	
