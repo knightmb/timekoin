@@ -134,12 +134,12 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 		// Choose random transaction foundation
 		if(mt_rand(1,4) == 4)
 		{
-			// Check the most recent foundations more frequently than older foundations
-			$rand_block = rand($previous_foundation_block - 4, $previous_foundation_block);
+			$rand_block = rand(0, $previous_foundation_block);
 		}
 		else
 		{
-			$rand_block = rand(0, $previous_foundation_block);
+			// Check the most recent foundations more frequently than older foundations
+			$rand_block = rand($previous_foundation_block - 4, $previous_foundation_block);			
 		}
 		
 		$current_foundation_hash = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_foundation` WHERE `block` = $rand_block LIMIT 1"),0,0);
@@ -165,7 +165,6 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 			{
 				// Build an existing Foundation Block and compare to the Hash in the database.
 				// If the two hash do not match, then some repairs need to be made to the transaction history.
-
 				write_log("Testing Transaction Foundation #$rand_block", "FO");
 
 				// Start the process to rebuild the transaction foundation

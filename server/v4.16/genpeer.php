@@ -249,6 +249,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 			}
 
 			// Optimize Table when Finished
+			mysqli_query($db_connect, "OPTIMIZE TABLE `generating_peer_list`");
 			mysqli_query($db_connect, "OPTIMIZE TABLE `generating_peer_queue`");
 
 			// Wait after generation election for DB sanity reasons
@@ -354,6 +355,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 			}
 
 			// Optimize Table when Finished
+			mysqli_query($db_connect, "OPTIMIZE TABLE `generating_peer_list`");			
 			mysqli_query($db_connect, "OPTIMIZE TABLE `generating_peer_queue`");
 
 			// Wait after generation election for DB sanity reasons

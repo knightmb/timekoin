@@ -373,7 +373,7 @@ if($sql_num_results > 0)
 					else
 					{
 						// Check to make sure there is not a duplicate generation transaction already
-						$found_public_key_queue = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY timestamp FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `attribute` = 'G' AND `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle LIMIT 1"),0,0);
+						$found_public_key_queue = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY timestamp FROM `transaction_history` WHERE `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle AND `public_key_from` = '$public_key' AND `attribute` = 'G' LIMIT 1"));
 
 						if(empty($found_public_key_queue) == TRUE)
 						{
@@ -508,7 +508,7 @@ if($sql_num_results > 0)
 		if($sql_row["attribute"] == "T") // Regular Transaction
 		{
 			// Check to make sure there is not a duplicate transaction already
-			$found_public_key_queue = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY timestamp FROM `transaction_history` WHERE `public_key_from` = '$public_key' AND `hash` = '$hash_check' LIMIT 1"));
+			$found_public_key_queue = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY timestamp FROM `transaction_history` WHERE `hash` = '$hash_check' AND `public_key_from` = '$public_key' LIMIT 1"));
 
 			if(empty($found_public_key_queue) == TRUE)
 			{
@@ -696,7 +696,6 @@ if($sql_num_results > 0)
 				$safe_delete_transaction = TRUE;
 				$record_failure_counter++;
 			}
-
 		} // Regular Transaction Check
 
 		// Safe to delete transaction from my transaction queue?
@@ -722,15 +721,20 @@ if($sql_num_results > 0)
 	if(mysqli_query($db_connect, $sql) == FALSE)
 	{
 		//Something didn't work
-		write_log("Could NOT Delete Old Transactions from the Transaction Queue", "TR");
+		write_log("Could NOT Delete Old Transactions from the Transaction Queue!", "TR");
 	}
 
+	// Wipe my transaction queue of all old election request and generation transactions
 	$sql = "DELETE QUICK FROM `my_transaction_queue` WHERE `my_transaction_queue`.`attribute` = 'R' OR `my_transaction_queue`.`attribute` = 'G'";
 	if(mysqli_query($db_connect, $sql) == FALSE)
 	{
 		//Something didn't work
-		write_log("Could NOT Delete Old Generation Join Request or Currency Generation from the MyQueue", "TR");
+		write_log("Could NOT Delete Old Election Request or Old Currency Generation from the My Transaction Queue!", "TR");
 	}
+
+	// Optimize Tables to Reclaim Space
+	mysqli_query($db_connect, "OPTIMIZE TABLE `my_transaction_queue`");
+	mysqli_query($db_connect, "OPTIMIZE TABLE `transaction_queue`");	
 }
 else
 {
@@ -744,8 +748,8 @@ else
 // Check to see if it is time to write a hash of the last cycle transactions
 
 $generation_arbitrary = ARBITRARY_KEY;
-$current_hash = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `timestamp` >= $current_transaction_cycle AND `timestamp` < $next_transaction_cycle AND `attribute` = 'H' LIMIT 1"),0,0);
-$past_hash = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle AND `attribute` = 'H' LIMIT 1"),0,0);
+$current_hash = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `timestamp` >= $current_transaction_cycle AND `timestamp` < $next_transaction_cycle AND `attribute` = 'H' LIMIT 1"));
+$past_hash = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle AND `attribute` = 'H' LIMIT 1"));
 
 if(empty($current_hash) == TRUE)
 {

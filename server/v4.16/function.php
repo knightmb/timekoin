@@ -1,5 +1,7 @@
 <?PHP
 include 'status.php';
+include 'mersenne_twister.php';
+include 'RSA.php';
 
 define("TRANSACTION_EPOCH","1338576300"); // Epoch timestamp: 1338576300
 define("ARBITRARY_KEY","01110100011010010110110101100101"); // Space filler for non-encryption data
@@ -156,7 +158,7 @@ function write_log($message = "", $type = "")
 {
 	// Write Log Entry
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);	
-	mysqli_query($db_connect, "INSERT INTO `activity_logs` (`timestamp` ,`log` ,`attribute`)	
+	mysqli_query($db_connect, "INSERT LOW_PRIORITY INTO `activity_logs` (`timestamp` ,`log` ,`attribute`)	
 		VALUES ('" . time() . "', '" . filter_sql(substr($message, 0, 256)) . "', '$type')");
 	return;
 }
@@ -664,7 +666,6 @@ function tk_encrypt($key = "", $crypt_data = "")
 		if(empty($encrypted_data) == TRUE)
 		{
 			// OpenSSL Encryption Limit Reached, try Native RSA
-			require_once('RSA.php');
 			$rsa = new Crypt_RSA();
 			$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
 			$rsa->loadKey($key);
@@ -673,7 +674,6 @@ function tk_encrypt($key = "", $crypt_data = "")
 	}
 	else
 	{
-		require_once('RSA.php');
 		$rsa = new Crypt_RSA();
 		$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
 		$rsa->loadKey($key);
@@ -684,25 +684,9 @@ function tk_encrypt($key = "", $crypt_data = "")
 }
 //***********************************************************************************
 //***********************************************************************************
-function set_decrypt_mode()
+function tk_decrypt($key = "", $crypt_data = "")
 {
 	if(function_exists('openssl_public_decrypt') == TRUE)
-	{
-		$GLOBALS['decrypt_mode'] = 1;
-	}
-	else
-	{
-		$GLOBALS['decrypt_mode'] = 2;
-	}
-	return;
-}
-//***********************************************************************************
-//***********************************************************************************
-function tk_decrypt($key = "", $crypt_data = "", $skip_openssl_check = FALSE)
-{
-	$decrypt;
-
-	if($skip_openssl_check == TRUE || function_exists('openssl_public_decrypt') == TRUE)
 	{
 		// Use OpenSSL if it is working
 		openssl_public_decrypt($crypt_data, $decrypt, $key, OPENSSL_PKCS1_PADDING);
@@ -711,7 +695,6 @@ function tk_decrypt($key = "", $crypt_data = "", $skip_openssl_check = FALSE)
 		{
 			// OpenSSL can't decrypt this for some reason
 			// Use built in Code instead
-			require_once('RSA.php');
 			$rsa = new Crypt_RSA();
 			$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
 			$rsa->loadKey($key);
@@ -721,7 +704,6 @@ function tk_decrypt($key = "", $crypt_data = "", $skip_openssl_check = FALSE)
 	else
 	{
 		// Use built in Code
-		require_once('RSA.php');
 		$rsa = new Crypt_RSA();
 		$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
 		$rsa->loadKey($key);
@@ -734,16 +716,6 @@ function tk_decrypt($key = "", $crypt_data = "", $skip_openssl_check = FALSE)
 //***********************************************************************************
 function check_crypt_balance_range($public_key = "", $block_start = 0, $block_end = 0)
 {
-	set_decrypt_mode(); // Figure out which decrypt method can be best used
-
-	//Initialize objects for Internal RSA decrypt
-	if($GLOBALS['decrypt_mode'] == 2)
-	{
-		require_once('RSA.php');
-		$rsa = new Crypt_RSA();
-		$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
-	}
-
 	if($block_start == 0 && $block_end == 0)// Find every TimeKoin ever sent to and from this public Key
 	{
 		$sql = "SELECT public_key_from, public_key_to, crypt_data3, attribute FROM `transaction_history` WHERE `public_key_from` = '$public_key' OR `public_key_to` = '$public_key' ";
@@ -755,10 +727,10 @@ function check_crypt_balance_range($public_key = "", $block_start = 0, $block_en
 		$start_time_range = TRANSACTION_EPOCH + ($block_start * 300);
 		$end_time_range = TRANSACTION_EPOCH + ($block_end * 300);
 
-		$sql = "SELECT public_key_from, public_key_to, crypt_data3, attribute FROM `transaction_history` WHERE (`public_key_from` = '$public_key' AND `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range')
-		OR (`public_key_to` = '$public_key' AND `timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range')";
+		$sql = "SELECT public_key_from, public_key_to, crypt_data3, attribute FROM `transaction_history` WHERE (`timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range' AND `public_key_from` = '$public_key')
+		OR (`timestamp` >= '$start_time_range' AND `timestamp` < '$end_time_range' AND `public_key_to` = '$public_key')";
 	}
-	
+
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	$sql_result = mysqli_query($db_connect, $sql);
 	$sql_num_results = mysqli_num_rows($sql_result);
@@ -768,65 +740,34 @@ function check_crypt_balance_range($public_key = "", $block_start = 0, $block_en
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
 		$sql_row = mysqli_fetch_row($sql_result);
-
 		$public_key_from = $sql_row[0];
 		$public_key_to = $sql_row[1];
 		$crypt3 = $sql_row[2];
 		$attribute = $sql_row[3];
+		$crypt3 = base64_decode($crypt3);
 
 		if($attribute == "G" && $public_key_from == $public_key_to) // Everything generated by this public key
 		{
 			// Currency Generation
 			// Decrypt transaction information
-			if($GLOBALS['decrypt_mode'] == 2)
-			{
-				$rsa->loadKey($public_key_from);
-				$transaction_info = $rsa->decrypt(base64_decode($crypt3));
-			}
-			else
-			{
-				$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3), TRUE);
-			} 
-
+			$transaction_info = tk_decrypt($public_key_from, $crypt3);
 			$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
-			$crypto_balance += $transaction_amount_sent;
+			$crypto_balance+= $transaction_amount_sent;
 		}
-
-		if($attribute == "T" && $public_key_to == $public_key) // Everything given to this public key
+		else if($attribute == "T" && $public_key_to == $public_key) // Everything given to this public key
 		{
 			// Decrypt transaction information
-			if($GLOBALS['decrypt_mode'] == 2)
-			{
-				$rsa->loadKey($public_key_from);
-				$transaction_info = $rsa->decrypt(base64_decode($crypt3));
-			}
-			else
-			{
-				$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3), TRUE);
-			}
-	
+			$transaction_info = tk_decrypt($public_key_from, $crypt3);
 			$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
-			$crypto_balance += $transaction_amount_sent;
+			$crypto_balance+= $transaction_amount_sent;
 		}
-
-		if($attribute == "T" && $public_key_from == $public_key) // Everything spent from this public key
+		else if($attribute == "T" && $public_key_from == $public_key) // Everything spent from this public key
 		{
 			// Decrypt transaction information
-			$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3));
-
-			if($GLOBALS['decrypt_mode'] == 2)
-			{
-				$rsa->loadKey($public_key_from);
-				$transaction_info = $rsa->decrypt(base64_decode($crypt3));
-			}
-			else
-			{
-				$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3), TRUE);
-			}
-
+			$transaction_info = tk_decrypt($public_key_from, $crypt3);
 			$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
-			$crypto_balance -= $transaction_amount_sent;
-		}		
+			$crypto_balance-= $transaction_amount_sent;
+		}
 	}
 
 	// Unset variable to free up RAM
@@ -862,7 +803,7 @@ function check_crypt_balance($public_key = "")
 	}
 
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-	$sql = "SELECT block, balance FROM `balance_index` WHERE `block` = $previous_foundation_block AND `public_key_hash` = '$public_key_hash' LIMIT 1";
+	$sql = "SELECT block, balance FROM `balance_index` WHERE `public_key_hash` = '$public_key_hash' AND `block` = $previous_foundation_block LIMIT 1";
 	$sql_result = mysqli_query($db_connect, $sql);
 	$sql_row = mysqli_fetch_array($sql_result);
 
@@ -905,7 +846,7 @@ function check_crypt_balance($public_key = "")
 			$qbi_max_foundation = $sql_row2["max_foundation"];
 			$qbi_balance = $sql_row2["balance"];
 		}		
-		
+
 		// Use QBI to Decrease DB time to calculate Public Key Balance
 		// Create time range
 		$start_time_range = $qbi_max_foundation * 500;
@@ -1159,8 +1100,8 @@ function gen_lifetime_transactions($public_key = "", $high_priority = FALSE)
 	// Double md5 to keep key balances and lifetime transaction counts separate
 	$public_key_hash = hash('md5', $public_key);
 	$public_key_hash = hash('md5', $public_key_hash);
-	$previous_foundation_block = foundation_cycle(-2, TRUE);
-	$previous_foundation_block_time = foundation_cycle(-2);
+	$previous_foundation_block = foundation_cycle(-1, TRUE);
+	$previous_foundation_block_time = foundation_cycle(-1);
 
 	$generation_records_total = mysql_result(mysqli_query($db_connect, "SELECT balance FROM `balance_index` WHERE `public_key_hash` = '$public_key_hash' AND `block` = '$previous_foundation_block' LIMIT 1"));
 	$generation_records_total2;
@@ -1177,7 +1118,7 @@ function gen_lifetime_transactions($public_key = "", $high_priority = FALSE)
 	if($generation_records_total == "")
 	{
 		// No cache exist yet, create a new one
-		$generation_records_total = mysql_result(mysqli_query($db_connect, "SELECT $high_priority COUNT(*) FROM `transaction_history` WHERE `timestamp` <= $previous_foundation_block_time AND `public_key_to` = '$public_key' AND `attribute` = 'G'"));
+		$generation_records_total = mysql_result(mysqli_query($db_connect, "SELECT $high_priority COUNT(*) FROM `transaction_history` WHERE `public_key_to` = '$public_key' AND `timestamp` <= $previous_foundation_block_time AND `attribute` = 'G'"));
 
 		// Insert new Cache Total
 		$sql = "INSERT $high_priority INTO `balance_index` (`block`, `public_key_hash`, `balance`) VALUES ('$previous_foundation_block', '$public_key_hash', '$generation_records_total')";
@@ -1217,7 +1158,6 @@ function TKRandom($range_start = 0, $range_end = 1, $custom_seed = "")
 {
 	if(version_compare(PHP_VERSION, '7.1.0', '<') == TRUE)
 	{
-		require_once 'mersenne_twister.php';
 		$require_mersenne_twister = TRUE;
 	}
 
@@ -1252,7 +1192,7 @@ function scorePublicKey($public_key = "", $score_key = FALSE)
 
 	if(version_compare(PHP_VERSION, '7.1.0', '<') == TRUE)
 	{
-		require_once('mersenne_twister.php');// For Earlier PHP Versions (less than v7.1)
+		// For Earlier PHP Versions (less than v7.1)
 		$twister1 = new twister(TKFoundationSeed() + $current_generation_block);
 		$mersenne_twister = TRUE;
 	}
@@ -1396,7 +1336,7 @@ function election_cycle($when = 0, $ip_type = 1, $gen_peers_total = 0, $plugin_s
 
 		if(version_compare(PHP_VERSION, '7.1.0', '<') == TRUE)
 		{
-			require_once('mersenne_twister.php');// For Earlier PHP Versions (less than v7.1)
+			// For Earlier PHP Versions (less than v7.1)
 			$twister1 = new twister($TKFoundationSeed + $current_generation_block);
 			$mersenne_twister = TRUE;
 		}
@@ -1473,7 +1413,7 @@ function election_cycle($when = 0, $ip_type = 1, $gen_peers_total = 0, $plugin_s
 		// Transpose waveform 180 degrees from IPv4 Generation
 		if(version_compare(PHP_VERSION, '7.1.0', '<') == TRUE)
 		{
-			require_once('mersenne_twister.php');// For Earlier PHP Versions (less than v7.1)
+			// For Earlier PHP Versions (less than v7.1)
 			$twister1 = new twister($TKFoundationSeed + $current_generation_block);
 			$mersenne_twister = TRUE;
 		}
@@ -2367,8 +2307,6 @@ function activate($component = "SYSTEM", $on_or_off = 1)
 //***********************************************************************************
 function generate_new_keys($bits = 1536, $return_keys_instead = FALSE)
 {
-	require_once('RSA.php');
-
 	$rsa = new Crypt_RSA();
 	extract($rsa->createKey($bits));
 

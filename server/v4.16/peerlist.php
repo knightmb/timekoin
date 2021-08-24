@@ -587,6 +587,16 @@ if($active_peers < $max_active_peers)
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
+		// Check for shutdown status in long loops
+		$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"));
+
+		// Check script status
+		if($loop_active == 3) // Shutdown
+		{
+			// Break Loop Early
+			break;
+		}// Check for shutdown status in long loops
+
 		$sql_row = mysqli_fetch_array($sql_result);
 		$ip_address = $sql_row["IP_Address"];
 		$domain = $sql_row["domain"];
@@ -830,8 +840,17 @@ if($new_peers_numbers < $max_new_peers && mt_rand(1,3) == 2)//Randomize a little
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
+		// Check for shutdown status in long loops
+		$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"));
+
+		// Check script status
+		if($loop_active == 3) // Shutdown
+		{
+			// Break Loop Early
+			break;
+		}// Check for shutdown status in long loops
+
 		$sql_row = mysqli_fetch_array($sql_result);
-		
 		$ip_address = $sql_row["IP_Address"];
 		$domain = $sql_row["domain"];
 		$subfolder = $sql_row["subfolder"];
@@ -1047,8 +1066,17 @@ if($new_peers_numbers < $max_new_peers && mt_rand(1,3) == 2)//Randomize a little
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysqli_fetch_array($sql_result);
+		// Check for shutdown status in long loops
+		$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"));
 
+		// Check script status
+		if($loop_active == 3) // Shutdown
+		{
+			// Break Loop Early
+			break;
+		}// Check for shutdown status in long loops
+
+		$sql_row = mysqli_fetch_array($sql_result);
 		$ip_address = $sql_row["IP_Address"];
 		$domain = $sql_row["domain"];
 		$subfolder = $sql_row["subfolder"];
@@ -1255,8 +1283,17 @@ if($new_peers_numbers < $max_new_peers && mt_rand(1,3) == 2)//Randomize a little
 
 	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql_row = mysqli_fetch_array($sql_result);
+		// Check for shutdown status in long loops
+		$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"));
 
+		// Check script status
+		if($loop_active == 3) // Shutdown
+		{
+			// Break Loop Early
+			break;
+		}// Check for shutdown status in long loops
+
+		$sql_row = mysqli_fetch_array($sql_result);
 		$ip_address = $sql_row["IP_Address"];
 		$domain = $sql_row["domain"];
 		$subfolder = $sql_row["subfolder"];

@@ -140,6 +140,44 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 			}
 			else
 			{
+				$queue_index_created = TRUE;
+				break; // Break from loop early
+			}
+		}
+	}
+
+	// Build Balance Index for Generation Transactions about to be Processed in the Queue
+	$sql = "SELECT public_key FROM `transaction_queue` WHERE `attribute` = 'G'";
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
+
+	if($sql_num_results > 0)
+	{
+		$previous_foundation_block = foundation_cycle(-1, TRUE);
+		$previous_foundation_block_time = foundation_cycle(-1);
+
+		for ($i = 0; $i < $sql_num_results; $i++)
+		{
+			if(($next_transaction_cycle - time()) > 120)// Keep looping until time runs out, then stop early
+			{
+				$sql_row = mysqli_fetch_array($sql_result);
+
+				// Double md5 to keep key balances and lifetime transaction counts separate
+				$public_key_hash = hash('md5', $sql_row["public_key"]);
+				$public_key_hash = hash('md5', $public_key_hash);
+				$generation_records_total = mysql_result(mysqli_query($db_connect, "SELECT balance FROM `balance_index` WHERE `public_key_hash` = '$public_key_hash' AND `block` = '$previous_foundation_block' LIMIT 1"));
+
+				if($generation_records_total == "")
+				{
+					// No lifetime transaction index, go ahead and create one
+					write_log("Updating Lifetime Generation Index For Transaction Queue", "BA");
+					gen_lifetime_transactions($sql_row["public_key"]);
+					$queue_index_created = TRUE;
+				}
+			}
+			else
+			{
+				$queue_index_created = TRUE;
 				break; // Break from loop early
 			}
 		}

@@ -3297,7 +3297,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string = '<strong>Checking All Database Tables</strong><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Check Database Results</th></tr><tr><td>';
 
-			$db_check = mysqli_query($db_connect, "CHECK TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
+			$db_check = mysqli_query($db_connect, "CHECK TABLE `activity_logs`, `generating_peer_list`, `generating_peer_queue`, `my_keys`, `my_transaction_queue`, `options`, `quantum_balance_index`, `transaction_foundation`, `transaction_history`, `transaction_queue`");
 			$db_check_info = mysqli_fetch_array($db_check);
 			$db_check_count = 0;
 			
@@ -3328,7 +3328,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$body_string = '<strong>Repair All Database Tables</strong><br><br>
 				<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" ><tr><th>Repair Database Results</th></tr><tr><td>';
 
-			$db_check = mysqli_query($db_connect, "REPAIR TABLE `activity_logs` , `generating_peer_list` , `generating_peer_queue` , `my_keys` , `my_transaction_queue` , `options` , `transaction_foundation` , `transaction_history` , `transaction_queue`");
+			$db_check = mysqli_query($db_connect, "REPAIR TABLE `activity_logs`, `generating_peer_list`, `generating_peer_queue`, `my_keys`, `my_transaction_queue`, `options`, `quantum_balance_index`, `transaction_foundation`, `transaction_history`, `transaction_queue`");
 			$db_check_info = mysqli_fetch_array($db_check);
 			$db_check_count = 0;
 			

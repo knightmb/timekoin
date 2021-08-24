@@ -1115,26 +1115,23 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 if($process_clone == FALSE)
 {
 	// Clear any duplicate transactions
-	if(rand(1,4) == 4) // Randomize to avoid DB spamming
+	$sql = "SELECT public_key, hash FROM `transaction_queue`";
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
+	
+	for ($i = 0; $i < $sql_num_results; $i++)
 	{
-		$sql = "SELECT public_key, hash FROM `transaction_queue`";
-		$sql_result = mysqli_query($db_connect, $sql);
-		$sql_num_results = mysqli_num_rows($sql_result);
-		
-		for ($i = 0; $i < $sql_num_results; $i++)
+		$sql_row = mysqli_fetch_array($sql_result);
+		$hash = $sql_row["hash"];
+		$public_key = $sql_row["public_key"];
+
+		// Is there more than one of this hash?
+		$duplicate_hash = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_queue` WHERE `public_key` = '$public_key' AND `hash` = '$hash' LIMIT 2"),1,0);
+
+		if($duplicate_hash != "")
 		{
-			$sql_row = mysqli_fetch_array($sql_result);
-			$hash = $sql_row["hash"];
-			$public_key = $sql_row["public_key"];
-
-			// Is there more than one of this hash?
-			$duplicate_hash = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_queue` WHERE `public_key` = '$public_key' AND `hash` = '$hash' LIMIT 2"),1,0);
-
-			if($duplicate_hash != "")
-			{
-				// Timestamp was valid, remove duplicate
-				mysqli_query($db_connect, "DELETE FROM `transaction_queue` WHERE `public_key` = '$public_key' AND `hash` = '$hash' LIMIT 1");
-			}
+			// Remove duplicate
+			mysqli_query($db_connect, "DELETE QUICK FROM `transaction_queue` WHERE `public_key` = '$public_key' AND `hash` = '$hash' LIMIT 1");
 		}
 	}
 

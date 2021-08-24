@@ -22,7 +22,7 @@ if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 $db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 //***********************************************************************************
 $hash_code = filter_sql(substr($_GET["hash"], 0, 256)); // Limit to 256 Characters
-$hash_code = mysql_result(mysqli_query($db_connect, "SELECT field_name FROM `options` WHERE `field_name` LIKE 'hashcode%' AND `field_data` = '$hash_code' LIMIT 1"),0,0);
+$hash_code = mysql_result(mysqli_query($db_connect, "SELECT field_name FROM `options` WHERE `field_name` LIKE 'hashcode%' AND `field_data` = '$hash_code' LIMIT 1"));
 
 if(empty($hash_code) == TRUE)
 {
@@ -33,7 +33,7 @@ if(empty($hash_code) == TRUE)
 }
 else
 {
-	$hash_permissions = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = '$hash_code" . "_permissions' LIMIT 1"),0,0);
+	$hash_permissions = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = '$hash_code" . "_permissions' LIMIT 1"));
 }
 //***********************************************************************************
 // Answer if Hashcode is valid for any reason
@@ -41,7 +41,7 @@ if($_GET["action"] == "tk_hash_status")
 {
 	echo TRUE;
 
-	log_ip("AP", scale_trigger(100));
+	log_ip("AP", 1);
 	exit;
 }
 //***********************************************************************************
@@ -325,7 +325,7 @@ if($_GET["action"] == "tk_start_stop")
 	}// Valid Permissions Check
 
 	// Log inbound IP activity
-	log_ip("AP", scale_trigger(100));
+	log_ip("AP", 1);
 	exit;
 }
 //***********************************************************************************
@@ -589,7 +589,7 @@ if($_GET["action"] == "tk_process_status")
 	}// Valid Permissions Check
 
 	// Log inbound IP activity
-	log_ip("AP", scale_trigger(100));
+	log_ip("AP", 1);
 	exit;
 }
 //***********************************************************************************
@@ -617,7 +617,7 @@ if($_GET["action"] == "pk_valid")
 	}// Valid Permissions Check
 
 	// Log inbound IP activity
-	log_ip("AP", scale_trigger(100));
+	log_ip("AP", 1);
 	exit;
 }
 //***********************************************************************************
@@ -628,14 +628,14 @@ if($_GET["action"] == "pk_balance")
 	if(check_hashcode_permissions($hash_permissions, "pk_balance") == TRUE)
 	{
 		// Grab balance for public key and return value
-		$public_key = substr($_POST["public_key"], 0, 4096); // In case someone is trying to flood this function
+		$public_key = substr($_POST["public_key"], 0, 10000); // In case someone is trying to flood this function
 		$public_key = filter_sql(base64_decode($public_key));
 
 		echo check_crypt_balance($public_key);
 	}// Valid Permissions Check
 
 	// Log inbound IP activity
-	log_ip("AP", scale_trigger(100));
+	log_ip("AP", 1);
 	exit;
 }
 //***********************************************************************************
@@ -768,7 +768,7 @@ if($_GET["action"] == "send_tk")
 	} // End Permission Check
 
 	// Log inbound IP activity
-	log_ip("AP", scale_trigger(100));
+	log_ip("AP", 1);
 	exit;
 }
 //***********************************************************************************
@@ -827,7 +827,7 @@ if($_GET["action"] == "pk_history")
 			echo $echo_buffer;
 
 			// Log inbound IP activity
-			log_ip("AP", scale_trigger(100));
+			log_ip("AP", 1);
 			exit;		
 		
 		} // Sent to Public Key
@@ -875,14 +875,14 @@ if($_GET["action"] == "pk_history")
 			echo $echo_buffer;
 
 			// Log inbound IP activity
-			log_ip("AP", scale_trigger(100));
+			log_ip("AP", 1);
 			exit;		
 		
 		} // Sent from Public Key
 
 	}// Valid Permissions Check
 
-	log_ip("AP", scale_trigger(100));
+	log_ip("AP", 1);
 	exit;
 }
 //***********************************************************************************
@@ -898,7 +898,7 @@ if($_GET["action"] == "pk_gen_amt")
 	}
 
 	// Log inbound IP activity
-	log_ip("AP", scale_trigger(100));
+	log_ip("AP", 1);
 	exit;
 }
 //***********************************************************************************
@@ -956,7 +956,7 @@ if($_GET["action"] == "tk_trans_total")
 	}// End Permission Check
 
 	// Log inbound IP activity
-	log_ip("AP", scale_trigger(100));
+	log_ip("AP", 1);
 	exit;
 }
 //***********************************************************************************
@@ -968,19 +968,8 @@ if($_GET["action"] == "pk_recv")
 		// Total of *all* the Timekoins ever received by the provided public key via transactions
 		$public_key = filter_sql(base64_decode($_POST["public_key"]));
 
-		set_decrypt_mode(); // Figure out which decrypt method can be best used
-
-		//Initialize objects for Internal RSA decrypt
-		if($GLOBALS['decrypt_mode'] == 2)
-		{
-			require_once('RSA.php');
-			$rsa = new Crypt_RSA();
-			$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
-		}
-
 		// Find every TimeKoin sent to this public Key
 		$sql = "SELECT crypt_data3, attribute FROM `transaction_history` WHERE `public_key_to` = '$public_key'";
-
 		$sql_result = mysqli_query($db_connect, $sql);
 		$sql_num_results = mysqli_num_rows($sql_result);
 		$crypto_balance = 0;
@@ -996,16 +985,7 @@ if($_GET["action"] == "pk_recv")
 			if($attribute == "T")
 			{
 				// Decrypt transaction information
-				if($GLOBALS['decrypt_mode'] == 2)
-				{
-					$rsa->loadKey($public_key_from);
-					$transaction_info = $rsa->decrypt(base64_decode($crypt3));
-				}
-				else
-				{
-					$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3), TRUE);
-				}
-		
+				$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3));
 				$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 				$crypto_balance += $transaction_amount_sent;
 			}
@@ -1016,7 +996,7 @@ if($_GET["action"] == "pk_recv")
 	}// End Permission Check
 
 	// Log inbound IP activity
-	log_ip("AP", scale_trigger(100));
+	log_ip("AP", 1);
 	exit;
 }
 //***********************************************************************************
@@ -1027,16 +1007,6 @@ if($_GET["action"] == "pk_sent")
 	{
 		// Total of *all* the Timekoins ever sent by the provided public key via transactions
 		$public_key = filter_sql(base64_decode($_POST["public_key"]));
-
-		set_decrypt_mode(); // Figure out which decrypt method can be best used
-
-		//Initialize objects for Internal RSA decrypt
-		if($GLOBALS['decrypt_mode'] == 2)
-		{
-			require_once('RSA.php');
-			$rsa = new Crypt_RSA();
-			$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
-		}
 
 		// Find every Time Koin sent to this public Key
 		$sql = "SELECT crypt_data3, attribute FROM `transaction_history` WHERE `public_key_from` = '$public_key'";
@@ -1049,23 +1019,13 @@ if($_GET["action"] == "pk_sent")
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
 			$sql_row = mysqli_fetch_row($sql_result);
-
 			$crypt3 = $sql_row[0];
 			$attribute = $sql_row[1];
 
 			if($attribute == "T")
 			{
 				// Decrypt transaction information
-				if($GLOBALS['decrypt_mode'] == 2)
-				{
-					$rsa->loadKey($public_key_from);
-					$transaction_info = $rsa->decrypt(base64_decode($crypt3));
-				}
-				else
-				{
-					$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3), TRUE);
-				}
-		
+				$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3));
 				$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 				$crypto_balance += $transaction_amount_sent;
 			}
@@ -1076,7 +1036,7 @@ if($_GET["action"] == "pk_sent")
 	} // End Permission Check
 
 	// Log inbound IP activity
-	log_ip("AP", scale_trigger(100));
+	log_ip("AP", 1);
 	exit;
 }
 //***********************************************************************************
@@ -1087,16 +1047,6 @@ if($_GET["action"] == "pk_gen_total")
 	{
 		// Total of *all* the Timekoins ever generated by the provided public key
 		$public_key = filter_sql(base64_decode($_POST["public_key"]));
-
-		set_decrypt_mode(); // Figure out which decrypt method can be best used
-
-		//Initialize objects for Internal RSA decrypt
-		if($GLOBALS['decrypt_mode'] == 2)
-		{
-			require_once('RSA.php');
-			$rsa = new Crypt_RSA();
-			$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
-		}
 
 		// Find every Time Koin sent to this public Key
 		$sql = "SELECT public_key_from, public_key_to, crypt_data3, attribute FROM `transaction_history` WHERE `public_key_from` = '$public_key'";
@@ -1109,7 +1059,6 @@ if($_GET["action"] == "pk_gen_total")
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
 			$sql_row = mysqli_fetch_row($sql_result);
-
 			$public_key_from = $sql_row[0];			
 			$public_key_to = $sql_row[1];
 			$crypt3 = $sql_row[2];
@@ -1118,16 +1067,7 @@ if($_GET["action"] == "pk_gen_total")
 			if($attribute == "G" && $public_key_from == $public_key_to)
 			{
 				// Decrypt transaction information
-				if($GLOBALS['decrypt_mode'] == 2)
-				{
-					$rsa->loadKey($public_key_from);
-					$transaction_info = $rsa->decrypt(base64_decode($crypt3));
-				}
-				else
-				{
-					$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3), TRUE);
-				}
-		
+				$transaction_info = tk_decrypt($public_key_from, base64_decode($crypt3));
 				$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 				$crypto_balance += $transaction_amount_sent;
 			}
@@ -1138,7 +1078,7 @@ if($_GET["action"] == "pk_gen_total")
 	} // End Permission Check
 
 	// Log inbound IP activity
-	log_ip("AP", scale_trigger(100));
+	log_ip("AP", 1);
 	exit;
 }
 //***********************************************************************************
@@ -1163,7 +1103,7 @@ if($_GET["action"] == "easy_key")
 	}
 
 	// Log inbound IP activity
-	log_ip("AP", scale_trigger(100));
+	log_ip("AP", 1);
 	exit;
 }
 //***********************************************************************************
@@ -1217,7 +1157,7 @@ if($_GET["action"] == "num_gen_peers")
 	}
 
 	// Log inbound IP activity
-	log_ip("AP", scale_trigger(100));
+	log_ip("AP", 1);
 	exit;
 }
 //***********************************************************************************

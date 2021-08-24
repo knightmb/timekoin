@@ -235,8 +235,9 @@ while(1) // Begin Infinite Loop :)
 				// Trim the oldest records
 				mysqli_query($db_connect, "DELETE FROM `activity_logs` ORDER BY `timestamp` ASC LIMIT " . ($activity_log_count - $activity_log_max) . "");
 
-				// Optimize Table to Reclaim Space
+				// Optimize Tables to Reclaim Space
 				mysqli_query($db_connect, "OPTIMIZE TABLE `activity_logs`");
+				mysqli_query($db_connect, "OPTIMIZE TABLE `options`");
 
 				// Log Activity Log Maintenance
 				write_log("Activity Log Purged of the Last [" . ($activity_log_count - $activity_log_max) . "] Oldest Records", "MA");
