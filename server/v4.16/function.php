@@ -724,7 +724,7 @@ function tk_decrypt($key = "", $crypt_data = "")
 			// Not using PKCS1, try OAEP
 			$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_OAEP);
 			$decrypt = $rsa->decrypt($crypt_data);
-		}		
+		}
 	}
 
 	return $decrypt;

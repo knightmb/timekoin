@@ -599,7 +599,7 @@ if($_GET["action"] == "pk_valid")
 	if(check_hashcode_permissions($hash_permissions, "pk_valid") == TRUE)
 	{
 		// Is this public key valid with any history?
-		$public_key = substr($_POST["public_key"], 0, 4096); // In case someone is trying to flood this function
+		$public_key = substr($_POST["public_key"], 0, 10000); // In case someone is trying to flood this function
 		$public_key = filter_sql(base64_decode($public_key));
 
 		$valid_key_test = mysql_result(mysqli_query($db_connect, "SELECT public_key_from FROM `transaction_history` WHERE `public_key_from` = '$public_key' OR `public_key_to` = '$public_key' LIMIT 1"),0,0);
