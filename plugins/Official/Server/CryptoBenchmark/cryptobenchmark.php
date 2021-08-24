@@ -28,6 +28,8 @@ if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 	if($_GET["action"] == "crypt")
 	{
 		$bits_level = intval($_POST["crypt_bits"]);
+		$custom_private_key = $_POST["custom_private_key"];
+		$custom_public_key = $_POST["custom_public_key"];
 
 		if($bits_level < 10) { $bits_level = 10; }
 
@@ -37,12 +39,19 @@ if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 
 		$key_create_micro_time = microtime(TRUE);
 
-		require_once('../RSA.php');
-
-		$rsa = new Crypt_RSA();
+		if($custom_private_key == "" && $custom_public_key == "")
+		{
+			require_once('../RSA.php');
+			$rsa = new Crypt_RSA();
+			extract($rsa->createKey($bits_level));
+		}
+		else
+		{
+			$privatekey = base64_decode($custom_private_key);
+			$publickey = base64_decode($custom_public_key);
+			$bits_level = "Unknown";
+		}
 		
-		extract($rsa->createKey($bits_level));
-
 		$key_create_micro_time_done = microtime(TRUE);
 
 		if(empty($privatekey) == FALSE && empty($publickey) == FALSE)
@@ -63,10 +72,10 @@ if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 
 			if(empty($decrypted_data) == TRUE) { $decrypted_data = '***DATA STRING TOO LONG FOR BITS ENTERED***'; }
 
-				$micro_time_variance = "Key Pair Creation [<strong>" . round(($key_create_micro_time_done - $key_create_micro_time) * 1000) . "</strong>] ms<br>
-				Data Encryption [<strong>" . round(($encrypt_create_micro_time_done - $encrypt_create_micro_time) * 1000) . "</strong>] ms<br>
-				Data Decryption [<strong>" . round(($decrypt_create_micro_time_done - $decrypt_create_micro_time) * 1000) . "</strong>] ms<br>
-				Total Time [<strong>" . round((microtime(TRUE) - $key_create_micro_time) * 1000) . "</strong>] ms";
+			$micro_time_variance = "Key Pair Creation [<strong>" . round(($key_create_micro_time_done - $key_create_micro_time) * 1000) . "</strong>] ms<br>
+			Data Encryption [<strong>" . round(($encrypt_create_micro_time_done - $encrypt_create_micro_time) * 1000) . "</strong>] ms<br>
+			Data Decryption [<strong>" . round(($decrypt_create_micro_time_done - $decrypt_create_micro_time) * 1000) . "</strong>] ms<br>
+			Total Time [<strong>" . round((microtime(TRUE) - $key_create_micro_time) * 1000) . "</strong>] ms";
 			$text_bar.= " $micro_time_variance for <strong>$bits_level</strong> bit RSA Encryption";			
 		}
 		else
@@ -78,11 +87,12 @@ if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 	}
 
 	// Main Body Text
-	$body_string = '<FORM ACTION="cryptobenchmark.php?action=crypt" METHOD="post">
-	Choose bits: <input type="text" size="20" name="crypt_bits" value="' . $bits_level . '" /><br><br>
+	$body_string = '<FORM ACTION="cryptobenchmark.php?action=crypt" METHOD="post">	<input type="submit" name="Submit" value="Run Benchmark" /><br>
+	<strong>Choose bits: <input type="text" size="20" name="crypt_bits" value="' . $bits_level . '" /><br><br>
 	Data to Encrypt: <textarea name="encrypt_me" rows="6" cols="75">' . $encrypt_data . '</textarea><hr>
-	Data to After Decryption: <textarea name="decrypt_me" rows="6" cols="75">' . $decrypted_data . '</textarea><br><br>
-	<input type="submit" name="Submit" value="Run Benchmark" /></FORM><hr>
+	Data to After Decryption: <textarea name="decrypt_me" rows="6" cols="75">' . $decrypted_data . '</textarea><hr>
+	Custom Private Key: <textarea name="custom_private_key" rows="6" cols="75">' . $custom_private_key . '</textarea><br><br>
+	Custom Public Key: <textarea name="custom_public_key" rows="6" cols="75">' . $custom_public_key . '</textarea><hr></strong></FORM>
 	<p style="word-wrap:break-word; font-size:12px;"><strong>Private Key Used:</strong><br>' . base64_encode($new_privatekey) . '</p><hr>
 	<p style="word-wrap:break-word; font-size:12px;"><strong>Public Key Used:</strong><br>' . base64_encode($new_publickey) . '</p>';
 

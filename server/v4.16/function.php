@@ -661,6 +661,7 @@ function tk_encrypt($key = "", $crypt_data = "")
 {
 	if(function_exists('openssl_private_encrypt') == TRUE)
 	{
+		// Use OpenSSL if possible
 		openssl_private_encrypt($crypt_data, $encrypted_data, $key, OPENSSL_PKCS1_PADDING);
 
 		if(empty($encrypted_data) == TRUE)
@@ -668,6 +669,7 @@ function tk_encrypt($key = "", $crypt_data = "")
 			// OpenSSL Encryption Limit Reached, try Native RSA
 			$rsa = new Crypt_RSA();
 			$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
+			//$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_OAEP);
 			$rsa->loadKey($key);
 			$encrypted_data = $rsa->encrypt($crypt_data);
 		}
@@ -676,6 +678,7 @@ function tk_encrypt($key = "", $crypt_data = "")
 	{
 		$rsa = new Crypt_RSA();
 		$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
+		//$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_OAEP);
 		$rsa->loadKey($key);
 		$encrypted_data = $rsa->encrypt($crypt_data);
 	}
@@ -688,7 +691,7 @@ function tk_decrypt($key = "", $crypt_data = "")
 {
 	if(function_exists('openssl_public_decrypt') == TRUE)
 	{
-		// Use OpenSSL if it is working
+		// Use OpenSSL if possible
 		openssl_public_decrypt($crypt_data, $decrypt, $key, OPENSSL_PKCS1_PADDING);
 
 		if(empty($decrypt) == TRUE)
@@ -699,6 +702,13 @@ function tk_decrypt($key = "", $crypt_data = "")
 			$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
 			$rsa->loadKey($key);
 			$decrypt = $rsa->decrypt($crypt_data);
+
+			if(empty($decrypt) == TRUE)
+			{
+				// Not using PKCS1, try OAEP
+				$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_OAEP);
+				$decrypt = $rsa->decrypt($crypt_data);
+			}
 		}
 	}
 	else
@@ -708,6 +718,13 @@ function tk_decrypt($key = "", $crypt_data = "")
 		$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_PKCS1);
 		$rsa->loadKey($key);
 		$decrypt = $rsa->decrypt($crypt_data);
+
+		if(empty($decrypt) == TRUE)
+		{
+			// Not using PKCS1, try OAEP
+			$rsa->setEncryptionMode(CRYPT_RSA_ENCRYPTION_OAEP);
+			$decrypt = $rsa->decrypt($crypt_data);
+		}		
 	}
 
 	return $decrypt;

@@ -1,12 +1,5 @@
 <?PHP
 /**
- * Include Math_BigInteger
- */
-
-//***************************************************************************************
-//***************************************************************************************
-//***************************************************************************************
-/**
  * Pure-PHP arbitrary precision integer arithmetic library.
  *
  * Supports base-2, base-10, base-16, and base-256 numbers.  Uses the GMP or BCMath extensions, if available,
@@ -14,32 +7,90 @@
  *
  * PHP versions 4 and 5
  *
+ * {@internal (all DocBlock comments regarding implementation - such as the one that follows - refer to the
+ * {@link MATH_BIGINTEGER_MODE_INTERNAL MATH_BIGINTEGER_MODE_INTERNAL} mode)
+ *
+ * Math_BigInteger uses base-2**26 to perform operations such as multiplication and division and
+ * base-2**52 (ie. two base 2**26 digits) to perform addition and subtraction.  Because the largest possible
+ * value when multiplying two base-2**26 numbers together is a base-2**52 number, double precision floating
+ * point numbers - numbers that should be supported on most hardware and whose significand is 53 bits - are
+ * used.  As a consequence, bitwise operators such as >> and << cannot be used, nor can the modulo operator %,
+ * which only supports integers.  Although this fact will slow this library down, the fact that such a high
+ * base is being used should more than compensate.
+ *
+ * Numbers are stored in {@link http://en.wikipedia.org/wiki/Endianness little endian} format.  ie.
+ * (new Math_BigInteger(pow(2, 26)))->value = array(0, 1)
+ *
+ * Useful resources are as follows:
+ *
+ *  - {@link http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf Handbook of Applied Cryptography (HAC)}
+ *  - {@link http://math.libtomcrypt.com/files/tommath.pdf Multi-Precision Math (MPM)}
+ *  - Java's BigInteger classes.  See /j2se/src/share/classes/java/math in jdk-1_5_0-src-jrl.zip
+ *
+ * Here's an example of how to use this library:
+ * <code>
+ * <?php
+ *    include 'Math/BigInteger.php';
+ *
+ *    $a = new Math_BigInteger(2);
+ *    $b = new Math_BigInteger(3);
+ *
+ *    $c = $a->add($b);
+ *
+ *    echo $c->toString(); // outputs 5
+ * ?>
+ * </code>
+ *
+ * LICENSE: Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * @category  Math
+ * @package   Math_BigInteger
+ * @author    Jim Wigginton <terrafrost@php.net>
+ * @copyright 2006 Jim Wigginton
+ * @license   http://www.opensource.org/licenses/mit-license.html  MIT License
+ */
 
 /**#@+
  * Reduction constants
  *
  * @access private
- * @see Math_BigInteger::_reduce()
+ * @see self::_reduce()
  */
 /**
- * @see Math_BigInteger::_montgomery()
- * @see Math_BigInteger::_prepMontgomery()
+ * @see self::_montgomery()
+ * @see self::_prepMontgomery()
  */
 define('MATH_BIGINTEGER_MONTGOMERY', 0);
 /**
- * @see Math_BigInteger::_barrett()
+ * @see self::_barrett()
  */
 define('MATH_BIGINTEGER_BARRETT', 1);
 /**
- * @see Math_BigInteger::_mod2()
+ * @see self::_mod2()
  */
 define('MATH_BIGINTEGER_POWEROF2', 2);
 /**
- * @see Math_BigInteger::_remainder()
+ * @see self::_remainder()
  */
 define('MATH_BIGINTEGER_CLASSIC', 3);
 /**
- * @see Math_BigInteger::__clone()
+ * @see self::__clone()
  */
 define('MATH_BIGINTEGER_NONE', 4);
 /**#@-*/
@@ -64,8 +115,8 @@ define('MATH_BIGINTEGER_SIGN', 1);
 
 /**#@+
  * @access private
- * @see Math_BigInteger::_montgomery()
- * @see Math_BigInteger::_barrett()
+ * @see self::_montgomery()
+ * @see self::_barrett()
  */
 /**
  * Cache constants
@@ -83,7 +134,7 @@ define('MATH_BIGINTEGER_DATA', 1);
  * Mode constants.
  *
  * @access private
- * @see Math_BigInteger::Math_BigInteger()
+ * @see self::Math_BigInteger()
  */
 /**
  * To use the pure-PHP implementation
@@ -104,16 +155,6 @@ define('MATH_BIGINTEGER_MODE_GMP', 3);
 /**#@-*/
 
 /**
- * The largest digit that may be used in addition / subtraction
- *
- * (we do pow(2, 52) instead of using 4503599627370496, directly, because some PHP installations
- *  will truncate 4503599627370496)
- *
- * @access private
- */
-define('MATH_BIGINTEGER_MAX_DIGIT52', pow(2, 52));
-
-/**
  * Karatsuba Cutoff
  *
  * At what point do we switch between Karatsuba multiplication and schoolbook long multiplication?
@@ -126,16 +167,16 @@ define('MATH_BIGINTEGER_KARATSUBA_CUTOFF', 25);
  * Pure-PHP arbitrary precision integer arithmetic library. Supports base-2, base-10, base-16, and base-256
  * numbers.
  *
- * @author  Jim Wigginton <terrafrost@php.net>
- * @version 1.0.0RC4
- * @access  public
  * @package Math_BigInteger
+ * @author  Jim Wigginton <terrafrost@php.net>
+ * @access  public
  */
-class Math_BigInteger {
+class Math_BigInteger
+{
     /**
      * Holds the BigInteger's value.
      *
-     * @var Array
+     * @var array
      * @access private
      */
     var $value;
@@ -143,23 +184,15 @@ class Math_BigInteger {
     /**
      * Holds the BigInteger's magnitude.
      *
-     * @var Boolean
+     * @var bool
      * @access private
      */
     var $is_negative = false;
 
     /**
-     * Random number generator function
-     *
-     * @see setRandomGenerator()
-     * @access private
-     */
-    var $generator = 'mt_rand';
-
-    /**
      * Precision
      *
-     * @see setPrecision()
+     * @see self::setPrecision()
      * @access private
      */
     var $precision = -1;
@@ -167,40 +200,50 @@ class Math_BigInteger {
     /**
      * Precision Bitmask
      *
-     * @see setPrecision()
+     * @see self::setPrecision()
      * @access private
      */
     var $bitmask = false;
 
     /**
-     * Mode independant value used for serialization.
+     * Mode independent value used for serialization.
      *
-     * If the bcmath or gmp extensions are installed $this->value will be a non-serializable resource, hence the need for 
+     * If the bcmath or gmp extensions are installed $this->value will be a non-serializable resource, hence the need for
      * a variable that'll be serializable regardless of whether or not extensions are being used.  Unlike $this->value,
      * however, $this->hex is only calculated when $this->__sleep() is called.
      *
-     * @see __sleep()
-     * @see __wakeup()
-     * @var String
+     * @see self::__sleep()
+     * @see self::__wakeup()
+     * @var string
      * @access private
      */
     var $hex;
 
     /**
-     * Converts base-2, base-10, base-16, and binary strings (eg. base-256) to BigIntegers.
+     * Converts base-2, base-10, base-16, and binary strings (base-256) to BigIntegers.
      *
      * If the second parameter - $base - is negative, then it will be assumed that the number's are encoded using
      * two's compliment.  The sole exception to this is -10, which is treated the same as 10 is.
      *
+     * Here's an example:
+     * <code>
+     * <?php
+     *    include 'Math/BigInteger.php';
      *
-     * @param optional $x base-10 number or base-$base number if $base set.
-     * @param optional integer $base
+     *    $a = new Math_BigInteger('0x32', 16); // 50 in base-16
+     *
+     *    echo $a->toString(); // outputs 50
+     * ?>
+     * </code>
+     *
+     * @param $x base-10 number or base-$base number if $base set.
+     * @param int $base
      * @return Math_BigInteger
      * @access public
      */
-    function Math_BigInteger($x = 0, $base = 10)
+    function __construct($x = 0, $base = 10)
     {
-        if ( !defined('MATH_BIGINTEGER_MODE') ) {
+        if (!defined('MATH_BIGINTEGER_MODE')) {
             switch (true) {
                 case extension_loaded('gmp'):
                     define('MATH_BIGINTEGER_MODE', MATH_BIGINTEGER_MODE_GMP);
@@ -213,15 +256,83 @@ class Math_BigInteger {
             }
         }
 
-        if (function_exists('openssl_public_encrypt') && !defined('MATH_BIGINTEGER_OPENSSL_DISABLE') && !defined('MATH_BIGINTEGER_OPENSSL_ENABLED')) {
-            define('MATH_BIGINTEGER_OPENSSL_ENABLED', true);
+        if (extension_loaded('openssl') && !defined('MATH_BIGINTEGER_OPENSSL_DISABLE') && !defined('MATH_BIGINTEGER_OPENSSL_ENABLED')) {
+            // some versions of XAMPP have mismatched versions of OpenSSL which causes it not to work
+            ob_start();
+            @phpinfo();
+            $content = ob_get_contents();
+            ob_end_clean();
+
+            preg_match_all('#OpenSSL (Header|Library) Version(.*)#im', $content, $matches);
+
+            $versions = array();
+            if (!empty($matches[1])) {
+                for ($i = 0; $i < count($matches[1]); $i++) {
+                    $fullVersion = trim(str_replace('=>', '', strip_tags($matches[2][$i])));
+
+                    // Remove letter part in OpenSSL version
+                    if (!preg_match('/(\d+\.\d+\.\d+)/i', $fullVersion, $m)) {
+                        $versions[$matches[1][$i]] = $fullVersion;
+                    } else {
+                        $versions[$matches[1][$i]] = $m[0];
+                    }
+                }
+            }
+
+            // it doesn't appear that OpenSSL versions were reported upon until PHP 5.3+
+            switch (true) {
+                case !isset($versions['Header']):
+                case !isset($versions['Library']):
+                case $versions['Header'] == $versions['Library']:
+                case version_compare($versions['Header'], '1.0.0') >= 0 && version_compare($versions['Library'], '1.0.0') >= 0:
+                    define('MATH_BIGINTEGER_OPENSSL_ENABLED', true);
+                    break;
+                default:
+                    define('MATH_BIGINTEGER_OPENSSL_DISABLE', true);
+            }
         }
 
-        switch ( MATH_BIGINTEGER_MODE ) {
+        if (!defined('PHP_INT_SIZE')) {
+            define('PHP_INT_SIZE', 4);
+        }
+
+        if (!defined('MATH_BIGINTEGER_BASE') && MATH_BIGINTEGER_MODE == MATH_BIGINTEGER_MODE_INTERNAL) {
+            switch (PHP_INT_SIZE) {
+                case 8: // use 64-bit integers if int size is 8 bytes
+                    define('MATH_BIGINTEGER_BASE',       31);
+                    define('MATH_BIGINTEGER_BASE_FULL',  0x80000000);
+                    define('MATH_BIGINTEGER_MAX_DIGIT',  0x7FFFFFFF);
+                    define('MATH_BIGINTEGER_MSB',        0x40000000);
+                    // 10**9 is the closest we can get to 2**31 without passing it
+                    define('MATH_BIGINTEGER_MAX10',      1000000000);
+                    define('MATH_BIGINTEGER_MAX10_LEN',  9);
+                    // the largest digit that may be used in addition / subtraction
+                    define('MATH_BIGINTEGER_MAX_DIGIT2', pow(2, 62));
+                    break;
+                //case 4: // use 64-bit floats if int size is 4 bytes
+                default:
+                    define('MATH_BIGINTEGER_BASE',       26);
+                    define('MATH_BIGINTEGER_BASE_FULL',  0x4000000);
+                    define('MATH_BIGINTEGER_MAX_DIGIT',  0x3FFFFFF);
+                    define('MATH_BIGINTEGER_MSB',        0x2000000);
+                    // 10**7 is the closest to 2**26 without passing it
+                    define('MATH_BIGINTEGER_MAX10',      10000000);
+                    define('MATH_BIGINTEGER_MAX10_LEN',  7);
+                    // the largest digit that may be used in addition / subtraction
+                    // we do pow(2, 52) instead of using 4503599627370496 directly because some
+                    // PHP installations will truncate 4503599627370496.
+                    define('MATH_BIGINTEGER_MAX_DIGIT2', pow(2, 52));
+            }
+        }
+
+        switch (MATH_BIGINTEGER_MODE) {
             case MATH_BIGINTEGER_MODE_GMP:
-                if (is_resource($x) && get_resource_type($x) == 'GMP integer') {
-                    $this->value = $x;
-                    return;
+                switch (true) {
+                    case is_resource($x) && get_resource_type($x) == 'GMP integer':
+                    // PHP 5.6 switched GMP from using resources to objects
+                    case is_object($x) && get_class($x) == 'GMP':
+                        $this->value = $x;
+                        return;
                 }
                 $this->value = gmp_init(0);
                 break;
@@ -233,7 +344,7 @@ class Math_BigInteger {
         }
 
         // '0' counts as empty() but when the base is 256 '0' is equal to ord('0') or 48
-        // '0' is the only  value like this per http://php.net/empty
+        // '0' is the only value like this per http://php.net/empty
         if (empty($x) && (abs($base) != 256 || $x !== '0')) {
             return;
         }
@@ -244,11 +355,15 @@ class Math_BigInteger {
                     $x = ~$x;
                     $this->is_negative = true;
                 }
-            case  256:
-                switch ( MATH_BIGINTEGER_MODE ) {
+            case 256:
+                switch (MATH_BIGINTEGER_MODE) {
                     case MATH_BIGINTEGER_MODE_GMP:
-                        $sign = $this->is_negative ? '-' : '';
-                        $this->value = gmp_init($sign . '0x' . bin2hex($x));
+                        $this->value = function_exists('gmp_import') ?
+                            gmp_import($x) :
+                            gmp_init('0x' . bin2hex($x));
+                        if ($this->is_negative) {
+                            $this->value = gmp_neg($this->value);
+                        }
                         break;
                     case MATH_BIGINTEGER_MODE_BCMATH:
                         // round $len to the nearest 4 (thanks, DavidMJ!)
@@ -269,7 +384,7 @@ class Math_BigInteger {
                     // converts a base-2**8 (big endian / msb) number to base-2**26 (little endian / lsb)
                     default:
                         while (strlen($x)) {
-                            $this->value[] = $this->_bytes2int($this->_base256_rshift($x, 26));
+                            $this->value[] = $this->_bytes2int($this->_base256_rshift($x, MATH_BIGINTEGER_BASE));
                         }
                 }
 
@@ -281,7 +396,7 @@ class Math_BigInteger {
                     $this->value = $temp->value;
                 }
                 break;
-            case  16:
+            case 16:
             case -16:
                 if ($base > 0 && $x[0] == '-') {
                     $this->is_negative = true;
@@ -296,20 +411,20 @@ class Math_BigInteger {
                     $x = bin2hex(~pack('H*', $x));
                 }
 
-                switch ( MATH_BIGINTEGER_MODE ) {
+                switch (MATH_BIGINTEGER_MODE) {
                     case MATH_BIGINTEGER_MODE_GMP:
                         $temp = $this->is_negative ? '-0x' . $x : '0x' . $x;
                         $this->value = gmp_init($temp);
                         $this->is_negative = false;
                         break;
                     case MATH_BIGINTEGER_MODE_BCMATH:
-                        $x = ( strlen($x) & 1 ) ? '0' . $x : $x;
+                        $x = (strlen($x) & 1) ? '0' . $x : $x;
                         $temp = new Math_BigInteger(pack('H*', $x), 256);
                         $this->value = $this->is_negative ? '-' . $temp->value : $temp->value;
                         $this->is_negative = false;
                         break;
                     default:
-                        $x = ( strlen($x) & 1 ) ? '0' . $x : $x;
+                        $x = (strlen($x) & 1) ? '0' . $x : $x;
                         $temp = new Math_BigInteger(pack('H*', $x), 256);
                         $this->value = $temp->value;
                 }
@@ -319,43 +434,47 @@ class Math_BigInteger {
                     $this->value = $temp->value;
                 }
                 break;
-            case  10:
+            case 10:
             case -10:
-                $x = preg_replace('#^(-?[0-9]*).*#', '$1', $x);
+                // (?<!^)(?:-).*: find any -'s that aren't at the beginning and then any characters that follow that
+                // (?<=^|-)0*: find any 0's that are preceded by the start of the string or by a - (ie. octals)
+                // [^-0-9].*: find any non-numeric characters and then any characters that follow that
+                $x = preg_replace('#(?<!^)(?:-).*|(?<=^|-)0*|[^-0-9].*#', '', $x);
+                if (!strlen($x) || $x == '-') {
+                    $x = '0';
+                }
 
-                switch ( MATH_BIGINTEGER_MODE ) {
+                switch (MATH_BIGINTEGER_MODE) {
                     case MATH_BIGINTEGER_MODE_GMP:
                         $this->value = gmp_init($x);
                         break;
                     case MATH_BIGINTEGER_MODE_BCMATH:
                         // explicitly casting $x to a string is necessary, here, since doing $x[0] on -1 yields different
                         // results then doing it on '-1' does (modInverse does $x[0])
-                        $this->value = (string) $x;
+                        $this->value = $x === '-' ? '0' : (string) $x;
                         break;
                     default:
                         $temp = new Math_BigInteger();
 
-                        // array(10000000) is 10**7 in base-2**26.  10**7 is the closest to 2**26 we can get without passing it.
                         $multiplier = new Math_BigInteger();
-                        $multiplier->value = array(10000000);
+                        $multiplier->value = array(MATH_BIGINTEGER_MAX10);
 
                         if ($x[0] == '-') {
                             $this->is_negative = true;
                             $x = substr($x, 1);
                         }
 
-                        $x = str_pad($x, strlen($x) + (6 * strlen($x)) % 7, 0, STR_PAD_LEFT);
-
+                        $x = str_pad($x, strlen($x) + ((MATH_BIGINTEGER_MAX10_LEN - 1) * strlen($x)) % MATH_BIGINTEGER_MAX10_LEN, 0, STR_PAD_LEFT);
                         while (strlen($x)) {
                             $temp = $temp->multiply($multiplier);
-                            $temp = $temp->add(new Math_BigInteger($this->_int2bytes(substr($x, 0, 7)), 256));
-                            $x = substr($x, 7);
+                            $temp = $temp->add(new Math_BigInteger($this->_int2bytes(substr($x, 0, MATH_BIGINTEGER_MAX10_LEN)), 256));
+                            $x = substr($x, MATH_BIGINTEGER_MAX10_LEN);
                         }
 
                         $this->value = $temp->value;
                 }
                 break;
-            case  2: // base-2 support originally implemented by Lluis Pamies - thanks!
+            case 2: // base-2 support originally implemented by Lluis Pamies - thanks!
             case -2:
                 if ($base > 0 && $x[0] == '-') {
                     $this->is_negative = true;
@@ -387,14 +506,37 @@ class Math_BigInteger {
     }
 
     /**
+     * PHP4 compatible Default Constructor.
+     *
+     * @see self::__construct()
+     * @param $x base-10 number or base-$base number if $base set.
+     * @param int $base
+     * @access public
+     */
+    function Math_BigInteger($x = 0, $base = 10)
+    {
+        $this->__construct($x, $base);
+    }
+
+    /**
      * Converts a BigInteger to a byte string (eg. base-256).
      *
      * Negative numbers are saved as positive numbers, unless $twos_compliment is set to true, at which point, they're
      * saved as two's compliment.
      *
+     * Here's an example:
+     * <code>
+     * <?php
+     *    include 'Math/BigInteger.php';
      *
-     * @param Boolean $twos_compliment
-     * @return String
+     *    $a = new Math_BigInteger('65');
+     *
+     *    echo $a->toBytes(); // outputs chr(65)
+     * ?>
+     * </code>
+     *
+     * @param bool $twos_compliment
+     * @return string
      * @access public
      * @internal Converts a base-2**26 number to base-2**8
      */
@@ -409,26 +551,30 @@ class Math_BigInteger {
             $temp = $comparison < 0 ? $this->add(new Math_BigInteger(1)) : $this->copy();
             $bytes = $temp->toBytes();
 
-            if (empty($bytes)) { // eg. if the number we're trying to convert is -1
+            if (!strlen($bytes)) { // eg. if the number we're trying to convert is -1
                 $bytes = chr(0);
             }
 
-            if (ord($bytes[0]) & 0x80) {
+            if ($this->precision <= 0 && (ord($bytes[0]) & 0x80)) {
                 $bytes = chr(0) . $bytes;
             }
 
             return $comparison < 0 ? ~$bytes : $bytes;
         }
 
-        switch ( MATH_BIGINTEGER_MODE ) {
+        switch (MATH_BIGINTEGER_MODE) {
             case MATH_BIGINTEGER_MODE_GMP:
                 if (gmp_cmp($this->value, gmp_init(0)) == 0) {
                     return $this->precision > 0 ? str_repeat(chr(0), ($this->precision + 1) >> 3) : '';
                 }
 
-                $temp = gmp_strval(gmp_abs($this->value), 16);
-                $temp = ( strlen($temp) & 1 ) ? '0' . $temp : $temp;
-                $temp = pack('H*', $temp);
+                if (function_exists('gmp_export')) {
+                    $temp = gmp_export($this->value);
+                } else {
+                    $temp = gmp_strval(gmp_abs($this->value), 16);
+                    $temp = (strlen($temp) & 1) ? '0' . $temp : $temp;
+                    $temp = pack('H*', $temp);
+                }
 
                 return $this->precision > 0 ?
                     substr(str_pad($temp, $this->precision >> 3, chr(0), STR_PAD_LEFT), -($this->precision >> 3)) :
@@ -464,7 +610,7 @@ class Math_BigInteger {
         $temp = $this->copy();
 
         for ($i = count($temp->value) - 2; $i >= 0; --$i) {
-            $temp->_base256_lshift($result, 26);
+            $temp->_base256_lshift($result, MATH_BIGINTEGER_BASE);
             $result = $result | str_pad($temp->_int2bytes($temp->value[$i]), strlen($result), chr(0), STR_PAD_LEFT);
         }
 
@@ -479,9 +625,19 @@ class Math_BigInteger {
      * Negative numbers are saved as positive numbers, unless $twos_compliment is set to true, at which point, they're
      * saved as two's compliment.
      *
+     * Here's an example:
+     * <code>
+     * <?php
+     *    include 'Math/BigInteger.php';
      *
-     * @param Boolean $twos_compliment
-     * @return String
+     *    $a = new Math_BigInteger('65');
+     *
+     *    echo $a->toHex(); // outputs '41'
+     * ?>
+     * </code>
+     *
+     * @param bool $twos_compliment
+     * @return string
      * @access public
      * @internal Converts a base-2**26 number to base-2**8
      */
@@ -496,9 +652,19 @@ class Math_BigInteger {
      * Negative numbers are saved as positive numbers, unless $twos_compliment is set to true, at which point, they're
      * saved as two's compliment.
      *
+     * Here's an example:
+     * <code>
+     * <?php
+     *    include 'Math/BigInteger.php';
      *
-     * @param Boolean $twos_compliment
-     * @return String
+     *    $a = new Math_BigInteger('65');
+     *
+     *    echo $a->toBits(); // outputs '1000001'
+     * ?>
+     * </code>
+     *
+     * @param bool $twos_compliment
+     * @return string
      * @access public
      * @internal Converts a base-2**26 number to base-2**2
      */
@@ -524,14 +690,24 @@ class Math_BigInteger {
     /**
      * Converts a BigInteger to a base-10 number.
      *
+     * Here's an example:
+     * <code>
+     * <?php
+     *    include 'Math/BigInteger.php';
      *
-     * @return String
+     *    $a = new Math_BigInteger('50');
+     *
+     *    echo $a->toString(); // outputs 50
+     * ?>
+     * </code>
+     *
+     * @return string
      * @access public
      * @internal Converts a base-2**26 number to base-10**7 (which is pretty much base-10)
      */
     function toString()
     {
-        switch ( MATH_BIGINTEGER_MODE ) {
+        switch (MATH_BIGINTEGER_MODE) {
             case MATH_BIGINTEGER_MODE_GMP:
                 return gmp_strval($this->value);
             case MATH_BIGINTEGER_MODE_BCMATH:
@@ -547,14 +723,15 @@ class Math_BigInteger {
         }
 
         $temp = $this->copy();
+        $temp->bitmask = false;
         $temp->is_negative = false;
 
         $divisor = new Math_BigInteger();
-        $divisor->value = array(10000000); // eg. 10**7
+        $divisor->value = array(MATH_BIGINTEGER_MAX10);
         $result = '';
         while (count($temp->value)) {
             list($temp, $mod) = $temp->divide($divisor);
-            $result = str_pad(isset($mod->value[0]) ? $mod->value[0] : '', 7, '0', STR_PAD_LEFT) . $result;
+            $result = str_pad(isset($mod->value[0]) ? $mod->value[0] : '', MATH_BIGINTEGER_MAX10_LEN, '0', STR_PAD_LEFT) . $result;
         }
         $result = ltrim($result, '0');
         if (empty($result)) {
@@ -577,7 +754,7 @@ class Math_BigInteger {
      * {@link http://php.net/language.oop5.basic#51624}
      *
      * @access public
-     * @see __clone()
+     * @see self::__clone()
      * @return Math_BigInteger
      */
     function copy()
@@ -585,7 +762,6 @@ class Math_BigInteger {
         $temp = new Math_BigInteger();
         $temp->value = $this->value;
         $temp->is_negative = $this->is_negative;
-        $temp->generator = $this->generator;
         $temp->precision = $this->precision;
         $temp->bitmask = $this->bitmask;
         return $temp;
@@ -614,7 +790,7 @@ class Math_BigInteger {
      * call Math_BigInteger::copy(), instead.
      *
      * @access public
-     * @see copy()
+     * @see self::copy()
      * @return Math_BigInteger
      */
     function __clone()
@@ -627,21 +803,17 @@ class Math_BigInteger {
      *
      * Will be called, automatically, when serialize() is called on a Math_BigInteger object.
      *
-     * @see __wakeup()
+     * @see self::__wakeup()
      * @access public
      */
     function __sleep()
     {
         $this->hex = $this->toHex(true);
         $vars = array('hex');
-        if ($this->generator != 'mt_rand') {
-            $vars[] = 'generator';
-        }
         if ($this->precision > 0) {
             $vars[] = 'precision';
         }
         return $vars;
-        
     }
 
     /**
@@ -649,7 +821,7 @@ class Math_BigInteger {
      *
      * Will be called, automatically, when unserialize() is called on a Math_BigInteger object.
      *
-     * @see __sleep()
+     * @see self::__sleep()
      * @access public
      */
     function __wakeup()
@@ -657,7 +829,6 @@ class Math_BigInteger {
         $temp = new Math_BigInteger($this->hex, -16);
         $this->value = $temp->value;
         $this->is_negative = $temp->is_negative;
-        $this->setRandomGenerator($this->generator);
         if ($this->precision > 0) {
             // recalculate $this->bitmask
             $this->setPrecision($this->precision);
@@ -665,8 +836,54 @@ class Math_BigInteger {
     }
 
     /**
+     *  __debugInfo() magic method
+     *
+     * Will be called, automatically, when print_r() or var_dump() are called
+     *
+     * @access public
+     */
+    function __debugInfo()
+    {
+        $opts = array();
+        switch (MATH_BIGINTEGER_MODE) {
+            case MATH_BIGINTEGER_MODE_GMP:
+                $engine = 'gmp';
+                break;
+            case MATH_BIGINTEGER_MODE_BCMATH:
+                $engine = 'bcmath';
+                break;
+            case MATH_BIGINTEGER_MODE_INTERNAL:
+                $engine = 'internal';
+                $opts[] = PHP_INT_SIZE == 8 ? '64-bit' : '32-bit';
+        }
+        if (MATH_BIGINTEGER_MODE != MATH_BIGINTEGER_MODE_GMP && defined('MATH_BIGINTEGER_OPENSSL_ENABLED')) {
+            $opts[] = 'OpenSSL';
+        }
+        if (!empty($opts)) {
+            $engine.= ' (' . implode('.', $opts) . ')';
+        }
+        return array(
+            'value' => '0x' . $this->toHex(true),
+            'engine' => $engine
+        );
+    }
+
+    /**
      * Adds two BigIntegers.
      *
+     * Here's an example:
+     * <code>
+     * <?php
+     *    include 'Math/BigInteger.php';
+     *
+     *    $a = new Math_BigInteger('10');
+     *    $b = new Math_BigInteger('20');
+     *
+     *    $c = $a->add($b);
+     *
+     *    echo $c->toString(); // outputs 30
+     * ?>
+     * </code>
      *
      * @param Math_BigInteger $y
      * @return Math_BigInteger
@@ -675,7 +892,7 @@ class Math_BigInteger {
      */
     function add($y)
     {
-        switch ( MATH_BIGINTEGER_MODE ) {
+        switch (MATH_BIGINTEGER_MODE) {
             case MATH_BIGINTEGER_MODE_GMP:
                 $temp = new Math_BigInteger();
                 $temp->value = gmp_add($this->value, $y->value);
@@ -700,11 +917,11 @@ class Math_BigInteger {
     /**
      * Performs addition.
      *
-     * @param Array $x_value
-     * @param Boolean $x_negative
-     * @param Array $y_value
-     * @param Boolean $y_negative
-     * @return Array
+     * @param array $x_value
+     * @param bool $x_negative
+     * @param array $y_value
+     * @param bool $y_negative
+     * @return array
      * @access private
      */
     function _add($x_value, $x_negative, $y_value, $y_negative)
@@ -717,7 +934,7 @@ class Math_BigInteger {
                 MATH_BIGINTEGER_VALUE => $y_value,
                 MATH_BIGINTEGER_SIGN => $y_negative
             );
-        } else if ($y_size == 0) {
+        } elseif ($y_size == 0) {
             return array(
                 MATH_BIGINTEGER_VALUE => $x_value,
                 MATH_BIGINTEGER_SIGN => $x_negative
@@ -725,8 +942,8 @@ class Math_BigInteger {
         }
 
         // subtract, if appropriate
-        if ( $x_negative != $y_negative ) {
-            if ( $x_value == $y_value ) {
+        if ($x_negative != $y_negative) {
+            if ($x_value == $y_value) {
                 return array(
                     MATH_BIGINTEGER_VALUE => array(),
                     MATH_BIGINTEGER_SIGN => false
@@ -748,29 +965,29 @@ class Math_BigInteger {
             $value = $x_value;
         }
 
-        $value[] = 0; // just in case the carry adds an extra digit
+        $value[count($value)] = 0; // just in case the carry adds an extra digit
 
         $carry = 0;
         for ($i = 0, $j = 1; $j < $size; $i+=2, $j+=2) {
-            $sum = $x_value[$j] * 0x4000000 + $x_value[$i] + $y_value[$j] * 0x4000000 + $y_value[$i] + $carry;
-            $carry = $sum >= MATH_BIGINTEGER_MAX_DIGIT52; // eg. floor($sum / 2**52); only possible values (in any base) are 0 and 1
-            $sum = $carry ? $sum - MATH_BIGINTEGER_MAX_DIGIT52 : $sum;
+            $sum = $x_value[$j] * MATH_BIGINTEGER_BASE_FULL + $x_value[$i] + $y_value[$j] * MATH_BIGINTEGER_BASE_FULL + $y_value[$i] + $carry;
+            $carry = $sum >= MATH_BIGINTEGER_MAX_DIGIT2; // eg. floor($sum / 2**52); only possible values (in any base) are 0 and 1
+            $sum = $carry ? $sum - MATH_BIGINTEGER_MAX_DIGIT2 : $sum;
 
-            $temp = (int) ($sum / 0x4000000);
+            $temp = MATH_BIGINTEGER_BASE === 26 ? intval($sum / 0x4000000) : ($sum >> 31);
 
-            $value[$i] = (int) ($sum - 0x4000000 * $temp); // eg. a faster alternative to fmod($sum, 0x4000000)
+            $value[$i] = (int) ($sum - MATH_BIGINTEGER_BASE_FULL * $temp); // eg. a faster alternative to fmod($sum, 0x4000000)
             $value[$j] = $temp;
         }
 
         if ($j == $size) { // ie. if $y_size is odd
             $sum = $x_value[$i] + $y_value[$i] + $carry;
-            $carry = $sum >= 0x4000000;
-            $value[$i] = $carry ? $sum - 0x4000000 : $sum;
+            $carry = $sum >= MATH_BIGINTEGER_BASE_FULL;
+            $value[$i] = $carry ? $sum - MATH_BIGINTEGER_BASE_FULL : $sum;
             ++$i; // ie. let $i = $j since we've just done $value[$i]
         }
 
         if ($carry) {
-            for (; $value[$i] == 0x3FFFFFF; ++$i) {
+            for (; $value[$i] == MATH_BIGINTEGER_MAX_DIGIT; ++$i) {
                 $value[$i] = 0;
             }
             ++$value[$i];
@@ -785,6 +1002,19 @@ class Math_BigInteger {
     /**
      * Subtracts two BigIntegers.
      *
+     * Here's an example:
+     * <code>
+     * <?php
+     *    include 'Math/BigInteger.php';
+     *
+     *    $a = new Math_BigInteger('10');
+     *    $b = new Math_BigInteger('20');
+     *
+     *    $c = $a->subtract($b);
+     *
+     *    echo $c->toString(); // outputs -10
+     * ?>
+     * </code>
      *
      * @param Math_BigInteger $y
      * @return Math_BigInteger
@@ -793,7 +1023,7 @@ class Math_BigInteger {
      */
     function subtract($y)
     {
-        switch ( MATH_BIGINTEGER_MODE ) {
+        switch (MATH_BIGINTEGER_MODE) {
             case MATH_BIGINTEGER_MODE_GMP:
                 $temp = new Math_BigInteger();
                 $temp->value = gmp_sub($this->value, $y->value);
@@ -818,11 +1048,11 @@ class Math_BigInteger {
     /**
      * Performs subtraction.
      *
-     * @param Array $x_value
-     * @param Boolean $x_negative
-     * @param Array $y_value
-     * @param Boolean $y_negative
-     * @return Array
+     * @param array $x_value
+     * @param bool $x_negative
+     * @param array $y_value
+     * @param bool $y_negative
+     * @return array
      * @access private
      */
     function _subtract($x_value, $x_negative, $y_value, $y_negative)
@@ -835,7 +1065,7 @@ class Math_BigInteger {
                 MATH_BIGINTEGER_VALUE => $y_value,
                 MATH_BIGINTEGER_SIGN => !$y_negative
             );
-        } else if ($y_size == 0) {
+        } elseif ($y_size == 0) {
             return array(
                 MATH_BIGINTEGER_VALUE => $x_value,
                 MATH_BIGINTEGER_SIGN => $x_negative
@@ -843,7 +1073,7 @@ class Math_BigInteger {
         }
 
         // add, if appropriate (ie. -$x - +$y or +$x - -$y)
-        if ( $x_negative != $y_negative ) {
+        if ($x_negative != $y_negative) {
             $temp = $this->_add($x_value, false, $y_value, false);
             $temp[MATH_BIGINTEGER_SIGN] = $x_negative;
 
@@ -852,7 +1082,7 @@ class Math_BigInteger {
 
         $diff = $this->_compare($x_value, $x_negative, $y_value, $y_negative);
 
-        if ( !$diff ) {
+        if (!$diff) {
             return array(
                 MATH_BIGINTEGER_VALUE => array(),
                 MATH_BIGINTEGER_SIGN => false
@@ -860,7 +1090,7 @@ class Math_BigInteger {
         }
 
         // switch $x and $y around, if appropriate.
-        if ( (!$x_negative && $diff < 0) || ($x_negative && $diff > 0) ) {
+        if ((!$x_negative && $diff < 0) || ($x_negative && $diff > 0)) {
             $temp = $x_value;
             $x_value = $y_value;
             $y_value = $temp;
@@ -875,26 +1105,26 @@ class Math_BigInteger {
 
         $carry = 0;
         for ($i = 0, $j = 1; $j < $y_size; $i+=2, $j+=2) {
-            $sum = $x_value[$j] * 0x4000000 + $x_value[$i] - $y_value[$j] * 0x4000000 - $y_value[$i] - $carry;
+            $sum = $x_value[$j] * MATH_BIGINTEGER_BASE_FULL + $x_value[$i] - $y_value[$j] * MATH_BIGINTEGER_BASE_FULL - $y_value[$i] - $carry;
             $carry = $sum < 0; // eg. floor($sum / 2**52); only possible values (in any base) are 0 and 1
-            $sum = $carry ? $sum + MATH_BIGINTEGER_MAX_DIGIT52 : $sum;
+            $sum = $carry ? $sum + MATH_BIGINTEGER_MAX_DIGIT2 : $sum;
 
-            $temp = (int) ($sum / 0x4000000);
+            $temp = MATH_BIGINTEGER_BASE === 26 ? intval($sum / 0x4000000) : ($sum >> 31);
 
-            $x_value[$i] = (int) ($sum - 0x4000000 * $temp);
+            $x_value[$i] = (int) ($sum - MATH_BIGINTEGER_BASE_FULL * $temp);
             $x_value[$j] = $temp;
         }
 
         if ($j == $y_size) { // ie. if $y_size is odd
             $sum = $x_value[$i] - $y_value[$i] - $carry;
             $carry = $sum < 0;
-            $x_value[$i] = $carry ? $sum + 0x4000000 : $sum;
+            $x_value[$i] = $carry ? $sum + MATH_BIGINTEGER_BASE_FULL : $sum;
             ++$i;
         }
 
         if ($carry) {
             for (; !$x_value[$i]; ++$i) {
-                $x_value[$i] = 0x3FFFFFF;
+                $x_value[$i] = MATH_BIGINTEGER_MAX_DIGIT;
             }
             --$x_value[$i];
         }
@@ -908,6 +1138,19 @@ class Math_BigInteger {
     /**
      * Multiplies two BigIntegers
      *
+     * Here's an example:
+     * <code>
+     * <?php
+     *    include 'Math/BigInteger.php';
+     *
+     *    $a = new Math_BigInteger('10');
+     *    $b = new Math_BigInteger('20');
+     *
+     *    $c = $a->multiply($b);
+     *
+     *    echo $c->toString(); // outputs 200
+     * ?>
+     * </code>
      *
      * @param Math_BigInteger $x
      * @return Math_BigInteger
@@ -915,7 +1158,7 @@ class Math_BigInteger {
      */
     function multiply($x)
     {
-        switch ( MATH_BIGINTEGER_MODE ) {
+        switch (MATH_BIGINTEGER_MODE) {
             case MATH_BIGINTEGER_MODE_GMP:
                 $temp = new Math_BigInteger();
                 $temp->value = gmp_mul($this->value, $x->value);
@@ -940,11 +1183,11 @@ class Math_BigInteger {
     /**
      * Performs multiplication.
      *
-     * @param Array $x_value
-     * @param Boolean $x_negative
-     * @param Array $y_value
-     * @param Boolean $y_negative
-     * @return Array
+     * @param array $x_value
+     * @param bool $x_negative
+     * @param array $y_value
+     * @param bool $y_negative
+     * @return array
      * @access private
      */
     function _multiply($x_value, $x_negative, $y_value, $y_negative)
@@ -959,7 +1202,7 @@ class Math_BigInteger {
         $x_length = count($x_value);
         $y_length = count($y_value);
 
-        if ( !$x_length || !$y_length ) { // a 0 is being multiplied
+        if (!$x_length || !$y_length) { // a 0 is being multiplied
             return array(
                 MATH_BIGINTEGER_VALUE => array(),
                 MATH_BIGINTEGER_SIGN => false
@@ -979,9 +1222,9 @@ class Math_BigInteger {
      *
      * Modeled after 'multiply' in MutableBigInteger.java.
      *
-     * @param Array $x_value
-     * @param Array $y_value
-     * @return Array
+     * @param array $x_value
+     * @param array $y_value
+     * @return array
      * @access private
      */
     function _regularMultiply($x_value, $y_value)
@@ -989,11 +1232,11 @@ class Math_BigInteger {
         $x_length = count($x_value);
         $y_length = count($y_value);
 
-        if ( !$x_length || !$y_length ) { // a 0 is being multiplied
+        if (!$x_length || !$y_length) { // a 0 is being multiplied
             return array();
         }
 
-        if ( $x_length < $y_length ) {
+        if ($x_length < $y_length) {
             $temp = $x_value;
             $x_value = $y_value;
             $y_value = $temp;
@@ -1014,8 +1257,8 @@ class Math_BigInteger {
 
         for ($j = 0; $j < $x_length; ++$j) { // ie. $i = 0
             $temp = $x_value[$j] * $y_value[0] + $carry; // $product_value[$k] == 0
-            $carry = (int) ($temp / 0x4000000);
-            $product_value[$j] = (int) ($temp - 0x4000000 * $carry);
+            $carry = MATH_BIGINTEGER_BASE === 26 ? intval($temp / 0x4000000) : ($temp >> 31);
+            $product_value[$j] = (int) ($temp - MATH_BIGINTEGER_BASE_FULL * $carry);
         }
 
         $product_value[$j] = $carry;
@@ -1027,8 +1270,8 @@ class Math_BigInteger {
 
             for ($j = 0, $k = $i; $j < $x_length; ++$j, ++$k) {
                 $temp = $product_value[$k] + $x_value[$j] * $y_value[$i] + $carry;
-                $carry = (int) ($temp / 0x4000000);
-                $product_value[$k] = (int) ($temp - 0x4000000 * $carry);
+                $carry = MATH_BIGINTEGER_BASE === 26 ? intval($temp / 0x4000000) : ($temp >> 31);
+                $product_value[$k] = (int) ($temp - MATH_BIGINTEGER_BASE_FULL * $carry);
             }
 
             $product_value[$k] = $carry;
@@ -1043,9 +1286,9 @@ class Math_BigInteger {
      * See {@link http://en.wikipedia.org/wiki/Karatsuba_algorithm Karatsuba algorithm} and
      * {@link http://math.libtomcrypt.com/files/tommath.pdf#page=120 MPM 5.2.3}.
      *
-     * @param Array $x_value
-     * @param Array $y_value
-     * @return Array
+     * @param array $x_value
+     * @param array $y_value
+     * @return array
      * @access private
      */
     function _karatsuba($x_value, $y_value)
@@ -1082,8 +1325,8 @@ class Math_BigInteger {
     /**
      * Performs squaring
      *
-     * @param Array $x
-     * @return Array
+     * @param array $x
+     * @return array
      * @access private
      */
     function _square($x = false)
@@ -1100,13 +1343,13 @@ class Math_BigInteger {
      * {@link http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf#page=7 HAC 14.2.4} /
      * {@link http://math.libtomcrypt.com/files/tommath.pdf#page=141 MPM 5.3} for more information.
      *
-     * @param Array $value
-     * @return Array
+     * @param array $value
+     * @return array
      * @access private
      */
     function _baseSquare($value)
     {
-        if ( empty($value) ) {
+        if (empty($value)) {
             return array();
         }
         $square_value = $this->_array_repeat(0, 2 * count($value));
@@ -1115,14 +1358,14 @@ class Math_BigInteger {
             $i2 = $i << 1;
 
             $temp = $square_value[$i2] + $value[$i] * $value[$i];
-            $carry = (int) ($temp / 0x4000000);
-            $square_value[$i2] = (int) ($temp - 0x4000000 * $carry);
+            $carry = MATH_BIGINTEGER_BASE === 26 ? intval($temp / 0x4000000) : ($temp >> 31);
+            $square_value[$i2] = (int) ($temp - MATH_BIGINTEGER_BASE_FULL * $carry);
 
             // note how we start from $i+1 instead of 0 as we do in multiplication.
             for ($j = $i + 1, $k = $i2 + 1; $j <= $max_index; ++$j, ++$k) {
                 $temp = $square_value[$k] + 2 * $value[$j] * $value[$i] + $carry;
-                $carry = (int) ($temp / 0x4000000);
-                $square_value[$k] = (int) ($temp - 0x4000000 * $carry);
+                $carry = MATH_BIGINTEGER_BASE === 26 ? intval($temp / 0x4000000) : ($temp >> 31);
+                $square_value[$k] = (int) ($temp - MATH_BIGINTEGER_BASE_FULL * $carry);
             }
 
             // the following line can yield values larger 2**15.  at this point, PHP should switch
@@ -1139,8 +1382,8 @@ class Math_BigInteger {
      * See {@link http://en.wikipedia.org/wiki/Karatsuba_algorithm Karatsuba algorithm} and
      * {@link http://math.libtomcrypt.com/files/tommath.pdf#page=151 MPM 5.3.4}.
      *
-     * @param Array $value
-     * @return Array
+     * @param array $value
+     * @return array
      * @access private
      */
     function _karatsubaSquare($value)
@@ -1179,15 +1422,30 @@ class Math_BigInteger {
      * same.  If the remainder would be negative, the "common residue" is equal to the sum of the remainder
      * and the divisor (basically, the "common residue" is the first positive modulo).
      *
+     * Here's an example:
+     * <code>
+     * <?php
+     *    include 'Math/BigInteger.php';
+     *
+     *    $a = new Math_BigInteger('10');
+     *    $b = new Math_BigInteger('20');
+     *
+     *    list($quotient, $remainder) = $a->divide($b);
+     *
+     *    echo $quotient->toString(); // outputs 0
+     *    echo "\r\n";
+     *    echo $remainder->toString(); // outputs 10
+     * ?>
+     * </code>
      *
      * @param Math_BigInteger $y
-     * @return Array
+     * @return array
      * @access public
      * @internal This function is based off of {@link http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf#page=9 HAC 14.20}.
      */
     function divide($y)
     {
-        switch ( MATH_BIGINTEGER_MODE ) {
+        switch (MATH_BIGINTEGER_MODE) {
             case MATH_BIGINTEGER_MODE_GMP:
                 $quotient = new Math_BigInteger();
                 $remainder = new Math_BigInteger();
@@ -1224,7 +1482,7 @@ class Math_BigInteger {
         }
 
         static $zero;
-        if ( !isset($zero) ) {
+        if (!isset($zero)) {
             $zero = new Math_BigInteger();
         }
 
@@ -1238,16 +1496,16 @@ class Math_BigInteger {
 
         $diff = $x->compare($y);
 
-        if ( !$diff ) {
+        if (!$diff) {
             $temp = new Math_BigInteger();
             $temp->value = array(1);
             $temp->is_negative = $x_sign != $y_sign;
             return array($this->_normalize($temp), $this->_normalize(new Math_BigInteger()));
         }
 
-        if ( $diff < 0 ) {
+        if ($diff < 0) {
             // if $x is negative, "add" $y.
-            if ( $x_sign ) {
+            if ($x_sign) {
                 $x = $y->subtract($x);
             }
             return array($this->_normalize(new Math_BigInteger()), $this->_normalize($x));
@@ -1255,7 +1513,7 @@ class Math_BigInteger {
 
         // normalize $x and $y as described in HAC 14.23 / 14.24
         $msb = $y->value[count($y->value) - 1];
-        for ($shift = 0; !($msb & 0x2000000); ++$shift) {
+        for ($shift = 0; !($msb & MATH_BIGINTEGER_MSB); ++$shift) {
             $msb <<= 1;
         }
         $x->_lshift($shift);
@@ -1281,7 +1539,7 @@ class Math_BigInteger {
         // $temp = $y << ($x_max - $y_max-1) in base 2**26
         $temp_value = array_merge($this->_array_repeat(0, $x_max - $y_max), $y_value);
 
-        while ( $x->compare($temp) >= 0 ) {
+        while ($x->compare($temp) >= 0) {
             // calculate the "common residue"
             ++$quotient_value[$x_max - $y_max];
             $x = $x->subtract($temp);
@@ -1297,16 +1555,15 @@ class Math_BigInteger {
             );
             $y_window = array(
                 $y_value[$y_max],
-                ( $y_max > 0 ) ? $y_value[$y_max - 1] : 0
+                ($y_max > 0) ? $y_value[$y_max - 1] : 0
             );
 
             $q_index = $i - $y_max - 1;
             if ($x_window[0] == $y_window[0]) {
-                $quotient_value[$q_index] = 0x3FFFFFF;
+                $quotient_value[$q_index] = MATH_BIGINTEGER_MAX_DIGIT;
             } else {
-                $quotient_value[$q_index] = (int) (
-                    ($x_window[0] * 0x4000000 + $x_window[1])
-                    /
+                $quotient_value[$q_index] = $this->_safe_divide(
+                    $x_window[0] * MATH_BIGINTEGER_BASE_FULL + $x_window[1],
                     $y_window[0]
                 );
             }
@@ -1318,7 +1575,7 @@ class Math_BigInteger {
 
             $rhs_value = array($x_window[2], $x_window[1], $x_window[0]);
 
-            while ( $lhs->compare($rhs) > 0 ) {
+            while ($lhs->compare($rhs) > 0) {
                 --$quotient_value[$q_index];
 
                 $lhs->value = array($quotient_value[$q_index]);
@@ -1329,7 +1586,9 @@ class Math_BigInteger {
             $temp_value = array($quotient_value[$q_index]);
             $temp = $temp->multiply($y);
             $temp_value = &$temp->value;
-            $temp_value = array_merge($adjust, $temp_value);
+            if (count($temp_value)) {
+                $temp_value = array_merge($adjust, $temp_value);
+            }
 
             $x = $x->subtract($temp);
 
@@ -1349,7 +1608,7 @@ class Math_BigInteger {
         $quotient->is_negative = $x_sign != $y_sign;
 
         // calculate the "common residue", if appropriate
-        if ( $x_sign ) {
+        if ($x_sign) {
             $y->_rshift($shift);
             $x = $y->subtract($x);
         }
@@ -1362,9 +1621,9 @@ class Math_BigInteger {
      *
      * abc / x = a00 / x + b0 / x + c / x
      *
-     * @param Array $dividend
-     * @param Array $divisor
-     * @return Array
+     * @param array $dividend
+     * @param array $divisor
+     * @return array
      * @access private
      */
     function _divide_digit($dividend, $divisor)
@@ -1373,8 +1632,8 @@ class Math_BigInteger {
         $result = array();
 
         for ($i = count($dividend) - 1; $i >= 0; --$i) {
-            $temp = 0x4000000 * $carry + $dividend[$i];
-            $result[$i] = (int) ($temp / $divisor);
+            $temp = MATH_BIGINTEGER_BASE_FULL * $carry + $dividend[$i];
+            $result[$i] = $this->_safe_divide($temp, $divisor);
             $carry = (int) ($temp - $divisor * $result[$i]);
         }
 
@@ -1384,6 +1643,20 @@ class Math_BigInteger {
     /**
      * Performs modular exponentiation.
      *
+     * Here's an example:
+     * <code>
+     * <?php
+     *    include 'Math/BigInteger.php';
+     *
+     *    $a = new Math_BigInteger('10');
+     *    $b = new Math_BigInteger('20');
+     *    $c = new Math_BigInteger('30');
+     *
+     *    $c = $a->modPow($b, $c);
+     *
+     *    echo $c->toString(); // outputs 10
+     * ?>
+     * </code>
      *
      * @param Math_BigInteger $e
      * @param Math_BigInteger $n
@@ -1447,17 +1720,23 @@ class Math_BigInteger {
                 'publicExponent' => pack('Ca*a*', 2, $this->_encodeASN1Length(strlen($components['publicExponent'])), $components['publicExponent'])
             );
 
-            $RSAPublicKey = pack('Ca*a*a*',
-                48, $this->_encodeASN1Length(strlen($components['modulus']) + strlen($components['publicExponent'])),
-                $components['modulus'], $components['publicExponent']
+            $RSAPublicKey = pack(
+                'Ca*a*a*',
+                48,
+                $this->_encodeASN1Length(strlen($components['modulus']) + strlen($components['publicExponent'])),
+                $components['modulus'],
+                $components['publicExponent']
             );
 
             $rsaOID = pack('H*', '300d06092a864886f70d0101010500'); // hex version of MA0GCSqGSIb3DQEBAQUA
             $RSAPublicKey = chr(0) . $RSAPublicKey;
             $RSAPublicKey = chr(3) . $this->_encodeASN1Length(strlen($RSAPublicKey)) . $RSAPublicKey;
 
-            $encapsulated = pack('Ca*a*',
-                48, $this->_encodeASN1Length(strlen($rsaOID . $RSAPublicKey)), $rsaOID . $RSAPublicKey
+            $encapsulated = pack(
+                'Ca*a*',
+                48,
+                $this->_encodeASN1Length(strlen($rsaOID . $RSAPublicKey)),
+                $rsaOID . $RSAPublicKey
             );
 
             $RSAPublicKey = "-----BEGIN PUBLIC KEY-----\r\n" .
@@ -1471,31 +1750,25 @@ class Math_BigInteger {
             }
         }
 
-        switch ( MATH_BIGINTEGER_MODE ) {
-            case MATH_BIGINTEGER_MODE_GMP:
-                $temp = new Math_BigInteger();
-                $temp->value = gmp_powm($this->value, $e->value, $n->value);
+        if (MATH_BIGINTEGER_MODE == MATH_BIGINTEGER_MODE_BCMATH) {
+            $temp = new Math_BigInteger();
+            $temp->value = bcpowmod($this->value, $e->value, $n->value, 0);
 
-                return $this->_normalize($temp);
-            case MATH_BIGINTEGER_MODE_BCMATH:
-                $temp = new Math_BigInteger();
-                $temp->value = bcpowmod($this->value, $e->value, $n->value, 0);
-
-                return $this->_normalize($temp);
+            return $this->_normalize($temp);
         }
 
-        if ( empty($e->value) ) {
+        if (empty($e->value)) {
             $temp = new Math_BigInteger();
             $temp->value = array(1);
             return $this->_normalize($temp);
         }
 
-        if ( $e->value == array(1) ) {
+        if ($e->value == array(1)) {
             list(, $temp) = $this->divide($n);
             return $this->_normalize($temp);
         }
 
-        if ( $e->value == array(2) ) {
+        if ($e->value == array(2)) {
             $temp = new Math_BigInteger();
             $temp->value = $this->_square($this->value);
             list(, $temp) = $temp->divide($n);
@@ -1504,15 +1777,20 @@ class Math_BigInteger {
 
         return $this->_normalize($this->_slidingWindow($e, $n, MATH_BIGINTEGER_BARRETT));
 
+        // the following code, although not callable, can be run independently of the above code
+        // although the above code performed better in my benchmarks the following could might
+        // perform better under different circumstances. in lieu of deleting it it's just been
+        // made uncallable
+
         // is the modulo odd?
-        if ( $n->value[0] & 1 ) {
+        if ($n->value[0] & 1) {
             return $this->_normalize($this->_slidingWindow($e, $n, MATH_BIGINTEGER_MONTGOMERY));
         }
         // if it's not, it's even
 
         // find the lowest set bit (eg. the max pow of 2 that divides $n)
         for ($i = 0; $i < count($n->value); ++$i) {
-            if ( $n->value[$i] ) {
+            if ($n->value[$i]) {
                 $temp = decbin($n->value[$i]);
                 $j = strlen($temp) - strrpos($temp, '1') - 1;
                 $j+= 26 * $i;
@@ -1527,7 +1805,7 @@ class Math_BigInteger {
         $mod2->value = array(1);
         $mod2->_lshift($j);
 
-        $part1 = ( $mod1->value != array(1) ) ? $this->_slidingWindow($e, $mod1, MATH_BIGINTEGER_MONTGOMERY) : new Math_BigInteger();
+        $part1 = ($mod1->value != array(1)) ? $this->_slidingWindow($e, $mod1, MATH_BIGINTEGER_MONTGOMERY) : new Math_BigInteger();
         $part2 = $this->_slidingWindow($e, $mod2, MATH_BIGINTEGER_POWEROF2);
 
         $y1 = $mod2->modInverse($mod1);
@@ -1570,7 +1848,7 @@ class Math_BigInteger {
      *
      * @param Math_BigInteger $e
      * @param Math_BigInteger $n
-     * @param Integer $mode
+     * @param int $mode
      * @return Math_BigInteger
      * @access private
      */
@@ -1583,14 +1861,15 @@ class Math_BigInteger {
         $e_length = count($e_value) - 1;
         $e_bits = decbin($e_value[$e_length]);
         for ($i = $e_length - 1; $i >= 0; --$i) {
-            $e_bits.= str_pad(decbin($e_value[$i]), 26, '0', STR_PAD_LEFT);
+            $e_bits.= str_pad(decbin($e_value[$i]), MATH_BIGINTEGER_BASE, '0', STR_PAD_LEFT);
         }
 
         $e_length = strlen($e_bits);
 
         // calculate the appropriate window size.
         // $window_size == 3 if $window_ranges is between 25 and 81, for example.
-        for ($i = 0, $window_size = 1; $e_length > $window_ranges[$i] && $i < count($window_ranges); ++$window_size, ++$i);
+        for ($i = 0, $window_size = 1; $i < count($window_ranges) && $e_length > $window_ranges[$i]; ++$window_size, ++$i) {
+        }
 
         $n_value = $n->value;
 
@@ -1610,24 +1889,25 @@ class Math_BigInteger {
         $result = array(1);
         $result = $this->_prepareReduce($result, $n_value, $mode);
 
-        for ($i = 0; $i < $e_length; ) {
-            if ( !$e_bits[$i] ) {
+        for ($i = 0; $i < $e_length;) {
+            if (!$e_bits[$i]) {
                 $result = $this->_squareReduce($result, $n_value, $mode);
                 ++$i;
             } else {
                 for ($j = $window_size - 1; $j > 0; --$j) {
-                    if ( !empty($e_bits[$i + $j]) ) {
+                    if (!empty($e_bits[$i + $j])) {
                         break;
                     }
                 }
 
-                for ($k = 0; $k <= $j; ++$k) {// eg. the length of substr($e_bits, $i, $j+1)
+                // eg. the length of substr($e_bits, $i, $j + 1)
+                for ($k = 0; $k <= $j; ++$k) {
                     $result = $this->_squareReduce($result, $n_value, $mode);
                 }
 
                 $result = $this->_multiplyReduce($result, $powers[bindec(substr($e_bits, $i, $j + 1))], $n_value, $mode);
 
-                $i+=$j + 1;
+                $i += $j + 1;
             }
         }
 
@@ -1642,12 +1922,12 @@ class Math_BigInteger {
      *
      * For most $modes this will return the remainder.
      *
-     * @see _slidingWindow()
+     * @see self::_slidingWindow()
      * @access private
-     * @param Array $x
-     * @param Array $n
-     * @param Integer $mode
-     * @return Array
+     * @param array $x
+     * @param array $n
+     * @param int $mode
+     * @return array
      */
     function _reduce($x, $n, $mode)
     {
@@ -1679,12 +1959,12 @@ class Math_BigInteger {
     /**
      * Modular reduction preperation
      *
-     * @see _slidingWindow()
+     * @see self::_slidingWindow()
      * @access private
-     * @param Array $x
-     * @param Array $n
-     * @param Integer $mode
-     * @return Array
+     * @param array $x
+     * @param array $n
+     * @param int $mode
+     * @return array
      */
     function _prepareReduce($x, $n, $mode)
     {
@@ -1697,13 +1977,13 @@ class Math_BigInteger {
     /**
      * Modular multiply
      *
-     * @see _slidingWindow()
+     * @see self::_slidingWindow()
      * @access private
-     * @param Array $x
-     * @param Array $y
-     * @param Array $n
-     * @param Integer $mode
-     * @return Array
+     * @param array $x
+     * @param array $y
+     * @param array $n
+     * @param int $mode
+     * @return array
      */
     function _multiplyReduce($x, $y, $n, $mode)
     {
@@ -1717,12 +1997,12 @@ class Math_BigInteger {
     /**
      * Modular square
      *
-     * @see _slidingWindow()
+     * @see self::_slidingWindow()
      * @access private
-     * @param Array $x
-     * @param Array $n
-     * @param Integer $mode
-     * @return Array
+     * @param array $x
+     * @param array $n
+     * @param int $mode
+     * @return array
      */
     function _squareReduce($x, $n, $mode)
     {
@@ -1738,7 +2018,7 @@ class Math_BigInteger {
      * Calculates $x%$n, where $n = 2**$e, for some $e.  Since this is basically the same as doing $x & ($n-1),
      * we'll just use this function as a wrapper for doing that.
      *
-     * @see _slidingWindow()
+     * @see self::_slidingWindow()
      * @access private
      * @param Math_BigInteger
      * @return Math_BigInteger
@@ -1768,11 +2048,11 @@ class Math_BigInteger {
      * (x >> 1) + (x >> 1) != x / 2 + x / 2.  If x is even, they're the same, but if x is odd, they're not.  See the in-line
      * comments for details.
      *
-     * @see _slidingWindow()
+     * @see self::_slidingWindow()
      * @access private
-     * @param Array $n
-     * @param Array $m
-     * @return Array
+     * @param array $n
+     * @param array $m
+     * @return array
      */
     function _barrett($n, $m)
     {
@@ -1800,7 +2080,7 @@ class Math_BigInteger {
 
         // n = 2 * m.length
 
-        if ( ($key = array_search($m, $cache[MATH_BIGINTEGER_VARIABLE])) === false ) {
+        if (($key = array_search($m, $cache[MATH_BIGINTEGER_VARIABLE])) === false) {
             $key = count($cache[MATH_BIGINTEGER_VARIABLE]);
             $cache[MATH_BIGINTEGER_VARIABLE][] = $m;
 
@@ -1865,11 +2145,11 @@ class Math_BigInteger {
      * For numbers with more than four digits Math_BigInteger::_barrett() is faster.  The difference between that and this
      * is that this function does not fold the denominator into a smaller form.
      *
-     * @see _slidingWindow()
+     * @see self::_slidingWindow()
      * @access private
-     * @param Array $x
-     * @param Array $n
-     * @return Array
+     * @param array $x
+     * @param array $n
+     * @return array
      */
     function _regularBarrett($x, $n)
     {
@@ -1889,7 +2169,7 @@ class Math_BigInteger {
             return $temp->value;
         }
 
-        if ( ($key = array_search($n, $cache[MATH_BIGINTEGER_VARIABLE])) === false ) {
+        if (($key = array_search($n, $cache[MATH_BIGINTEGER_VARIABLE])) === false) {
             $key = count($cache[MATH_BIGINTEGER_VARIABLE]);
             $cache[MATH_BIGINTEGER_VARIABLE][] = $n;
             $lhs = new Math_BigInteger();
@@ -1917,8 +2197,8 @@ class Math_BigInteger {
 
         if ($this->_compare($result, false, $temp[MATH_BIGINTEGER_VALUE], $temp[MATH_BIGINTEGER_SIGN]) < 0) {
             $corrector_value = $this->_array_repeat(0, $n_length + 1);
-            $corrector_value[] = 1;
-            $result = $this->_add($result, false, $corrector, false);
+            $corrector_value[count($corrector_value)] = 1;
+            $result = $this->_add($result, false, $corrector_value, false);
             $result = $result[MATH_BIGINTEGER_VALUE];
         }
 
@@ -1936,12 +2216,13 @@ class Math_BigInteger {
      *
      * If you're going to be doing array_slice($product->value, 0, $stop), some cycles can be saved.
      *
-     * @see _regularBarrett()
-     * @param Array $x_value
-     * @param Boolean $x_negative
-     * @param Array $y_value
-     * @param Boolean $y_negative
-     * @return Array
+     * @see self::_regularBarrett()
+     * @param array $x_value
+     * @param bool $x_negative
+     * @param array $y_value
+     * @param bool $y_negative
+     * @param int $stop
+     * @return array
      * @access private
      */
     function _multiplyLower($x_value, $x_negative, $y_value, $y_negative, $stop)
@@ -1949,14 +2230,14 @@ class Math_BigInteger {
         $x_length = count($x_value);
         $y_length = count($y_value);
 
-        if ( !$x_length || !$y_length ) { // a 0 is being multiplied
+        if (!$x_length || !$y_length) { // a 0 is being multiplied
             return array(
                 MATH_BIGINTEGER_VALUE => array(),
                 MATH_BIGINTEGER_SIGN => false
             );
         }
 
-        if ( $x_length < $y_length ) {
+        if ($x_length < $y_length) {
             $temp = $x_value;
             $x_value = $y_value;
             $y_value = $temp;
@@ -1977,8 +2258,8 @@ class Math_BigInteger {
 
         for ($j = 0; $j < $x_length; ++$j) { // ie. $i = 0, $k = $i
             $temp = $x_value[$j] * $y_value[0] + $carry; // $product_value[$k] == 0
-            $carry = (int) ($temp / 0x4000000);
-            $product_value[$j] = (int) ($temp - 0x4000000 * $carry);
+            $carry = MATH_BIGINTEGER_BASE === 26 ? intval($temp / 0x4000000) : ($temp >> 31);
+            $product_value[$j] = (int) ($temp - MATH_BIGINTEGER_BASE_FULL * $carry);
         }
 
         if ($j < $stop) {
@@ -1993,8 +2274,8 @@ class Math_BigInteger {
 
             for ($j = 0, $k = $i; $j < $x_length && $k < $stop; ++$j, ++$k) {
                 $temp = $product_value[$k] + $x_value[$j] * $y_value[$i] + $carry;
-                $carry = (int) ($temp / 0x4000000);
-                $product_value[$k] = (int) ($temp - 0x4000000 * $carry);
+                $carry = MATH_BIGINTEGER_BASE === 26 ? intval($temp / 0x4000000) : ($temp >> 31);
+                $product_value[$k] = (int) ($temp - MATH_BIGINTEGER_BASE_FULL * $carry);
             }
 
             if ($k < $stop) {
@@ -2016,12 +2297,12 @@ class Math_BigInteger {
      * improved upon (basically, by using the comba method).  gcd($n, 2) must be equal to one for this function
      * to work correctly.
      *
-     * @see _prepMontgomery()
-     * @see _slidingWindow()
+     * @see self::_prepMontgomery()
+     * @see self::_slidingWindow()
      * @access private
-     * @param Array $x
-     * @param Array $n
-     * @return Array
+     * @param array $x
+     * @param array $n
+     * @return array
      */
     function _montgomery($x, $n)
     {
@@ -2030,7 +2311,7 @@ class Math_BigInteger {
             MATH_BIGINTEGER_DATA => array()
         );
 
-        if ( ($key = array_search($n, $cache[MATH_BIGINTEGER_VARIABLE])) === false ) {
+        if (($key = array_search($n, $cache[MATH_BIGINTEGER_VARIABLE])) === false) {
             $key = count($cache[MATH_BIGINTEGER_VARIABLE]);
             $cache[MATH_BIGINTEGER_VARIABLE][] = $x;
             $cache[MATH_BIGINTEGER_DATA][] = $this->_modInverse67108864($n);
@@ -2042,7 +2323,7 @@ class Math_BigInteger {
 
         for ($i = 0; $i < $k; ++$i) {
             $temp = $result[MATH_BIGINTEGER_VALUE][$i] * $cache[MATH_BIGINTEGER_DATA][$key];
-            $temp = (int) ($temp - 0x4000000 * ((int) ($temp / 0x4000000)));
+            $temp = $temp - MATH_BIGINTEGER_BASE_FULL * (MATH_BIGINTEGER_BASE === 26 ? intval($temp / 0x4000000) : ($temp >> 31));
             $temp = $this->_regularMultiply(array($temp), $n);
             $temp = array_merge($this->_array_repeat(0, $i), $temp);
             $result = $this->_add($result[MATH_BIGINTEGER_VALUE], false, $temp, false);
@@ -2060,28 +2341,33 @@ class Math_BigInteger {
     /**
      * Montgomery Multiply
      *
-     * Interleaves the montgomery reduction and long multiplication algorithms together as described in 
+     * Interleaves the montgomery reduction and long multiplication algorithms together as described in
      * {@link http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf#page=13 HAC 14.36}
      *
-     * @see _prepMontgomery()
-     * @see _montgomery()
+     * @see self::_prepMontgomery()
+     * @see self::_montgomery()
      * @access private
-     * @param Array $x
-     * @param Array $y
-     * @param Array $m
-     * @return Array
+     * @param array $x
+     * @param array $y
+     * @param array $m
+     * @return array
      */
     function _montgomeryMultiply($x, $y, $m)
     {
         $temp = $this->_multiply($x, false, $y, false);
         return $this->_montgomery($temp[MATH_BIGINTEGER_VALUE], $m);
 
+        // the following code, although not callable, can be run independently of the above code
+        // although the above code performed better in my benchmarks the following could might
+        // perform better under different circumstances. in lieu of deleting it it's just been
+        // made uncallable
+
         static $cache = array(
             MATH_BIGINTEGER_VARIABLE => array(),
             MATH_BIGINTEGER_DATA => array()
         );
 
-        if ( ($key = array_search($m, $cache[MATH_BIGINTEGER_VARIABLE])) === false ) {
+        if (($key = array_search($m, $cache[MATH_BIGINTEGER_VARIABLE])) === false) {
             $key = count($cache[MATH_BIGINTEGER_VARIABLE]);
             $cache[MATH_BIGINTEGER_VARIABLE][] = $m;
             $cache[MATH_BIGINTEGER_DATA][] = $this->_modInverse67108864($m);
@@ -2094,9 +2380,9 @@ class Math_BigInteger {
         $a = array(MATH_BIGINTEGER_VALUE => $this->_array_repeat(0, $n + 1));
         for ($i = 0; $i < $n; ++$i) {
             $temp = $a[MATH_BIGINTEGER_VALUE][0] + $x[$i] * $y[0];
-            $temp = (int) ($temp - 0x4000000 * ((int) ($temp / 0x4000000)));
+            $temp = $temp - MATH_BIGINTEGER_BASE_FULL * (MATH_BIGINTEGER_BASE === 26 ? intval($temp / 0x4000000) : ($temp >> 31));
             $temp = $temp * $cache[MATH_BIGINTEGER_DATA][$key];
-            $temp = (int) ($temp - 0x4000000 * ((int) ($temp / 0x4000000)));
+            $temp = $temp - MATH_BIGINTEGER_BASE_FULL * (MATH_BIGINTEGER_BASE === 26 ? intval($temp / 0x4000000) : ($temp >> 31));
             $temp = $this->_add($this->_regularMultiply(array($x[$i]), $y), false, $this->_regularMultiply(array($temp), $m), false);
             $a = $this->_add($a[MATH_BIGINTEGER_VALUE], false, $temp[MATH_BIGINTEGER_VALUE], false);
             $a[MATH_BIGINTEGER_VALUE] = array_slice($a[MATH_BIGINTEGER_VALUE], 1);
@@ -2110,12 +2396,12 @@ class Math_BigInteger {
     /**
      * Prepare a number for use in Montgomery Modular Reductions
      *
-     * @see _montgomery()
-     * @see _slidingWindow()
+     * @see self::_montgomery()
+     * @see self::_slidingWindow()
      * @access private
-     * @param Array $x
-     * @param Array $n
-     * @return Array
+     * @param array $x
+     * @param array $n
+     * @return array
      */
     function _prepMontgomery($x, $n)
     {
@@ -2140,7 +2426,7 @@ class Math_BigInteger {
      * {@link http://groups.google.com/group/sci.crypt/msg/7a137205c1be7d85}
      *
      * As for why we do all the bitmasking...  strange things can happen when converting from floats to ints. For
-     * instance, on some computers, var_dump((int) -4294967297) yields int(-1) and on others, it yields 
+     * instance, on some computers, var_dump((int) -4294967297) yields int(-1) and on others, it yields
      * int(-2147483648).  To avoid problems stemming from this, we use bitmasks to guarantee that ints aren't
      * auto-converted to floats.  The outermost bitmask is present because without it, there's no guarantee that
      * the "residue" returned would be the so-called "common residue".  We use fmod, in the last step, because the
@@ -2149,20 +2435,20 @@ class Math_BigInteger {
      *
      * Thanks to Pedro Gimeno Fortea for input!
      *
-     * @see _montgomery()
+     * @see self::_montgomery()
      * @access private
-     * @param Array $x
-     * @return Integer
+     * @param array $x
+     * @return int
      */
-    function _modInverse67108864($x) // 2**26 == 67108864
+    function _modInverse67108864($x) // 2**26 == 67,108,864
     {
         $x = -$x[0];
         $result = $x & 0x3; // x**-1 mod 2**2
         $result = ($result * (2 - $x * $result)) & 0xF; // x**-1 mod 2**4
         $result = ($result * (2 - ($x & 0xFF) * $result))  & 0xFF; // x**-1 mod 2**8
         $result = ($result * ((2 - ($x & 0xFFFF) * $result) & 0xFFFF)) & 0xFFFF; // x**-1 mod 2**16
-        $result = fmod($result * (2 - fmod($x * $result, 0x4000000)), 0x4000000); // x**-1 mod 2**26
-        return $result & 0x3FFFFFF;
+        $result = fmod($result * (2 - fmod($x * $result, MATH_BIGINTEGER_BASE_FULL)), MATH_BIGINTEGER_BASE_FULL); // x**-1 mod 2**26
+        return $result & MATH_BIGINTEGER_MAX_DIGIT;
     }
 
     /**
@@ -2170,20 +2456,38 @@ class Math_BigInteger {
      *
      * Say you have (30 mod 17 * x mod 17) mod 17 == 1.  x can be found using modular inverses.
      *
+     * Here's an example:
+     * <code>
+     * <?php
+     *    include 'Math/BigInteger.php';
+     *
+     *    $a = new Math_BigInteger(30);
+     *    $b = new Math_BigInteger(17);
+     *
+     *    $c = $a->modInverse($b);
+     *    echo $c->toString(); // outputs 4
+     *
+     *    echo "\r\n";
+     *
+     *    $d = $a->multiply($c);
+     *    list(, $d) = $d->divide($b);
+     *    echo $d; // outputs 1 (as per the definition of modular inverse)
+     * ?>
+     * </code>
      *
      * @param Math_BigInteger $n
-     * @return mixed false, if no modular inverse exists, Math_BigInteger, otherwise.
+     * @return Math_BigInteger|false
      * @access public
      * @internal See {@link http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf#page=21 HAC 14.64} for more information.
      */
     function modInverse($n)
     {
-        switch ( MATH_BIGINTEGER_MODE ) {
+        switch (MATH_BIGINTEGER_MODE) {
             case MATH_BIGINTEGER_MODE_GMP:
                 $temp = new Math_BigInteger();
                 $temp->value = gmp_invert($this->value, $n->value);
 
-                return ( $temp->value === false ) ? false : $this->_normalize($temp);
+                return ($temp->value === false) ? false : $this->_normalize($temp);
         }
 
         static $zero, $one;
@@ -2213,13 +2517,27 @@ class Math_BigInteger {
     }
 
     /**
-     * Calculates the greatest common divisor and Bézout's identity.
+     * Calculates the greatest common divisor and Bezout's identity.
      *
-     * Say you have 693 and 609.  The GCD is 21.  Bézout's identity states that there exist integers x and y such that
+     * Say you have 693 and 609.  The GCD is 21.  Bezout's identity states that there exist integers x and y such that
      * 693*x + 609*y == 21.  In point of fact, there are actually an infinite number of x and y combinations and which
-     * combination is returned is dependant upon which mode is in use.  See
-     * {@link http://en.wikipedia.org/wiki/B%C3%A9zout%27s_identity Bézout's identity - Wikipedia} for more information.
+     * combination is returned is dependent upon which mode is in use.  See
+     * {@link http://en.wikipedia.org/wiki/B%C3%A9zout%27s_identity Bezout's identity - Wikipedia} for more information.
      *
+     * Here's an example:
+     * <code>
+     * <?php
+     *    include 'Math/BigInteger.php';
+     *
+     *    $a = new Math_BigInteger(693);
+     *    $b = new Math_BigInteger(609);
+     *
+     *    extract($a->extendedGCD($b));
+     *
+     *    echo $gcd->toString() . "\r\n"; // outputs 21
+     *    echo $a->toString() * $x->toString() + $b->toString() * $y->toString(); // outputs 21
+     * ?>
+     * </code>
      *
      * @param Math_BigInteger $n
      * @return Math_BigInteger
@@ -2230,7 +2548,7 @@ class Math_BigInteger {
      */
     function extendedGCD($n)
     {
-        switch ( MATH_BIGINTEGER_MODE ) {
+        switch (MATH_BIGINTEGER_MODE) {
             case MATH_BIGINTEGER_MODE_GMP:
                 extract(gmp_gcdext($this->value, $n->value));
 
@@ -2280,7 +2598,7 @@ class Math_BigInteger {
         $g = new Math_BigInteger();
         $g->value = array(1);
 
-        while ( !(($x->value[0] & 1)|| ($y->value[0] & 1)) ) {
+        while (!(($x->value[0] & 1)|| ($y->value[0] & 1))) {
             $x->_rshift(1);
             $y->_rshift(1);
             $g->_lshift(1);
@@ -2297,10 +2615,10 @@ class Math_BigInteger {
         $a->value = $d->value = $g->value = array(1);
         $b->value = $c->value = array();
 
-        while ( !empty($u->value) ) {
-            while ( !($u->value[0] & 1) ) {
+        while (!empty($u->value)) {
+            while (!($u->value[0] & 1)) {
                 $u->_rshift(1);
-                if ( (!empty($a->value) && ($a->value[0] & 1)) || (!empty($b->value) && ($b->value[0] & 1)) ) {
+                if ((!empty($a->value) && ($a->value[0] & 1)) || (!empty($b->value) && ($b->value[0] & 1))) {
                     $a = $a->add($y);
                     $b = $b->subtract($x);
                 }
@@ -2308,9 +2626,9 @@ class Math_BigInteger {
                 $b->_rshift(1);
             }
 
-            while ( !($v->value[0] & 1) ) {
+            while (!($v->value[0] & 1)) {
                 $v->_rshift(1);
-                if ( (!empty($d->value) && ($d->value[0] & 1)) || (!empty($c->value) && ($c->value[0] & 1)) ) {
+                if ((!empty($d->value) && ($d->value[0] & 1)) || (!empty($c->value) && ($c->value[0] & 1))) {
                     $c = $c->add($y);
                     $d = $d->subtract($x);
                 }
@@ -2341,6 +2659,19 @@ class Math_BigInteger {
      *
      * Say you have 693 and 609.  The GCD is 21.
      *
+     * Here's an example:
+     * <code>
+     * <?php
+     *    include 'Math/BigInteger.php';
+     *
+     *    $a = new Math_BigInteger(693);
+     *    $b = new Math_BigInteger(609);
+     *
+     *    $gcd = a->extendedGCD($b);
+     *
+     *    echo $gcd->toString() . "\r\n"; // outputs 21
+     * ?>
+     * </code>
      *
      * @param Math_BigInteger $n
      * @return Math_BigInteger
@@ -2362,7 +2693,7 @@ class Math_BigInteger {
     {
         $temp = new Math_BigInteger();
 
-        switch ( MATH_BIGINTEGER_MODE ) {
+        switch (MATH_BIGINTEGER_MODE) {
             case MATH_BIGINTEGER_MODE_GMP:
                 $temp->value = gmp_abs($this->value);
                 break;
@@ -2388,17 +2719,24 @@ class Math_BigInteger {
      *
      * Note how the same comparison operator is used.  If you want to test for equality, use $x->equals($y).
      *
-     * @param Math_BigInteger $x
-     * @return Integer < 0 if $this is less than $x; > 0 if $this is greater than $x, and 0 if they are equal.
+     * @param Math_BigInteger $y
+     * @return int < 0 if $this is less than $y; > 0 if $this is greater than $y, and 0 if they are equal.
      * @access public
-     * @see equals()
+     * @see self::equals()
      * @internal Could return $this->subtract($x), but that's not as fast as what we do do.
      */
     function compare($y)
     {
-        switch ( MATH_BIGINTEGER_MODE ) {
+        switch (MATH_BIGINTEGER_MODE) {
             case MATH_BIGINTEGER_MODE_GMP:
-                return gmp_cmp($this->value, $y->value);
+                $r = gmp_cmp($this->value, $y->value);
+                if ($r < -1) {
+                    $r = -1;
+                }
+                if ($r > 1) {
+                    $r = 1;
+                }
+                return $r;
             case MATH_BIGINTEGER_MODE_BCMATH:
                 return bccomp($this->value, $y->value, 0);
         }
@@ -2409,24 +2747,24 @@ class Math_BigInteger {
     /**
      * Compares two numbers.
      *
-     * @param Array $x_value
-     * @param Boolean $x_negative
-     * @param Array $y_value
-     * @param Boolean $y_negative
-     * @return Integer
-     * @see compare()
+     * @param array $x_value
+     * @param bool $x_negative
+     * @param array $y_value
+     * @param bool $y_negative
+     * @return int
+     * @see self::compare()
      * @access private
      */
     function _compare($x_value, $x_negative, $y_value, $y_negative)
     {
-        if ( $x_negative != $y_negative ) {
-            return ( !$x_negative && $y_negative ) ? 1 : -1;
+        if ($x_negative != $y_negative) {
+            return (!$x_negative && $y_negative) ? 1 : -1;
         }
 
         $result = $x_negative ? -1 : 1;
 
-        if ( count($x_value) != count($y_value) ) {
-            return ( count($x_value) > count($y_value) ) ? $result : -$result;
+        if (count($x_value) != count($y_value)) {
+            return (count($x_value) > count($y_value)) ? $result : -$result;
         }
         $size = max(count($x_value), count($y_value));
 
@@ -2435,7 +2773,7 @@ class Math_BigInteger {
 
         for ($i = count($x_value) - 1; $i >= 0; --$i) {
             if ($x_value[$i] != $y_value[$i]) {
-                return ( $x_value[$i] > $y_value[$i] ) ? $result : -$result;
+                return ($x_value[$i] > $y_value[$i]) ? $result : -$result;
             }
         }
 
@@ -2448,13 +2786,13 @@ class Math_BigInteger {
      * If you need to see if one number is greater than or less than another number, use Math_BigInteger::compare()
      *
      * @param Math_BigInteger $x
-     * @return Boolean
+     * @return bool
      * @access public
-     * @see compare()
+     * @see self::compare()
      */
     function equals($x)
     {
-        switch ( MATH_BIGINTEGER_MODE ) {
+        switch (MATH_BIGINTEGER_MODE) {
             case MATH_BIGINTEGER_MODE_GMP:
                 return gmp_cmp($this->value, $x->value) == 0;
             default:
@@ -2468,14 +2806,13 @@ class Math_BigInteger {
      * Some bitwise operations give different results depending on the precision being used.  Examples include left
      * shift, not, and rotates.
      *
-     * @param Math_BigInteger $x
+     * @param int $bits
      * @access public
-     * @return Math_BigInteger
      */
     function setPrecision($bits)
     {
         $this->precision = $bits;
-        if ( MATH_BIGINTEGER_MODE != MATH_BIGINTEGER_MODE_BCMATH ) {
+        if (MATH_BIGINTEGER_MODE != MATH_BIGINTEGER_MODE_BCMATH) {
             $this->bitmask = new Math_BigInteger(chr((1 << ($bits & 0x7)) - 1) . str_repeat(chr(0xFF), $bits >> 3), 256);
         } else {
             $this->bitmask = new Math_BigInteger(bcpow('2', $bits, 0));
@@ -2495,7 +2832,7 @@ class Math_BigInteger {
      */
     function bitwise_and($x)
     {
-        switch ( MATH_BIGINTEGER_MODE ) {
+        switch (MATH_BIGINTEGER_MODE) {
             case MATH_BIGINTEGER_MODE_GMP:
                 $temp = new Math_BigInteger();
                 $temp->value = gmp_and($this->value, $x->value);
@@ -2520,7 +2857,7 @@ class Math_BigInteger {
         $result->value = array_slice($result->value, 0, $length);
 
         for ($i = 0; $i < $length; ++$i) {
-            $result->value[$i] = $result->value[$i] & $x->value[$i];
+            $result->value[$i]&= $x->value[$i];
         }
 
         return $this->_normalize($result);
@@ -2536,7 +2873,7 @@ class Math_BigInteger {
      */
     function bitwise_or($x)
     {
-        switch ( MATH_BIGINTEGER_MODE ) {
+        switch (MATH_BIGINTEGER_MODE) {
             case MATH_BIGINTEGER_MODE_GMP:
                 $temp = new Math_BigInteger();
                 $temp->value = gmp_or($this->value, $x->value);
@@ -2556,11 +2893,11 @@ class Math_BigInteger {
 
         $length = max(count($this->value), count($x->value));
         $result = $this->copy();
-        $result->value = array_pad($result->value, 0, $length);
-        $x->value = array_pad($x->value, 0, $length);
+        $result->value = array_pad($result->value, $length, 0);
+        $x->value = array_pad($x->value, $length, 0);
 
         for ($i = 0; $i < $length; ++$i) {
-            $result->value[$i] = $this->value[$i] | $x->value[$i];
+            $result->value[$i]|= $x->value[$i];
         }
 
         return $this->_normalize($result);
@@ -2576,10 +2913,10 @@ class Math_BigInteger {
      */
     function bitwise_xor($x)
     {
-        switch ( MATH_BIGINTEGER_MODE ) {
+        switch (MATH_BIGINTEGER_MODE) {
             case MATH_BIGINTEGER_MODE_GMP:
                 $temp = new Math_BigInteger();
-                $temp->value = gmp_xor($this->value, $x->value);
+                $temp->value = gmp_xor(gmp_abs($this->value), gmp_abs($x->value));
 
                 return $this->_normalize($temp);
             case MATH_BIGINTEGER_MODE_BCMATH:
@@ -2596,11 +2933,12 @@ class Math_BigInteger {
 
         $length = max(count($this->value), count($x->value));
         $result = $this->copy();
-        $result->value = array_pad($result->value, 0, $length);
-        $x->value = array_pad($x->value, 0, $length);
+        $result->is_negative = false;
+        $result->value = array_pad($result->value, $length, 0);
+        $x->value = array_pad($x->value, $length, 0);
 
         for ($i = 0; $i < $length; ++$i) {
-            $result->value[$i] = $this->value[$i] ^ $x->value[$i];
+            $result->value[$i]^= $x->value[$i];
         }
 
         return $this->_normalize($result);
@@ -2618,6 +2956,9 @@ class Math_BigInteger {
         // calculuate "not" without regard to $this->precision
         // (will always result in a smaller number.  ie. ~1 isn't 1111 1110 - it's 0)
         $temp = $this->toBytes();
+        if ($temp == '') {
+            return $this->_normalize(new Math_BigInteger());
+        }
         $pre_msb = decbin(ord($temp[0]));
         $temp = ~$temp;
         $msb = decbin(ord($temp[0]));
@@ -2637,7 +2978,7 @@ class Math_BigInteger {
         $leading_ones = chr((1 << ($new_bits & 0x7)) - 1) . str_repeat(chr(0xFF), $new_bits >> 3);
         $this->_base256_lshift($leading_ones, $current_bits);
 
-        $temp = str_pad($temp, ceil($this->bits / 8), chr(0), STR_PAD_LEFT);
+        $temp = str_pad($temp, strlen($leading_ones), chr(0), STR_PAD_LEFT);
 
         return $this->_normalize(new Math_BigInteger($leading_ones | $temp, 256));
     }
@@ -2647,7 +2988,7 @@ class Math_BigInteger {
      *
      * Shifts BigInteger's by $shift bits, effectively dividing by 2**$shift.
      *
-     * @param Integer $shift
+     * @param int $shift
      * @return Math_BigInteger
      * @access public
      * @internal The only version that yields any speed increases is the internal version.
@@ -2656,7 +2997,7 @@ class Math_BigInteger {
     {
         $temp = new Math_BigInteger();
 
-        switch ( MATH_BIGINTEGER_MODE ) {
+        switch (MATH_BIGINTEGER_MODE) {
             case MATH_BIGINTEGER_MODE_GMP:
                 static $two;
 
@@ -2685,7 +3026,7 @@ class Math_BigInteger {
      *
      * Shifts BigInteger's by $shift bits, effectively multiplying by 2**$shift.
      *
-     * @param Integer $shift
+     * @param int $shift
      * @return Math_BigInteger
      * @access public
      * @internal The only version that yields any speed increases is the internal version.
@@ -2694,7 +3035,7 @@ class Math_BigInteger {
     {
         $temp = new Math_BigInteger();
 
-        switch ( MATH_BIGINTEGER_MODE ) {
+        switch (MATH_BIGINTEGER_MODE) {
             case MATH_BIGINTEGER_MODE_GMP:
                 static $two;
 
@@ -2723,7 +3064,7 @@ class Math_BigInteger {
      *
      * Instead of the top x bits being dropped they're appended to the shifted bit string.
      *
-     * @param Integer $shift
+     * @param int $shift
      * @return Math_BigInteger
      * @access public
      */
@@ -2733,7 +3074,7 @@ class Math_BigInteger {
 
         if ($this->precision > 0) {
             $precision = $this->precision;
-            if ( MATH_BIGINTEGER_MODE == MATH_BIGINTEGER_MODE_BCMATH ) {
+            if (MATH_BIGINTEGER_MODE == MATH_BIGINTEGER_MODE_BCMATH) {
                 $mask = $this->bitmask->subtract(new Math_BigInteger(1));
                 $mask = $mask->toBytes();
             } else {
@@ -2741,7 +3082,8 @@ class Math_BigInteger {
             }
         } else {
             $temp = ord($bits[0]);
-            for ($i = 0; $temp >> $i; ++$i);
+            for ($i = 0; $temp >> $i; ++$i) {
+            }
             $precision = 8 * strlen($bits) - 8 + $i;
             $mask = chr((1 << ($precision & 0x7)) - 1) . str_repeat(chr(0xFF), $precision >> 3);
         }
@@ -2767,7 +3109,7 @@ class Math_BigInteger {
      *
      * Instead of the bottom x bits being dropped they're prepended to the shifted bit string.
      *
-     * @param Integer $shift
+     * @param int $shift
      * @return Math_BigInteger
      * @access public
      */
@@ -2779,77 +3121,125 @@ class Math_BigInteger {
     /**
      * Set random number generator function
      *
-     * $generator should be the name of a random generating function whose first parameter is the minimum
-     * value and whose second parameter is the maximum value.  If this function needs to be seeded, it should
-     * be seeded prior to calling Math_BigInteger::random() or Math_BigInteger::randomPrime()
+     * This function is deprecated.
      *
-     * If the random generating function is not explicitly set, it'll be assumed to be mt_rand().
-     *
-     * @see random()
-     * @see randomPrime()
-     * @param optional String $generator
+     * @param string $generator
      * @access public
      */
     function setRandomGenerator($generator)
     {
-        $this->generator = $generator;
+    }
+
+    /**
+     * Generates a random BigInteger
+     *
+     * Byte length is equal to $length. Uses crypt_random if it's loaded and mt_rand if it's not.
+     *
+     * @param int $length
+     * @return Math_BigInteger
+     * @access private
+     */
+    function _random_number_helper($size)
+    {
+        if (function_exists('crypt_random_string')) {
+            $random = crypt_random_string($size);
+        } else {
+            $random = '';
+
+            if ($size & 1) {
+                $random.= chr(mt_rand(0, 255));
+            }
+
+            $blocks = $size >> 1;
+            for ($i = 0; $i < $blocks; ++$i) {
+                // mt_rand(-2147483648, 0x7FFFFFFF) always produces -2147483648 on some systems
+                $random.= pack('n', mt_rand(0, 0xFFFF));
+            }
+        }
+
+        return new Math_BigInteger($random, 256);
     }
 
     /**
      * Generate a random number
      *
-     * @param optional Integer $min
-     * @param optional Integer $max
+     * Returns a random number between $min and $max where $min and $max
+     * can be defined using one of the two methods:
+     *
+     * $min->random($max)
+     * $max->random($min)
+     *
+     * @param Math_BigInteger $arg1
+     * @param Math_BigInteger $arg2
      * @return Math_BigInteger
      * @access public
+     * @internal The API for creating random numbers used to be $a->random($min, $max), where $a was a Math_BigInteger object.
+     *           That method is still supported for BC purposes.
      */
-    function random($min = false, $max = false)
+    function random($arg1, $arg2 = false)
     {
-        if ($min === false) {
-            $min = new Math_BigInteger(0);
+        if ($arg1 === false) {
+            return false;
         }
 
-        if ($max === false) {
-            $max = new Math_BigInteger(0x7FFFFFFF);
+        if ($arg2 === false) {
+            $max = $arg1;
+            $min = $this;
+        } else {
+            $min = $arg1;
+            $max = $arg2;
         }
 
         $compare = $max->compare($min);
 
         if (!$compare) {
             return $this->_normalize($min);
-        } else if ($compare < 0) {
+        } elseif ($compare < 0) {
             // if $min is bigger then $max, swap $min and $max
             $temp = $max;
             $max = $min;
             $min = $temp;
         }
 
-        $generator = $this->generator;
-
-        $max = $max->subtract($min);
-        $max = ltrim($max->toBytes(), chr(0));
-        $size = strlen($max) - 1;
-        $random = '';
-
-        $bytes = $size & 1;
-        for ($i = 0; $i < $bytes; ++$i) {
-            $random.= chr($generator(0, 255));
+        static $one;
+        if (!isset($one)) {
+            $one = new Math_BigInteger(1);
         }
 
-        $blocks = $size >> 1;
-        for ($i = 0; $i < $blocks; ++$i) {
-            // mt_rand(-2147483648, 0x7FFFFFFF) always produces -2147483648 on some systems
-            $random.= pack('n', $generator(0, 0xFFFF));
-        }
+        $max = $max->subtract($min->subtract($one));
+        $size = strlen(ltrim($max->toBytes(), chr(0)));
 
-        $temp = new Math_BigInteger($random, 256);
-        if ($temp->compare(new Math_BigInteger(substr($max, 1), 256)) > 0) {
-            $random = chr($generator(0, ord($max[0]) - 1)) . $random;
-        } else {
-            $random = chr($generator(0, ord($max[0])    )) . $random;
-        }
+        /*
+            doing $random % $max doesn't work because some numbers will be more likely to occur than others.
+            eg. if $max is 140 and $random's max is 255 then that'd mean both $random = 5 and $random = 145
+            would produce 5 whereas the only value of random that could produce 139 would be 139. ie.
+            not all numbers would be equally likely. some would be more likely than others.
 
-        $random = new Math_BigInteger($random, 256);
+            creating a whole new random number until you find one that is within the range doesn't work
+            because, for sufficiently small ranges, the likelihood that you'd get a number within that range
+            would be pretty small. eg. with $random's max being 255 and if your $max being 1 the probability
+            would be pretty high that $random would be greater than $max.
+
+            phpseclib works around this using the technique described here:
+
+            http://crypto.stackexchange.com/questions/5708/creating-a-small-number-from-a-cryptographically-secure-random-string
+        */
+        $random_max = new Math_BigInteger(chr(1) . str_repeat("\0", $size), 256);
+        $random = $this->_random_number_helper($size);
+
+        list($max_multiple) = $random_max->divide($max);
+        $max_multiple = $max_multiple->multiply($max);
+
+        while ($random->compare($max_multiple) >= 0) {
+            $random = $random->subtract($max_multiple);
+            $random_max = $random_max->subtract($max_multiple);
+            $random = $random->bitwise_leftShift(8);
+            $random = $random->add($this->_random_number_helper(1));
+            $random_max = $random_max->bitwise_leftShift(8);
+            list($max_multiple) = $random_max->divide($max);
+            $max_multiple = $max_multiple->multiply($max);
+        }
+        list(, $random) = $random->divide($max);
 
         return $this->_normalize($random->add($min));
     }
@@ -2857,57 +3247,39 @@ class Math_BigInteger {
     /**
      * Generate a random prime number.
      *
-     * If there's not a prime within the given range, false will be returned.  If more than $timeout seconds have elapsed,
-     * give up and return false.
+     * If there's not a prime within the given range, false will be returned.
+     * If more than $timeout seconds have elapsed, give up and return false.
      *
-     * @param optional Integer $min
-     * @param optional Integer $max
-     * @param optional Integer $timeout
-     * @return Math_BigInteger
+     * @param Math_BigInteger $arg1
+     * @param Math_BigInteger $arg2
+     * @param int $timeout
+     * @return Math_BigInteger|false
      * @access public
      * @internal See {@link http://www.cacr.math.uwaterloo.ca/hac/about/chap4.pdf#page=15 HAC 4.44}.
      */
-    function randomPrime($min = false, $max = false, $timeout = false)
+    function randomPrime($arg1, $arg2 = false, $timeout = false)
     {
+        if ($arg1 === false) {
+            return false;
+        }
+
+        if ($arg2 === false) {
+            $max = $arg1;
+            $min = $this;
+        } else {
+            $min = $arg1;
+            $max = $arg2;
+        }
+
         $compare = $max->compare($min);
 
         if (!$compare) {
-            return $min;
-        } else if ($compare < 0) {
+            return $min->isPrime() ? $min : false;
+        } elseif ($compare < 0) {
             // if $min is bigger then $max, swap $min and $max
             $temp = $max;
             $max = $min;
             $min = $temp;
-        }
-
-        // gmp_nextprime() requires PHP 5 >= 5.2.0 per <http://php.net/gmp-nextprime>.
-        if ( MATH_BIGINTEGER_MODE == MATH_BIGINTEGER_MODE_GMP && function_exists('gmp_nextprime') ) {
-            // we don't rely on Math_BigInteger::random()'s min / max when gmp_nextprime() is being used since this function
-            // does its own checks on $max / $min when gmp_nextprime() is used.  When gmp_nextprime() is not used, however,
-            // the same $max / $min checks are not performed.
-            if ($min === false) {
-                $min = new Math_BigInteger(0);
-            }
-
-            if ($max === false) {
-                $max = new Math_BigInteger(0x7FFFFFFF);
-            }
-
-            $x = $this->random($min, $max);
-
-            $x->value = gmp_nextprime($x->value);
-
-            if ($x->compare($max) <= 0) {
-                return $x;
-            }
-
-            $x->value = gmp_nextprime($min->value);
-
-            if ($x->compare($max) <= 0) {
-                return $x;
-            }
-
-            return false;
         }
 
         static $one, $two;
@@ -2919,6 +3291,23 @@ class Math_BigInteger {
         $start = time();
 
         $x = $this->random($min, $max);
+
+        // gmp_nextprime() requires PHP 5 >= 5.2.0 per <http://php.net/gmp-nextprime>.
+        if (MATH_BIGINTEGER_MODE == MATH_BIGINTEGER_MODE_GMP && extension_loaded('gmp') && version_compare(PHP_VERSION, '5.2.0', '>=')) {
+            $p = new Math_BigInteger();
+            $p->value = gmp_nextprime($x->value);
+
+            if ($p->compare($max) <= 0) {
+                return $p;
+            }
+
+            if (!$min->equals($x)) {
+                $x = $x->subtract($one);
+            }
+
+            return $x->randomPrime($min, $x);
+        }
+
         if ($x->equals($two)) {
             return $x;
         }
@@ -2965,12 +3354,12 @@ class Math_BigInteger {
      *
      * If the current number is odd it'll be unchanged.  If it's even, one will be added to it.
      *
-     * @see randomPrime()
+     * @see self::randomPrime()
      * @access private
      */
     function _make_odd()
     {
-        switch ( MATH_BIGINTEGER_MODE ) {
+        switch (MATH_BIGINTEGER_MODE) {
             case MATH_BIGINTEGER_MODE_GMP:
                 gmp_setbit($this->value, 0);
                 break;
@@ -2988,14 +3377,14 @@ class Math_BigInteger {
      * Checks a numer to see if it's prime
      *
      * Assuming the $t parameter is not set, this function has an error rate of 2**-80.  The main motivation for the
-     * $t parameter is distributability.  Math_BigInteger::randomPrime() can be distributed accross multiple pageloads
+     * $t parameter is distributability.  Math_BigInteger::randomPrime() can be distributed across multiple pageloads
      * on a website instead of just one.
      *
-     * @param optional Integer $t
-     * @return Boolean
+     * @param Math_BigInteger $t
+     * @return bool
      * @access public
      * @internal Uses the
-     *     {@link http://en.wikipedia.org/wiki/Miller%E2%80%93Rabin_primality_test Miller-Rabin primality test}.  See 
+     *     {@link http://en.wikipedia.org/wiki/Miller%E2%80%93Rabin_primality_test Miller-Rabin primality test}.  See
      *     {@link http://www.cacr.math.uwaterloo.ca/hac/about/chap4.pdf#page=8 HAC 4.24}.
      */
     function isPrime($t = false)
@@ -3004,6 +3393,7 @@ class Math_BigInteger {
 
         if (!$t) {
             // see HAC 4.49 "Note (controlling the error probability)"
+            // @codingStandardsIgnoreStart
                  if ($length >= 163) { $t =  2; } // floor(1300 / 8)
             else if ($length >= 106) { $t =  3; } // floor( 850 / 8)
             else if ($length >= 81 ) { $t =  4; } // floor( 650 / 8)
@@ -3016,11 +3406,12 @@ class Math_BigInteger {
             else if ($length >= 25 ) { $t = 15; } // floor( 200 / 8)
             else if ($length >= 18 ) { $t = 18; } // floor( 150 / 8)
             else                     { $t = 27; }
+            // @codingStandardsIgnoreEnd
         }
 
         // ie. gmp_testbit($this, 0)
         // ie. isEven() or !isOdd()
-        switch ( MATH_BIGINTEGER_MODE ) {
+        switch (MATH_BIGINTEGER_MODE) {
             case MATH_BIGINTEGER_MODE_GMP:
                 return gmp_prob_prime($this->value, $t) != 0;
             case MATH_BIGINTEGER_MODE_BCMATH:
@@ -3044,20 +3435,20 @@ class Math_BigInteger {
 
         if (!isset($primes)) {
             $primes = array(
-                3,    5,    7,    11,   13,   17,   19,   23,   29,   31,   37,   41,   43,   47,   53,   59,   
-                61,   67,   71,   73,   79,   83,   89,   97,   101,  103,  107,  109,  113,  127,  131,  137,  
-                139,  149,  151,  157,  163,  167,  173,  179,  181,  191,  193,  197,  199,  211,  223,  227,  
-                229,  233,  239,  241,  251,  257,  263,  269,  271,  277,  281,  283,  293,  307,  311,  313,  
-                317,  331,  337,  347,  349,  353,  359,  367,  373,  379,  383,  389,  397,  401,  409,  419,  
-                421,  431,  433,  439,  443,  449,  457,  461,  463,  467,  479,  487,  491,  499,  503,  509,  
-                521,  523,  541,  547,  557,  563,  569,  571,  577,  587,  593,  599,  601,  607,  613,  617,  
-                619,  631,  641,  643,  647,  653,  659,  661,  673,  677,  683,  691,  701,  709,  719,  727,  
-                733,  739,  743,  751,  757,  761,  769,  773,  787,  797,  809,  811,  821,  823,  827,  829,  
-                839,  853,  857,  859,  863,  877,  881,  883,  887,  907,  911,  919,  929,  937,  941,  947,  
+                3,    5,    7,    11,   13,   17,   19,   23,   29,   31,   37,   41,   43,   47,   53,   59,
+                61,   67,   71,   73,   79,   83,   89,   97,   101,  103,  107,  109,  113,  127,  131,  137,
+                139,  149,  151,  157,  163,  167,  173,  179,  181,  191,  193,  197,  199,  211,  223,  227,
+                229,  233,  239,  241,  251,  257,  263,  269,  271,  277,  281,  283,  293,  307,  311,  313,
+                317,  331,  337,  347,  349,  353,  359,  367,  373,  379,  383,  389,  397,  401,  409,  419,
+                421,  431,  433,  439,  443,  449,  457,  461,  463,  467,  479,  487,  491,  499,  503,  509,
+                521,  523,  541,  547,  557,  563,  569,  571,  577,  587,  593,  599,  601,  607,  613,  617,
+                619,  631,  641,  643,  647,  653,  659,  661,  673,  677,  683,  691,  701,  709,  719,  727,
+                733,  739,  743,  751,  757,  761,  769,  773,  787,  797,  809,  811,  821,  823,  827,  829,
+                839,  853,  857,  859,  863,  877,  881,  883,  887,  907,  911,  919,  929,  937,  941,  947,
                 953,  967,  971,  977,  983,  991,  997
             );
 
-            if ( MATH_BIGINTEGER_MODE != MATH_BIGINTEGER_MODE_INTERNAL ) {
+            if (MATH_BIGINTEGER_MODE != MATH_BIGINTEGER_MODE_INTERNAL) {
                 for ($i = 0; $i < count($primes); ++$i) {
                     $primes[$i] = new Math_BigInteger($primes[$i]);
                 }
@@ -3073,7 +3464,7 @@ class Math_BigInteger {
         }
 
         // see HAC 4.4.1 "Random search for probable primes"
-        if ( MATH_BIGINTEGER_MODE != MATH_BIGINTEGER_MODE_INTERNAL ) {
+        if (MATH_BIGINTEGER_MODE != MATH_BIGINTEGER_MODE_INTERNAL) {
             foreach ($primes as $prime) {
                 list(, $r) = $this->divide($prime);
                 if ($r->equals($zero)) {
@@ -3097,7 +3488,7 @@ class Math_BigInteger {
         $r = $n_1->copy();
         $r_value = $r->value;
         // ie. $s = gmp_scan1($n, 0) and $r = gmp_div_q($n, gmp_pow(gmp_init('2'), $s));
-        if ( MATH_BIGINTEGER_MODE == MATH_BIGINTEGER_MODE_BCMATH ) {
+        if (MATH_BIGINTEGER_MODE == MATH_BIGINTEGER_MODE_BCMATH) {
             $s = 0;
             // if $n was 1, $r would be 0 and this would be an infinite loop, hence our $this->equals($one) check earlier
             while ($r->value[strlen($r->value) - 1] % 2 == 0) {
@@ -3107,12 +3498,13 @@ class Math_BigInteger {
         } else {
             for ($i = 0, $r_length = count($r_value); $i < $r_length; ++$i) {
                 $temp = ~$r_value[$i] & 0xFFFFFF;
-                for ($j = 1; ($temp >> $j) & 1; ++$j);
+                for ($j = 1; ($temp >> $j) & 1; ++$j) {
+                }
                 if ($j != 25) {
                     break;
                 }
             }
-            $s = 26 * $i + $j - 1;
+            $s = 26 * $i + $j;
             $r->_rshift($s);
         }
 
@@ -3141,29 +3533,29 @@ class Math_BigInteger {
      *
      * Shifts BigInteger's by $shift bits.
      *
-     * @param Integer $shift
+     * @param int $shift
      * @access private
      */
     function _lshift($shift)
     {
-        if ( $shift == 0 ) {
+        if ($shift == 0) {
             return;
         }
 
-        $num_digits = (int) ($shift / 26);
-        $shift %= 26;
+        $num_digits = (int) ($shift / MATH_BIGINTEGER_BASE);
+        $shift %= MATH_BIGINTEGER_BASE;
         $shift = 1 << $shift;
 
         $carry = 0;
 
         for ($i = 0; $i < count($this->value); ++$i) {
             $temp = $this->value[$i] * $shift + $carry;
-            $carry = (int) ($temp / 0x4000000);
-            $this->value[$i] = (int) ($temp - $carry * 0x4000000);
+            $carry = MATH_BIGINTEGER_BASE === 26 ? intval($temp / 0x4000000) : ($temp >> 31);
+            $this->value[$i] = (int) ($temp - $carry * MATH_BIGINTEGER_BASE_FULL);
         }
 
-        if ( $carry ) {
-            $this->value[] = $carry;
+        if ($carry) {
+            $this->value[count($this->value)] = $carry;
         }
 
         while ($num_digits--) {
@@ -3176,7 +3568,7 @@ class Math_BigInteger {
      *
      * Shifts BigInteger's by $shift bits.
      *
-     * @param Integer $shift
+     * @param int $shift
      * @access private
      */
     function _rshift($shift)
@@ -3185,12 +3577,12 @@ class Math_BigInteger {
             return;
         }
 
-        $num_digits = (int) ($shift / 26);
-        $shift %= 26;
-        $carry_shift = 26 - $shift;
+        $num_digits = (int) ($shift / MATH_BIGINTEGER_BASE);
+        $shift %= MATH_BIGINTEGER_BASE;
+        $carry_shift = MATH_BIGINTEGER_BASE - $shift;
         $carry_mask = (1 << $shift) - 1;
 
-        if ( $num_digits ) {
+        if ($num_digits) {
             $this->value = array_slice($this->value, $num_digits);
         }
 
@@ -3212,7 +3604,7 @@ class Math_BigInteger {
      *
      * @param Math_BigInteger
      * @return Math_BigInteger
-     * @see _trim()
+     * @see self::_trim()
      * @access private
      */
     function _normalize($result)
@@ -3220,10 +3612,17 @@ class Math_BigInteger {
         $result->precision = $this->precision;
         $result->bitmask = $this->bitmask;
 
-        switch ( MATH_BIGINTEGER_MODE ) {
+        switch (MATH_BIGINTEGER_MODE) {
             case MATH_BIGINTEGER_MODE_GMP:
-                if (!empty($result->bitmask->value)) {
+                if ($this->bitmask !== false) {
+                    $flip = gmp_cmp($result->value, gmp_init(0)) < 0;
+                    if ($flip) {
+                        $result->value = gmp_neg($result->value);
+                    }
                     $result->value = gmp_and($result->value, $result->bitmask->value);
+                    if ($flip) {
+                        $result->value = gmp_neg($result->value);
+                    }
                 }
 
                 return $result;
@@ -3237,7 +3636,8 @@ class Math_BigInteger {
 
         $value = &$result->value;
 
-        if ( !count($value) ) {
+        if (!count($value)) {
+            $result->is_negative = false;
             return $result;
         }
 
@@ -3260,13 +3660,14 @@ class Math_BigInteger {
      *
      * Removes leading zeros
      *
+     * @param array $value
      * @return Math_BigInteger
      * @access private
      */
     function _trim($value)
     {
         for ($i = count($value) - 1; $i >= 0; --$i) {
-            if ( $value[$i] ) {
+            if ($value[$i]) {
                 break;
             }
             unset($value[$i]);
@@ -3280,7 +3681,7 @@ class Math_BigInteger {
      *
      * @param $input Array
      * @param $multiplier mixed
-     * @return Array
+     * @return array
      * @access private
      */
     function _array_repeat($input, $multiplier)
@@ -3295,7 +3696,7 @@ class Math_BigInteger {
      *
      * @param $x String
      * @param $shift Integer
-     * @return String
+     * @return string
      * @access private
      */
     function _base256_lshift(&$x, $shift)
@@ -3324,7 +3725,7 @@ class Math_BigInteger {
      *
      * @param $x String
      * @param $shift Integer
-     * @return String
+     * @return string
      * @access private
      */
     function _base256_rshift(&$x, $shift)
@@ -3364,8 +3765,8 @@ class Math_BigInteger {
     /**
      * Converts 32-bit integers to bytes.
      *
-     * @param Integer $x
-     * @return String
+     * @param int $x
+     * @return string
      * @access private
      */
     function _int2bytes($x)
@@ -3376,8 +3777,8 @@ class Math_BigInteger {
     /**
      * Converts bytes to 32-bit integers
      *
-     * @param String $x
-     * @return Integer
+     * @param string $x
+     * @return int
      * @access private
      */
     function _bytes2int($x)
@@ -3391,10 +3792,10 @@ class Math_BigInteger {
      *
      * The ability to DER-encode integers is needed to create RSA public keys for use with OpenSSL
      *
-     * @see modPow()
+     * @see self::modPow()
      * @access private
-     * @param Integer $length
-     * @return String
+     * @param int $length
+     * @return string
      */
     function _encodeASN1Length($length)
     {
@@ -3405,20 +3806,32 @@ class Math_BigInteger {
         $temp = ltrim(pack('N', $length), chr(0));
         return pack('Ca*', 0x80 | strlen($temp), $temp);
     }
+
+    /**
+     * Single digit division
+     *
+     * Even if int64 is being used the division operator will return a float64 value
+     * if the dividend is not evenly divisible by the divisor. Since a float64 doesn't
+     * have the precision of int64 this is a problem so, when int64 is being used,
+     * we'll guarantee that the dividend is divisible by first subtracting the remainder.
+     *
+     * @access private
+     * @param int $x
+     * @param int $y
+     * @return int
+     */
+    function _safe_divide($x, $y)
+    {
+        if (MATH_BIGINTEGER_BASE === 26) {
+            return (int) ($x / $y);
+        }
+
+        // MATH_BIGINTEGER_BASE === 31
+        return ($x - ($x % $y)) / $y;
+    }
 }
-//***************************************************************************************
-//***************************************************************************************
-//***************************************************************************************
 
-
-/**
- * Include Crypt_Random
- */
-// the class_exists() will only be called if the crypt_random function hasn't been defined and
-// will trigger a call to __autoload() if you're wanting to auto-load classes
-// call function_exists() a second time to stop the require_once from being called outside
-// of the auto loader
-
+//***************************************************************************************
 //***************************************************************************************
 //***************************************************************************************
 //***************************************************************************************
@@ -3427,118 +3840,342 @@ class Math_BigInteger {
 /**
  * Random Number Generator
  *
+ * The idea behind this function is that it can be easily replaced with your own crypt_random_string()
+ * function. eg. maybe you have a better source of entropy for creating the initial states or whatever.
+ *
  * PHP versions 4 and 5
  *
-
-/**
- * Generate a random value.
+ * Here's a short example of how to use this library:
+ * <code>
+ * <?php
+ *    include 'Crypt/Random.php';
  *
- * On 32-bit machines, the largest distance that can exist between $min and $max is 2**31.
- * If $min and $max are farther apart than that then the last ($max - range) numbers.
+ *    echo bin2hex(crypt_random_string(8));
+ * ?>
+ * </code>
  *
- * Depending on how this is being used, it may be worth while to write a replacement.  For example,
- * a PHP-based web app that stores its data in an SQL database can collect more entropy than this function
- * can.
+ * LICENSE: Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * @param optional Integer $min
- * @param optional Integer $max
- * @return Integer
- * @access public
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * @category  Crypt
+ * @package   Crypt_Random
+ * @author    Jim Wigginton <terrafrost@php.net>
+ * @copyright 2007 Jim Wigginton
+ * @license   http://www.opensource.org/licenses/mit-license.html  MIT License
+ * @link      http://phpseclib.sourceforge.net
  */
-function crypt_random($min = 0, $max = 0x7FFFFFFF)
-{
-    if ($min == $max) {
-        return $min;
-    }
 
-    if (function_exists('openssl_random_pseudo_bytes')) {
-        // openssl_random_pseudo_bytes() is slow on windows per the following:
-        // http://stackoverflow.com/questions/1940168/openssl-random-pseudo-bytes-is-slow-php
-        if ((PHP_OS & "\xDF\xDF\xDF") !== 'WIN') { // PHP_OS & "\xDF\xDF\xDF" == strtoupper(substr(PHP_OS, 0, 3)), but a lot faster
-            extract(unpack('Nrandom', openssl_random_pseudo_bytes(4)));
+// laravel is a PHP framework that utilizes phpseclib. laravel workbenches may, independently,
+// have phpseclib as a requirement as well. if you're developing such a program you may encounter
+// a "Cannot redeclare crypt_random_string()" error.
+if (!function_exists('crypt_random_string')) {
+    /**
+     * "Is Windows" test
+     *
+     * @access private
+     */
+    define('CRYPT_RANDOM_IS_WINDOWS', strtoupper(substr(PHP_OS, 0, 3)) === 'WIN');
 
-            return abs($random) % ($max - $min) + $min; 
+    /**
+     * Generate a random string.
+     *
+     * Although microoptimizations are generally discouraged as they impair readability this function is ripe with
+     * microoptimizations because this function has the potential of being called a huge number of times.
+     * eg. for RSA key generation.
+     *
+     * @param int $length
+     * @return string
+     * @access public
+     */
+    function crypt_random_string($length)
+    {
+        if (!$length) {
+            return '';
         }
-    }
 
-    // see http://en.wikipedia.org/wiki//dev/random
-    static $urandom = true;
-    if ($urandom === true) {
-        // Warning's will be output unles the error suppression operator is used.  Errors such as
-        // "open_basedir restriction in effect", "Permission denied", "No such file or directory", etc.
-        $urandom = @fopen('/dev/urandom', 'rb');
-    }
-    if (!is_bool($urandom)) {
-        extract(unpack('Nrandom', fread($urandom, 4)));
-
-        // say $min = 0 and $max = 3.  if we didn't do abs() then we could have stuff like this:
-        // -4 % 3 + 0 = -1, even though -1 < $min
-        return abs($random) % ($max - $min) + $min;
-    }
-
-    /* Prior to PHP 4.2.0, mt_srand() had to be called before mt_rand() could be called.
-       Prior to PHP 5.2.6, mt_rand()'s automatic seeding was subpar, as elaborated here:
-
-       http://www.suspekt.org/2008/08/17/mt_srand-and-not-so-random-numbers/
-
-       The seeding routine is pretty much ripped from PHP's own internal GENERATE_SEED() macro:
-
-       http://svn.php.net/viewvc/php/php-src/tags/php_5_3_2/ext/standard/php_rand.h?view=markup */
-    if (version_compare(PHP_VERSION, '5.2.5', '<=')) { 
-        static $seeded;
-        if (!isset($seeded)) {
-            $seeded = true;
-            mt_srand(fmod(time() * getmypid(), 0x7FFFFFFF) ^ fmod(1000000 * lcg_value(), 0x7FFFFFFF));
+        if (CRYPT_RANDOM_IS_WINDOWS) {
+            // method 1. prior to PHP 5.3, mcrypt_create_iv() would call rand() on windows
+            if (extension_loaded('mcrypt') && version_compare(PHP_VERSION, '5.3.0', '>=')) {
+                return @mcrypt_create_iv($length);
+            }
+            // method 2. openssl_random_pseudo_bytes was introduced in PHP 5.3.0 but prior to PHP 5.3.4 there was,
+            // to quote <http://php.net/ChangeLog-5.php#5.3.4>, "possible blocking behavior". as of 5.3.4
+            // openssl_random_pseudo_bytes and mcrypt_create_iv do the exact same thing on Windows. ie. they both
+            // call php_win32_get_random_bytes():
+            //
+            // https://github.com/php/php-src/blob/7014a0eb6d1611151a286c0ff4f2238f92c120d6/ext/openssl/openssl.c#L5008
+            // https://github.com/php/php-src/blob/7014a0eb6d1611151a286c0ff4f2238f92c120d6/ext/mcrypt/mcrypt.c#L1392
+            //
+            // php_win32_get_random_bytes() is defined thusly:
+            //
+            // https://github.com/php/php-src/blob/7014a0eb6d1611151a286c0ff4f2238f92c120d6/win32/winutil.c#L80
+            //
+            // we're calling it, all the same, in the off chance that the mcrypt extension is not available
+            if (extension_loaded('openssl') && version_compare(PHP_VERSION, '5.3.4', '>=')) {
+                return openssl_random_pseudo_bytes($length);
+            }
+        } else {
+            // method 1. the fastest
+            if (extension_loaded('openssl') && version_compare(PHP_VERSION, '5.3.0', '>=')) {
+                return openssl_random_pseudo_bytes($length);
+            }
+            // method 2
+            static $fp = true;
+            if ($fp === true) {
+                // warning's will be output unles the error suppression operator is used. errors such as
+                // "open_basedir restriction in effect", "Permission denied", "No such file or directory", etc.
+                $fp = @fopen('/dev/urandom', 'rb');
+            }
+            if ($fp !== true && $fp !== false) { // surprisingly faster than !is_bool() or is_resource()
+                $temp = fread($fp, $length);
+                if (strlen($temp) == $length) {
+                    return $temp;
+                }
+            }
+            // method 3. pretty much does the same thing as method 2 per the following url:
+            // https://github.com/php/php-src/blob/7014a0eb6d1611151a286c0ff4f2238f92c120d6/ext/mcrypt/mcrypt.c#L1391
+            // surprisingly slower than method 2. maybe that's because mcrypt_create_iv does a bunch of error checking that we're
+            // not doing. regardless, this'll only be called if this PHP script couldn't open /dev/urandom due to open_basedir
+            // restrictions or some such
+            if (extension_loaded('mcrypt')) {
+                return @mcrypt_create_iv($length, MCRYPT_DEV_URANDOM);
+            }
         }
-    }
+        // at this point we have no choice but to use a pure-PHP CSPRNG
 
-    static $crypto;
+        // cascade entropy across multiple PHP instances by fixing the session and collecting all
+        // environmental variables, including the previous session data and the current session
+        // data.
+        //
+        // mt_rand seeds itself by looking at the PID and the time, both of which are (relatively)
+        // easy to guess at. linux uses mouse clicks, keyboard timings, etc, as entropy sources, but
+        // PHP isn't low level to be able to use those as sources and on a web server there's not likely
+        // going to be a ton of keyboard or mouse action. web servers do have one thing that we can use
+        // however, a ton of people visiting the website. obviously you don't want to base your seeding
+        // soley on parameters a potential attacker sends but (1) not everything in $_SERVER is controlled
+        // by the user and (2) this isn't just looking at the data sent by the current user - it's based
+        // on the data sent by all users. one user requests the page and a hash of their info is saved.
+        // another user visits the page and the serialization of their data is utilized along with the
+        // server envirnment stuff and a hash of the previous http request data (which itself utilizes
+        // a hash of the session data before that). certainly an attacker should be assumed to have
+        // full control over his own http requests. he, however, is not going to have control over
+        // everyone's http requests.
+        static $crypto = false, $v;
+        if ($crypto === false) {
+            // save old session data
+            $old_session_id = session_id();
+            $old_use_cookies = ini_get('session.use_cookies');
+            $old_session_cache_limiter = session_cache_limiter();
+            $_OLD_SESSION = isset($_SESSION) ? $_SESSION : false;
+            if ($old_session_id != '') {
+                session_write_close();
+            }
 
-    // The CSPRNG's Yarrow and Fortuna periodically reseed.  This function can be reseeded by hitting F5
-    // in the browser and reloading the page.
+            session_id(1);
+            ini_set('session.use_cookies', 0);
+            session_cache_limiter('');
+            session_start();
 
-    if (!isset($crypto)) {
-        $key = $iv = '';
-        for ($i = 0; $i < 8; $i++) {
-            $key.= pack('n', mt_rand(0, 0xFFFF));
-            $iv .= pack('n', mt_rand(0, 0xFFFF));
+            $v = $seed = $_SESSION['seed'] = pack('H*', sha1(
+                (isset($_SERVER) ? phpseclib_safe_serialize($_SERVER) : '') .
+                (isset($_POST) ? phpseclib_safe_serialize($_POST) : '') .
+                (isset($_GET) ? phpseclib_safe_serialize($_GET) : '') .
+                (isset($_COOKIE) ? phpseclib_safe_serialize($_COOKIE) : '') .
+                phpseclib_safe_serialize($GLOBALS) .
+                phpseclib_safe_serialize($_SESSION) .
+                phpseclib_safe_serialize($_OLD_SESSION)
+            ));
+            if (!isset($_SESSION['count'])) {
+                $_SESSION['count'] = 0;
+            }
+            $_SESSION['count']++;
+
+            session_write_close();
+
+            // restore old session data
+            if ($old_session_id != '') {
+                session_id($old_session_id);
+                session_start();
+                ini_set('session.use_cookies', $old_use_cookies);
+                session_cache_limiter($old_session_cache_limiter);
+            } else {
+                if ($_OLD_SESSION !== false) {
+                    $_SESSION = $_OLD_SESSION;
+                    unset($_OLD_SESSION);
+                } else {
+                    unset($_SESSION);
+                }
+            }
+
+            // in SSH2 a shared secret and an exchange hash are generated through the key exchange process.
+            // the IV client to server is the hash of that "nonce" with the letter A and for the encryption key it's the letter C.
+            // if the hash doesn't produce enough a key or an IV that's long enough concat successive hashes of the
+            // original hash and the current hash. we'll be emulating that. for more info see the following URL:
+            //
+            // http://tools.ietf.org/html/rfc4253#section-7.2
+            //
+            // see the is_string($crypto) part for an example of how to expand the keys
+            $key = pack('H*', sha1($seed . 'A'));
+            $iv = pack('H*', sha1($seed . 'C'));
+
+            // ciphers are used as per the nist.gov link below. also, see this link:
+            //
+            // http://en.wikipedia.org/wiki/Cryptographically_secure_pseudorandom_number_generator#Designs_based_on_cryptographic_primitives
+            switch (true) {
+                case phpseclib_resolve_include_path('Crypt/AES.php'):
+                    if (!class_exists('Crypt_AES')) {
+                        include_once 'AES.php';
+                    }
+                    $crypto = new Crypt_AES(CRYPT_AES_MODE_CTR);
+                    break;
+                case phpseclib_resolve_include_path('Crypt/Twofish.php'):
+                    if (!class_exists('Crypt_Twofish')) {
+                        include_once 'Twofish.php';
+                    }
+                    $crypto = new Crypt_Twofish(CRYPT_TWOFISH_MODE_CTR);
+                    break;
+                case phpseclib_resolve_include_path('Crypt/Blowfish.php'):
+                    if (!class_exists('Crypt_Blowfish')) {
+                        include_once 'Blowfish.php';
+                    }
+                    $crypto = new Crypt_Blowfish(CRYPT_BLOWFISH_MODE_CTR);
+                    break;
+                case phpseclib_resolve_include_path('Crypt/TripleDES.php'):
+                    if (!class_exists('Crypt_TripleDES')) {
+                        include_once 'TripleDES.php';
+                    }
+                    $crypto = new Crypt_TripleDES(CRYPT_DES_MODE_CTR);
+                    break;
+                case phpseclib_resolve_include_path('Crypt/DES.php'):
+                    if (!class_exists('Crypt_DES')) {
+                        include_once 'DES.php';
+                    }
+                    $crypto = new Crypt_DES(CRYPT_DES_MODE_CTR);
+                    break;
+                case phpseclib_resolve_include_path('Crypt/RC4.php'):
+                    if (!class_exists('Crypt_RC4')) {
+                        include_once 'RC4.php';
+                    }
+                    $crypto = new Crypt_RC4();
+                    break;
+                default:
+                    user_error('crypt_random_string requires at least one symmetric cipher be loaded');
+                    return false;
+            }
+
+            $crypto->setKey($key);
+            $crypto->setIV($iv);
+            $crypto->enableContinuousBuffer();
         }
-        switch (true) {
-            case class_exists('Crypt_AES'):
-                $crypto = new Crypt_AES(CRYPT_AES_MODE_CTR);
-                break;
-            case class_exists('Crypt_TripleDES'):
-                $crypto = new Crypt_TripleDES(CRYPT_DES_MODE_CTR);
-                break;
-            case class_exists('Crypt_DES'):
-                $crypto = new Crypt_DES(CRYPT_DES_MODE_CTR);
-                break;
-            case class_exists('Crypt_RC4'):
-                $crypto = new Crypt_RC4();
-                break;
-            default:
-                extract(unpack('Nrandom', pack('H*', sha1(mt_rand(0, 0x7FFFFFFF)))));
-                return abs($random) % ($max - $min) + $min;
-        }
-        $crypto->setKey($key);
-        $crypto->setIV($iv);
-        $crypto->enableContinuousBuffer();
-    }
 
-    extract(unpack('Nrandom', $crypto->encrypt("\0\0\0\0")));
-    return abs($random) % ($max - $min) + $min;
+        //return $crypto->encrypt(str_repeat("\0", $length));
+
+        // the following is based off of ANSI X9.31:
+        //
+        // http://csrc.nist.gov/groups/STM/cavp/documents/rng/931rngext.pdf
+        //
+        // OpenSSL uses that same standard for it's random numbers:
+        //
+        // http://www.opensource.apple.com/source/OpenSSL/OpenSSL-38/openssl/fips-1.0/rand/fips_rand.c
+        // (do a search for "ANS X9.31 A.2.4")
+        $result = '';
+        while (strlen($result) < $length) {
+            $i = $crypto->encrypt(microtime()); // strlen(microtime()) == 21
+            $r = $crypto->encrypt($i ^ $v); // strlen($v) == 20
+            $v = $crypto->encrypt($r ^ $i); // strlen($r) == 20
+            $result.= $r;
+        }
+        return substr($result, 0, $length);
+    }
 }
 
+if (!function_exists('phpseclib_safe_serialize')) {
+    /**
+     * Safely serialize variables
+     *
+     * If a class has a private __sleep() method it'll give a fatal error on PHP 5.2 and earlier.
+     * PHP 5.3 will emit a warning.
+     *
+     * @param mixed $arr
+     * @access public
+     */
+    function phpseclib_safe_serialize(&$arr)
+    {
+        if (is_object($arr)) {
+            return '';
+        }
+        if (!is_array($arr)) {
+            return serialize($arr);
+        }
+        // prevent circular array recursion
+        if (isset($arr['__phpseclib_marker'])) {
+            return '';
+        }
+        $safearr = array();
+        $arr['__phpseclib_marker'] = true;
+        foreach (array_keys($arr) as $key) {
+            // do not recurse on the '__phpseclib_marker' key itself, for smaller memory usage
+            if ($key !== '__phpseclib_marker') {
+                $safearr[$key] = phpseclib_safe_serialize($arr[$key]);
+            }
+        }
+        unset($arr['__phpseclib_marker']);
+        return serialize($safearr);
+    }
+}
 
-//***************************************************************************************
-//***************************************************************************************
-//***************************************************************************************
-//***************************************************************************************
+if (!function_exists('phpseclib_resolve_include_path')) {
+    /**
+     * Resolve filename against the include path.
+     *
+     * Wrapper around stream_resolve_include_path() (which was introduced in
+     * PHP 5.3.2) with fallback implementation for earlier PHP versions.
+     *
+     * @param string $filename
+     * @return string|false
+     * @access public
+     */
+    function phpseclib_resolve_include_path($filename)
+    {
+        if (function_exists('stream_resolve_include_path')) {
+            return stream_resolve_include_path($filename);
+        }
 
+        // handle non-relative paths
+        if (file_exists($filename)) {
+            return realpath($filename);
+        }
 
-/**
- * Include Crypt_Hash
- */
+        $paths = PATH_SEPARATOR == ':' ?
+            preg_split('#(?<!phar):#', get_include_path()) :
+            explode(PATH_SEPARATOR, get_include_path());
+        foreach ($paths as $prefix) {
+            // path's specified in include_path don't always end in /
+            $ds = substr($prefix, -1) == DIRECTORY_SEPARATOR ? '' : DIRECTORY_SEPARATOR;
+            $file = $prefix . $ds . $filename;
+            if (file_exists($file)) {
+                return realpath($file);
+            }
+        }
+
+        return false;
+    }
+}
 
 //***************************************************************************************
 //***************************************************************************************
@@ -3551,17 +4188,58 @@ function crypt_random($min = 0, $max = 0x7FFFFFFF)
  *
  * Uses hash() or mhash() if available and an internal implementation, otherwise.  Currently supports the following:
  *
- * md2, md5, md5-96, sha1, sha1-96, sha256, sha384, and sha512
+ * md2, md5, md5-96, sha1, sha1-96, sha256, sha256-96, sha384, and sha512, sha512-96
  *
- * If {@link Crypt_Hash::setKey() setKey()} is called, {@link Crypt_Hash::hash() hash()} will return the HMAC as opposed to
+ * If {@link self::setKey() setKey()} is called, {@link self::hash() hash()} will return the HMAC as opposed to
  * the hash.  If no valid algorithm is provided, sha1 will be used.
  *
  * PHP versions 4 and 5
  *
+ * {@internal The variable names are the same as those in
+ * {@link http://tools.ietf.org/html/rfc2104#section-2 RFC2104}.}}
+ *
+ * Here's a short example of how to use this library:
+ * <code>
+ * <?php
+ *    include 'Crypt/Hash.php';
+ *
+ *    $hash = new Crypt_Hash('sha1');
+ *
+ *    $hash->setKey('abcdefg');
+ *
+ *    echo base64_encode($hash->hash('abcdefg'));
+ * ?>
+ * </code>
+ *
+ * LICENSE: Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * @category  Crypt
+ * @package   Crypt_Hash
+ * @author    Jim Wigginton <terrafrost@php.net>
+ * @copyright 2007 Jim Wigginton
+ * @license   http://www.opensource.org/licenses/mit-license.html  MIT License
+ * @link      http://phpseclib.sourceforge.net
+ */
 
 /**#@+
  * @access private
- * @see Crypt_Hash::Crypt_Hash()
+ * @see self::Crypt_Hash()
  */
 /**
  * Toggles the internal implementation
@@ -3580,17 +4258,26 @@ define('CRYPT_HASH_MODE_HASH',     3);
 /**
  * Pure-PHP implementations of keyed-hash message authentication codes (HMACs) and various cryptographic hashing functions.
  *
- * @author  Jim Wigginton <terrafrost@php.net>
- * @version 0.1.0
- * @access  public
  * @package Crypt_Hash
+ * @author  Jim Wigginton <terrafrost@php.net>
+ * @access  public
  */
-class Crypt_Hash {
+class Crypt_Hash
+{
+    /**
+     * Hash Parameter
+     *
+     * @see self::setHash()
+     * @var int
+     * @access private
+     */
+    var $hashParam;
+
     /**
      * Byte-length of compression blocks / key (Internal HMAC)
      *
-     * @see Crypt_Hash::setAlgorithm()
-     * @var Integer
+     * @see self::setAlgorithm()
+     * @var int
      * @access private
      */
     var $b;
@@ -3598,8 +4285,8 @@ class Crypt_Hash {
     /**
      * Byte-length of hash output (Internal HMAC)
      *
-     * @see Crypt_Hash::setHash()
-     * @var Integer
+     * @see self::setHash()
+     * @var int
      * @access private
      */
     var $l = false;
@@ -3607,8 +4294,8 @@ class Crypt_Hash {
     /**
      * Hash Algorithm
      *
-     * @see Crypt_Hash::setHash()
-     * @var String
+     * @see self::setHash()
+     * @var string
      * @access private
      */
     var $hash;
@@ -3616,17 +4303,26 @@ class Crypt_Hash {
     /**
      * Key
      *
-     * @see Crypt_Hash::setKey()
-     * @var String
+     * @see self::setKey()
+     * @var string
      * @access private
      */
     var $key = false;
 
     /**
+     * Computed Key
+     *
+     * @see self::_computeKey()
+     * @var string
+     * @access private
+     */
+    var $computedKey = false;
+
+    /**
      * Outer XOR (Internal HMAC)
      *
-     * @see Crypt_Hash::setKey()
-     * @var String
+     * @see self::setKey()
+     * @var string
      * @access private
      */
     var $opad;
@@ -3634,22 +4330,31 @@ class Crypt_Hash {
     /**
      * Inner XOR (Internal HMAC)
      *
-     * @see Crypt_Hash::setKey()
-     * @var String
+     * @see self::setKey()
+     * @var string
      * @access private
      */
     var $ipad;
 
     /**
+     * Engine
+     *
+     * @see self::setHash()
+     * @var string
+     * @access private
+     */
+    var $engine;
+
+    /**
      * Default Constructor.
      *
-     * @param optional String $hash
+     * @param string $hash
      * @return Crypt_Hash
      * @access public
      */
-    function Crypt_Hash($hash = 'sha1')
+    function __construct($hash = 'sha1')
     {
-        if ( !defined('CRYPT_HASH_MODE') ) {
+        if (!defined('CRYPT_HASH_MODE')) {
             switch (true) {
                 case extension_loaded('hash'):
                     define('CRYPT_HASH_MODE', CRYPT_HASH_MODE_HASH);
@@ -3666,30 +4371,95 @@ class Crypt_Hash {
     }
 
     /**
+     * PHP4 compatible Default Constructor.
+     *
+     * @see self::__construct()
+     * @param int $mode
+     * @access public
+     */
+    function Crypt_Hash($hash = 'sha1')
+    {
+        $this->__construct($hash);
+    }
+
+    /**
      * Sets the key for HMACs
      *
      * Keys can be of any length.
      *
      * @access public
-     * @param String $key
+     * @param string $key
      */
     function setKey($key = false)
     {
         $this->key = $key;
+        $this->_computeKey();
+    }
+
+    /**
+     * Pre-compute the key used by the HMAC
+     *
+     * Quoting http://tools.ietf.org/html/rfc2104#section-2, "Applications that use keys longer than B bytes
+     * will first hash the key using H and then use the resultant L byte string as the actual key to HMAC."
+     *
+     * As documented in https://www.reddit.com/r/PHP/comments/9nct2l/symfonypolyfill_hash_pbkdf2_correct_fix_for/
+     * when doing an HMAC multiple times it's faster to compute the hash once instead of computing it during
+     * every call
+     *
+     * @access private
+     */
+    function _computeKey()
+    {
+        if ($this->key === false) {
+            $this->computedKey = false;
+            return;
+        }
+
+        if (strlen($this->key) <= $this->b) {
+            $this->computedKey = $this->key;
+            return;
+        }
+
+        switch ($this->engine) {
+            case CRYPT_HASH_MODE_MHASH:
+                $this->computedKey = mhash($this->hash, $this->key);
+                break;
+            case CRYPT_HASH_MODE_HASH:
+                $this->computedKey = hash($this->hash, $this->key, true);
+                break;
+            case CRYPT_HASH_MODE_INTERNAL:
+                $this->computedKey = call_user_func($this->hash, $this->key);
+        }
+    }
+
+    /**
+     * Gets the hash function.
+     *
+     * As set by the constructor or by the setHash() method.
+     *
+     * @access public
+     * @return string
+     */
+    function getHash()
+    {
+        return $this->hashParam;
     }
 
     /**
      * Sets the hash function.
      *
      * @access public
-     * @param String $hash
+     * @param string $hash
      */
     function setHash($hash)
     {
-        $hash = strtolower($hash);
+        $this->hashParam = $hash = strtolower($hash);
         switch ($hash) {
             case 'md5-96':
             case 'sha1-96':
+            case 'sha256-96':
+            case 'sha512-96':
+                $hash = substr($hash, 0, -3);
                 $this->l = 12; // 96 / 8 = 12
                 break;
             case 'md2':
@@ -3710,38 +4480,55 @@ class Crypt_Hash {
         }
 
         switch ($hash) {
+            case 'md2-96':
             case 'md2':
-                $mode = CRYPT_HASH_MODE == CRYPT_HASH_MODE_HASH && in_array('md2', hash_algos()) ?
+                $this->b = 16;
+            case 'md5-96':
+            case 'sha1-96':
+            case 'sha224-96':
+            case 'sha256-96':
+            case 'md2':
+            case 'md5':
+            case 'sha1':
+            case 'sha224':
+            case 'sha256':
+                $this->b = 64;
+                break;
+            default:
+                $this->b = 128;
+        }
+
+        switch ($hash) {
+            case 'md2':
+                $this->engine = CRYPT_HASH_MODE == CRYPT_HASH_MODE_HASH && in_array('md2', hash_algos()) ?
                     CRYPT_HASH_MODE_HASH : CRYPT_HASH_MODE_INTERNAL;
                 break;
             case 'sha384':
             case 'sha512':
-                $mode = CRYPT_HASH_MODE == CRYPT_HASH_MODE_MHASH ? CRYPT_HASH_MODE_INTERNAL : CRYPT_HASH_MODE;
+                $this->engine = CRYPT_HASH_MODE == CRYPT_HASH_MODE_MHASH ? CRYPT_HASH_MODE_INTERNAL : CRYPT_HASH_MODE;
                 break;
             default:
-                $mode = CRYPT_HASH_MODE;
+                $this->engine = CRYPT_HASH_MODE;
         }
 
-        switch ( $mode ) {
+        switch ($this->engine) {
             case CRYPT_HASH_MODE_MHASH:
                 switch ($hash) {
                     case 'md5':
-                    case 'md5-96':
                         $this->hash = MHASH_MD5;
                         break;
                     case 'sha256':
                         $this->hash = MHASH_SHA256;
                         break;
                     case 'sha1':
-                    case 'sha1-96':
                     default:
                         $this->hash = MHASH_SHA1;
                 }
+                $this->_computeKey();
                 return;
             case CRYPT_HASH_MODE_HASH:
                 switch ($hash) {
                     case 'md5':
-                    case 'md5-96':
                         $this->hash = 'md5';
                         return;
                     case 'md2':
@@ -3751,79 +4538,66 @@ class Crypt_Hash {
                         $this->hash = $hash;
                         return;
                     case 'sha1':
-                    case 'sha1-96':
                     default:
                         $this->hash = 'sha1';
                 }
+                $this->_computeKey();
                 return;
         }
 
         switch ($hash) {
             case 'md2':
-                 $this->b = 16;
-                 $this->hash = array($this, '_md2');
-                 break;
+                $this->hash = array($this, '_md2');
+                break;
             case 'md5':
-            case 'md5-96':
-                 $this->b = 64;
-                 $this->hash = array($this, '_md5');
-                 break;
+                $this->hash = array($this, '_md5');
+                break;
             case 'sha256':
-                 $this->b = 64;
-                 $this->hash = array($this, '_sha256');
-                 break;
+                $this->hash = array($this, '_sha256');
+                break;
             case 'sha384':
             case 'sha512':
-                 $this->b = 128;
-                 $this->hash = array($this, '_sha512');
-                 break;
+                $this->hash = array($this, '_sha512');
+                break;
             case 'sha1':
-            case 'sha1-96':
             default:
-                 $this->b = 64;
-                 $this->hash = array($this, '_sha1');
+                $this->hash = array($this, '_sha1');
         }
 
         $this->ipad = str_repeat(chr(0x36), $this->b);
         $this->opad = str_repeat(chr(0x5C), $this->b);
+
+        $this->_computeKey();
     }
 
     /**
      * Compute the HMAC.
      *
      * @access public
-     * @param String $text
-     * @return String
+     * @param string $text
+     * @return string
      */
     function hash($text)
     {
-        $mode = is_array($this->hash) ? CRYPT_HASH_MODE_INTERNAL : CRYPT_HASH_MODE;
-
         if (!empty($this->key) || is_string($this->key)) {
-            switch ( $mode ) {
+            switch ($this->engine) {
                 case CRYPT_HASH_MODE_MHASH:
-                    $output = mhash($this->hash, $text, $this->key);
+                    $output = mhash($this->hash, $text, $this->computedKey);
                     break;
                 case CRYPT_HASH_MODE_HASH:
-                    $output = hash_hmac($this->hash, $text, $this->key, true);
+                    $output = hash_hmac($this->hash, $text, $this->computedKey, true);
                     break;
                 case CRYPT_HASH_MODE_INTERNAL:
-                    /* "Applications that use keys longer than B bytes will first hash the key using H and then use the
-                        resultant L byte string as the actual key to HMAC."
-
-                        -- http://tools.ietf.org/html/rfc2104#section-2 */
-                    $key = strlen($this->key) > $this->b ? call_user_func($this->hash, $this->key) : $this->key;
-
-                    $key    = str_pad($key, $this->b, chr(0));      // step 1
-                    $temp   = $this->ipad ^ $key;                   // step 2
-                    $temp  .= $text;                                // step 3
-                    $temp   = call_user_func($this->hash, $temp);   // step 4
-                    $output = $this->opad ^ $key;                   // step 5
-                    $output.= $temp;                                // step 6
-                    $output = call_user_func($this->hash, $output); // step 7
+                    $key    = str_pad($this->computedKey, $this->b, chr(0)); // step 1
+                    $temp   = $this->ipad ^ $key;                            // step 2
+                    $temp  .= $text;                                         // step 3
+                    $temp   = call_user_func($this->hash, $temp);            // step 4
+                    $output = $this->opad ^ $key;                            // step 5
+                    $output.= $temp;                                         // step 6
+                    $output = call_user_func($this->hash, $output);          // step 7
             }
         } else {
-            switch ( $mode ) {
+            switch ($this->engine) {
                 case CRYPT_HASH_MODE_MHASH:
                     $output = mhash($this->hash, $text);
                     break;
@@ -3842,7 +4616,7 @@ class Crypt_Hash {
      * Returns the hash length (in bytes)
      *
      * @access public
-     * @return Integer
+     * @return int
      */
     function getLength()
     {
@@ -3853,7 +4627,7 @@ class Crypt_Hash {
      * Wrapper for MD5
      *
      * @access private
-     * @param String $text
+     * @param string $m
      */
     function _md5($m)
     {
@@ -3864,7 +4638,7 @@ class Crypt_Hash {
      * Wrapper for SHA1
      *
      * @access private
-     * @param String $text
+     * @param string $m
      */
     function _sha1($m)
     {
@@ -3877,7 +4651,7 @@ class Crypt_Hash {
      * See {@link http://tools.ietf.org/html/rfc1319 RFC1319}.
      *
      * @access private
-     * @param String $text
+     * @param string $m
      */
     function _md2($m)
     {
@@ -3953,7 +4727,7 @@ class Crypt_Hash {
      * See {@link http://en.wikipedia.org/wiki/SHA_hash_functions#SHA-256_.28a_SHA-2_variant.29_pseudocode SHA-256 (a SHA-2 variant) pseudocode - Wikipedia}.
      *
      * @access private
-     * @param String $text
+     * @param string $m
      */
     function _sha256($m)
     {
@@ -3997,14 +4771,15 @@ class Crypt_Hash {
 
             // Extend the sixteen 32-bit words into sixty-four 32-bit words
             for ($i = 16; $i < 64; $i++) {
+                // @codingStandardsIgnoreStart
                 $s0 = $this->_rightRotate($w[$i - 15],  7) ^
                       $this->_rightRotate($w[$i - 15], 18) ^
                       $this->_rightShift( $w[$i - 15],  3);
                 $s1 = $this->_rightRotate($w[$i - 2], 17) ^
                       $this->_rightRotate($w[$i - 2], 19) ^
                       $this->_rightShift( $w[$i - 2], 10);
+                // @codingStandardsIgnoreEnd
                 $w[$i] = $this->_add($w[$i - 16], $s0, $w[$i - 7], $s1);
-
             }
 
             // Initialize hash value for this chunk
@@ -4058,12 +4833,12 @@ class Crypt_Hash {
      * Pure-PHP implementation of SHA384 and SHA512
      *
      * @access private
-     * @param String $text
+     * @param string $m
      */
     function _sha512($m)
     {
         if (!class_exists('Math_BigInteger')) {
-            require_once('Math/BigInteger.php');
+            include_once 'Math/BigInteger.php';
         }
 
         static $init384, $init512, $k;
@@ -4071,11 +4846,11 @@ class Crypt_Hash {
         if (!isset($k)) {
             // Initialize variables
             $init384 = array( // initial values for SHA384
-                'cbbb9d5dc1059ed8', '629a292a367cd507', '9159015a3070dd17', '152fecd8f70e5939', 
+                'cbbb9d5dc1059ed8', '629a292a367cd507', '9159015a3070dd17', '152fecd8f70e5939',
                 '67332667ffc00b31', '8eb44a8768581511', 'db0c2e0d64f98fa7', '47b5481dbefa4fa4'
             );
             $init512 = array( // initial values for SHA512
-                '6a09e667f3bcc908', 'bb67ae8584caa73b', '3c6ef372fe94f82b', 'a54ff53a5f1d36f1', 
+                '6a09e667f3bcc908', 'bb67ae8584caa73b', '3c6ef372fe94f82b', 'a54ff53a5f1d36f1',
                 '510e527fade682d1', '9b05688c2b3e6c1f', '1f83d9abfb41bd6b', '5be0cd19137e2179'
             );
 
@@ -4241,10 +5016,10 @@ class Crypt_Hash {
      * Right Rotate
      *
      * @access private
-     * @param Integer $int
-     * @param Integer $amt
-     * @see _sha256()
-     * @return Integer
+     * @param int $int
+     * @param int $amt
+     * @see self::_sha256()
+     * @return int
      */
     function _rightRotate($int, $amt)
     {
@@ -4257,10 +5032,10 @@ class Crypt_Hash {
      * Right Shift
      *
      * @access private
-     * @param Integer $int
-     * @param Integer $amt
-     * @see _sha256()
-     * @return Integer
+     * @param int $int
+     * @param int $amt
+     * @see self::_sha256()
+     * @return int
      */
     function _rightShift($int, $amt)
     {
@@ -4272,9 +5047,9 @@ class Crypt_Hash {
      * Not
      *
      * @access private
-     * @param Integer $int
-     * @see _sha256()
-     * @return Integer
+     * @param int $int
+     * @see self::_sha256()
+     * @return int
      */
     function _not($int)
     {
@@ -4287,10 +5062,9 @@ class Crypt_Hash {
      * _sha256() adds multiple unsigned 32-bit integers.  Since PHP doesn't support unsigned integers and since the
      * possibility of overflow exists, care has to be taken.  Math_BigInteger() could be used but this should be faster.
      *
-     * @param String $string
-     * @param optional Integer $index
-     * @return String
-     * @see _sha256()
+     * @param int $...
+     * @return int
+     * @see self::_sha256()
      * @access private
      */
     function _add()
@@ -4306,7 +5080,17 @@ class Crypt_Hash {
             $result+= $argument < 0 ? ($argument & 0x7FFFFFFF) + 0x80000000 : $argument;
         }
 
-        return fmod($result, $mod);
+        switch (true) {
+            case is_int($result):
+            // PHP 5.3, per http://php.net/releases/5_3_0.php, introduced "more consistent float rounding"
+            case version_compare(PHP_VERSION, '5.3.0') >= 0 && (php_uname('m') & "\xDF\xDF\xDF") != 'ARM':
+            // PHP_OS & "\xDF\xDF\xDF" == strtoupper(substr(PHP_OS, 0, 3)), but a lot faster
+            case (PHP_OS & "\xDF\xDF\xDF") === 'WIN':
+                return fmod($result, $mod);
+        }
+
+        return (fmod($result, 0x80000000) & 0x7FFFFFFF) |
+            ((fmod(floor($result / 0x80000000), 2) & 1) << 31);
     }
 
     /**
@@ -4314,9 +5098,9 @@ class Crypt_Hash {
      *
      * Inspired by array_shift
      *
-     * @param String $string
-     * @param optional Integer $index
-     * @return String
+     * @param string $string
+     * @param int $index
+     * @return string
      * @access private
      */
     function _string_shift(&$string, $index = 1)
@@ -4333,10 +5117,95 @@ class Crypt_Hash {
 //***************************************************************************************
 //***************************************************************************************
 
+/**
+ * Pure-PHP PKCS#1 (v2.1) compliant implementation of RSA.
+ *
+ * PHP versions 4 and 5
+ *
+ * Here's an example of how to encrypt and decrypt text with this library:
+ * <code>
+ * <?php
+ *    include 'Crypt/RSA.php';
+ *
+ *    $rsa = new Crypt_RSA();
+ *    extract($rsa->createKey());
+ *
+ *    $plaintext = 'terrafrost';
+ *
+ *    $rsa->loadKey($privatekey);
+ *    $ciphertext = $rsa->encrypt($plaintext);
+ *
+ *    $rsa->loadKey($publickey);
+ *    echo $rsa->decrypt($ciphertext);
+ * ?>
+ * </code>
+ *
+ * Here's an example of how to create signatures and verify signatures with this library:
+ * <code>
+ * <?php
+ *    include 'Crypt/RSA.php';
+ *
+ *    $rsa = new Crypt_RSA();
+ *    extract($rsa->createKey());
+ *
+ *    $plaintext = 'terrafrost';
+ *
+ *    $rsa->loadKey($privatekey);
+ *    $signature = $rsa->sign($plaintext);
+ *
+ *    $rsa->loadKey($publickey);
+ *    echo $rsa->verify($plaintext, $signature) ? 'verified' : 'unverified';
+ * ?>
+ * </code>
+ *
+ * LICENSE: Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * @category  Crypt
+ * @package   Crypt_RSA
+ * @author    Jim Wigginton <terrafrost@php.net>
+ * @copyright 2009 Jim Wigginton
+ * @license   http://www.opensource.org/licenses/mit-license.html  MIT License
+ * @link      http://phpseclib.sourceforge.net
+ */
+
+/**
+ * Include Crypt_Random
+ */
+// the class_exists() will only be called if the crypt_random_string function hasn't been defined and
+// will trigger a call to __autoload() if you're wanting to auto-load classes
+// call function_exists() a second time to stop the include_once from being called outside
+// of the auto loader
+if (!function_exists('crypt_random_string')) {
+    include_once 'Random.php';
+}
+
+/**
+ * Include Crypt_Hash
+ */
+if (!class_exists('Crypt_Hash')) {
+    include_once 'Hash.php';
+}
+
 /**#@+
  * @access public
- * @see Crypt_RSA::encrypt()
- * @see Crypt_RSA::decrypt()
+ * @see self::encrypt()
+ * @see self::decrypt()
  */
 /**
  * Use {@link http://en.wikipedia.org/wiki/Optimal_Asymmetric_Encryption_Padding Optimal Asymmetric Encryption Padding}
@@ -4344,64 +5213,79 @@ class Crypt_Hash {
  *
  * Uses sha1 by default.
  *
- * @see Crypt_RSA::setHash()
- * @see Crypt_RSA::setMGFHash()
+ * @see self::setHash()
+ * @see self::setMGFHash()
  */
 define('CRYPT_RSA_ENCRYPTION_OAEP',  1);
 /**
  * Use PKCS#1 padding.
  *
  * Although CRYPT_RSA_ENCRYPTION_OAEP offers more security, including PKCS#1 padding is necessary for purposes of backwards
- * compatability with protocols (like SSH-1) written before OAEP's introduction.
+ * compatibility with protocols (like SSH-1) written before OAEP's introduction.
  */
 define('CRYPT_RSA_ENCRYPTION_PKCS1', 2);
+/**
+ * Do not use any padding
+ *
+ * Although this method is not recommended it can none-the-less sometimes be useful if you're trying to decrypt some legacy
+ * stuff, if you're trying to diagnose why an encrypted message isn't decrypting, etc.
+ */
+define('CRYPT_RSA_ENCRYPTION_NONE', 3);
 /**#@-*/
 
 /**#@+
  * @access public
- * @see Crypt_RSA::sign()
- * @see Crypt_RSA::verify()
- * @see Crypt_RSA::setHash()
+ * @see self::sign()
+ * @see self::verify()
+ * @see self::setHash()
  */
 /**
  * Use the Probabilistic Signature Scheme for signing
  *
  * Uses sha1 by default.
  *
- * @see Crypt_RSA::setSaltLength()
- * @see Crypt_RSA::setMGFHash()
+ * @see self::setSaltLength()
+ * @see self::setMGFHash()
  */
 define('CRYPT_RSA_SIGNATURE_PSS',  1);
 /**
  * Use the PKCS#1 scheme by default.
  *
  * Although CRYPT_RSA_SIGNATURE_PSS offers more security, including PKCS#1 signing is necessary for purposes of backwards
- * compatability with protocols (like SSH-2) written before PSS's introduction.
+ * compatibility with protocols (like SSH-2) written before PSS's introduction.
  */
 define('CRYPT_RSA_SIGNATURE_PKCS1', 2);
 /**#@-*/
 
 /**#@+
  * @access private
- * @see Crypt_RSA::createKey()
+ * @see self::createKey()
  */
 /**
  * ASN1 Integer
  */
-define('CRYPT_RSA_ASN1_INTEGER',   2);
+define('CRYPT_RSA_ASN1_INTEGER',     2);
 /**
  * ASN1 Bit String
  */
-define('CRYPT_RSA_ASN1_BITSTRING', 3); 
+define('CRYPT_RSA_ASN1_BITSTRING',   3);
+/**
+ * ASN1 Octet String
+ */
+define('CRYPT_RSA_ASN1_OCTETSTRING', 4);
+/**
+ * ASN1 Object Identifier
+ */
+define('CRYPT_RSA_ASN1_OBJECT',      6);
 /**
  * ASN1 Sequence (with the constucted bit set)
  */
-define('CRYPT_RSA_ASN1_SEQUENCE', 48);
+define('CRYPT_RSA_ASN1_SEQUENCE',   48);
 /**#@-*/
 
 /**#@+
  * @access private
- * @see Crypt_RSA::Crypt_RSA()
+ * @see self::Crypt_RSA()
  */
 /**
  * To use the pure-PHP implementation
@@ -4415,10 +5299,15 @@ define('CRYPT_RSA_MODE_INTERNAL', 1);
 define('CRYPT_RSA_MODE_OPENSSL', 2);
 /**#@-*/
 
+/**
+ * Default openSSL configuration file.
+ */
+define('CRYPT_RSA_OPENSSL_CONFIG', dirname(__FILE__) . '/openssl.cnf');
+
 /**#@+
  * @access public
- * @see Crypt_RSA::createKey()
- * @see Crypt_RSA::setPrivateKeyFormat()
+ * @see self::createKey()
+ * @see self::setPrivateKeyFormat()
  */
 /**
  * PKCS#1 formatted private key
@@ -4434,12 +5323,20 @@ define('CRYPT_RSA_PRIVATE_FORMAT_PUTTY', 1);
  * XML formatted private key
  */
 define('CRYPT_RSA_PRIVATE_FORMAT_XML', 2);
+/**
+ * PKCS#8 formatted private key
+ */
+define('CRYPT_RSA_PRIVATE_FORMAT_PKCS8', 8);
+/**
+ * OpenSSH formatted private key
+ */
+define('CRYPT_RSA_PRIVATE_FORMAT_OPENSSH', 9);
 /**#@-*/
 
 /**#@+
  * @access public
- * @see Crypt_RSA::createKey()
- * @see Crypt_RSA::setPublicKeyFormat()
+ * @see self::createKey()
+ * @see self::setPublicKeyFormat()
  */
 /**
  * Raw public key
@@ -4459,7 +5356,14 @@ define('CRYPT_RSA_PUBLIC_FORMAT_RAW', 3);
  * PKCS#1 formatted public key (raw)
  *
  * Used by File/X509.php
+ *
+ * Has the following header:
+ *
+ * -----BEGIN RSA PUBLIC KEY-----
+ *
+ * Analogous to ssh-keygen's pem format (as specified by -m)
  */
+define('CRYPT_RSA_PUBLIC_FORMAT_PKCS1', 4);
 define('CRYPT_RSA_PUBLIC_FORMAT_PKCS1_RAW', 4);
 /**
  * XML formatted public key
@@ -4475,23 +5379,31 @@ define('CRYPT_RSA_PUBLIC_FORMAT_OPENSSH', 6);
  * PKCS#1 formatted public key (encapsulated)
  *
  * Used by PHP's openssl_public_encrypt() and openssl's rsautl (when -pubin is set)
+ *
+ * Has the following header:
+ *
+ * -----BEGIN PUBLIC KEY-----
+ *
+ * Analogous to ssh-keygen's pkcs8 format (as specified by -m). Although PKCS8
+ * is specific to private keys it's basically creating a DER-encoded wrapper
+ * for keys. This just extends that same concept to public keys (much like ssh-keygen)
  */
-define('CRYPT_RSA_PUBLIC_FORMAT_PKCS1', 7);
+define('CRYPT_RSA_PUBLIC_FORMAT_PKCS8', 7);
 /**#@-*/
 
 /**
  * Pure-PHP PKCS#1 compliant implementation of RSA.
  *
- * @author  Jim Wigginton <terrafrost@php.net>
- * @version 0.1.0
- * @access  public
  * @package Crypt_RSA
+ * @author  Jim Wigginton <terrafrost@php.net>
+ * @access  public
  */
-class Crypt_RSA {
+class Crypt_RSA
+{
     /**
      * Precomputed Zero
      *
-     * @var Array
+     * @var Math_BigInteger
      * @access private
      */
     var $zero;
@@ -4499,7 +5411,7 @@ class Crypt_RSA {
     /**
      * Precomputed One
      *
-     * @var Array
+     * @var Math_BigInteger
      * @access private
      */
     var $one;
@@ -4507,7 +5419,7 @@ class Crypt_RSA {
     /**
      * Private Key Format
      *
-     * @var Integer
+     * @var int
      * @access private
      */
     var $privateKeyFormat = CRYPT_RSA_PRIVATE_FORMAT_PKCS1;
@@ -4515,10 +5427,10 @@ class Crypt_RSA {
     /**
      * Public Key Format
      *
-     * @var Integer
+     * @var int
      * @access public
      */
-    var $publicKeyFormat = CRYPT_RSA_PUBLIC_FORMAT_PKCS1;
+    var $publicKeyFormat = CRYPT_RSA_PUBLIC_FORMAT_PKCS8;
 
     /**
      * Modulus (ie. n)
@@ -4547,7 +5459,7 @@ class Crypt_RSA {
     /**
      * Primes for Chinese Remainder Theorem (ie. p and q)
      *
-     * @var Array
+     * @var array
      * @access private
      */
     var $primes;
@@ -4555,7 +5467,7 @@ class Crypt_RSA {
     /**
      * Exponents for Chinese Remainder Theorem (ie. dP and dQ)
      *
-     * @var Array
+     * @var array
      * @access private
      */
     var $exponents;
@@ -4563,7 +5475,7 @@ class Crypt_RSA {
     /**
      * Coefficients for Chinese Remainder Theorem (ie. qInv)
      *
-     * @var Array
+     * @var array
      * @access private
      */
     var $coefficients;
@@ -4571,7 +5483,7 @@ class Crypt_RSA {
     /**
      * Hash name
      *
-     * @var String
+     * @var string
      * @access private
      */
     var $hashName;
@@ -4587,7 +5499,7 @@ class Crypt_RSA {
     /**
      * Length of hash function output
      *
-     * @var Integer
+     * @var int
      * @access private
      */
     var $hLen;
@@ -4595,7 +5507,7 @@ class Crypt_RSA {
     /**
      * Length of salt
      *
-     * @var Integer
+     * @var int
      * @access private
      */
     var $sLen;
@@ -4611,7 +5523,7 @@ class Crypt_RSA {
     /**
      * Length of MGF hash function output
      *
-     * @var Integer
+     * @var int
      * @access private
      */
     var $mgfHLen;
@@ -4619,7 +5531,7 @@ class Crypt_RSA {
     /**
      * Encryption mode
      *
-     * @var Integer
+     * @var int
      * @access private
      */
     var $encryptionMode = CRYPT_RSA_ENCRYPTION_OAEP;
@@ -4627,7 +5539,7 @@ class Crypt_RSA {
     /**
      * Signature mode
      *
-     * @var Integer
+     * @var int
      * @access private
      */
     var $signatureMode = CRYPT_RSA_SIGNATURE_PSS;
@@ -4635,7 +5547,7 @@ class Crypt_RSA {
     /**
      * Public Exponent
      *
-     * @var Mixed
+     * @var mixed
      * @access private
      */
     var $publicExponent = false;
@@ -4643,7 +5555,7 @@ class Crypt_RSA {
     /**
      * Password
      *
-     * @var String
+     * @var string
      * @access private
      */
     var $password = false;
@@ -4654,8 +5566,8 @@ class Crypt_RSA {
      * For use with parsing XML formatted keys.  PHP's XML Parser functions use utilized - instead of PHP's DOM functions -
      * because PHP's XML Parser functions work on PHP4 whereas PHP's DOM functions - although surperior - don't.
      *
-     * @see Crypt_RSA::_start_element_handler()
-     * @var Array
+     * @see self::_start_element_handler()
+     * @var array
      * @access private
      */
     var $components = array();
@@ -4665,12 +5577,30 @@ class Crypt_RSA {
      *
      * For use with parsing XML formatted keys.
      *
-     * @see Crypt_RSA::_character_handler()
-     * @see Crypt_RSA::_stop_element_handler()
-     * @var Mixed
+     * @see self::_character_handler()
+     * @see self::_stop_element_handler()
+     * @var mixed
      * @access private
      */
     var $current;
+
+    /**
+     * OpenSSL configuration file name.
+     *
+     * Set to null to use system configuration file.
+     * @see self::createKey()
+     * @var mixed
+     * @Access public
+     */
+    var $configFile;
+
+    /**
+     * Public key comment field.
+     *
+     * @var string
+     * @access private
+     */
+    var $comment = 'phpseclib-generated-key';
 
     /**
      * The constructor
@@ -4682,20 +5612,65 @@ class Crypt_RSA {
      * @return Crypt_RSA
      * @access public
      */
-    function Crypt_RSA()
+    function __construct()
     {
-        if ( !defined('CRYPT_RSA_MODE') ) {
+        if (!class_exists('Math_BigInteger')) {
+            include_once 'Math/BigInteger.php';
+        }
+
+        $this->configFile = CRYPT_RSA_OPENSSL_CONFIG;
+
+        if (!defined('CRYPT_RSA_MODE')) {
             switch (true) {
-                case extension_loaded('openssl') && version_compare(PHP_VERSION, '4.2.0', '>='):
-                    define('CRYPT_RSA_MODE', CRYPT_RSA_MODE_OPENSSL);
+                // Math/BigInteger's openssl requirements are a little less stringent than Crypt/RSA's. in particular,
+                // Math/BigInteger doesn't require an openssl.cfg file whereas Crypt/RSA does. so if Math/BigInteger
+                // can't use OpenSSL it can be pretty trivially assumed, then, that Crypt/RSA can't either.
+                case defined('MATH_BIGINTEGER_OPENSSL_DISABLE'):
+                    define('CRYPT_RSA_MODE', CRYPT_RSA_MODE_INTERNAL);
+                    break;
+                // openssl_pkey_get_details - which is used in the only place Crypt/RSA.php uses OpenSSL - was introduced in PHP 5.2.0
+                case !function_exists('openssl_pkey_get_details'):
+                    define('CRYPT_RSA_MODE', CRYPT_RSA_MODE_INTERNAL);
+                    break;
+                case extension_loaded('openssl') && version_compare(PHP_VERSION, '4.2.0', '>=') && file_exists($this->configFile):
+                    // some versions of XAMPP have mismatched versions of OpenSSL which causes it not to work
+                    ob_start();
+                    @phpinfo();
+                    $content = ob_get_contents();
+                    ob_end_clean();
+
+                    preg_match_all('#OpenSSL (Header|Library) Version(.*)#im', $content, $matches);
+
+                    $versions = array();
+                    if (!empty($matches[1])) {
+                        for ($i = 0; $i < count($matches[1]); $i++) {
+                            $fullVersion = trim(str_replace('=>', '', strip_tags($matches[2][$i])));
+
+                            // Remove letter part in OpenSSL version
+                            if (!preg_match('/(\d+\.\d+\.\d+)/i', $fullVersion, $m)) {
+                                $versions[$matches[1][$i]] = $fullVersion;
+                            } else {
+                                $versions[$matches[1][$i]] = $m[0];
+                            }
+                        }
+                    }
+
+                    // it doesn't appear that OpenSSL versions were reported upon until PHP 5.3+
+                    switch (true) {
+                        case !isset($versions['Header']):
+                        case !isset($versions['Library']):
+                        case $versions['Header'] == $versions['Library']:
+                        case version_compare($versions['Header'], '1.0.0') >= 0 && version_compare($versions['Library'], '1.0.0') >= 0:
+                            define('CRYPT_RSA_MODE', CRYPT_RSA_MODE_OPENSSL);
+                            break;
+                        default:
+                            define('CRYPT_RSA_MODE', CRYPT_RSA_MODE_INTERNAL);
+                            define('MATH_BIGINTEGER_OPENSSL_DISABLE', true);
+                    }
                     break;
                 default:
                     define('CRYPT_RSA_MODE', CRYPT_RSA_MODE_INTERNAL);
             }
-        }
-
-        if (!defined('CRYPT_RSA_COMMENT')) {
-            define('CRYPT_RSA_COMMENT', 'phpseclib-generated-key');
         }
 
         $this->zero = new Math_BigInteger();
@@ -4709,6 +5684,17 @@ class Crypt_RSA {
     }
 
     /**
+     * PHP4 compatible Default Constructor.
+     *
+     * @see self::__construct()
+     * @access public
+     */
+    function Crypt_RSA()
+    {
+        $this->__construct();
+    }
+
+    /**
      * Create public / private key pair
      *
      * Returns an array with the following three elements:
@@ -4718,9 +5704,9 @@ class Crypt_RSA {
      *                  Will need to be passed back to Crypt_RSA::createKey() as the third parameter for further processing.
      *
      * @access public
-     * @param optional Integer $bits
-     * @param optional Integer $timeout
-     * @param optional Math_BigInteger $p
+     * @param int $bits
+     * @param int $timeout
+     * @param Math_BigInteger $p
      */
     function createKey($bits = 1024, $timeout = false, $partial = array())
     {
@@ -4739,13 +5725,13 @@ class Crypt_RSA {
         }
 
         // OpenSSL uses 65537 as the exponent and requires RSA keys be 384 bits minimum
-        if ( CRYPT_RSA_MODE == CRYPT_RSA_MODE_OPENSSL && $bits >= 384 && CRYPT_RSA_EXPONENT == 65537) {
-            $rsa = openssl_pkey_new(array(
-                'private_key_bits' => $bits,
-                'config' => dirname(__FILE__) . '/openssl.cnf'
-            ));
-
-            openssl_pkey_export($rsa, $privatekey, NULL, array('config' => dirname(__FILE__) . '/openssl.cnf'));
+        if (CRYPT_RSA_MODE == CRYPT_RSA_MODE_OPENSSL && $bits >= 384 && CRYPT_RSA_EXPONENT == 65537) {
+            $config = array();
+            if (isset($this->configFile)) {
+                $config['config'] = $this->configFile;
+            }
+            $rsa = openssl_pkey_new(array('private_key_bits' => $bits) + $config);
+            openssl_pkey_export($rsa, $privatekey, null, $config);
             $publickey = openssl_pkey_get_details($rsa);
             $publickey = $publickey['key'];
 
@@ -4753,7 +5739,8 @@ class Crypt_RSA {
             $publickey = call_user_func_array(array($this, '_convertPublicKey'), array_values($this->_parseKey($publickey, CRYPT_RSA_PUBLIC_FORMAT_PKCS1)));
 
             // clear the buffer of error strings stemming from a minimalistic openssl.cnf
-            while (openssl_error_string() !== false);
+            while (openssl_error_string() !== false) {
+            }
 
             return array(
                 'privatekey' => $privatekey,
@@ -4781,7 +5768,6 @@ class Crypt_RSA {
         extract($this->_generateMinMax($temp));
 
         $generator = new Math_BigInteger();
-        $generator->setRandomGenerator('crypt_random');
 
         $n = $this->one->copy();
         if (!empty($partial)) {
@@ -4864,12 +5850,12 @@ class Crypt_RSA {
                 $exponents[$i] = $e->modInverse($temp);
             }
 
-            list($lcm) = $lcm['top']->divide($lcm['bottom']);
-            $gcd = $lcm->gcd($e);
+            list($temp) = $lcm['top']->divide($lcm['bottom']);
+            $gcd = $temp->gcd($e);
             $i0 = 1;
         } while (!$gcd->equals($this->one));
 
-        $d = $e->modInverse($lcm);
+        $d = $e->modInverse($temp);
 
         $coefficients[2] = $primes[2]->modInverse($primes[1]);
 
@@ -4898,23 +5884,24 @@ class Crypt_RSA {
      * Convert a private key to the appropriate format.
      *
      * @access private
-     * @see setPrivateKeyFormat()
-     * @param String $RSAPrivateKey
-     * @return String
+     * @see self::setPrivateKeyFormat()
+     * @param string $RSAPrivateKey
+     * @return string
      */
     function _convertPrivateKey($n, $e, $d, $primes, $exponents, $coefficients)
     {
+        $signed = $this->privateKeyFormat != CRYPT_RSA_PRIVATE_FORMAT_XML;
         $num_primes = count($primes);
         $raw = array(
             'version' => $num_primes == 2 ? chr(0) : chr(1), // two-prime vs. multi
-            'modulus' => $n->toBytes(true),
-            'publicExponent' => $e->toBytes(true),
-            'privateExponent' => $d->toBytes(true),
-            'prime1' => $primes[1]->toBytes(true),
-            'prime2' => $primes[2]->toBytes(true),
-            'exponent1' => $exponents[1]->toBytes(true),
-            'exponent2' => $exponents[2]->toBytes(true),
-            'coefficient' => $coefficients[2]->toBytes(true)
+            'modulus' => $n->toBytes($signed),
+            'publicExponent' => $e->toBytes($signed),
+            'privateExponent' => $d->toBytes($signed),
+            'prime1' => $primes[1]->toBytes($signed),
+            'prime2' => $primes[2]->toBytes($signed),
+            'exponent1' => $exponents[1]->toBytes($signed),
+            'exponent2' => $exponents[2]->toBytes($signed),
+            'coefficient' => $coefficients[2]->toBytes($signed)
         );
 
         // if the format in question does not support multi-prime rsa and multi-prime rsa was used,
@@ -4942,29 +5929,49 @@ class Crypt_RSA {
                 $key = "PuTTY-User-Key-File-2: ssh-rsa\r\nEncryption: ";
                 $encryption = (!empty($this->password) || is_string($this->password)) ? 'aes256-cbc' : 'none';
                 $key.= $encryption;
-                $key.= "\r\nComment: " . CRYPT_RSA_COMMENT . "\r\n";
-                $public = pack('Na*Na*Na*',
-                    strlen('ssh-rsa'), 'ssh-rsa', strlen($raw['publicExponent']), $raw['publicExponent'], strlen($raw['modulus']), $raw['modulus']
+                $key.= "\r\nComment: " . $this->comment . "\r\n";
+                $public = pack(
+                    'Na*Na*Na*',
+                    strlen('ssh-rsa'),
+                    'ssh-rsa',
+                    strlen($raw['publicExponent']),
+                    $raw['publicExponent'],
+                    strlen($raw['modulus']),
+                    $raw['modulus']
                 );
-                $source = pack('Na*Na*Na*Na*',
-                              strlen('ssh-rsa'), 'ssh-rsa', strlen($encryption), $encryption,
-                              strlen(CRYPT_RSA_COMMENT), CRYPT_RSA_COMMENT, strlen($public), $public
+                $source = pack(
+                    'Na*Na*Na*Na*',
+                    strlen('ssh-rsa'),
+                    'ssh-rsa',
+                    strlen($encryption),
+                    $encryption,
+                    strlen($this->comment),
+                    $this->comment,
+                    strlen($public),
+                    $public
                 );
                 $public = base64_encode($public);
-                $key.= "Public-Lines: " . ((strlen($public) + 32) >> 6) . "\r\n";
+                $key.= "Public-Lines: " . ((strlen($public) + 63) >> 6) . "\r\n";
                 $key.= chunk_split($public, 64);
-                $private = pack('Na*Na*Na*Na*',
-                    strlen($raw['privateExponent']), $raw['privateExponent'], strlen($raw['prime1']), $raw['prime1'],
-                    strlen($raw['prime2']), $raw['prime2'], strlen($raw['coefficient']), $raw['coefficient']
+                $private = pack(
+                    'Na*Na*Na*Na*',
+                    strlen($raw['privateExponent']),
+                    $raw['privateExponent'],
+                    strlen($raw['prime1']),
+                    $raw['prime1'],
+                    strlen($raw['prime2']),
+                    $raw['prime2'],
+                    strlen($raw['coefficient']),
+                    $raw['coefficient']
                 );
                 if (empty($this->password) && !is_string($this->password)) {
                     $source.= pack('Na*', strlen($private), $private);
                     $hashkey = 'putty-private-key-file-mac-key';
                 } else {
-                    $private.= $this->_random(16 - (strlen($private) & 15));
+                    $private.= crypt_random_string(16 - (strlen($private) & 15));
                     $source.= pack('Na*', strlen($private), $private);
                     if (!class_exists('Crypt_AES')) {
-                        require_once('Crypt/AES.php');
+                        include_once 'Crypt/AES.php';
                     }
                     $sequence = 0;
                     $symkey = '';
@@ -4982,16 +5989,68 @@ class Crypt_RSA {
                 }
 
                 $private = base64_encode($private);
-                $key.= 'Private-Lines: ' . ((strlen($private) + 32) >> 6) . "\r\n";
+                $key.= 'Private-Lines: ' . ((strlen($private) + 63) >> 6) . "\r\n";
                 $key.= chunk_split($private, 64);
                 if (!class_exists('Crypt_Hash')) {
-                    require_once('Crypt/Hash.php');
+                    include_once 'Crypt/Hash.php';
                 }
                 $hash = new Crypt_Hash('sha1');
                 $hash->setKey(pack('H*', sha1($hashkey)));
                 $key.= 'Private-MAC: ' . bin2hex($hash->hash($source)) . "\r\n";
 
                 return $key;
+            case CRYPT_RSA_PRIVATE_FORMAT_OPENSSH:
+                if ($num_primes != 2) {
+                    return false;
+                }
+                $publicKey = pack('Na*Na*Na*', strlen('ssh-rsa'), 'ssh-rsa', strlen($raw['publicExponent']), $raw['publicExponent'], strlen($raw['modulus']), $raw['modulus']);
+                $privateKey = pack(
+                    'Na*Na*Na*Na*Na*Na*Na*',
+                    strlen('ssh-rsa'),
+                    'ssh-rsa',
+                    strlen($raw['modulus']),
+                    $raw['modulus'],
+                    strlen($raw['publicExponent']),
+                    $raw['publicExponent'],
+                    strlen($raw['privateExponent']),
+                    $raw['privateExponent'],
+                    strlen($raw['coefficient']),
+                    $raw['coefficient'],
+                    strlen($raw['prime1']),
+                    $raw['prime1'],
+                    strlen($raw['prime2']),
+                    $raw['prime2']
+                );
+                $checkint = crypt_random_string(4);
+                $paddedKey = pack(
+                    'a*Na*',
+                    $checkint . $checkint . $privateKey,
+                    strlen($this->comment),
+                    $this->comment
+                );
+                $paddingLength = (7 * strlen($paddedKey)) % 8;
+                for ($i = 1; $i <= $paddingLength; $i++) {
+                    $paddedKey.= chr($i);
+                }
+                $key = pack(
+                    'Na*Na*Na*NNa*Na*',
+                    strlen('none'),
+                    'none',
+                    strlen('none'),
+                    'none',
+                    0,
+                    '',
+                    1,
+                    strlen($publicKey),
+                    $publicKey,
+                    strlen($paddedKey),
+                    $paddedKey
+                );
+                $key = "openssh-key-v1\0$key";
+
+                return "-----BEGIN OPENSSH PRIVATE KEY-----\r\n" .
+                       chunk_split(base64_encode($key), 70) .
+                       "-----END OPENSSH PRIVATE KEY-----";
             default: // eg. CRYPT_RSA_PRIVATE_FORMAT_PKCS1
                 $components = array();
                 foreach ($raw as $name => $value) {
@@ -5020,12 +6079,79 @@ class Crypt_RSA {
 
                 $RSAPrivateKey = pack('Ca*a*', CRYPT_RSA_ASN1_SEQUENCE, $this->_encodeLength(strlen($RSAPrivateKey)), $RSAPrivateKey);
 
+                if ($this->privateKeyFormat == CRYPT_RSA_PRIVATE_FORMAT_PKCS8) {
+                    $rsaOID = pack('H*', '300d06092a864886f70d0101010500'); // hex version of MA0GCSqGSIb3DQEBAQUA
+                    $RSAPrivateKey = pack(
+                        'Ca*a*Ca*a*',
+                        CRYPT_RSA_ASN1_INTEGER,
+                        "\01\00",
+                        $rsaOID,
+                        4,
+                        $this->_encodeLength(strlen($RSAPrivateKey)),
+                        $RSAPrivateKey
+                    );
+                    $RSAPrivateKey = pack('Ca*a*', CRYPT_RSA_ASN1_SEQUENCE, $this->_encodeLength(strlen($RSAPrivateKey)), $RSAPrivateKey);
+                    if (!empty($this->password) || is_string($this->password)) {
+                        $salt = crypt_random_string(8);
+                        $iterationCount = 2048;
+
+                        if (!class_exists('Crypt_DES')) {
+                            include_once 'Crypt/DES.php';
+                        }
+                        $crypto = new Crypt_DES();
+                        $crypto->setPassword($this->password, 'pbkdf1', 'md5', $salt, $iterationCount);
+                        $RSAPrivateKey = $crypto->encrypt($RSAPrivateKey);
+
+                        $parameters = pack(
+                            'Ca*a*Ca*N',
+                            CRYPT_RSA_ASN1_OCTETSTRING,
+                            $this->_encodeLength(strlen($salt)),
+                            $salt,
+                            CRYPT_RSA_ASN1_INTEGER,
+                            $this->_encodeLength(4),
+                            $iterationCount
+                        );
+                        $pbeWithMD5AndDES_CBC = "\x2a\x86\x48\x86\xf7\x0d\x01\x05\x03";
+
+                        $encryptionAlgorithm = pack(
+                            'Ca*a*Ca*a*',
+                            CRYPT_RSA_ASN1_OBJECT,
+                            $this->_encodeLength(strlen($pbeWithMD5AndDES_CBC)),
+                            $pbeWithMD5AndDES_CBC,
+                            CRYPT_RSA_ASN1_SEQUENCE,
+                            $this->_encodeLength(strlen($parameters)),
+                            $parameters
+                        );
+
+                        $RSAPrivateKey = pack(
+                            'Ca*a*Ca*a*',
+                            CRYPT_RSA_ASN1_SEQUENCE,
+                            $this->_encodeLength(strlen($encryptionAlgorithm)),
+                            $encryptionAlgorithm,
+                            CRYPT_RSA_ASN1_OCTETSTRING,
+                            $this->_encodeLength(strlen($RSAPrivateKey)),
+                            $RSAPrivateKey
+                        );
+
+                        $RSAPrivateKey = pack('Ca*a*', CRYPT_RSA_ASN1_SEQUENCE, $this->_encodeLength(strlen($RSAPrivateKey)), $RSAPrivateKey);
+
+                        $RSAPrivateKey = "-----BEGIN ENCRYPTED PRIVATE KEY-----\r\n" .
+                                         chunk_split(base64_encode($RSAPrivateKey), 64) .
+                                         '-----END ENCRYPTED PRIVATE KEY-----';
+                    } else {
+                        $RSAPrivateKey = "-----BEGIN PRIVATE KEY-----\r\n" .
+                                         chunk_split(base64_encode($RSAPrivateKey), 64) .
+                                         '-----END PRIVATE KEY-----';
+                    }
+                    return $RSAPrivateKey;
+                }
+
                 if (!empty($this->password) || is_string($this->password)) {
-                    $iv = $this->_random(8);
+                    $iv = crypt_random_string(8);
                     $symkey = pack('H*', md5($this->password . $iv)); // symkey is short for symmetric key
                     $symkey.= substr(pack('H*', md5($symkey . $this->password . $iv)), 0, 8);
                     if (!class_exists('Crypt_TripleDES')) {
-                        require_once('Crypt/TripleDES.php');
+                        include_once 'Crypt/TripleDES.php';
                     }
                     $des = new Crypt_TripleDES();
                     $des->setKey($symkey);
@@ -5035,11 +6161,11 @@ class Crypt_RSA {
                                      "Proc-Type: 4,ENCRYPTED\r\n" .
                                      "DEK-Info: DES-EDE3-CBC,$iv\r\n" .
                                      "\r\n" .
-                                     chunk_split(base64_encode($des->encrypt($RSAPrivateKey))) .
+                                     chunk_split(base64_encode($des->encrypt($RSAPrivateKey)), 64) .
                                      '-----END RSA PRIVATE KEY-----';
                 } else {
                     $RSAPrivateKey = "-----BEGIN RSA PRIVATE KEY-----\r\n" .
-                                     chunk_split(base64_encode($RSAPrivateKey)) .
+                                     chunk_split(base64_encode($RSAPrivateKey), 64) .
                                      '-----END RSA PRIVATE KEY-----';
                 }
 
@@ -5051,14 +6177,16 @@ class Crypt_RSA {
      * Convert a public key to the appropriate format
      *
      * @access private
-     * @see setPublicKeyFormat()
-     * @param String $RSAPrivateKey
-     * @return String
+     * @see self::setPublicKeyFormat()
+     * @param string $RSAPrivateKey
+     * @return string
      */
     function _convertPublicKey($n, $e)
     {
-        $modulus = $n->toBytes(true);
-        $publicExponent = $e->toBytes(true);
+        $signed = $this->publicKeyFormat != CRYPT_RSA_PUBLIC_FORMAT_XML;
+
+        $modulus = $n->toBytes($signed);
+        $publicExponent = $e->toBytes($signed);
 
         switch ($this->publicKeyFormat) {
             case CRYPT_RSA_PUBLIC_FORMAT_RAW:
@@ -5075,7 +6203,7 @@ class Crypt_RSA {
                 // mpint     e
                 // mpint     n
                 $RSAPublicKey = pack('Na*Na*Na*', strlen('ssh-rsa'), 'ssh-rsa', strlen($publicExponent), $publicExponent, strlen($modulus), $modulus);
-                $RSAPublicKey = 'ssh-rsa ' . base64_encode($RSAPublicKey) . ' ' . CRYPT_RSA_COMMENT;
+                $RSAPublicKey = 'ssh-rsa ' . base64_encode($RSAPublicKey) . ' ' . $this->comment;
 
                 return $RSAPublicKey;
             default: // eg. CRYPT_RSA_PUBLIC_FORMAT_PKCS1_RAW or CRYPT_RSA_PUBLIC_FORMAT_PKCS1
@@ -5089,25 +6217,35 @@ class Crypt_RSA {
                     'publicExponent' => pack('Ca*a*', CRYPT_RSA_ASN1_INTEGER, $this->_encodeLength(strlen($publicExponent)), $publicExponent)
                 );
 
-                $RSAPublicKey = pack('Ca*a*a*',
-                    CRYPT_RSA_ASN1_SEQUENCE, $this->_encodeLength(strlen($components['modulus']) + strlen($components['publicExponent'])),
-                    $components['modulus'], $components['publicExponent']
+                $RSAPublicKey = pack(
+                    'Ca*a*a*',
+                    CRYPT_RSA_ASN1_SEQUENCE,
+                    $this->_encodeLength(strlen($components['modulus']) + strlen($components['publicExponent'])),
+                    $components['modulus'],
+                    $components['publicExponent']
                 );
 
-                if ($this->publicKeyFormat == CRYPT_RSA_PUBLIC_FORMAT_PKCS1) {
+                if ($this->publicKeyFormat == CRYPT_RSA_PUBLIC_FORMAT_PKCS1_RAW) {
+                    $RSAPublicKey = "-----BEGIN RSA PUBLIC KEY-----\r\n" .
+                                    chunk_split(base64_encode($RSAPublicKey), 64) .
+                                    '-----END RSA PUBLIC KEY-----';
+                } else {
                     // sequence(oid(1.2.840.113549.1.1.1), null)) = rsaEncryption.
                     $rsaOID = pack('H*', '300d06092a864886f70d0101010500'); // hex version of MA0GCSqGSIb3DQEBAQUA
                     $RSAPublicKey = chr(0) . $RSAPublicKey;
                     $RSAPublicKey = chr(3) . $this->_encodeLength(strlen($RSAPublicKey)) . $RSAPublicKey;
 
-                    $RSAPublicKey = pack('Ca*a*',
-                        CRYPT_RSA_ASN1_SEQUENCE, $this->_encodeLength(strlen($rsaOID . $RSAPublicKey)), $rsaOID . $RSAPublicKey
+                    $RSAPublicKey = pack(
+                        'Ca*a*',
+                        CRYPT_RSA_ASN1_SEQUENCE,
+                        $this->_encodeLength(strlen($rsaOID . $RSAPublicKey)),
+                        $rsaOID . $RSAPublicKey
                     );
-                }
 
-                $RSAPublicKey = "-----BEGIN PUBLIC KEY-----\r\n" .
-                                 chunk_split(base64_encode($RSAPublicKey)) .
-                                 '-----END PUBLIC KEY-----';
+                    $RSAPublicKey = "-----BEGIN PUBLIC KEY-----\r\n" .
+                                     chunk_split(base64_encode($RSAPublicKey), 64) .
+                                     '-----END PUBLIC KEY-----';
+                }
 
                 return $RSAPublicKey;
         }
@@ -5117,11 +6255,11 @@ class Crypt_RSA {
      * Break a public or private key down into its constituant components
      *
      * @access private
-     * @see _convertPublicKey()
-     * @see _convertPrivateKey()
-     * @param String $key
-     * @param Integer $type
-     * @return Array
+     * @see self::_convertPublicKey()
+     * @see self::_convertPrivateKey()
+     * @param string $key
+     * @param int $type
+     * @return array
      */
     function _parseKey($key, $type)
     {
@@ -5163,6 +6301,7 @@ class Crypt_RSA {
                 }
                 return isset($components['modulus']) && isset($components['publicExponent']) ? $components : false;
             case CRYPT_RSA_PRIVATE_FORMAT_PKCS1:
+            case CRYPT_RSA_PRIVATE_FORMAT_PKCS8:
             case CRYPT_RSA_PUBLIC_FORMAT_PKCS1:
                 /* Although PKCS#1 proposes a format that public and private keys can use, encrypting them is
                    "outside the scope" of PKCS#1.  PKCS#1 then refers you to PKCS#12 and PKCS#15 if you're wanting to
@@ -5175,42 +6314,50 @@ class Crypt_RSA {
                    DES-EDE3-CBC as an algorithm, however, is not discussed anywhere, near as I can tell.
                    DES-CBC and DES-EDE are discussed in RFC1423, however, DES-EDE3-CBC isn't, nor is its key derivation
                    function.  As is, the definitive authority on this encoding scheme isn't the IETF but rather OpenSSL's
-                   own implementation.  ie. the implementation *is* the standard and any bugs that may exist in that 
+                   own implementation.  ie. the implementation *is* the standard and any bugs that may exist in that
                    implementation are part of the standard, as well.
 
                    * OpenSSL is the de facto standard.  It's utilized by OpenSSH and other projects */
                 if (preg_match('#DEK-Info: (.+),(.+)#', $key, $matches)) {
                     $iv = pack('H*', trim($matches[2]));
                     $symkey = pack('H*', md5($this->password . substr($iv, 0, 8))); // symkey is short for symmetric key
-                    $symkey.= substr(pack('H*', md5($symkey . $this->password . $iv)), 0, 8);
-                    $ciphertext = preg_replace('#.+(\r|\n|\r\n)\1|[\r\n]|-.+-| #s', '', $key);
-                    $ciphertext = preg_match('#^[a-zA-Z\d/+]*={0,2}$#', $ciphertext) ? base64_decode($ciphertext) : false;
+                    $symkey.= pack('H*', md5($symkey . $this->password . substr($iv, 0, 8)));
+                    // remove the Proc-Type / DEK-Info sections as they're no longer needed
+                    $key = preg_replace('#^(?:Proc-Type|DEK-Info): .*#m', '', $key);
+                    $ciphertext = $this->_extractBER($key);
                     if ($ciphertext === false) {
                         $ciphertext = $key;
                     }
                     switch ($matches[1]) {
+                        case 'AES-256-CBC':
+                            if (!class_exists('Crypt_AES')) {
+                                include_once 'Crypt/AES.php';
+                            }
+                            $crypto = new Crypt_AES();
+                            break;
                         case 'AES-128-CBC':
                             if (!class_exists('Crypt_AES')) {
-                                require_once('Crypt/AES.php');
+                                include_once 'Crypt/AES.php';
                             }
                             $symkey = substr($symkey, 0, 16);
                             $crypto = new Crypt_AES();
                             break;
                         case 'DES-EDE3-CFB':
                             if (!class_exists('Crypt_TripleDES')) {
-                                require_once('Crypt/TripleDES.php');
+                                include_once 'Crypt/TripleDES.php';
                             }
                             $crypto = new Crypt_TripleDES(CRYPT_DES_MODE_CFB);
                             break;
                         case 'DES-EDE3-CBC':
                             if (!class_exists('Crypt_TripleDES')) {
-                                require_once('Crypt/TripleDES.php');
+                                include_once 'Crypt/TripleDES.php';
                             }
+                            $symkey = substr($symkey, 0, 24);
                             $crypto = new Crypt_TripleDES();
                             break;
                         case 'DES-CBC':
                             if (!class_exists('Crypt_DES')) {
-                                require_once('Crypt/DES.php');
+                                include_once 'Crypt/DES.php';
                             }
                             $crypto = new Crypt_DES();
                             break;
@@ -5221,8 +6368,7 @@ class Crypt_RSA {
                     $crypto->setIV($iv);
                     $decoded = $crypto->decrypt($ciphertext);
                 } else {
-                    $decoded = preg_replace('#-.+-|[\r\n]| #', '', $key);
-                    $decoded = preg_match('#^[a-zA-Z\d/+]*={0,2}$#', $decoded) ? base64_decode($decoded) : false;
+                    $decoded = $this->_extractBER($key);
                 }
 
                 if ($decoded !== false) {
@@ -5246,7 +6392,9 @@ class Crypt_RSA {
                     7:d=1  hl=2 l=  13 cons:  SEQUENCE
                     9:d=2  hl=2 l=   9 prim:   OBJECT            :rsaEncryption
                    20:d=2  hl=2 l=   0 prim:   NULL
-                   22:d=1  hl=4 l= 609 prim:  OCTET STRING */
+                   22:d=1  hl=4 l= 609 prim:  OCTET STRING
+
+                   ie. PKCS8 keys*/
 
                 if ($tag == CRYPT_RSA_ASN1_INTEGER && substr($key, 0, 3) == "\x01\x00\x30") {
                     $this->_string_shift($key, 3);
@@ -5254,6 +6402,52 @@ class Crypt_RSA {
                 }
 
                 if ($tag == CRYPT_RSA_ASN1_SEQUENCE) {
+                    $temp = $this->_string_shift($key, $this->_decodeLength($key));
+                    if (ord($this->_string_shift($temp)) != CRYPT_RSA_ASN1_OBJECT) {
+                        return false;
+                    }
+                    $length = $this->_decodeLength($temp);
+                    switch ($this->_string_shift($temp, $length)) {
+                        case "\x2a\x86\x48\x86\xf7\x0d\x01\x01\x01": // rsaEncryption
+                            break;
+                        case "\x2a\x86\x48\x86\xf7\x0d\x01\x05\x03": // pbeWithMD5AndDES-CBC
+                            /*
+                               PBEParameter ::= SEQUENCE {
+                                   salt OCTET STRING (SIZE(8)),
+                                   iterationCount INTEGER }
+                            */
+                            if (ord($this->_string_shift($temp)) != CRYPT_RSA_ASN1_SEQUENCE) {
+                                return false;
+                            }
+                            if ($this->_decodeLength($temp) != strlen($temp)) {
+                                return false;
+                            }
+                            $this->_string_shift($temp); // assume it's an octet string
+                            $salt = $this->_string_shift($temp, $this->_decodeLength($temp));
+                            if (ord($this->_string_shift($temp)) != CRYPT_RSA_ASN1_INTEGER) {
+                                return false;
+                            }
+                            $this->_decodeLength($temp);
+                            list(, $iterationCount) = unpack('N', str_pad($temp, 4, chr(0), STR_PAD_LEFT));
+                            $this->_string_shift($key); // assume it's an octet string
+                            $length = $this->_decodeLength($key);
+                            if (strlen($key) != $length) {
+                                return false;
+                            }
+
+                            if (!class_exists('Crypt_DES')) {
+                                include_once 'Crypt/DES.php';
+                            }
+                            $crypto = new Crypt_DES();
+                            $crypto->setPassword($this->password, 'pbkdf1', 'md5', $salt, $iterationCount);
+                            $key = $crypto->decrypt($key);
+                            if ($key === false) {
+                                return false;
+                            }
+                            return $this->_parseKey($key, CRYPT_RSA_PRIVATE_FORMAT_PKCS1);
+                        default:
+                            return false;
+                    }
                     /* intended for keys for which OpenSSL's asn1parse returns the following:
 
                         0:d=0  hl=4 l= 290 cons: SEQUENCE
@@ -5261,7 +6455,6 @@ class Crypt_RSA {
                         6:d=2  hl=2 l=   9 prim:   OBJECT            :rsaEncryption
                        17:d=2  hl=2 l=   0 prim:   NULL
                        19:d=1  hl=4 l= 271 prim:  BIT STRING */
-                    $this->_string_shift($key, $this->_decodeLength($key));
                     $tag = ord($this->_string_shift($key)); // skip over the BIT STRING / OCTET STRING tag
                     $this->_decodeLength($key); // skip over the BIT STRING / OCTET STRING length
                     // "The initial octet shall encode, as an unsigned binary integer wtih bit 1 as the least significant bit, the number of
@@ -5343,10 +6536,14 @@ class Crypt_RSA {
 
                 return $components;
             case CRYPT_RSA_PUBLIC_FORMAT_OPENSSH:
-                $key = base64_decode(preg_replace('#^ssh-rsa | .+$#', '', $key));
+                $parts = explode(' ', $key, 3);
+
+                $key = isset($parts[1]) ? base64_decode($parts[1]) : false;
                 if ($key === false) {
                     return false;
                 }
+
+                $comment = isset($parts[2]) ? $parts[2] : false;
 
                 $cleanup = substr($key, 0, 11) == "\0\0\0\7ssh-rsa";
 
@@ -5369,12 +6566,14 @@ class Crypt_RSA {
                     $realModulus = new Math_BigInteger($this->_string_shift($key, $length), -256);
                     return strlen($key) ? false : array(
                         'modulus' => $realModulus,
-                        'publicExponent' => $modulus
+                        'publicExponent' => $modulus,
+                        'comment' => $comment
                     );
                 } else {
                     return strlen($key) ? false : array(
                         'modulus' => $modulus,
-                        'publicExponent' => $publicExponent
+                        'publicExponent' => $publicExponent,
+                        'comment' => $comment
                     );
                 }
             // http://www.w3.org/TR/xmldsig-core/#sec-RSAKeyValue
@@ -5387,9 +6586,15 @@ class Crypt_RSA {
                 xml_set_object($xml, $this);
                 xml_set_element_handler($xml, '_start_element_handler', '_stop_element_handler');
                 xml_set_character_data_handler($xml, '_data_handler');
-                if (!xml_parse($xml, $key)) {
+                // add <xml></xml> to account for "dangling" tags like <BitStrength>...</BitStrength> that are sometimes added
+                if (!xml_parse($xml, '<xml>' . $key . '</xml>')) {
+                    xml_parser_free($xml);
+                    unset($xml);
                     return false;
                 }
+
+                xml_parser_free($xml);
+                unset($xml);
 
                 return isset($this->components['modulus']) && isset($this->components['publicExponent']) ? $this->components : false;
             // from PuTTY's SSHPUBK.C
@@ -5401,6 +6606,7 @@ class Crypt_RSA {
                     return false;
                 }
                 $encryption = trim(preg_replace('#Encryption: (.+)#', '$1', $key[1]));
+                $comment = trim(preg_replace('#Comment: (.+)#', '$1', $key[2]));
 
                 $publicLength = trim(preg_replace('#Public-Lines: (\d+)#', '$1', $key[3]));
                 $public = base64_decode(implode('', array_map('trim', array_slice($key, 4, $publicLength))));
@@ -5416,7 +6622,7 @@ class Crypt_RSA {
                 switch ($encryption) {
                     case 'aes256-cbc':
                         if (!class_exists('Crypt_AES')) {
-                            require_once('Crypt/AES.php');
+                            include_once 'Crypt/AES.php';
                         }
                         $symkey = '';
                         $sequence = 0;
@@ -5465,6 +6671,75 @@ class Crypt_RSA {
                 $components['coefficients'] = array(2 => new Math_BigInteger($this->_string_shift($private, $length), -256));
 
                 return $components;
+            case CRYPT_RSA_PRIVATE_FORMAT_OPENSSH:
+                $components = array();
+                $decoded = $this->_extractBER($key);
+                $magic = $this->_string_shift($decoded, 15);
+                if ($magic !== "openssh-key-v1\0") {
+                    return false;
+                }
+                $options = $this->_string_shift($decoded, 24);
+                // \0\0\0\4none = ciphername
+                // \0\0\0\4none = kdfname
+                // \0\0\0\0 = kdfoptions
+                // \0\0\0\1 = numkeys
+                if ($options != "\0\0\0\4none\0\0\0\4none\0\0\0\0\0\0\0\1") {
+                    return false;
+                }
+                extract(unpack('Nlength', $this->_string_shift($decoded, 4)));
+                if (strlen($decoded) < $length) {
+                    return false;
+                }
+                $publicKey = $this->_string_shift($decoded, $length);
+                extract(unpack('Nlength', $this->_string_shift($decoded, 4)));
+                if (strlen($decoded) < $length) {
+                    return false;
+                }
+                $paddedKey = $this->_string_shift($decoded, $length);
+
+                if ($this->_string_shift($publicKey, 11) !== "\0\0\0\7ssh-rsa") {
+                    return false;
+                }
+
+                $checkint1 = $this->_string_shift($paddedKey, 4);
+                $checkint2 = $this->_string_shift($paddedKey, 4);
+                if (strlen($checkint1) != 4 || $checkint1 !== $checkint2) {
+                    return false;
+                }
+
+                if ($this->_string_shift($paddedKey, 11) !== "\0\0\0\7ssh-rsa") {
+                    return false;
+                }
+
+                $values = array(
+                    &$components['modulus'],
+                    &$components['publicExponent'],
+                    &$components['privateExponent'],
+                    &$components['coefficients'][2],
+                    &$components['primes'][1],
+                    &$components['primes'][2]
+                );
+
+                for ($i = 0; $i < count($values); $i++) {
+                    extract(unpack('Nlength', $this->_string_shift($paddedKey, 4)));
+                    if (strlen($paddedKey) < $length) {
+                        return false;
+                    }
+                    $values[$i] = new Math_BigInteger($this->_string_shift($paddedKey, $length), -256);
+                }
+
+                extract(unpack('Nlength', $this->_string_shift($paddedKey, 4)));
+                if (strlen($paddedKey) < $length) {
+                    return false;
+                }
+                $components['comment'] = $this->_string_shift($decoded, $length);
+
+                $temp = $components['primes'][1]->subtract($this->one);
+                $components['exponents'] = array(1 => $components['publicExponent']->modInverse($temp));
+                $temp = $components['primes'][2]->subtract($this->one);
+                $components['exponents'][] = $components['publicExponent']->modInverse($temp);
+
+                return $components;
         }
     }
 
@@ -5474,7 +6749,7 @@ class Crypt_RSA {
      * More specifically, this returns the size of the modulo in bits.
      *
      * @access public
-     * @return Integer
+     * @return int
      */
     function getSize()
     {
@@ -5487,9 +6762,9 @@ class Crypt_RSA {
      * Called by xml_set_element_handler()
      *
      * @access private
-     * @param Resource $parser
-     * @param String $name
-     * @param Array $attribs
+     * @param resource $parser
+     * @param string $name
+     * @param array $attribs
      */
     function _start_element_handler($parser, $name, $attribs)
     {
@@ -5518,9 +6793,6 @@ class Crypt_RSA {
                 break;
             case 'D':
                 $this->current = &$this->components['privateExponent'];
-                break;
-            default:
-                unset($this->current);
         }
         $this->current = '';
     }
@@ -5531,16 +6803,15 @@ class Crypt_RSA {
      * Called by xml_set_element_handler()
      *
      * @access private
-     * @param Resource $parser
-     * @param String $name
+     * @param resource $parser
+     * @param string $name
      */
     function _stop_element_handler($parser, $name)
     {
-        //$name = strtoupper($name);
-        if ($name == 'RSAKEYVALUE') {
-            return;
+        if (isset($this->current)) {
+            $this->current = new Math_BigInteger(base64_decode($this->current), 256);
+            unset($this->current);
         }
-        $this->current = new Math_BigInteger(base64_decode($this->current), 256);
     }
 
     /**
@@ -5549,8 +6820,8 @@ class Crypt_RSA {
      * Called by xml_set_character_data_handler()
      *
      * @access private
-     * @param Resource $parser
-     * @param String $data
+     * @param resource $parser
+     * @param string $data
      */
     function _data_handler($parser, $data)
     {
@@ -5566,18 +6837,66 @@ class Crypt_RSA {
      * Returns true on success and false on failure (ie. an incorrect password was provided or the key was malformed)
      *
      * @access public
-     * @param String $key
-     * @param Integer $type optional
+     * @param string $key
+     * @param int $type optional
      */
     function loadKey($key, $type = false)
     {
+        if (is_object($key) && strtolower(get_class($key)) == 'crypt_rsa') {
+            $this->privateKeyFormat = $key->privateKeyFormat;
+            $this->publicKeyFormat = $key->publicKeyFormat;
+            $this->k = $key->k;
+            $this->hLen = $key->hLen;
+            $this->sLen = $key->sLen;
+            $this->mgfHLen = $key->mgfHLen;
+            $this->encryptionMode = $key->encryptionMode;
+            $this->signatureMode = $key->signatureMode;
+            $this->password = $key->password;
+            $this->configFile = $key->configFile;
+            $this->comment = $key->comment;
+
+            if (is_object($key->hash)) {
+                $this->hash = new Crypt_Hash($key->hash->getHash());
+            }
+            if (is_object($key->mgfHash)) {
+                $this->mgfHash = new Crypt_Hash($key->mgfHash->getHash());
+            }
+
+            if (is_object($key->modulus)) {
+                $this->modulus = $key->modulus->copy();
+            }
+            if (is_object($key->exponent)) {
+                $this->exponent = $key->exponent->copy();
+            }
+            if (is_object($key->publicExponent)) {
+                $this->publicExponent = $key->publicExponent->copy();
+            }
+
+            $this->primes = array();
+            $this->exponents = array();
+            $this->coefficients = array();
+
+            foreach ($this->primes as $prime) {
+                $this->primes[] = $prime->copy();
+            }
+            foreach ($this->exponents as $exponent) {
+                $this->exponents[] = $exponent->copy();
+            }
+            foreach ($this->coefficients as $coefficient) {
+                $this->coefficients[] = $coefficient->copy();
+            }
+
+            return true;
+        }
+
         if ($type === false) {
             $types = array(
                 CRYPT_RSA_PUBLIC_FORMAT_RAW,
                 CRYPT_RSA_PRIVATE_FORMAT_PKCS1,
                 CRYPT_RSA_PRIVATE_FORMAT_XML,
                 CRYPT_RSA_PRIVATE_FORMAT_PUTTY,
-                CRYPT_RSA_PUBLIC_FORMAT_OPENSSH
+                CRYPT_RSA_PUBLIC_FORMAT_OPENSSH,
+                CRYPT_RSA_PRIVATE_FORMAT_OPENSSH
             );
             foreach ($types as $type) {
                 $components = $this->_parseKey($key, $type);
@@ -5585,15 +6904,26 @@ class Crypt_RSA {
                     break;
                 }
             }
-            
         } else {
             $components = $this->_parseKey($key, $type);
         }
 
         if ($components === false) {
+            $this->comment = null;
+            $this->modulus = null;
+            $this->k = null;
+            $this->exponent = null;
+            $this->primes = null;
+            $this->exponents = null;
+            $this->coefficients = null;
+            $this->publicExponent = null;
+
             return false;
         }
 
+        if (isset($components['comment']) && $components['comment'] !== false) {
+            $this->comment = $components['comment'];
+        }
         $this->modulus = $components['modulus'];
         $this->k = strlen($this->modulus->toBytes());
         $this->exponent = isset($components['privateExponent']) ? $components['privateExponent'] : $components['publicExponent'];
@@ -5609,6 +6939,19 @@ class Crypt_RSA {
             $this->publicExponent = false;
         }
 
+        switch ($type) {
+            case CRYPT_RSA_PUBLIC_FORMAT_OPENSSH:
+            case CRYPT_RSA_PUBLIC_FORMAT_RAW:
+                $this->setPublicKey();
+                break;
+            case CRYPT_RSA_PRIVATE_FORMAT_PKCS1:
+                switch (true) {
+                    case strpos($key, '-BEGIN PUBLIC KEY-') !== false:
+                    case strpos($key, '-BEGIN RSA PUBLIC KEY-') !== false:
+                        $this->setPublicKey();
+                }
+        }
+
         return true;
     }
 
@@ -5618,10 +6961,10 @@ class Crypt_RSA {
      * Private keys can be encrypted with a password.  To unset the password, pass in the empty string or false.
      * Or rather, pass in $password such that empty($password) && !is_string($password) is true.
      *
-     * @see createKey()
-     * @see loadKey()
+     * @see self::createKey()
+     * @see self::loadKey()
      * @access public
-     * @param String $password
+     * @param string $password
      */
     function setPassword($password = false)
     {
@@ -5635,20 +6978,27 @@ class Crypt_RSA {
      * used in certain contexts.  For example, in SSH-2, RSA authentication works by sending the public key along with a
      * message signed by the private key to the server.  The SSH-2 server looks the public key up in an index of public keys
      * and if it's present then proceeds to verify the signature.  Problem is, if your private key doesn't include the public
-     * exponent this won't work unless you manually add the public exponent.
+     * exponent this won't work unless you manually add the public exponent. phpseclib tries to guess if the key being used
+     * is the public key but in the event that it guesses incorrectly you might still want to explicitly set the key as being
+     * public.
      *
      * Do note that when a new key is loaded the index will be cleared.
      *
      * Returns true on success, false on failure
      *
-     * @see getPublicKey()
+     * @see self::getPublicKey()
      * @access public
-     * @param String $key optional
-     * @param Integer $type optional
-     * @return Boolean
+     * @param string $key optional
+     * @param int $type optional
+     * @return bool
      */
     function setPublicKey($key = false, $type = false)
     {
+        // if a public key has already been loaded return false
+        if (!empty($this->publicExponent)) {
+            return false;
+        }
+
         if ($key === false && !empty($this->modulus)) {
             $this->publicExponent = $this->exponent;
             return true;
@@ -5687,18 +7037,52 @@ class Crypt_RSA {
     }
 
     /**
+     * Defines the private key
+     *
+     * If phpseclib guessed a private key was a public key and loaded it as such it might be desirable to force
+     * phpseclib to treat the key as a private key. This function will do that.
+     *
+     * Do note that when a new key is loaded the index will be cleared.
+     *
+     * Returns true on success, false on failure
+     *
+     * @see self::getPublicKey()
+     * @access public
+     * @param string $key optional
+     * @param int $type optional
+     * @return bool
+     */
+    function setPrivateKey($key = false, $type = false)
+    {
+        if ($key === false && !empty($this->publicExponent)) {
+            $this->publicExponent = false;
+            return true;
+        }
+
+        $rsa = new Crypt_RSA();
+        if (!$rsa->loadKey($key, $type)) {
+            return false;
+        }
+        $rsa->publicExponent = false;
+
+        // don't overwrite the old key if the new key is invalid
+        $this->loadKey($rsa);
+        return true;
+    }
+
+    /**
      * Returns the public key
      *
      * The public key is only returned under two circumstances - if the private key had the public key embedded within it
      * or if the public key was set via setPublicKey().  If the currently loaded key is supposed to be the public key this
      * function won't return it since this library, for the most part, doesn't distinguish between public and private keys.
      *
-     * @see getPublicKey()
+     * @see self::getPublicKey()
      * @access public
-     * @param String $key
-     * @param Integer $type optional
+     * @param string $key
+     * @param int $type optional
      */
-    function getPublicKey($type = CRYPT_RSA_PUBLIC_FORMAT_PKCS1)
+    function getPublicKey($type = CRYPT_RSA_PUBLIC_FORMAT_PKCS8)
     {
         if (empty($this->modulus) || empty($this->publicExponent)) {
             return false;
@@ -5712,14 +7096,50 @@ class Crypt_RSA {
     }
 
     /**
+     * Returns the public key's fingerprint
+     *
+     * The public key's fingerprint is returned, which is equivalent to running `ssh-keygen -lf rsa.pub`. If there is
+     * no public key currently loaded, false is returned.
+     * Example output (md5): "c1:b1:30:29:d7:b8:de:6c:97:77:10:d7:46:41:63:87" (as specified by RFC 4716)
+     *
+     * @access public
+     * @param string $algorithm The hashing algorithm to be used. Valid options are 'md5' and 'sha256'. False is returned
+     * for invalid values.
+     * @return mixed
+     */
+    function getPublicKeyFingerprint($algorithm = 'md5')
+    {
+        if (empty($this->modulus) || empty($this->publicExponent)) {
+            return false;
+        }
+
+        $modulus = $this->modulus->toBytes(true);
+        $publicExponent = $this->publicExponent->toBytes(true);
+
+        $RSAPublicKey = pack('Na*Na*Na*', strlen('ssh-rsa'), 'ssh-rsa', strlen($publicExponent), $publicExponent, strlen($modulus), $modulus);
+
+        switch ($algorithm) {
+            case 'sha256':
+                $hash = new Crypt_Hash('sha256');
+                $base = base64_encode($hash->hash($RSAPublicKey));
+                return substr($base, 0, strlen($base) - 1);
+            case 'md5':
+                return substr(chunk_split(md5($RSAPublicKey), 2, ':'), 0, -1);
+            default:
+                return false;
+        }
+    }
+
+    /**
      * Returns the private key
      *
      * The private key is only returned if the currently loaded key contains the constituent prime numbers.
      *
-     * @see getPublicKey()
+     * @see self::getPublicKey()
      * @access public
-     * @param String $key
-     * @param Integer $type optional
+     * @param string $key
+     * @param int $type optional
+     * @return mixed
      */
     function getPrivateKey($type = CRYPT_RSA_PUBLIC_FORMAT_PKCS1)
     {
@@ -5740,12 +7160,12 @@ class Crypt_RSA {
      * Returns the private key without the prime number constituants.  Structurally identical to a public key that
      * hasn't been set as the public key
      *
-     * @see getPrivateKey()
+     * @see self::getPrivateKey()
      * @access private
-     * @param String $key
-     * @param Integer $type optional
+     * @param string $key
+     * @param int $type optional
      */
-    function _getPrivatePublicKey($mode = CRYPT_RSA_PUBLIC_FORMAT_PKCS1)
+    function _getPrivatePublicKey($mode = CRYPT_RSA_PUBLIC_FORMAT_PKCS8)
     {
         if (empty($this->modulus) || empty($this->exponent)) {
             return false;
@@ -5762,6 +7182,7 @@ class Crypt_RSA {
      *  __toString() magic method
      *
      * @access public
+     * @return string
      */
     function __toString()
     {
@@ -5774,11 +7195,24 @@ class Crypt_RSA {
     }
 
     /**
+     *  __clone() magic method
+     *
+     * @access public
+     * @return Crypt_RSA
+     */
+    function __clone()
+    {
+        $key = new Crypt_RSA();
+        $key->loadKey($this);
+        return $key;
+    }
+
+    /**
      * Generates the smallest and largest numbers requiring $bits bits
      *
      * @access private
-     * @param Integer $bits
-     * @return Array
+     * @param int $bits
+     * @return array
      */
     function _generateMinMax($bits)
     {
@@ -5803,16 +7237,16 @@ class Crypt_RSA {
      * DER-decode the length
      *
      * DER supports lengths up to (2**8)**127, however, we'll only support lengths up to (2**8)**4.  See
-     * {@link http://itu.int/ITU-T/studygroups/com17/languages/X.690-0207.pdf#p=13 X.690 § 8.1.3} for more information.
+     * {@link http://itu.int/ITU-T/studygroups/com17/languages/X.690-0207.pdf#p=13 X.690 paragraph 8.1.3} for more information.
      *
      * @access private
-     * @param String $string
-     * @return Integer
+     * @param string $string
+     * @return int
      */
     function _decodeLength(&$string)
     {
         $length = ord($this->_string_shift($string));
-        if ( $length & 0x80 ) { // definite length, long form
+        if ($length & 0x80) { // definite length, long form
             $length&= 0x7F;
             $temp = $this->_string_shift($string, $length);
             list(, $length) = unpack('N', substr(str_pad($temp, 4, chr(0), STR_PAD_LEFT), -4));
@@ -5824,11 +7258,11 @@ class Crypt_RSA {
      * DER-encode the length
      *
      * DER supports lengths up to (2**8)**127, however, we'll only support lengths up to (2**8)**4.  See
-     * {@link http://itu.int/ITU-T/studygroups/com17/languages/X.690-0207.pdf#p=13 X.690 § 8.1.3} for more information.
+     * {@link http://itu.int/ITU-T/studygroups/com17/languages/X.690-0207.pdf#p=13 X.690 paragraph 8.1.3} for more information.
      *
      * @access private
-     * @param Integer $length
-     * @return String
+     * @param int $length
+     * @return string
      */
     function _encodeLength($length)
     {
@@ -5845,9 +7279,9 @@ class Crypt_RSA {
      *
      * Inspired by array_shift
      *
-     * @param String $string
-     * @param optional Integer $index
-     * @return String
+     * @param string $string
+     * @param int $index
+     * @return string
      * @access private
      */
     function _string_shift(&$string, $index = 1)
@@ -5860,9 +7294,9 @@ class Crypt_RSA {
     /**
      * Determines the private key format
      *
-     * @see createKey()
+     * @see self::createKey()
      * @access public
-     * @param Integer $format
+     * @param int $format
      */
     function setPrivateKeyFormat($format)
     {
@@ -5872,9 +7306,9 @@ class Crypt_RSA {
     /**
      * Determines the public key format
      *
-     * @see createKey()
+     * @see self::createKey()
      * @access public
-     * @param Integer $format
+     * @param int $format
      */
     function setPublicKeyFormat($format)
     {
@@ -5888,7 +7322,7 @@ class Crypt_RSA {
      * decryption.  If $hash isn't supported, sha1 is used.
      *
      * @access public
-     * @param String $hash
+     * @param string $hash
      */
     function setHash($hash)
     {
@@ -5917,7 +7351,7 @@ class Crypt_RSA {
      * best if Hash and MGFHash are set to the same thing this is not a requirement.
      *
      * @access public
-     * @param String $hash
+     * @param string $hash
      */
     function setMGFHash($hash)
     {
@@ -5946,28 +7380,11 @@ class Crypt_RSA {
      *    of the hash function Hash) and 0.
      *
      * @access public
-     * @param Integer $format
+     * @param int $format
      */
     function setSaltLength($sLen)
     {
         $this->sLen = $sLen;
-    }
-
-    /**
-     * Generates a random string x bytes long
-     *
-     * @access public
-     * @param Integer $bytes
-     * @param optional Integer $nonzero
-     * @return String
-     */
-    function _random($bytes, $nonzero = false)
-    {
-        $temp = '';
-        for ($i = 0; $i < $bytes; $i++) {
-            $temp.= chr(crypt_random($nonzero, 255));
-        }
-        return $temp;
     }
 
     /**
@@ -5977,14 +7394,14 @@ class Crypt_RSA {
      *
      * @access private
      * @param Math_BigInteger $x
-     * @param Integer $xLen
-     * @return String
+     * @param int $xLen
+     * @return string
      */
     function _i2osp($x, $xLen)
     {
         $x = $x->toBytes();
         if (strlen($x) > $xLen) {
-            user_error('Integer too large', E_USER_NOTICE);
+            user_error('Integer too large');
             return false;
         }
         return str_pad($x, $xLen, chr(0), STR_PAD_LEFT);
@@ -5996,7 +7413,7 @@ class Crypt_RSA {
      * See {@link http://tools.ietf.org/html/rfc3447#section-4.2 RFC3447#section-4.2}.
      *
      * @access private
-     * @param String $x
+     * @param string $x
      * @return Math_BigInteger
      */
     function _os2ip($x)
@@ -6015,8 +7432,14 @@ class Crypt_RSA {
      */
     function _exponentiate($x)
     {
-        if (empty($this->primes) || empty($this->coefficients) || empty($this->exponents)) {
-            return $x->modPow($this->exponent, $this->modulus);
+        switch (true) {
+            case empty($this->primes):
+            case $this->primes[1]->equals($this->zero):
+            case empty($this->coefficients):
+            case $this->coefficients[2]->equals($this->zero):
+            case empty($this->exponents):
+            case $this->exponents[1]->equals($this->zero):
+                return $x->modPow($this->exponent, $this->modulus);
         }
 
         $num_primes = count($this->primes);
@@ -6052,7 +7475,6 @@ class Crypt_RSA {
             }
 
             $one = new Math_BigInteger(1);
-            $one->setRandomGenerator('crypt_random');
 
             $r = $one->random($one, $smallest->subtract($one));
 
@@ -6091,7 +7513,7 @@ class Crypt_RSA {
      * @access private
      * @param Math_BigInteger $x
      * @param Math_BigInteger $r
-     * @param Integer $i
+     * @param int $i
      * @return Math_BigInteger
      */
     function _blind($x, $r, $i)
@@ -6111,27 +7533,32 @@ class Crypt_RSA {
      *
      * Protects against a particular type of timing attack described.
      *
-     * See {@link http://codahale.com/a-lesson-in-timing-attacks/ A Lesson In Timing Attacks (or, Don’t use MessageDigest.isEquals)}
+     * See {@link http://codahale.com/a-lesson-in-timing-attacks/ A Lesson In Timing Attacks (or, Don't use MessageDigest.isEquals)}
      *
      * Thanks for the heads up singpolyma!
      *
      * @access private
-     * @param String $x
-     * @param String $y
-     * @return Boolean
+     * @param string $x
+     * @param string $y
+     * @return bool
      */
     function _equals($x, $y)
     {
+        if (function_exists('hash_equals')) {
+            return hash_equals($x, $y);
+        }
+
         if (strlen($x) != strlen($y)) {
             return false;
         }
 
-        $result = 0;
+        $result = "\0";
+        $x^= $y;
         for ($i = 0; $i < strlen($x); $i++) {
-            $result |= ord($x[$i]) ^ ord($y[$i]);
+            $result|= $x[$i];
         }
 
-        return $result == 0;
+        return $result === "\0";
     }
 
     /**
@@ -6146,7 +7573,7 @@ class Crypt_RSA {
     function _rsaep($m)
     {
         if ($m->compare($this->zero) < 0 || $m->compare($this->modulus) > 0) {
-            user_error('Message representative out of range', E_USER_NOTICE);
+            user_error('Message representative out of range');
             return false;
         }
         return $this->_exponentiate($m);
@@ -6164,7 +7591,7 @@ class Crypt_RSA {
     function _rsadp($c)
     {
         if ($c->compare($this->zero) < 0 || $c->compare($this->modulus) > 0) {
-            user_error('Ciphertext representative out of range', E_USER_NOTICE);
+            user_error('Ciphertext representative out of range');
             return false;
         }
         return $this->_exponentiate($c);
@@ -6182,7 +7609,7 @@ class Crypt_RSA {
     function _rsasp1($m)
     {
         if ($m->compare($this->zero) < 0 || $m->compare($this->modulus) > 0) {
-            user_error('Message representative out of range', E_USER_NOTICE);
+            user_error('Message representative out of range');
             return false;
         }
         return $this->_exponentiate($m);
@@ -6200,7 +7627,7 @@ class Crypt_RSA {
     function _rsavp1($s)
     {
         if ($s->compare($this->zero) < 0 || $s->compare($this->modulus) > 0) {
-            user_error('Signature representative out of range', E_USER_NOTICE);
+            user_error('Signature representative out of range');
             return false;
         }
         return $this->_exponentiate($s);
@@ -6212,9 +7639,9 @@ class Crypt_RSA {
      * See {@link http://tools.ietf.org/html/rfc3447#appendix-B.2.1 RFC3447#appendix-B.2.1}.
      *
      * @access private
-     * @param String $mgfSeed
-     * @param Integer $mgfLen
-     * @return String
+     * @param string $mgfSeed
+     * @param int $mgfLen
+     * @return string
      */
     function _mgf1($mgfSeed, $maskLen)
     {
@@ -6237,9 +7664,9 @@ class Crypt_RSA {
      * {http://en.wikipedia.org/wiki/Optimal_Asymmetric_Encryption_Padding OAES}.
      *
      * @access private
-     * @param String $m
-     * @param String $l
-     * @return String
+     * @param string $m
+     * @param string $l
+     * @return string
      */
     function _rsaes_oaep_encrypt($m, $l = '')
     {
@@ -6251,7 +7678,7 @@ class Crypt_RSA {
         // be output.
 
         if ($mLen > $this->k - 2 * $this->hLen - 2) {
-            user_error('Message too long', E_USER_NOTICE);
+            user_error('Message too long');
             return false;
         }
 
@@ -6260,7 +7687,7 @@ class Crypt_RSA {
         $lHash = $this->hash->hash($l);
         $ps = str_repeat(chr(0), $this->k - $mLen - 2 * $this->hLen - 2);
         $db = $lHash . $ps . chr(1) . $m;
-        $seed = $this->_random($this->hLen);
+        $seed = crypt_random_string($this->hLen);
         $dbMask = $this->_mgf1($seed, $this->k - $this->hLen - 1);
         $maskedDB = $db ^ $dbMask;
         $seedMask = $this->_mgf1($maskedDB, $this->hLen);
@@ -6283,7 +7710,7 @@ class Crypt_RSA {
      *
      * See {@link http://tools.ietf.org/html/rfc3447#section-7.1.2 RFC3447#section-7.1.2}.  The fact that the error
      * messages aren't distinguishable from one another hinders debugging, but, to quote from RFC3447#section-7.1.2:
-     * 
+     *
      *    Note.  Care must be taken to ensure that an opponent cannot
      *    distinguish the different error conditions in Step 3.g, whether by
      *    error message or timing, or, more generally, learn partial
@@ -6300,9 +7727,9 @@ class Crypt_RSA {
      *    this document.
      *
      * @access private
-     * @param String $c
-     * @param String $l
-     * @return String
+     * @param string $c
+     * @param string $l
+     * @return string
      */
     function _rsaes_oaep_decrypt($c, $l = '')
     {
@@ -6312,7 +7739,7 @@ class Crypt_RSA {
         // be output.
 
         if (strlen($c) != $this->k || $this->k < 2 * $this->hLen + 2) {
-            user_error('Decryption error', E_USER_NOTICE);
+            user_error('Decryption error');
             return false;
         }
 
@@ -6321,7 +7748,7 @@ class Crypt_RSA {
         $c = $this->_os2ip($c);
         $m = $this->_rsadp($c);
         if ($m === false) {
-            user_error('Decryption error', E_USER_NOTICE);
+            user_error('Decryption error');
             return false;
         }
         $em = $this->_i2osp($m, $this->k);
@@ -6338,19 +7765,42 @@ class Crypt_RSA {
         $db = $maskedDB ^ $dbMask;
         $lHash2 = substr($db, 0, $this->hLen);
         $m = substr($db, $this->hLen);
-        if ($lHash != $lHash2) {
-            user_error('Decryption error', E_USER_NOTICE);
-            return false;
+        $hashesMatch = $this->_equals($lHash, $lHash2);
+        $leadingZeros = 1;
+        $patternMatch = 0;
+        $offset = 0;
+        for ($i = 0; $i < strlen($m); $i++) {
+            $patternMatch|= $leadingZeros & ($m[$i] === "\1");
+            $leadingZeros&= $m[$i] === "\0";
+            $offset+= $patternMatch ? 0 : 1;
         }
-        $m = ltrim($m, chr(0));
-        if (ord($m[0]) != 1) {
-            user_error('Decryption error', E_USER_NOTICE);
+
+        // we do & instead of && to avoid https://en.wikipedia.org/wiki/Short-circuit_evaluation
+        // to protect against timing attacks
+        if (!$hashesMatch & !$patternMatch) {
+            user_error('Decryption error');
             return false;
         }
 
         // Output the message M
 
-        return substr($m, 1);
+        return substr($m, $offset + 1);
+    }
+
+    /**
+     * Raw Encryption / Decryption
+     *
+     * Doesn't use padding and is not recommended.
+     *
+     * @access private
+     * @param string $m
+     * @return string
+     */
+    function _raw_encrypt($m)
+    {
+        $temp = $this->_os2ip($m);
+        $temp = $this->_rsaep($temp);
+        return  $this->_i2osp($temp, $this->k);
     }
 
     /**
@@ -6359,8 +7809,8 @@ class Crypt_RSA {
      * See {@link http://tools.ietf.org/html/rfc3447#section-7.2.1 RFC3447#section-7.2.1}.
      *
      * @access private
-     * @param String $m
-     * @return String
+     * @param string $m
+     * @return string
      */
     function _rsaes_pkcs1_v1_5_encrypt($m)
     {
@@ -6369,14 +7819,27 @@ class Crypt_RSA {
         // Length checking
 
         if ($mLen > $this->k - 11) {
-            user_error('Message too long', E_USER_NOTICE);
+            user_error('Message too long');
             return false;
         }
 
         // EME-PKCS1-v1_5 encoding
 
-        $ps = $this->_random($this->k - $mLen - 3, true);
-        $em = chr(0) . chr(2) . $ps . chr(0) . $m;
+        $psLen = $this->k - $mLen - 3;
+        $ps = '';
+        while (strlen($ps) != $psLen) {
+            $temp = crypt_random_string($psLen - strlen($ps));
+            $temp = str_replace("\x00", '', $temp);
+            $ps.= $temp;
+        }
+        $type = 2;
+        // see the comments of _rsaes_pkcs1_v1_5_decrypt() to understand why this is being done
+        if (defined('CRYPT_RSA_PKCS15_COMPAT') && (!isset($this->publicExponent) || $this->exponent !== $this->publicExponent)) {
+            $type = 1;
+            // "The padding string PS shall consist of k-3-||D|| octets. ... for block type 01, they shall have value FF"
+            $ps = str_repeat("\xFF", $psLen);
+        }
+        $em = chr(0) . chr($type) . $ps . chr(0) . $m;
 
         // RSA encryption
         $m = $this->_os2ip($em);
@@ -6393,11 +7856,11 @@ class Crypt_RSA {
      *
      * See {@link http://tools.ietf.org/html/rfc3447#section-7.2.2 RFC3447#section-7.2.2}.
      *
-     * For compatability purposes, this function departs slightly from the description given in RFC3447.
+     * For compatibility purposes, this function departs slightly from the description given in RFC3447.
      * The reason being that RFC2313#section-8.1 (PKCS#1 v1.5) states that ciphertext's encrypted by the
      * private key should have the second byte set to either 0 or 1 and that ciphertext's encrypted by the
      * public key should have the second byte set to 2.  In RFC3447 (PKCS#1 v2.1), the second byte is supposed
-     * to be 2 regardless of which key is used.  For compatability purposes, we'll just check to make sure the
+     * to be 2 regardless of which key is used.  For compatibility purposes, we'll just check to make sure the
      * second byte is 2 or less.  If it is, we'll accept the decrypted string as valid.
      *
      * As a consequence of this, a private key encrypted ciphertext produced with Crypt_RSA may not decrypt
@@ -6405,15 +7868,15 @@ class Crypt_RSA {
      * not private key encrypted ciphertext's.
      *
      * @access private
-     * @param String $c
-     * @return String
+     * @param string $c
+     * @return string
      */
     function _rsaes_pkcs1_v1_5_decrypt($c)
     {
         // Length checking
 
         if (strlen($c) != $this->k) { // or if k < 11
-            user_error('Decryption error', E_USER_NOTICE);
+            user_error('Decryption error');
             return false;
         }
 
@@ -6423,7 +7886,7 @@ class Crypt_RSA {
         $m = $this->_rsadp($c);
 
         if ($m === false) {
-            user_error('Decryption error', E_USER_NOTICE);
+            user_error('Decryption error');
             return false;
         }
         $em = $this->_i2osp($m, $this->k);
@@ -6431,7 +7894,7 @@ class Crypt_RSA {
         // EME-PKCS1-v1_5 decoding
 
         if (ord($em[0]) != 0 || ord($em[1]) > 2) {
-            user_error('Decryption error', E_USER_NOTICE);
+            user_error('Decryption error');
             return false;
         }
 
@@ -6439,7 +7902,7 @@ class Crypt_RSA {
         $m = substr($em, strlen($ps) + 3);
 
         if (strlen($ps) < 8) {
-            user_error('Decryption error', E_USER_NOTICE);
+            user_error('Decryption error');
             return false;
         }
 
@@ -6454,8 +7917,8 @@ class Crypt_RSA {
      * See {@link http://tools.ietf.org/html/rfc3447#section-9.1.1 RFC3447#section-9.1.1}.
      *
      * @access private
-     * @param String $m
-     * @param Integer $emBits
+     * @param string $m
+     * @param int $emBits
      */
     function _emsa_pss_encode($m, $emBits)
     {
@@ -6463,15 +7926,15 @@ class Crypt_RSA {
         // be output.
 
         $emLen = ($emBits + 1) >> 3; // ie. ceil($emBits / 8)
-        $sLen = $this->sLen == false ? $this->hLen : $this->sLen;
+        $sLen = $this->sLen !== null ? $this->sLen : $this->hLen;
 
         $mHash = $this->hash->hash($m);
         if ($emLen < $this->hLen + $sLen + 2) {
-            user_error('Encoding error', E_USER_NOTICE);
+            user_error('Encoding error');
             return false;
         }
 
-        $salt = $this->_random($sLen);
+        $salt = crypt_random_string($sLen);
         $m2 = "\0\0\0\0\0\0\0\0" . $mHash . $salt;
         $h = $this->hash->hash($m2);
         $ps = str_repeat(chr(0), $emLen - $sLen - $this->hLen - 2);
@@ -6490,18 +7953,18 @@ class Crypt_RSA {
      * See {@link http://tools.ietf.org/html/rfc3447#section-9.1.2 RFC3447#section-9.1.2}.
      *
      * @access private
-     * @param String $m
-     * @param String $em
-     * @param Integer $emBits
-     * @return String
+     * @param string $m
+     * @param string $em
+     * @param int $emBits
+     * @return string
      */
     function _emsa_pss_verify($m, $em, $emBits)
     {
         // if $m is larger than two million terrabytes and you're using sha1, PKCS#1 suggests a "Label too long" error
         // be output.
 
-        $emLen = ($emBits + 1) >> 3; // ie. ceil($emBits / 8);
-        $sLen = $this->sLen == false ? $this->hLen : $this->sLen;
+        $emLen = ($emBits + 7) >> 3; // ie. ceil($emBits / 8);
+        $sLen = $this->sLen !== null ? $this->sLen : $this->hLen;
 
         $mHash = $this->hash->hash($m);
         if ($emLen < $this->hLen + $sLen + 2) {
@@ -6537,8 +8000,8 @@ class Crypt_RSA {
      * See {@link http://tools.ietf.org/html/rfc3447#section-8.1.1 RFC3447#section-8.1.1}.
      *
      * @access private
-     * @param String $m
-     * @return String
+     * @param string $m
+     * @return string
      */
     function _rsassa_pss_sign($m)
     {
@@ -6563,32 +8026,32 @@ class Crypt_RSA {
      * See {@link http://tools.ietf.org/html/rfc3447#section-8.1.2 RFC3447#section-8.1.2}.
      *
      * @access private
-     * @param String $m
-     * @param String $s
-     * @return String
+     * @param string $m
+     * @param string $s
+     * @return string
      */
     function _rsassa_pss_verify($m, $s)
     {
         // Length checking
 
         if (strlen($s) != $this->k) {
-            user_error('Invalid signature', E_USER_NOTICE);
+            user_error('Invalid signature');
             return false;
         }
 
         // RSA verification
 
-        $modBits = 8 * $this->k;
+        $modBits = strlen($this->modulus->toBits());
 
         $s2 = $this->_os2ip($s);
         $m2 = $this->_rsavp1($s2);
         if ($m2 === false) {
-            user_error('Invalid signature', E_USER_NOTICE);
+            user_error('Invalid signature');
             return false;
         }
-        $em = $this->_i2osp($m2, $modBits >> 3);
+        $em = $this->_i2osp($m2, $this->k);
         if ($em === false) {
-            user_error('Invalid signature', E_USER_NOTICE);
+            user_error('Invalid signature');
             return false;
         }
 
@@ -6603,9 +8066,9 @@ class Crypt_RSA {
      * See {@link http://tools.ietf.org/html/rfc3447#section-9.2 RFC3447#section-9.2}.
      *
      * @access private
-     * @param String $m
-     * @param Integer $emLen
-     * @return String
+     * @param string $m
+     * @param int $emLen
+     * @return string
      */
     function _emsa_pkcs1_v1_5_encode($m, $emLen)
     {
@@ -6638,7 +8101,7 @@ class Crypt_RSA {
         $tLen = strlen($t);
 
         if ($emLen < $tLen + 11) {
-            user_error('Intended encoded message length too short', E_USER_NOTICE);
+            user_error('Intended encoded message length too short');
             return false;
         }
 
@@ -6655,8 +8118,8 @@ class Crypt_RSA {
      * See {@link http://tools.ietf.org/html/rfc3447#section-8.2.1 RFC3447#section-8.2.1}.
      *
      * @access private
-     * @param String $m
-     * @return String
+     * @param string $m
+     * @return string
      */
     function _rsassa_pkcs1_v1_5_sign($m)
     {
@@ -6664,7 +8127,7 @@ class Crypt_RSA {
 
         $em = $this->_emsa_pkcs1_v1_5_encode($m, $this->k);
         if ($em === false) {
-            user_error('RSA modulus too short', E_USER_NOTICE);
+            user_error('RSA modulus too short');
             return false;
         }
 
@@ -6685,15 +8148,15 @@ class Crypt_RSA {
      * See {@link http://tools.ietf.org/html/rfc3447#section-8.2.2 RFC3447#section-8.2.2}.
      *
      * @access private
-     * @param String $m
-     * @return String
+     * @param string $m
+     * @return string
      */
     function _rsassa_pkcs1_v1_5_verify($m, $s)
     {
         // Length checking
 
         if (strlen($s) != $this->k) {
-            user_error('Invalid signature', E_USER_NOTICE);
+            user_error('Invalid signature');
             return false;
         }
 
@@ -6702,12 +8165,12 @@ class Crypt_RSA {
         $s = $this->_os2ip($s);
         $m2 = $this->_rsavp1($s);
         if ($m2 === false) {
-            user_error('Invalid signature', E_USER_NOTICE);
+            user_error('Invalid signature');
             return false;
         }
         $em = $this->_i2osp($m2, $this->k);
         if ($em === false) {
-            user_error('Invalid signature', E_USER_NOTICE);
+            user_error('Invalid signature');
             return false;
         }
 
@@ -6715,12 +8178,11 @@ class Crypt_RSA {
 
         $em2 = $this->_emsa_pkcs1_v1_5_encode($m, $this->k);
         if ($em2 === false) {
-            user_error('RSA modulus too short', E_USER_NOTICE);
+            user_error('RSA modulus too short');
             return false;
         }
 
         // Compare
-
         return $this->_equals($em, $em2);
     }
 
@@ -6730,7 +8192,7 @@ class Crypt_RSA {
      * Valid values include CRYPT_RSA_ENCRYPTION_OAEP and CRYPT_RSA_ENCRYPTION_PKCS1.
      *
      * @access public
-     * @param Integer $mode
+     * @param int $mode
      */
     function setEncryptionMode($mode)
     {
@@ -6743,11 +8205,33 @@ class Crypt_RSA {
      * Valid values include CRYPT_RSA_SIGNATURE_PSS and CRYPT_RSA_SIGNATURE_PKCS1
      *
      * @access public
-     * @param Integer $mode
+     * @param int $mode
      */
     function setSignatureMode($mode)
     {
         $this->signatureMode = $mode;
+    }
+
+    /**
+     * Set public key comment.
+     *
+     * @access public
+     * @param string $comment
+     */
+    function setComment($comment)
+    {
+        $this->comment = $comment;
+    }
+
+    /**
+     * Get public key comment.
+     *
+     * @access public
+     * @return string
+     */
+    function getComment()
+    {
+        return $this->comment;
     }
 
     /**
@@ -6757,14 +8241,21 @@ class Crypt_RSA {
      * If $plaintext exceeds those limits it will be broken up so that it does and the resultant ciphertext's will
      * be concatenated together.
      *
-     * @see decrypt()
+     * @see self::decrypt()
      * @access public
-     * @param String $plaintext
-     * @return String
+     * @param string $plaintext
+     * @return string
      */
     function encrypt($plaintext)
     {
         switch ($this->encryptionMode) {
+            case CRYPT_RSA_ENCRYPTION_NONE:
+                $plaintext = str_split($plaintext, $this->k);
+                $ciphertext = '';
+                foreach ($plaintext as $m) {
+                    $ciphertext.= $this->_raw_encrypt($m);
+                }
+                return $ciphertext;
             case CRYPT_RSA_ENCRYPTION_PKCS1:
                 $length = $this->k - 11;
                 if ($length <= 0) {
@@ -6796,10 +8287,10 @@ class Crypt_RSA {
     /**
      * Decryption
      *
-     * @see encrypt()
+     * @see self::encrypt()
      * @access public
-     * @param String $plaintext
-     * @return String
+     * @param string $plaintext
+     * @return string
      */
     function decrypt($ciphertext)
     {
@@ -6808,9 +8299,14 @@ class Crypt_RSA {
         }
 
         $ciphertext = str_split($ciphertext, $this->k);
+        $ciphertext[count($ciphertext) - 1] = str_pad($ciphertext[count($ciphertext) - 1], $this->k, chr(0), STR_PAD_LEFT);
+
         $plaintext = '';
 
         switch ($this->encryptionMode) {
+            case CRYPT_RSA_ENCRYPTION_NONE:
+                $decrypt = '_raw_encrypt';
+                break;
             case CRYPT_RSA_ENCRYPTION_PKCS1:
                 $decrypt = '_rsaes_pkcs1_v1_5_decrypt';
                 break;
@@ -6833,10 +8329,10 @@ class Crypt_RSA {
     /**
      * Create a signature
      *
-     * @see verify()
+     * @see self::verify()
      * @access public
-     * @param String $message
-     * @return String
+     * @param string $message
+     * @return string
      */
     function sign($message)
     {
@@ -6856,11 +8352,11 @@ class Crypt_RSA {
     /**
      * Verifies a signature
      *
-     * @see sign()
+     * @see self::sign()
      * @access public
-     * @param String $message
-     * @param String $signature
-     * @return Boolean
+     * @param string $message
+     * @param string $signature
+     * @return bool
      */
     function verify($message, $signature)
     {
@@ -6876,5 +8372,38 @@ class Crypt_RSA {
                 return $this->_rsassa_pss_verify($message, $signature);
         }
     }
+
+    /**
+     * Extract raw BER from Base64 encoding
+     *
+     * @access private
+     * @param string $str
+     * @return string
+     */
+    function _extractBER($str)
+    {
+        /* X.509 certs are assumed to be base64 encoded but sometimes they'll have additional things in them
+         * above and beyond the ceritificate.
+         * ie. some may have the following preceding the -----BEGIN CERTIFICATE----- line:
+         *
+         * Bag Attributes
+         *     localKeyID: 01 00 00 00
+         * subject=/O=organization/OU=org unit/CN=common name
+         * issuer=/O=organization/CN=common name
+         */
+        $temp = preg_replace('#.*?^-+[^-]+-+[\r\n ]*$#ms', '', $str, 1);
+        // remove the -----BEGIN CERTIFICATE----- and -----END CERTIFICATE----- stuff
+        $temp = preg_replace('#-+[^-]+-+#', '', $temp);
+        // remove new lines
+        $temp = str_replace(array("\r", "\n", ' '), '', $temp);
+        $temp = preg_match('#^[a-zA-Z\d/+]*={0,2}$#', $temp) ? base64_decode($temp) : false;
+        return $temp != false ? $temp : $str;
+    }
 }
+
+//***************************************************************************************
+//***************************************************************************************
+//***************************************************************************************
+//***************************************************************************************
+//***************************************************************************************
 ?>
