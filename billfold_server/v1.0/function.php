@@ -117,7 +117,7 @@ function write_log($message = "", $type = "")
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	// Write Log Entry
 	mysqli_query($db_connect, "INSERT LOW_PRIORITY INTO `activity_logs` (`timestamp` ,`log` ,`attribute`)	
-		VALUES ('" . time() . "', '" . substr($message, 0, 256) . "', '$type')");
+		VALUES ('" . time() . "', '" . filter_sql(substr($message, 0, 256)) . "', '$type')");
 	return;
 }
 //***********************************************************************************
