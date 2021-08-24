@@ -24,12 +24,14 @@ if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 	$text_bar = 'Benchmark Results:<br>';
 	$bits_level = 1536;
 	$decrypted_data = 'Decrypted Data Appears Here';
+	$loops = 0;
 
 	if($_GET["action"] == "crypt")
 	{
 		$bits_level = intval($_POST["crypt_bits"]);
 		$custom_private_key = $_POST["custom_private_key"];
 		$custom_public_key = $_POST["custom_public_key"];
+		$loops = intval($_POST["loops"]);
 
 		if($bits_level < 10) { $bits_level = 10; }
 
@@ -41,7 +43,6 @@ if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 
 		if($custom_private_key == "" && $custom_public_key == "")
 		{
-			require_once('../RSA.php');
 			$rsa = new Crypt_RSA();
 			extract($rsa->createKey($bits_level));
 		}
@@ -66,8 +67,23 @@ if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 			$encrypt_create_micro_time_done = microtime(TRUE);
 
 			$decrypt_create_micro_time = microtime(TRUE);			
+
 			// Now Decrypt the same Data
-			$decrypted_data = tk_decrypt($new_publickey, $encrypt_data_new);
+			if($loops == 0)
+			{
+				$decrypted_data = tk_decrypt($new_publickey, $encrypt_data_new);
+			}
+			else
+			{
+				$loop_counter = $loops;
+
+				while($loop_counter > 0)
+				{
+					$decrypted_data = tk_decrypt($new_publickey, $encrypt_data_new);					
+					$loop_counter--;
+				}
+			}
+			
 			$decrypt_create_micro_time_done = microtime(TRUE);
 
 			if(empty($decrypted_data) == TRUE) { $decrypted_data = '***DATA STRING TOO LONG FOR BITS ENTERED***'; }
@@ -88,7 +104,8 @@ if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 
 	// Main Body Text
 	$body_string = '<FORM ACTION="cryptobenchmark.php?action=crypt" METHOD="post">	<input type="submit" name="Submit" value="Run Benchmark" /><br>
-	<strong>Choose bits: <input type="text" size="20" name="crypt_bits" value="' . $bits_level . '" /><br><br>
+	<strong>Choose bits: <input type="text" size="6" name="crypt_bits" value="' . $bits_level . '" /><br>
+	Loops: <input type="text" size="6" name="loops" value="' . $loops . '" /><br><br>
 	Data to Encrypt: <textarea name="encrypt_me" rows="6" cols="75">' . $encrypt_data . '</textarea><hr>
 	Data to After Decryption: <textarea name="decrypt_me" rows="6" cols="75">' . $decrypted_data . '</textarea><hr>
 	Custom Private Key: <textarea name="custom_private_key" rows="6" cols="75">' . $custom_private_key . '</textarea><br><br>
