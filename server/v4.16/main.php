@@ -252,7 +252,7 @@ while(1) // Begin Infinite Loop :)
 		if($sql_num_results == 0) // Randomize a little
 		{
 			// No activity from any peer, keep track of this
-			$no_peer_activity = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'no_peer_activity' LIMIT 1"),0,0);
+			$no_peer_activity = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'no_peer_activity' LIMIT 1"));
 			$no_peer_activity++;
 			
 			if($no_peer_activity < 12)
@@ -263,7 +263,7 @@ while(1) // Begin Infinite Loop :)
 		}
 		else
 		{
-			$no_peer_activity = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'no_peer_activity' LIMIT 1"),0,0);
+			$no_peer_activity = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'no_peer_activity' LIMIT 1"));
 			
 			if($no_peer_activity > 10)
 			{
