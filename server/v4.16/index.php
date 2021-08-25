@@ -2260,8 +2260,9 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["firewall"] == "tool")
 		{
-			$body_string = '<strong>This will use the settings set in the system tab (domain,folder, &amp; port) to attempt a reverse connection attempt.</strong><br><br>
-				<FORM ACTION="index.php?menu=generation&amp;firewall=test" METHOD="post"><input type="submit" value="Check My Firewall"/></FORM>';
+			$body_string = '<strong>This will use the settings set in the system tab (domain,folder, &amp; port) to attempt a reverse connection test from <font color="blue">timekoin.net</font>.</strong><br>
+			This test can only work when the system is running. Your system blocks all inbound traffic when stopped.<br><br>
+			<FORM ACTION="index.php?menu=generation&amp;firewall=test" METHOD="post"><input type="submit" value="Check My Firewall"/></FORM>';
 						
 			home_screen('Crypto Currency Generation', $text_bar, $body_string , $quick_info);
 			exit;
@@ -2308,9 +2309,8 @@ if($_SESSION["valid_login"] == TRUE)
 					$firewall_poll_v6 = '<font color="red">No Response</font>';
 				}				
 
-				$body_string = '<strong>IPv4 Test Response:</strong><br><br>
-				'. $firewall_poll . '<hr><strong>IPv6 Test Response:</strong><br><br>' . $firewall_poll_v6 .
-				'<br><br><FORM ACTION="index.php?menu=generation&amp;firewall=test" METHOD="post"><input type="submit" value="Check My Firewall Again"/></FORM>';				
+				$body_string = '<FORM ACTION="index.php?menu=generation&amp;firewall=test" METHOD="post"><input type="submit" value="Check My Firewall Again"/></FORM><br>
+				<strong>IPv4 Test Response:</strong><br><br>'. $firewall_poll . '<hr><strong>IPv6 Test Response:</strong><br><br>' . $firewall_poll_v6 . '<br><br>';
 			}
 
 			if($network_mode == 2)
@@ -2323,9 +2323,8 @@ if($_SESSION["valid_login"] == TRUE)
 					$firewall_poll = '<font color="red">No Response</font>';
 				}
 
-				$body_string = '<strong>IPv4 Test Response:</strong><br><br>
-				'. $firewall_poll .
-				'<br><br><FORM ACTION="index.php?menu=generation&amp;firewall=test" METHOD="post"><input type="submit" value="Check My Firewall Again"/></FORM>';				
+				$body_string = '<FORM ACTION="index.php?menu=generation&amp;firewall=test" METHOD="post"><input type="submit" value="Check My Firewall Again"/></FORM><br>
+				<strong>IPv4 Test Response:</strong><br><br>'. $firewall_poll;
 			}
 
 			if($network_mode == 3)
@@ -2338,9 +2337,8 @@ if($_SESSION["valid_login"] == TRUE)
 					$firewall_poll_v6 = '<font color="red">No Response</font>';
 				}
 
-				$body_string = '<strong>IPv6 Test Response:</strong><br><br>
-				'. $firewall_poll_v6 .
-				'<br><br><FORM ACTION="index.php?menu=generation&amp;firewall=test" METHOD="post"><input type="submit" value="Check My Firewall Again"/></FORM>';				
+				$body_string = '<FORM ACTION="index.php?menu=generation&amp;firewall=test" METHOD="post"><input type="submit" value="Check My Firewall Again"/></FORM><br>
+				<strong>IPv6 Test Response:</strong><br><br>'. $firewall_poll_v6;
 			}
 
 			home_screen('Crypto Currency Generation', $text_bar, $body_string , $quick_info);
