@@ -317,7 +317,7 @@ if($_SESSION["valid_login"] == TRUE)
 					$sql_row["name"] . 
 					' <a href="index.php?menu=history&amp;name_id=' . $sql_row["id"] . '" title="' . $sql_row["name"] . ' History"><img src="img/timekoin_history.png" style="float: right;"></a></p>
 					</td><td class="style1"><p style="word-wrap:break-word; width:175px; font-size:12px;">' . $sql_row["easy_key"] . 
-					'</p></td><td class="style1"><p style="word-wrap:break-word; width:175px; font-size:' . $default_public_key_font . 'px;">' . $sql_row["full_key"] . '</p></td>
+					'</p></td><td class="style1"><p style="word-wrap:break-word; width:225px; font-size:' . $default_public_key_font . 'px;">' . $sql_row["full_key"] . '</p></td>
 					<td><a href="index.php?menu=address&amp;task=delete&amp;name_id=' . $sql_row["id"] . '" title="Delete ' . $sql_row["name"] . '" onclick="return confirm(\'Delete ' . $sql_row["name"] . '?\');"><img src="img/hr.gif"></a></td>
 					<td><a href="index.php?menu=address&amp;task=edit&amp;name_id=' . $sql_row["id"] . '" title="Edit ' . $sql_row["name"] . '"><img src="img/edit-icon.gif"></a></td>
 					<td><a href="index.php?menu=send&amp;name_id=' . $sql_row["id"] . '" title="Send Koins to ' . $sql_row["name"] . '"><img src="img/timekoin_send.png"></a></td></tr>';
@@ -1220,7 +1220,7 @@ if($_SESSION["valid_login"] == TRUE)
 								// Decrypt Failed
 								$display_balance = db_cache_balance($my_public_key);
 								$body_string = send_receive_body($public_key_64, $send_amount, NULL, NULL, NULL, $_POST["name"]);
-								$body_string .= '<hr><font color="red"><strong>Send Failed. Wrong Password.</strong></font><br><br>';
+								$body_string .= '<hr><font color="red"><strong>Send Failed. Wrong Private Key Password.</strong></font><br><br><br>';
 							}
 							else
 							{
@@ -1319,11 +1319,18 @@ if($_SESSION["valid_login"] == TRUE)
 				$easy_key_fee = '<font color="red">No Network Response</font>';
 			}
 
+			$private_key_crypt = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'private_key_crypt' LIMIT 1"),0,1);
+
+			if($private_key_crypt == TRUE)
+			{
+				$request_password = '<tr><td><strong><font color="blue">Password Required:</font></strong> <input type="password" name="crypt_password" /></td></tr>';
+			}
+
 			$body_string = '<FORM ACTION="index.php?menu=send&amp;easy_key=create" METHOD="post">
 			<table border="0" cellpadding="6"><tr><td><font color="green"><strong>Create New Easy Key</strong></font></td></tr>
 			<tr><td><strong>Creation Fee: <font color="green">' . $easy_key_fee . ' TK</font></strong></td></tr>
 			<tr><td><strong><font color="blue">New Easy Key</font></strong><BR>
-			<input type="text" maxlength="64" size="64" value="" name="new_easy_key" /></td></tr></table>
+			<input type="text" maxlength="64" size="64" value="" name="new_easy_key" /></td></tr>' . $request_password . '</table>
 			<input type="submit" value="Create New Easy Key" onclick="showWait()" /></FORM>';
 
 			$quick_info = '<strong>Easy Keys</strong> are shortcuts enabling access to much longer <font color="blue">Public Keys</font> in Timekoin.</br><BR>
@@ -1342,8 +1349,39 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["easy_key"] == "create")
 		{
+			set_time_limit(999);
 			$new_easy_key = $_POST["new_easy_key"];
-			$create_easy_key = create_new_easy_key(my_private_key(), $my_public_key, $new_easy_key);
+			$private_key_crypt = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'private_key_crypt' LIMIT 1"),0,1);
+
+			if($private_key_crypt == TRUE)
+			{
+				// Private Key Encrypted
+				$my_private_key = my_private_key();
+
+				// Decrypt Private Key First
+				$my_private_key = AesCtr::decrypt($my_private_key, $_POST["crypt_password"], 256);
+				$valid_key = find_string("-----BEGIN", "KEY-----", $my_private_key); // Valid Decrypt?
+
+				if(empty($valid_key) == TRUE)
+				{
+					// Decrypt Failed
+					$create_easy_key = 8;
+				}
+				else
+				{
+					// Decrypt Good
+					$create_easy_key = create_new_easy_key($my_private_key, $my_public_key, $new_easy_key);
+				}
+			}
+			else
+			{
+				$my_private_key = my_private_key();
+				$create_easy_key = create_new_easy_key($my_private_key, $my_public_key, $new_easy_key);
+			}
+
+			// Clear Variable from RAM
+			unset($my_private_key);
+
 			$body_string;
 
 			if($create_easy_key > 300)// Success time will always be at least more than 1 transaction cycle
@@ -1384,7 +1422,11 @@ if($_SESSION["valid_login"] == TRUE)
 
 					case 7:
 					$body_string = '<BR><BR><font color="red"><strong>Easy Key Transaction for Creation Failed to Send</strong></font>';
-					break;					
+					break;
+
+					case 8:
+					$body_string = '<BR><BR><font color="red"><strong>Private Key Password Incorrect!</strong></font>';
+					break;
 
 					default:
 					$body_string = '<BR><BR><font color="red"><strong>Easy Key: [' . $new_easy_key . '] Unknown ERROR!</strong></font>';
@@ -1543,7 +1585,7 @@ if($_SESSION["valid_login"] == TRUE)
 					. $public_key_from . '</td>
 					<td class="style2"><p style="font-size: 11px;">' . $amount . '</p></td>
 					<td class="style2"><p style="font-size: 11px;">' . $verify . '</p></td>
-					<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $message . '</p></td></tr>';
+					<td class="style2"><p style="word-wrap:break-word; width:150px; font-size: 11px;">' . $message . '</p></td></tr>';
 				}
 				else
 				{
@@ -1557,7 +1599,7 @@ if($_SESSION["valid_login"] == TRUE)
 						. $public_key_from . '</td>
 						<td class="style2"><p style="font-size: 11px;">' . $amount . '</p></td>
 						<td class="style2"><p style="font-size: 11px;">' . $verify . '</p></td>
-						<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $message . '</p></td></tr>';						
+						<td class="style2"><p style="word-wrap:break-word; width:150px; font-size: 11px;">' . $message . '</p></td></tr>';						
 					}
 				}
 
@@ -1616,7 +1658,7 @@ if($_SESSION["valid_login"] == TRUE)
 					. $public_key_to . '</td>
 					<td class="style2"><p style="font-size: 11px;">' . $amount . '</p></td>
 					<td class="style2"><p style="font-size: 11px;">' . $verify . '</p></td>
-					<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $message . '</p></td></tr>';					
+					<td class="style2"><p style="word-wrap:break-word; width:150px; font-size: 11px;">' . $message . '</p></td></tr>';					
 				}
 				else
 				{
@@ -1630,7 +1672,7 @@ if($_SESSION["valid_login"] == TRUE)
 						. $public_key_to . '</td>
 						<td class="style2"><p style="font-size: 11px;">' . $amount . '</p></td>
 						<td class="style2"><p style="font-size: 11px;">' . $verify . '</p></td>
-						<td class="style2"><p style="word-wrap:break-word; width:140px; font-size: 11px;">' . $message . '</p></td></tr>';						
+						<td class="style2"><p style="word-wrap:break-word; width:150px; font-size: 11px;">' . $message . '</p></td></tr>';						
 					}
 				}
 
@@ -1721,7 +1763,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 					if(empty($address_name) == TRUE)
 					{
-						$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:175px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
+						$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:225px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
 					}
 					else
 					{
@@ -1749,7 +1791,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 						if(empty($address_name) == TRUE)
 						{
-							$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:195px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
+							$public_key_to = '<td class="style1"><p style="word-wrap:break-word; width:225px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans_to) . '</p>';
 						}
 						else
 						{
@@ -1763,7 +1805,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 				if(empty($address_name) == TRUE)
 				{
-					$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:195px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans) . '</p>';
+					$public_key_from = '<td class="style1"><p style="word-wrap:break-word; width:225px; font-size:' . $default_public_key_font . 'px;">' . base64_encode($public_key_trans) . '</p>';
 				}
 				else
 				{
