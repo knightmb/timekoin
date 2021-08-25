@@ -65,7 +65,6 @@ if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 			// Encrypt New Data
 			$encrypt_data_new = tk_encrypt($new_privatekey, $encrypt_data);
 			$encrypt_create_micro_time_done = microtime(TRUE);
-
 			$decrypt_create_micro_time = microtime(TRUE);			
 
 			// Now Decrypt the same Data

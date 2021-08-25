@@ -53,7 +53,7 @@ if($_GET["action"] == "reverse_queue")
 		$ip = $_SERVER['REMOTE_ADDR'];
 		$subfolder = filter_sql($_GET["subfolder"]);
 		$port = intval($_GET["port"]);
-		$reverse_queue_data = filter_sql($_POST["reverse_queue_data"]);
+		$reverse_queue_data = $_POST["reverse_queue_data"];
 		$qhash = $_POST["qhash"];
 		$connected_peer_check;
 
@@ -93,9 +93,9 @@ if($_GET["action"] == "reverse_queue")
 			$ignore_transaction_insert = 0;		
 			$transaction_timestamp = intval(find_string("---timestamp$match_number=", "---public_key$match_number", $reverse_queue_data));
 			$transaction_public_key = filter_sql(base64_decode(find_string("---public_key$match_number=", "---crypt1_data$match_number", $reverse_queue_data)));
-			$transaction_crypt1 = filter_sql(find_string("---crypt1_data$match_number=", "---crypt2_data$match_number", $reverse_queue_data));
-			$transaction_crypt2 = filter_sql(find_string("---crypt2_data$match_number=", "---crypt3_data$match_number", $reverse_queue_data));
-			$transaction_crypt3 = filter_sql(find_string("---crypt3_data$match_number=", "---hash$match_number", $reverse_queue_data));
+			$transaction_crypt1 = find_string("---crypt1_data$match_number=", "---crypt2_data$match_number", $reverse_queue_data);
+			$transaction_crypt2 = find_string("---crypt2_data$match_number=", "---crypt3_data$match_number", $reverse_queue_data);
+			$transaction_crypt3 = find_string("---crypt3_data$match_number=", "---hash$match_number", $reverse_queue_data);
 			$transaction_hash = filter_sql(find_string("---hash$match_number=", "---attribute$match_number", $reverse_queue_data));
 			$transaction_attribute = filter_sql(find_string("---attribute$match_number=", "---end$match_number", $reverse_queue_data));
 
@@ -130,7 +130,7 @@ if($_GET["action"] == "reverse_queue")
 						// Find destination public key
 						$public_key_to_1 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt1));
 						$public_key_to_2 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt2));
-						$public_key_to = filter_sql($public_key_to_1 . $public_key_to_2);
+						$public_key_to = $public_key_to_1 . $public_key_to_2;
 
 						$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 
@@ -227,9 +227,9 @@ if($_GET["action"] == "reverse_queue")
 				$match_number++;
 				$transaction_timestamp = intval(find_string("---timestamp$match_number=", "---public_key$match_number", $reverse_queue_data));
 				$transaction_public_key = filter_sql(base64_decode(find_string("---public_key$match_number=", "---crypt1_data$match_number", $reverse_queue_data)));
-				$transaction_crypt1 = filter_sql(find_string("---crypt1_data$match_number=", "---crypt2_data$match_number", $reverse_queue_data));
-				$transaction_crypt2 = filter_sql(find_string("---crypt2_data$match_number=", "---crypt3_data$match_number", $reverse_queue_data));
-				$transaction_crypt3 = filter_sql(find_string("---crypt3_data$match_number=", "---hash$match_number", $reverse_queue_data));
+				$transaction_crypt1 = find_string("---crypt1_data$match_number=", "---crypt2_data$match_number", $reverse_queue_data);
+				$transaction_crypt2 = find_string("---crypt2_data$match_number=", "---crypt3_data$match_number", $reverse_queue_data);
+				$transaction_crypt3 = find_string("---crypt3_data$match_number=", "---hash$match_number", $reverse_queue_data);
 				$transaction_hash = filter_sql(find_string("---hash$match_number=", "---attribute$match_number", $reverse_queue_data));
 				$transaction_attribute = filter_sql(find_string("---attribute$match_number=", "---end$match_number", $reverse_queue_data));			
 
@@ -295,8 +295,7 @@ if($_GET["action"] == "queue")
 // Answer transaction details that match our hash number
 if($_GET["action"] == "transaction" && empty($_GET["number"]) == FALSE)
 {
-	$current_hash = filter_sql($_GET["number"]);
-
+	$current_hash = $_GET["number"];
 	$sql = "SELECT * FROM `transaction_queue`";
 	$sql_result = mysqli_query($db_connect, $sql);
 	$sql_num_results = mysqli_num_rows($sql_result);
@@ -310,7 +309,6 @@ if($_GET["action"] == "transaction" && empty($_GET["number"]) == FALSE)
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
 			$sql_row = mysqli_fetch_array($sql_result);
-
 			$transaction_queue_hash = $sql_row["timestamp"] . $sql_row["public_key"] . $sql_row["crypt_data1"] . 
 			$sql_row["crypt_data2"] . $sql_row["crypt_data3"] . $sql_row["hash"] . $sql_row["attribute"];		
 
@@ -358,9 +356,9 @@ if($_GET["action"] == "input_transaction")
 	{
 		$transaction_timestamp = intval($_POST["timestamp"]);
 		$transaction_public_key = $_POST["public_key"];
-		$transaction_crypt1 = filter_sql($_POST["crypt_data1"]);
-		$transaction_crypt2 = filter_sql($_POST["crypt_data2"]);
-		$transaction_crypt3 = filter_sql($_POST["crypt_data3"]);
+		$transaction_crypt1 = $_POST["crypt_data1"];
+		$transaction_crypt2 = $_POST["crypt_data2"];
+		$transaction_crypt3 = $_POST["crypt_data3"];
 		$transaction_hash = filter_sql($_POST["hash"]);
 		$transaction_attribute = filter_sql($_POST["attribute"]);
 		$transaction_qhash = $_POST["qhash"];
@@ -421,7 +419,7 @@ if($_GET["action"] == "input_transaction")
 				// Find destination public key
 				$public_key_to_1 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt1));
 				$public_key_to_2 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt2));
-				$public_key_to = filter_sql($public_key_to_1 . $public_key_to_2);
+				$public_key_to = $public_key_to_1 . $public_key_to_2;
 
 				$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 
@@ -733,7 +731,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 
 			$peer_clock_start = time();
 
-			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 15000000, "queueclerk.php?action=queue");
+			$poll_peer = poll_peer($ip_address, $domain, $subfolder, $port_number, 20000000, "queueclerk.php?action=queue");
 
 			// Bring up first match (if any) to compare agaist our database
 			$match_number = 1;
@@ -924,7 +922,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 				if(empty($hash_match) == TRUE)
 				{
 					// This peer has a different transaction, ask for the full details of it
-					$poll_hash = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 15000, "queueclerk.php?action=transaction&number=$current_hash"));
+					$poll_hash = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 20000, "queueclerk.php?action=transaction&number=$current_hash"));
 
 					$transaction_timestamp = intval(find_string("-----timestamp=", "-----public_key", $poll_hash));
 					$transaction_public_key = find_string("-----public_key=", "-----crypt1", $poll_hash);
@@ -1013,7 +1011,7 @@ if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cyc
 							// Find destination public key
 							$public_key_to_1 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt1));
 							$public_key_to_2 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt2));
-							$public_key_to = filter_sql($public_key_to_1 . $public_key_to_2);
+							$public_key_to = $public_key_to_1 . $public_key_to_2;
 
 							$transaction_amount_sent = find_string("AMOUNT=", "---TIME", $transaction_info);
 

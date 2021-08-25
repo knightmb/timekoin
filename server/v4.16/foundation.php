@@ -25,7 +25,6 @@ $db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABA
 if($_GET["action"] == "block_hash" && $_GET["block_number"] >= 0)
 {
 	$block_number = intval($_GET["block_number"]);
-
 	echo mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_foundation` WHERE `block` = $block_number LIMIT 1"),0,0);
 
 	// Log inbound IP activity

@@ -14,7 +14,7 @@ if(GENERATION_DISABLED == TRUE || TIMEKOIN_DISABLED == TRUE)
 if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 {
 	// Sorry, your IP address has been banned :(
-	exit ("Your IP Has Been Banned");
+	exit;
 }
 
 // Open persistent connection to database

@@ -629,7 +629,7 @@ if($_GET["action"] == "pk_balance")
 	{
 		// Grab balance for public key and return value
 		$public_key = substr($_POST["public_key"], 0, 10000); // In case someone is trying to flood this function
-		$public_key = filter_sql(base64_decode($public_key));
+		$public_key = base64_decode($public_key);
 
 		echo check_crypt_balance($public_key);
 	}// Valid Permissions Check
@@ -650,9 +650,9 @@ if($_GET["action"] == "send_tk")
 		
 		$transaction_timestamp = intval($_POST["timestamp"]);
 		$transaction_public_key = $_POST["public_key"];
-		$transaction_crypt1 = filter_sql($_POST["crypt_data1"]);
-		$transaction_crypt2 = filter_sql($_POST["crypt_data2"]);
-		$transaction_crypt3 = filter_sql($_POST["crypt_data3"]);
+		$transaction_crypt1 = $_POST["crypt_data1"];
+		$transaction_crypt2 = $_POST["crypt_data2"];
+		$transaction_crypt3 = $_POST["crypt_data3"];
 		$transaction_hash = filter_sql($_POST["hash"]);
 		$transaction_attribute = filter_sql($_POST["attribute"]);
 		$transaction_qhash = $_POST["qhash"];
@@ -710,7 +710,7 @@ if($_GET["action"] == "send_tk")
 				// Find destination public key
 				$public_key_to_1 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt1));
 				$public_key_to_2 = tk_decrypt($transaction_public_key, base64_decode($transaction_crypt2));
-				$public_key_to = filter_sql($public_key_to_1 . $public_key_to_2);
+				$public_key_to = $public_key_to_1 . $public_key_to_2;
 
 				$inside_transaction_hash = find_string("HASH=", "", $transaction_info, TRUE);
 

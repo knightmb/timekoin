@@ -2295,7 +2295,7 @@ if($_SESSION["valid_login"] == TRUE)
 			if($network_mode == 1)
 			{
 				// Do both IPv4 & IPv6 Firewall Testing
-				$firewall_poll = filter_sql(file_get_contents('http://timekoin.net/firewall.php', FALSE, $context, NULL, 1024));
+				$firewall_poll = filter_sql(file_get_contents('http://ipv4.timekoin.net/firewall.php', FALSE, $context, NULL, 1024));
 				$firewall_poll_v6 = filter_sql(file_get_contents('http://ipv6.timekoin.net/firewall.php', FALSE, $context, NULL, 1024));
 
 				if(empty($firewall_poll) == TRUE)
@@ -2316,7 +2316,7 @@ if($_SESSION["valid_login"] == TRUE)
 			if($network_mode == 2)
 			{
 				// IPv4 Firewall Testing
-				$firewall_poll = filter_sql(file_get_contents('http://timekoin.net/firewall.php', FALSE, $context, NULL, 1024));
+				$firewall_poll = filter_sql(file_get_contents('http://ipv4.timekoin.net/firewall.php', FALSE, $context, NULL, 1024));
 
 				if(empty($firewall_poll) == TRUE)
 				{

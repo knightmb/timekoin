@@ -654,7 +654,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 									while($super_transaction_cycle < $block_number + $super_peer_cycles)
 									{
-										$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 15000000, "transclerk.php?action=transaction_data&block_number=$super_transaction_cycle"));
+										$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 25000000, "transclerk.php?action=transaction_data&block_number=$super_transaction_cycle"));
 
 										if(empty($poll_peer) == TRUE)
 										{
@@ -828,7 +828,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 					} // End blank data ahead check to allow Super Peer
 	//************************************************************
 
-					$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 15000000, "transclerk.php?action=transaction_data&block_number=$block_number"));
+					$poll_peer = filter_sql(poll_peer($ip_address, $domain, $subfolder, $port_number, 25000000, "transclerk.php?action=transaction_data&block_number=$block_number"));
 					$tc = 1;
 
 					if(empty($poll_peer) == TRUE)

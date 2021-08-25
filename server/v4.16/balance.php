@@ -14,7 +14,7 @@ if(BALANCE_DISABLED == TRUE || TIMEKOIN_DISABLED == TRUE)
 if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
 {
 	// Sorry, your IP address has been banned :(
-	exit ("Your IP Has Been Banned");
+	exit;
 }
 
 // Open persistent connection to database
@@ -153,8 +153,8 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 
 	if($sql_num_results > 0)
 	{
-		$previous_foundation_block = foundation_cycle(-1, TRUE);
-		$previous_foundation_block_time = foundation_cycle(-1);
+		$previous_foundation_block = foundation_cycle(0, TRUE);
+		$previous_foundation_block_time = foundation_cycle(0);
 
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{

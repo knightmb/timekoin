@@ -76,7 +76,7 @@ if($_GET["action"] == "gen_peer_list")
 if($_GET["action"] == "elect_gen_peer_valid")
 {
 	$gen_IP = filter_sql($_POST["gen_IP"]);
-	$gen_public_key = base64_decode(filter_sql($_POST["public_key"]));
+	$gen_public_key = filter_sql(base64_decode($_POST["public_key"]));
 
 	$peer_valid = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `generating_peer_queue` WHERE `public_key` = '$gen_public_key' AND `IP_Address` = '$gen_IP' LIMIT 1"));
 
