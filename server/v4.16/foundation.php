@@ -98,7 +98,7 @@ $current_generation_block = transaction_cycle(0, TRUE);
 $next_generation_cycle = transaction_cycle(1);
 
 $record_count = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_history`"),0);
-$treasurer_status = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,0));
+$treasurer_status = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1")));
 
 if($record_count < 500)
 {
@@ -107,7 +107,7 @@ if($record_count < 500)
 }
 else
 {
-	$foundation_task = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_block_check' LIMIT 1"),0,0);
+	$foundation_task = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_block_check' LIMIT 1"));
 }
 
 // Can we work on the transactions in the database?

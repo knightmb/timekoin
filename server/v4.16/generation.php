@@ -85,13 +85,13 @@ else
 //***********************************************************************************	
 //***********************************************************************************
 // Is generation turned on for our server key?
-
+$treasurer_status = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1")));
 $next_generation_cycle = transaction_cycle(1);
 $current_generation_cycle = transaction_cycle(0);
 
 // Can we work on the transactions in the database?
 // Not allowed 120 seconds before and 35 seconds after generation cycle.
-if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycle) > 35)
+if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycle) > 35 && $treasurer_status == 2)
 {
 	// Generation Peer Check	
 	$peer_purge = FALSE;

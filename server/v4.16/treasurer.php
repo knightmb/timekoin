@@ -508,7 +508,7 @@ if($sql_num_results > 0)
 		if($sql_row["attribute"] == "T") // Regular Transaction
 		{
 			// Check to make sure there is not a duplicate transaction already
-			$found_public_key_queue = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY timestamp FROM `transaction_history` WHERE `hash` = '$hash_check' AND `public_key_from` = '$public_key' LIMIT 1"));
+			$found_public_key_queue = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY timestamp FROM `transaction_history` WHERE `hash` = '$hash_check' LIMIT 1"));
 
 			if(empty($found_public_key_queue) == TRUE)
 			{
@@ -816,6 +816,15 @@ mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = 2 WHERE 
 mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = " . time() . " WHERE `main_loop_status`.`field_name` = 'treasurer_last_heartbeat' LIMIT 1");
 
 //***********************************************************************************
-sleep(10);
+if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cycle) > 30)
+{
+	sleep(25);
+}
+else
+{
+	sleep(5);
+}
+
 } // End Infinite Loop
+//***********************************************************************************
 ?>

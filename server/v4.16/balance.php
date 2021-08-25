@@ -78,12 +78,13 @@ else
 $current_transaction_cycle = transaction_cycle(0);
 $next_transaction_cycle = transaction_cycle(1);
 
-$foundation_status = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,0));
+$treasurer_status = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1")));
+$foundation_status = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1")));
 
 // Can we work on the key balances in the database?
 // Not allowed 120 seconds before and 40 seconds after transaction cycle.
 // Don't run if the Foundation Manager is busy (idle = 2)
-if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cycle) > 40 && $foundation_status == 2)
+if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cycle) > 40 && $foundation_status == 2 && $treasurer_status == 2)
 {
 	$current_transaction_block = transaction_cycle(0, TRUE);
 	$current_foundation_block = foundation_cycle(0, TRUE);

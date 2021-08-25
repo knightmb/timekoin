@@ -614,7 +614,7 @@ if($process_clone == FALSE) // No Activity Settings for Clone Process
 //***********************************************************************************
 $next_transaction_cycle = transaction_cycle(1);
 $current_transaction_cycle = transaction_cycle(0);
-$treasurer_status = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,0));
+$treasurer_status = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1")));
 
 // Can we work on the transactions in the database?
 // Not allowed 30 seconds before and 30 seconds after transaction cycle.
@@ -1162,5 +1162,7 @@ else
 {
 	sleep(10);
 }
+
 } // End Infinite Loop
+//***********************************************************************************
 ?>

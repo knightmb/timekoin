@@ -2719,7 +2719,7 @@ if($_SESSION["valid_login"] == TRUE)
 				}
 
 				$koin_kounter = 0;
-				$row_count_limit = 12;
+				$row_count_limit = 14;
 
 				if($sql_num_results > 1)
 				{
