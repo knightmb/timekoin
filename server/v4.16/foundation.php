@@ -147,8 +147,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 		if(empty($current_foundation_hash) == FALSE)
 		{
 			// How frequent the transaction foundation checks are set by the user
-			$trans_history_check = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'trans_history_check' LIMIT 1"),0,0));
-			$rand_freq = 100; // Rare - Default if no user set value
+			$trans_history_check = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'trans_history_check' LIMIT 1")));
 
 			if($trans_history_check == 1)
 			{
@@ -157,6 +156,10 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 			else if($trans_history_check == 2)
 			{
 				$rand_freq = 15; // Frequent
+			}
+			else
+			{
+				$rand_freq = 100; // Rare - Default if no user set value
 			}
 
 			// Check that a foundation block has not become corrupt due to unknown reasons

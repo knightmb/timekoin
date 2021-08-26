@@ -1769,8 +1769,8 @@ if($_SESSION["valid_login"] == TRUE)
 			}</script>';
 
 			$body_string = '<FORM ACTION="index.php?menu=options&amp;storage_key=new" METHOD="post">
-			<strong>Bits Size [1,536 to 17,408]</strong> (Caution: High Values Take a Lot of Time to Create New Keys!)<br>
-			<input type="number" name="crypt_bits" min="1536" max="17408" size="6" value="' . $bits_level . '"/>
+			<strong>Bits Size [1,536 to 20,480]</strong> (Caution: High Values Take a Lot of Time to Create New Keys!)<br>
+			<input type="number" name="crypt_bits" min="1536" max="20480" size="6" value="' . $bits_level . '"/>
 			<input type="submit" name="Submit" value="Create New Key Pair" /></FORM><br>' . $clipboard_copy . '
 			<strong><font color="blue">New Private Key</font></strong><br>
 			<textarea id="current_private_key" rows="10" cols="90" READONLY>' . $new_private_key . '</textarea><br>

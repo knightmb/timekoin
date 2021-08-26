@@ -125,7 +125,7 @@ while(1) // Begin Infinite Loop
 
 set_time_limit(300);
 //***********************************************************************************
-$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,0);
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"));
 
 // Check script status
 if($loop_active == "")
@@ -166,30 +166,45 @@ $treasurer_status = intval(mysql_result(mysqli_query($db_connect, "SELECT field_
 // Not allowed 30 seconds before and 30 seconds after transaction cycle.
 if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle) > 30 && $foundation_active == 2 && $treasurer_status == 2)
 {
-	// Check if the transaction history is blank or not (either from reset or new setup)
-	$trans_record_count = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_history`"),0);
-	$generation_arbitrary = ARBITRARY_KEY;
 //***********************************************************************************
-	if($trans_record_count == 0 && $trans_record_count !== FALSE) //New or blank transaction history
+	// Check if the transaction history is blank or not (either from wipe or new setup)
+	if($database_live == FALSE)
 	{
-		// Start by inserting the beginning arbitrary transaction from which all others will hash against 
-		$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from` ,`public_key_to` ,`crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
-		VALUES ('" . TRANSACTION_EPOCH . "', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', 'B')";
-	
-		if(mysqli_query($db_connect, $sql) == TRUE)
+		$blank_database = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `attribute` = 'B' LIMIT 1"));
+		
+		if(empty($blank_database) == TRUE) //New or blank transaction history
 		{
-			// Lock the System to prevent transaction processing during the initial phase
-			activate(TIMEKOINSYSTEM, 0);
+			$trans_record_count = intval(mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_history`")));
+
+			if($trans_record_count == 0)
+			{
+				$generation_arbitrary = ARBITRARY_KEY;
+				// Start by inserting the beginning arbitrary transaction from which all others will hash against
+				$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from` ,`public_key_to` ,`crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
+				VALUES ('" . TRANSACTION_EPOCH . "', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', 'B')";
+			
+				if(mysqli_query($db_connect, $sql) == TRUE)
+				{
+					write_log("Provenance Transaction Created","TC");
+					// Lock the System to prevent transaction processing during the initial phase
+					activate(TIMEKOINSYSTEM, 0);
+				}
+				else
+				{
+					write_log("ERROR: Unable to Create Provenance Transaction","TC");
+				}
+			}
 		}
 	}
 //***********************************************************************************
-	if($trans_record_count > 0 && $trans_record_count < 4) // Write out some test hashes and compare to verify sha256 accuracy
+	if($blank_database == TRANSACTION_EPOCH && $database_live == FALSE) // Write out some test hashes and compare to verify sha256 accuracy
 	{
-		// Beginning transaction should be in, check to make sure
-		$beginning_transaction = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_history` WHERE `public_key_from` = '$generation_arbitrary' AND `hash` = '$generation_arbitrary' LIMIT 1"),0,0);
+		$trans_record_count = intval(mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_history`")));
 
-		if($beginning_transaction == TRANSACTION_EPOCH)
+		if($trans_record_count < 4)
 		{
+			$generation_arbitrary = ARBITRARY_KEY;
+
 			// First transaction complete, continue processing
 			$current_generation_block = transaction_cycle(0, TRUE);
 			$cycles = 0;
@@ -201,7 +216,6 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 				// Build Hash
 				$sql = "SELECT hash FROM `transaction_history` WHERE `timestamp` >= $first_generation_cycle AND `timestamp` < $second_generation_cycle";
-
 				$sql_result = mysqli_query($db_connect, $sql);
 				$sql_num_results = mysqli_num_rows($sql_result);
 				$hash = 0;
@@ -209,7 +223,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
 					$sql_row = mysqli_fetch_array($sql_result);
-					$hash .= $sql_row["hash"];
+					$hash.= $sql_row["hash"];
 				}
 
 				// Transaction hash
@@ -217,7 +231,6 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 				$sql = "INSERT INTO `transaction_history` (`timestamp` ,`public_key_from` ,`public_key_to` ,`crypt_data1` ,`crypt_data2` ,`crypt_data3` ,`hash` ,`attribute`)
 				VALUES ('$second_generation_cycle', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$generation_arbitrary', '$hash', 'H')";
-		
 				mysqli_query($db_connect, $sql);
 
 				$current_generation_block--;
@@ -226,7 +239,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 			$current_generation_block++;
 			$second_generation_cycle = transaction_cycle((0 - $current_generation_block + 1));
-			$hash_check = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_history` WHERE `timestamp` = '$second_generation_cycle' AND `attribute` = 'H' LIMIT 1"),0,0);
+			$hash_check = mysql_result(mysqli_query($db_connect, "SELECT hash FROM `transaction_history` WHERE `timestamp` = '$second_generation_cycle' AND `attribute` = 'H' LIMIT 1"));
 
 			// Now let's check the results to make sure they match what should be expected
 			if($hash_check == SHA256TEST)
@@ -238,20 +251,43 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				// Start a transaction history rebuild from this since a new database is going to be far
 				// behind the history of the other active peers
 				mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'block_check_start' LIMIT 1");
+				$database_live = TRUE;
+				write_log("Server PASSED Initial Encryption Generation and Verification Testing!<br>Database is Now Live!", "TC");
+
+				// Unset Variables from RAM
+				unset($blank_database);
+				unset($trans_record_count);
+				unset($generation_arbitrary);
+				unset($current_generation_block);
+				unset($cycles);
+				unset($first_generation_cycle);
+				unset($second_generation_cycle);
+				unset($hash);
+				unset($hash_check);				
 			}
 			else
 			{
 				write_log("Server Failed Initial Encryption Generation and Verification Testing", "TC");
-				$failed_crypt_test = TRUE;
+				// Wipe Database and Try Again
+				mysqli_query($db_connect, "TRUNCATE `transaction_history`");
 			}
+		}
+		else
+		{
+			// More than 4 Records, must have passed DB hash testing
+			$database_live = TRUE;
+			write_log("Database is Now Live!", "TC");
+			// Unset Variables from RAM
+			unset($blank_database);
+			unset($trans_record_count);
 		}
 	} // End database preparation and hash testing
 //***********************************************************************************
-	// 4 or more transactions on a live database, let the magic begin
-	if($trans_record_count > 3 && $failed_crypt_test == FALSE)
+	// Live database, let the magic begin
+	if($database_live == TRUE)
 	{	
-	//***********************************************************************************		
-	// Update transaction history hash
+//***********************************************************************************		
+		// Update transaction history hash
 		$current_history_hash = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'transaction_history_hash' LIMIT 1"),0,0);
 		$transaction_history_block_check = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transaction_history_block_check' LIMIT 1"),0,0));
 		$foundation_block_check = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_block_check' LIMIT 1"),0,0));
@@ -282,7 +318,6 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 		else
 		{
 			$error_check_active = FALSE;
-
 			$history_hash = transaction_history_hash();
 
 			if($history_hash !== $current_history_hash)
@@ -315,8 +350,14 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 		
 		for ($i = 0; $i < $sql_num_results; $i++)
 		{
-			$sql_row = mysqli_fetch_array($sql_result);
+			$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"));
+			if($loop_active == 3)
+			{
+				// Exit Loop for Shutdown
+				break;
+			}
 
+			$sql_row = mysqli_fetch_array($sql_result);
 			$ip_address = $sql_row["IP_Address"];
 			$domain = $sql_row["domain"];
 			$subfolder = $sql_row["subfolder"];
@@ -417,7 +458,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 		if($error_check_active == FALSE)
 		{
-			$hash_number = intval(mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'block_check_start' LIMIT 1"),0,"field_data"));
+			$hash_number = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'block_check_start' LIMIT 1")));
 
 			if($hash_number == 0)
 			{
@@ -544,6 +585,13 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 			for ($i = 1; $i < $trans_list_hash_different + 1; $i++)
 			{
+				$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"));
+				if($loop_active == 3)
+				{
+					// Exit Loop for Shutdown
+					break;
+				}
+
 				$ip_address = $hash_different["ip_address$i"];
 				$domain = $hash_different["domain$i"];
 				$subfolder = $hash_different["subfolder$i"];
@@ -573,7 +621,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 			} // End For Loop
 
-			if($hash_agree == 0 && $hash_disagree == 0)
+			if($hash_agree == 0 && $hash_disagree == 0 && $loop_active != 3)
 			{
 				// No peers are responding
 				write_log("No Peers Are Responding to Transaction Cycle Hash Polling", "TC");
@@ -668,6 +716,15 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 										if(($next_generation_cycle - time()) < 20)
 										{
 											break;
+										}
+										else if(rand(1,50) == 50)
+										{
+											$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"));
+											if($loop_active == 3)
+											{
+												// Exit Loop for Shutdown
+												break;
+											}										
 										}
 
 										$one_hash_limit = 0; // Only one hash per cycle allowed, extra/duplicates are ignored
@@ -1140,12 +1197,29 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'peer_transaction_start_blocks' LIMIT 1");
 		}
 
-		if(mt_rand(1,10) == 10) // Randomize to avoid spamming checks all the time
+		// How frequent the transaction history checks are set by the user
+		$trans_history_check = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'trans_history_check' LIMIT 1")));
+
+		if($trans_history_check == 1)
+		{
+			$rand_freq = 50; // Normal
+		}
+		else if($trans_history_check == 2)
+		{
+			$rand_freq = 10; // Frequent
+		}
+		else
+		{
+			$rand_freq = 100; // Rare - Default if no user set value
+		}
+
+		if(mt_rand(1,$rand_freq) == 10)// Randomize to avoid spamming checks all the time
 		{
 			// Poll a random block from a random peer for random accuracy :)
 			// Within the range of the current foundation block to now
 			$current_foundation_block = foundation_cycle(0, TRUE) * 500;
 			$random_block = rand($current_foundation_block, transaction_cycle(-1, TRUE));
+			write_log("Testing Transaction Cycle #$random_block", "TC");
 
 			// Do a real hash compare
 			$current_generation_block = transaction_cycle(0, TRUE);
@@ -1182,6 +1256,13 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			{
 				for ($i = 0; $i < $sql_num_results; $i++)
 				{
+					$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"));
+					if($loop_active == 3)
+					{
+						// Exit Loop for Shutdown
+						break;
+					}
+					
 					$sql_row = mysqli_fetch_array($sql_result);
 					$ip_address = $sql_row["IP_Address"];
 					$domain = $sql_row["domain"];
@@ -1207,6 +1288,12 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 						}
 					}
 				}
+
+				if($peer_disagree < $target_number)
+				{
+					// Everything seems OK
+					write_log("Transaction Cycle #$random_block checks out OK", "TC");
+				}
 			}
 		} // Random Transaction Cycle Check
 		
@@ -1227,7 +1314,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 
 //***********************************************************************************
 //***********************************************************************************
-$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,0);
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"));
 
 // Check script status
 if($loop_active == 3)
