@@ -756,12 +756,12 @@ if($_SESSION["valid_login"] == TRUE)
 			$send_amount = $_POST["send_amount"];
 			$public_key_64 = $_POST["send_public_key"];			
 			$public_key_to = base64_decode($public_key_64);
-			$current_balance = db_cache_balance($my_public_key);			
+			$current_balance = db_cache_balance($my_public_key, 10, $_SESSION["login_username"]);
 
 			if($send_amount > $current_balance)
 			{
 				// Can't send this much silly
-				$display_balance = db_cache_balance($my_public_key);
+				$display_balance = db_cache_balance($my_public_key, 55, $_SESSION["login_username"]);
 				$body_string = send_receive_body($public_key_64);
 				$body_string .= '<hr><font color="red"><strong>This exceeds your current balance, send failed...</strong></font><br><br>';
 			}
@@ -770,7 +770,7 @@ if($_SESSION["valid_login"] == TRUE)
 				if($my_public_key == $public_key_to)
 				{
 					// Can't send to yourself
-					$display_balance = db_cache_balance($my_public_key);
+					$display_balance = db_cache_balance($my_public_key, 55, $_SESSION["login_username"]);
 					$body_string = send_receive_body();
 					$body_string .= '<hr><font color="red"><strong>Can not send to yourself, send failed...</strong></font><br><br>';
 				}
@@ -784,7 +784,7 @@ if($_SESSION["valid_login"] == TRUE)
 					{
 						// Key has a valid history
 						$message = $_POST["send_message"];
-						$display_balance = db_cache_balance($my_public_key);
+						$display_balance = db_cache_balance($my_public_key, 55, $_SESSION["login_username"]);
 						$body_string = send_receive_body($public_key_64, $send_amount, TRUE, NULL, $message, $_POST["name"]);
 						$body_string .= '<hr><font color="green"><strong>This public key is valid.</strong></font><br>
 						<strong>There is no way to recover Timekoins sent to the wrong public key.</strong><br>
@@ -794,7 +794,7 @@ if($_SESSION["valid_login"] == TRUE)
 					{
 						// No key history, might not be valid
 						$message = $_POST["send_message"];
-						$display_balance = db_cache_balance($my_public_key);
+						$display_balance = db_cache_balance($my_public_key, 55, $_SESSION["login_username"]);
 						$body_string = send_receive_body($public_key_64, $send_amount, TRUE, NULL, $message, $_POST["name"]);
 						$body_string .= '<hr><font color="red"><strong>This public key has no existing history of transactions.<br>
 						There is no way to recover Timekoins sent to the wrong public key.</strong></font><br>
@@ -812,12 +812,12 @@ if($_SESSION["valid_login"] == TRUE)
 				$public_key_64 = $_POST["send_public_key"];
 				$message = $_POST["send_message"];
 				$public_key_to = base64_decode($public_key_64);
-				$current_balance = db_cache_balance($my_public_key);			
+				$current_balance = db_cache_balance($my_public_key, 10, $_SESSION["login_username"]);			
 
 				if($send_amount > $current_balance)
 				{
 					// Can't send this much silly
-					$display_balance = db_cache_balance($my_public_key);
+					$display_balance = db_cache_balance($my_public_key, 55, $_SESSION["login_username"]);
 					$body_string = send_receive_body($public_key_64);
 					$body_string .= '<hr><font color="red"><strong>This exceeds your current balance, send failed...</strong></font><br><br>';
 				}
@@ -826,7 +826,7 @@ if($_SESSION["valid_login"] == TRUE)
 					if($my_public_key == $public_key_to)
 					{
 						// Can't send to yourself
-						$display_balance = db_cache_balance($my_public_key);
+						$display_balance = db_cache_balance($my_public_key, 55, $_SESSION["login_username"]);
 						$body_string = send_receive_body();
 						$body_string .= '<hr><font color="red"><strong>Can not send to yourself, send failed...</strong></font><br><br>';
 					}
@@ -845,7 +845,7 @@ if($_SESSION["valid_login"] == TRUE)
 							if(empty($valid_key) == TRUE)
 							{
 								// Decrypt Failed
-								$display_balance = db_cache_balance($my_public_key);
+								$display_balance = db_cache_balance($my_public_key, 55, $_SESSION["login_username"]);
 								$body_string = send_receive_body($public_key_64, $send_amount, NULL, NULL, NULL, $_POST["name"]);
 								$body_string .= '<hr><font color="red"><strong>Send Failed. Wrong Password.</strong></font><br><br>';
 							}
@@ -853,14 +853,14 @@ if($_SESSION["valid_login"] == TRUE)
 							{
 								if(send_timekoins($my_private_key, $my_public_key, $public_key_to, $send_amount, $message) == TRUE)
 								{
-									$display_balance = db_cache_balance($my_public_key);
+									$display_balance = db_cache_balance($my_public_key, 55, $_SESSION["login_username"]);
 									$body_string = send_receive_body($public_key_64, $send_amount, NULL, NULL, NULL, $_POST["name"]);
 									$body_string .= '<hr><font color="green"><strong>You just sent ' . $send_amount . ' timekoins to the above public key.</strong></font><br>
 									<strong>Your balance will not reflect this until the transaction is recorded across the entire network.</strong><br><br>';
 								}
 								else
 								{
-									$display_balance = db_cache_balance($my_public_key);
+									$display_balance = db_cache_balance($my_public_key, 55, $_SESSION["login_username"]);
 									$body_string = send_receive_body($public_key_64, $send_amount, NULL, NULL, NULL, $_POST["name"]);
 									$body_string .= '<hr><font color="red"><strong>Send failed...</strong></font><br><br>';
 								}
@@ -873,14 +873,14 @@ if($_SESSION["valid_login"] == TRUE)
 						{
 							if(send_timekoins($my_private_key, $my_public_key, $public_key_to, $send_amount, $message) == TRUE)
 							{
-								$display_balance = db_cache_balance($my_public_key);
+								$display_balance = db_cache_balance($my_public_key, 55, $_SESSION["login_username"]);
 								$body_string = send_receive_body($public_key_64, $send_amount, NULL, NULL, NULL, $_POST["name"]);
 								$body_string .= '<hr><font color="green"><strong>You just sent ' . $send_amount . ' timekoins to the above public key.</strong></font><br>
 								<strong>Your balance will not reflect this until the transaction is recorded across the entire network.</strong><br><br>';
 							}
 							else
 							{
-								$display_balance = db_cache_balance($my_public_key);
+								$display_balance = db_cache_balance($my_public_key, 55, $_SESSION["login_username"]);
 								$body_string = send_receive_body($public_key_64, $send_amount, NULL, NULL, NULL, $_POST["name"]);
 								$body_string .= '<hr><font color="red"><strong>Send failed...</strong></font><br><br>';
 							}
@@ -914,7 +914,7 @@ if($_SESSION["valid_login"] == TRUE)
 				if(empty($_GET["name_id"]) == TRUE)
 				{
 					// No selections made, default screen
-					$display_balance = db_cache_balance($my_public_key);
+					$display_balance = db_cache_balance($my_public_key, 55, $_SESSION["login_username"]);
 					$body_string = send_receive_body($easy_key, NULL, NULL, $last_easy_key, $message);
 					$body_string .= $server_message;
 				}
@@ -944,7 +944,7 @@ if($_SESSION["valid_login"] == TRUE)
 						$counter++;
 					}
 
-					$display_balance = db_cache_balance($my_public_key);
+					$display_balance = db_cache_balance($my_public_key, 55, $_SESSION["login_username"]);
 					$body_string = send_receive_body($full_key, NULL, NULL, $easy_key, $message, $name);
 				}
 			}
@@ -1863,9 +1863,6 @@ if($_SESSION["valid_login"] == TRUE)
 			$update_available = NULL;
 		}
 
-		$text_bar = '<table border="0"><tr><td style="width:325px"><strong>Current Billfold Balance: <font color="green">' . $display_balance_GUI . '</font> TK</strong></td></tr>
-			<tr>' . $update_available . '</table>';
-
 		$quick_info = 'This section will contain helpful information about each tab in the software.';
 
 		$home_update = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,0);
@@ -1884,6 +1881,9 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			$display_balance_GUI = number_format($display_balance);
 		}
+
+		$text_bar = '<table border="0"><tr><td style="width:325px"><strong>Current Billfold Balance: <font color="green">' . $display_balance_GUI . '</font> TK</strong></td></tr>
+		<tr>' . $update_available . '</table>';
 
 		home_screen("Home", $text_bar, $body_string, $quick_info , $home_update);
 		exit;
@@ -2035,7 +2035,7 @@ if($_SESSION["valid_login"] == TRUE)
 		}
 
 		if($_GET["task"] != "new" && $easy_key_fail == FALSE && $easy_key_edit_fail == FALSE) // Default View
-		{		
+		{
 			$quick_info = "The <strong>Address Book</strong> allows long, obscure public keys to be translated to friendly names.<br><br>
 	Transactions can also quickly be created from here.<br><br>
 	The scribe next to the name can be clicked to bring up a custom history of all transactions to and from the name selected.";

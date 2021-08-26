@@ -783,7 +783,7 @@ function db_cache_balance($my_public_key = "", $cache_refresh_time = 30, $login_
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
-	if($login_username == "")
+	if(empty($login_username) == TRUE)
 	{
 		// Check server balance via cache
 		$billfold_balance = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `data_cache` WHERE `username` = '' AND `field_name` = 'billfold_balance' LIMIT 1"));
@@ -819,14 +819,14 @@ function db_cache_balance($my_public_key = "", $cache_refresh_time = 30, $login_
 }
 //***********************************************************************************
 //***********************************************************************************
-function send_timekoins($my_private_key = "", $my_public_key = "", $send_to_public_key = "", $amount = "", $message = "", $custom_timestamp = FALSE)
+function send_timekoins($my_private_key = "", $my_public_key = "", $send_to_public_key = "", $amount = 0, $message = "", $custom_timestamp = FALSE)
 {
-	if(empty($my_private_key) == TRUE || empty($my_public_key) == TRUE || empty($send_to_public_key) == TRUE)
+	if(empty($my_private_key) == TRUE || empty($my_public_key) == TRUE || empty($send_to_public_key) == TRUE || $amount <= 0)
 	{
 		return FALSE;
 	}
 
-	ini_set('user_agent', 'Timekoin Client v' . TIMEKOIN_VERSION);
+	ini_set('user_agent', 'Timekoin Billfold Server Client v' . TIMEKOIN_VERSION);
 	ini_set('default_socket_timeout', 3); // Timeout for request in seconds
 
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
@@ -1470,7 +1470,7 @@ function create_new_easy_key($my_private_key = "", $my_public_key = "", $new_eas
 			$easy_key_lookup = easy_key_lookup($new_easy_key);
 			$create_check = FALSE;
 
-			if($easy_key_lookup == "")
+			if($easy_key_lookup == "0")
 			{
 				// None exist, let's create it
 				$create_check = TRUE;
