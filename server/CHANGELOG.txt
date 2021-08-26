@@ -1,5 +1,17 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 4.16 (Released 2021-8-26)
+============================================
+- Complete code audit to increase system performance and check code security against exploits
+- Tied user settings to Transaction Cycle checks, just like Foundation checks are now for how frequent to check their database against the network
+- More tweaks to allow the system to shutdown faster during heavy peer traffic without waiting so long to finish
+- Generation Manager won't create peer payment transactions for upcoming election if it detects a firewall issue to avoid losing funds when inbound connections are not working properly
+- Added separate ipv4 firewall testing poll since some servers are using the ipv6 address instead of the ipv4 when doing a DNS lookup on timekoin.net
+- Raised all polling maximums to handle more transactions per cycle (roughly +19,000)
+- RSA key max cap raised to 20,480 from 17,408 bits
+- API updated to handle larger key sizes and more API traffic
+- Update RSA code for 8% increase in speed, getting ready for future use of OAEP RSA encryption and sunset PKCS1 currently used
+
 Timekoin Server - 4.15 (Released 2021-8-17)
 ============================================
 - Created new function to handle Easy Key creation that has better logic for checking against future peer elections and scheduling transactions to avoid interference with a fail-safe user warning just in case it is not possible

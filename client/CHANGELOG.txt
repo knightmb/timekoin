@@ -1,5 +1,12 @@
 Timekoin Client - Change Log
 
+Timekoin Client - 1.31 (Released 2021-8-25)
+===========================================
+- 0000078: [General Issue] Easy Key generation reports that key exists when creating new easy key
+- Added password field for Easy Key creation from an Encrypted Private Key
+- Minor GUI tweak for larger screen size
+- Update RSA code for 8% increase in speed, get ready for future use of OAEP RSA encryption and sunset PKCS1 currently used
+
 Timekoin Client - 1.3 (Released 2021-8-18)
 ===========================================
 - TK Client GUI updated to show Easy Keys on the Send tab just like TK Server
