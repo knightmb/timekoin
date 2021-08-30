@@ -115,6 +115,11 @@ if($_SESSION["valid_login"] == FALSE)
 
 					if($new_delay <= 0)
 					{
+						if($tx_amount == "0")
+						{ 
+							$tx_amount = check_crypt_balance($tx_key2);
+						}
+						
 						// Complete Transaction Task
 						if(check_crypt_balance($tx_key2) >= $tx_amount) // Check for valid balance
 						{
@@ -150,6 +155,11 @@ if($_SESSION["valid_login"] == FALSE)
 
 					if($new_delay <= 0)
 					{
+						if($tx_amount == "0")
+						{ 
+							$tx_amount = check_crypt_balance($tx_key2);
+						}						
+						
 						// Complete Transaction Task
 						if(check_crypt_balance($tx_key2) >= $tx_amount) // Check for valid balance
 						{
@@ -173,6 +183,11 @@ if($_SESSION["valid_login"] == FALSE)
 					$tx_key3 = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key3' LIMIT 1"));
 					$tx_amount = find_string("---amount=", "---amount_match", $sql_row["field_data"]);
 					$amount_match = find_string("---amount_match=", "---end", $sql_row["field_data"]);
+
+					if($tx_amount == "0")
+					{ 
+						$tx_amount = check_crypt_balance($tx_key2);
+					}
 
 					if(check_crypt_balance($tx_key2) >= $amount_match) // Check for valid balance
 					{
@@ -216,6 +231,11 @@ if($_SESSION["valid_login"] == FALSE)
 							}
 							else
 							{
+								if($tx_amount == "0")
+								{ 
+									$tx_amount = check_crypt_balance($tx_key2);
+								}								
+								
 								if(send_timekoins($tx_key1, $tx_key2, $tx_key3, $tx_amount, NULL) == TRUE)
 								{
 									write_log("Auto Transfer Task ($tx_name) Has Completed.", "T");
@@ -357,7 +377,7 @@ if($_SESSION["valid_login"] == TRUE)
 	<textarea name="topublickey" rows="6" cols="62"></textarea>
 	</td></tr>
 	<tr><td align="right">
-	<strong><font color="green">Amount:</font></strong></td><td><input type="text" size="16" name="amount" /></td></tr>
+	<strong><font color="green">Amount:</font></strong></td><td><input type="text" size="16" name="amount" /> <strong>[0 = Entire Balance]</strong></td></tr>
 	<td align="right">
 	<strong>Delay:</strong></td><td>
 	<select name="delay_days">
@@ -527,7 +547,7 @@ if($_SESSION["valid_login"] == TRUE)
 		// Calculate Delay Seconds
 		$delay_seconds = (86400 * $delay_days) + (3600 * $delay_hours) + (60 * $delay_minutes);
 		if($delay_seconds == 0) { $delay_seconds = 300; } // Check for zero
-		if($amount <= 0) { $amount = 1; } // Check for zero
+		if($amount < 0) { $amount = 0; } // Check for negative numbers
 
 		if($type == "onedelay") // One shot delay
 		{
@@ -634,16 +654,8 @@ function autotx_home()
 			$tx_key3 = base64_encode(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `my_keys` WHERE `field_name` = '$tx_key3' LIMIT 1")));
 			$tx_amount = find_string("---amount=", "---amount_match", $sql_row["field_data"]);
 			$amount_match = find_string("---amount_match=", "---end", $sql_row["field_data"]);
-
 			$tx_type = "One Time<br>Amount Match";
-			if($tx_amount == 0)
-			{
-				$tx_conditions = "Finished";
-			}
-			else
-			{
-				$tx_conditions = "Amount >= $amount_match";
-			}
+			$tx_conditions = "Amount >= $amount_match";
 		}
 
 		if($tx_type == "repeatamount")
@@ -676,6 +688,8 @@ function autotx_home()
 			$tx_toggle = '<FORM ACTION="autotransfer.php?task=enable" METHOD="post"><font color="red">Disabled</font><br><input type="submit" name="Submit'.$i.'" value="Enable Here" />
 				<input type="hidden" name="tx_record_name" value="' . $tx_record_name . '"></FORM>';
 		}
+
+		if($tx_amount == "0") { $tx_amount = 'Entire<br>Balance'; }
 
 		$plugin_output .= '<tr><td>' . $tx_name . '</td><td>' . $tx_type . '</td><td>' . $tx_conditions . '</td><td><p style="word-wrap:break-word; width:90px; font-size:' . $default_public_key_font . 'px;">' . $tx_key2 . '</p></td>
 		<td><p style="word-wrap:break-word; width:90px; font-size:' . $default_public_key_font . 'px;">' . $tx_key3 . '</p></td><td align="center">' . $tx_amount . '</td><td valign="top" align="center">' . $tx_toggle . '</td>
