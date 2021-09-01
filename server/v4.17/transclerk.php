@@ -670,7 +670,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 						if($poll_peer >= 1)// This is a super peer that will allow mass downloading of transactions
 						{
 							// How far behind in the transaction history are we?
-							$total_trans_hash = mysql_result(mysqli_query($db_connect, "SELECT COUNT(attribute) FROM `transaction_history` WHERE `attribute` = 'H'"),0);
+							$total_trans_hash = count_transaction_hash(10);
 
 							if(transaction_cycle(0, TRUE) - $total_trans_hash > 500)
 							{

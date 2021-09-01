@@ -318,7 +318,6 @@ if($sql_num_results > 0)
 //*****************************************************************************************************
 // Find all transactions between the Previous Transaction Cycle and the Current
 $sql = "SELECT * FROM `transaction_queue` WHERE `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle ORDER BY `attribute`, `hash`, `timestamp` ASC";
-
 $sql_result = mysqli_query($db_connect, $sql);
 $sql_num_results = mysqli_num_rows($sql_result);
 
@@ -757,17 +756,13 @@ if(empty($current_hash) == TRUE)
 	{
 		// A hash from the previous generation cycle does not exist yet, so create it
 		$sql = "SELECT timestamp, hash FROM `transaction_history` WHERE `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle ORDER BY `timestamp`, `hash` ASC";
-
 		$sql_result = mysqli_query($db_connect, $sql);
 		$sql_num_results = mysqli_num_rows($sql_result);
 		$hash = 0;
 
-		if($sql_num_results == 0)
+		if($sql_num_results != 0)
 		{
-			// Transaction history is incomplete
-		}
-		else
-		{
+			// Time to create next hash to lock transactions from this cycle
 			for ($i = 0; $i < $sql_num_results; $i++)
 			{
 				$sql_row = mysqli_fetch_array($sql_result);
@@ -786,7 +781,6 @@ if(empty($current_hash) == TRUE)
 
 			// Reset Transction Hash Count Cache
 			reset_transaction_hash_count();			
-
 		} // End Previous Hash Missing Check
 
 	} // Pass hash check for existance
@@ -799,7 +793,7 @@ unset($sql_result2);
 unset($payment_sql_result);
 //***********************************************************************************
 //***********************************************************************************
-$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,0);
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"));
 
 // Check script status
 if($loop_active == 3)
@@ -818,7 +812,18 @@ mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = " . time
 //***********************************************************************************
 if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cycle) > 30)
 {
-	sleep(25);
+	sleep(10);
+
+	$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"));
+	// Check script status
+	if($loop_active == 3)
+	{
+		// Time to exit
+		mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active'");
+		exit;
+	}
+
+	sleep(10);
 }
 else
 {

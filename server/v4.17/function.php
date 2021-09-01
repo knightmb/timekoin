@@ -614,9 +614,9 @@ function walkhistory($block_start = 0, $block_end = 0)
 }
 //***********************************************************************************
 //***********************************************************************************
-function count_transaction_hash()
+function count_transaction_hash($cache_timeout = 300)
 {
-	// Check server balance via custom memory index
+	// Check server cache via custom memory index
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	$count_transaction_hash = mysql_result(mysqli_query($db_connect, "SELECT balance FROM `balance_index` WHERE `public_key_hash` = 'count_transaction_hash' LIMIT 1"));
 	$count_transaction_hash_last = mysql_result(mysqli_query($db_connect, "SELECT block FROM `balance_index` WHERE `public_key_hash` = 'count_transaction_hash' LIMIT 1"));
@@ -632,7 +632,7 @@ function count_transaction_hash()
 	}
 	else
 	{
-		if(time() - $count_transaction_hash_last > 300) // 300s cache time
+		if(time() - $count_transaction_hash_last > $cache_timeout) // 300s cache time default
 		{
 			// Update new hash count and cache time
 			$total_trans_hash = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_history` USE INDEX(attribute) WHERE `attribute` = 'H'"));
@@ -654,6 +654,40 @@ function reset_transaction_hash_count()
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 	mysqli_query($db_connect, "DELETE FROM `balance_index` WHERE `balance_index`.`public_key_hash` = 'count_transaction_hash' LIMIT 1");
 	return;
+}
+//***********************************************************************************
+//***********************************************************************************
+function count_transaction_history($cache_timeout = 90)
+{
+	// Check server cache via custom memory index
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+	$count_transaction_history = mysql_result(mysqli_query($db_connect, "SELECT balance FROM `balance_index` WHERE `public_key_hash` = 'count_transaction_history' LIMIT 1"));
+	$count_transaction_history_last = mysql_result(mysqli_query($db_connect, "SELECT block FROM `balance_index` WHERE `public_key_hash` = 'count_transaction_history' LIMIT 1"));
+
+	if($count_transaction_history == "")
+	{
+		// Does not exist, needs to be created
+		mysqli_query($db_connect, "INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`) VALUES ('0', 'count_transaction_history', '0')");
+
+		// Update record with the latest total
+		$total_trans_history = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_history`"));
+		mysqli_query($db_connect, "UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$total_trans_history' WHERE `balance_index`.`public_key_hash` = 'count_transaction_history' LIMIT 1");
+	}
+	else
+	{
+		if(time() - $count_transaction_history_last > $cache_timeout) // 90s cache time default
+		{
+			// Update new hash count and cache time
+			$total_trans_history = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_history`"));
+			mysqli_query($db_connect, "UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$total_trans_history' WHERE `balance_index`.`public_key_hash` = 'count_transaction_history' LIMIT 1");
+		}
+		else
+		{
+			$total_trans_history = $count_transaction_history;
+		}
+	}
+
+	return $total_trans_history;
 }
 //***********************************************************************************
 //***********************************************************************************

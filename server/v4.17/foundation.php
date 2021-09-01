@@ -97,7 +97,7 @@ $current_generation_cycle = transaction_cycle(0);
 $current_generation_block = transaction_cycle(0, TRUE);
 $next_generation_cycle = transaction_cycle(1);
 
-$record_count = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_history`"),0);
+$record_count = count_transaction_history();
 $treasurer_status = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1")));
 
 if($record_count < 500)
@@ -345,7 +345,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 	}
 //***********************************************************************************
 // How many foundation blocks exist?
-	$foundation_blocks = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_foundation`"),0);
+	$foundation_blocks = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_foundation`"));
 
 	// How does it compare to the current foundation cycle?
 	if($foundation_blocks != $current_foundation_block)

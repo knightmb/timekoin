@@ -3,48 +3,47 @@
 //***********************************************************
 function login_screen($error_message = "")
 {
-
-?>
-<!DOCTYPE html>
-<html>
-<head>
-<title>Timekoin</title>
-<link rel="icon" type="image/x-icon" href="img/favicon.ico" />
-<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
-<link  href="css/admin.css" rel="stylesheet" type="text/css" />
-</head>
-<body>
-<div id="main">
-<div id="header">
-<ul id="top-navigation">
-<li><a href="#" class="active">Login</a></li>
-</ul>
-</div>
-<div id="middle">
-<div id="left-column">
-</div>
-<div id="center-column">
-<div class="top-bar">
-<h1>Timekoin Server Login</h1>
-</div>
-<div class="select-bar">
-<FORM ACTION="index.php?action=login" METHOD="post">
-<table border="0"><tr><td align="right">
-Username: <input type="text" size="20" name="timekoin_username" /><br>
-Password: <input type="password" size="20" name="timekoin_password" />	
-</td><td>
-<input type="submit" name="Submit" value="Login" /></td></tr></table>
-</FORM>
-</div>
-<font color="red"><strong><?PHP echo $error_message; ?></strong></font>
-<center><img src="img/timekoin_logo.png" alt="" /></center>
-</div>
-</div>
-<div id="footer"><p>Timekoin Crypto Currency - <a href="http://timekoin.net">http://timekoin.net</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?></p></div>
-</div>
-</body>
-</html>
-<?PHP
+	?>
+	<!DOCTYPE html>
+	<html>
+	<head>
+	<title>Timekoin</title>
+	<link rel="icon" type="image/x-icon" href="img/favicon.ico" />
+	<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+	<link  href="css/admin.css" rel="stylesheet" type="text/css" />
+	</head>
+	<body>
+	<div id="main">
+	<div id="header">
+	<ul id="top-navigation">
+	<li><a href="#" class="active">Login</a></li>
+	</ul>
+	</div>
+	<div id="middle">
+	<div id="left-column">
+	</div>
+	<div id="center-column">
+	<div class="top-bar">
+	<h1>Timekoin Server Login</h1>
+	</div>
+	<div class="select-bar">
+	<FORM ACTION="index.php?action=login" METHOD="post">
+	<table border="0"><tr><td align="right">
+	Username: <input type="text" size="20" name="timekoin_username" /><br>
+	Password: <input type="password" size="20" name="timekoin_password" />	
+	</td><td>
+	<input type="submit" name="Submit" value="Login" /></td></tr></table>
+	</FORM>
+	</div>
+	<font color="red"><strong><?PHP echo $error_message; ?></strong></font>
+	<center><img src="img/timekoin_logo.png" alt="" /></center>
+	</div>
+	</div>
+	<div id="footer"><p>Timekoin Crypto Currency - <a href="http://timekoin.net">http://timekoin.net</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?></p></div>
+	</div>
+	</body>
+	</html>
+	<?PHP
 } 
 //***********************************************************
 //***********************************************************
@@ -179,46 +178,46 @@ function home_screen($contents = "", $select_bar = "", $body = "", $quick_info =
 		$menu_output .= '<li><a href="index.php?menu=logoff">Log Out</a></li>';
 	}
 
-?>
-<!DOCTYPE html>
-<html>
-<head>
-<title>Timekoin Server Administration</title>
-<?PHP 
+	?>
+	<!DOCTYPE html>
+	<html>
+	<head>
+	<title>Timekoin Server Administration</title>
+	<?PHP 
 
 	if($plugin_reference == TRUE)
 	{
 		// Redirect File Reference for Plugin
 		?>
-<link rel="icon" type="image/x-icon" href="../img/favicon.ico" />
-<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
-<link  href="../css/admin.css" rel="stylesheet" type="text/css" />
+	<link rel="icon" type="image/x-icon" href="../img/favicon.ico" />
+	<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+	<link  href="../css/admin.css" rel="stylesheet" type="text/css" />
 		<?PHP
 	}
 	else
 	{
 		// No Plugin
 		?>
-<link rel="icon" type="image/x-icon" href="img/favicon.ico" />
-<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
-<link  href="css/admin.css" rel="stylesheet" type="text/css" />
+	<link rel="icon" type="image/x-icon" href="img/favicon.ico" />
+	<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+	<link  href="css/admin.css" rel="stylesheet" type="text/css" />
 		<?PHP
 	}
 
-?>
+	?>
 
-<?PHP echo $refresh_header; ?>
-</head>
-<body>
-<div id="main">
-<div id="header">
-<ul id="top-navigation">
-<?PHP echo $menu_output; ?>
-</ul>
-</div>
-<div id="middle">
-<div id="left-column">
-<?PHP
+	<?PHP echo $refresh_header; ?>
+	</head>
+	<body>
+	<div id="main">
+	<div id="header">
+	<ul id="top-navigation">
+	<?PHP echo $menu_output; ?>
+	</ul>
+	</div>
+	<div id="middle">
+	<div id="left-column">
+	<?PHP
 	if($plugin_reference == TRUE)
 	{
 		echo '<img src="../img/timekoin_logo_80.png" alt="" />';
@@ -227,27 +226,27 @@ function home_screen($contents = "", $select_bar = "", $body = "", $quick_info =
 	{
 		echo '<img src="img/timekoin_logo_80.png" alt="" />';
 	}	
-?>
-</div>
-<div id="center-column">
-<div class="top-bar">
-<h1><?PHP echo $contents; ?></h1>
-</div>
-<div class="select-bar">
-<?PHP echo $select_bar; ?>
-</div>
-<?PHP echo $body; ?>
-</div>
-<div id="right-column">
-<strong class="h">Quick Info</strong>
-<div class="box"><?PHP echo $quick_info; ?></div>
-</div>
-</div>
-<div id="footer"><p>Timekoin Crypto Currency v<?PHP echo TIMEKOIN_VERSION; ?> - <a href="http://timekoin.net">http://timekoin.net</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?> - ( You are logged in as <strong><?PHP echo $_SESSION["login_username"]; ?></strong> )</p></div>
-</div>
-</body>
-</html>
-<?PHP
+	?>
+	</div>
+	<div id="center-column">
+	<div class="top-bar">
+	<h1><?PHP echo $contents; ?></h1>
+	</div>
+	<div class="select-bar">
+	<?PHP echo $select_bar; ?>
+	</div>
+	<?PHP echo $body; ?>
+	</div>
+	<div id="right-column">
+	<strong class="h">Quick Info</strong>
+	<div class="box"><?PHP echo $quick_info; ?></div>
+	</div>
+	</div>
+	<div id="footer"><p>Timekoin Crypto Currency v<?PHP echo TIMEKOIN_VERSION; ?> - <a href="http://timekoin.net">http://timekoin.net</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?> - ( You are logged in as <strong><?PHP echo $_SESSION["login_username"]; ?></strong> )</p></div>
+	</div>
+	</body>
+	</html>
+	<?PHP
 } 
 //***********************************************************
 //***********************************************************
@@ -450,9 +449,7 @@ function options_screen2()
 	<tr><td colspan="3"><hr></td></tr>
 	<tr><td align="right" colspan="2"><FORM ACTION="index.php?menu=options&amp;manage=tabs" METHOD="post"><input type="submit" name="Submit4" value="Menu Tabs" /></FORM></td>
 	<td align="right"><FORM ACTION="index.php?menu=options&amp;manage=plugins" METHOD="post"><input type="submit" name="Submit5" value="Manage Plugins" /></FORM></td></tr>
-	</table>
-	';
-
+	</table>';
 } 
 //***********************************************************
 //***********************************************************
@@ -485,7 +482,7 @@ function options_screen4()
 	if(check_standard_tab_settings($standard_settings_number, 64) == TRUE) { $backup_enable = "CHECKED"; }else{ $backup_disable = "CHECKED"; }
 	if(check_standard_tab_settings($standard_settings_number, 128) == TRUE) { $tools_enable = "CHECKED"; }else{ $tools_disable = "CHECKED"; }
 
-//	Plugin Tabs
+	//	Plugin Tabs
 	$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' ORDER BY `options`.`field_name` ASC";
 	$sql_result = mysqli_query($db_connect, $sql);
 	$sql_num_results = mysqli_num_rows($sql_result);
@@ -504,14 +501,14 @@ function options_screen4()
 		if($plugin_show == TRUE)
 		{
 			$plugin_output .= '<tr><td valign="top" align="right">' . $plugin_name . '</td>
-	<td valign="top" align="left"><input type="radio" name="plugins_status_' . $i . '" value="0">Hide <input type="radio" name="plugins_status_' . $i . '" value="1" CHECKED>Show</td></tr>
-	<input type="hidden" name="plugins_'. $i .'" value="' . $plugin_file . '">';
+			<td valign="top" align="left"><input type="radio" name="plugins_status_' . $i . '" value="0">Hide <input type="radio" name="plugins_status_' . $i . '" value="1" CHECKED>Show</td></tr>
+			<input type="hidden" name="plugins_'. $i .'" value="' . $plugin_file . '">';
 		}
 		else
 		{
 			$plugin_output .= '<tr><td valign="top" align="right">' . $plugin_name . '</td>
-	<td valign="top" align="left"><input type="radio" name="plugins_status_' . $i . '" value="0" CHECKED>Hide <input type="radio" name="plugins_status_' . $i . '" value="1">Show</td></tr>
-	<input type="hidden" name="plugins_'. $i .'" value="' . $plugin_file . '">';
+			<td valign="top" align="left"><input type="radio" name="plugins_status_' . $i . '" value="0" CHECKED>Hide <input type="radio" name="plugins_status_' . $i . '" value="1">Show</td></tr>
+			<input type="hidden" name="plugins_'. $i .'" value="' . $plugin_file . '">';
 		}
 	}
 
@@ -537,9 +534,7 @@ function options_screen4()
 	<tr><td valign="bottom" align="center" colspan="2"><strong>Plugin Tabs</strong></td></tr>
 	' . $plugin_output . '
 	<tr><td align="right" colspan="2"><input type="submit" name="Submit1" value="Save Tabs" /></td></tr>
-	</table></FORM>
-	';
-
+	</table></FORM>';
 } 
 //***********************************************************
 //***********************************************************
@@ -758,10 +753,10 @@ function system_screen()
 	}
 
 	// Total number of records
-	$total_records = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_history`"),0);
+	$total_records = count_transaction_history();
 
 	// Total number of transaction foundations in database
-	$total_foundations = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_foundation`"),0);
+	$total_foundations = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_foundation`"));
 
 	if($total_foundations == foundation_cycle(0, TRUE))
 	{
@@ -1012,5 +1007,4 @@ function backup_body($private_key = "", $public_key = "", $cancel_private = FALS
 }
 //***********************************************************
 //***********************************************************
-
 ?>
