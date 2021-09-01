@@ -673,8 +673,8 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 
 					// Server public key is listed as a qualified generation server.
 					// Has the server submitted it's currency generation to the transaction queue?
-					$found_public_key_my_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'G' LIMIT 1"),0,0);
-					$found_public_key_trans_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_queue` WHERE `public_key` = '$my_public_key' AND `attribute` = 'G' LIMIT 1"),0,0);
+					$found_public_key_my_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `my_transaction_queue` WHERE `public_key` = '$my_public_key' AND `attribute` = 'G' LIMIT 1"));
+					$found_public_key_trans_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_queue` WHERE `public_key` = '$my_public_key' AND `attribute` = 'G' LIMIT 1"));
 					$join_peer_list = find_v6_gen_join($my_public_key);
 					$join_peer_list2 = find_v4_gen_join($my_public_key);
 
@@ -725,7 +725,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 	} // Generation enabled check
 
 } // End Time allowed check
-$my_private_key = NULL;//Wipe from memory
+unset($my_private_key);//Wipe from memory
 //***********************************************************************************
 //***********************************************************************************
 $loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,0);
