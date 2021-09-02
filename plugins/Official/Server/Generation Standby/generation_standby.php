@@ -106,9 +106,9 @@ if($_SESSION["valid_login"] == FALSE)
 					$last_generation = time();
 				}
 
-				if(time() - $last_generation > 23400)// Create minimum needed after 6.5 Hours (23,400 Seconds)
+				if(time() - $last_generation > 18000)// Create minimum needed after 5 Hours (18,000 Seconds)
 				{
-					// More than 6 Hours has passed,
+					// More than 5 Hours has passed,
 					// schedule generation creation if it will happen in the next cycle
 					if($next_generation_cycle == TRUE)// Check 1 cycle ahead
 					{
