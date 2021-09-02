@@ -225,12 +225,12 @@ if($_SESSION["valid_login"] == TRUE)
 		<table border="0"><tr><td align="right">
 		<strong>Description:</strong></td><td><input type="text" size="48" name="generation_standby_description" /></td></tr>
 		<tr><td>
-		<strong><font color="blue">Generation Key - Private Key:</font></strong><br><br>
+		<strong><font color="blue">Generation - Private Key:</font></strong><br><br>
 		<input type="checkbox" name="use_private" value="1">Use Server<br>Private & Public Key</td><td>
 		<textarea name="fromprivatekey" rows="6" cols="62"></textarea>
 		</td></tr>
 		<tr><td>
-		<strong><font color="blue">Generation Key - Public Key:</font></strong></td><td>
+		<strong><font color="blue">Generation - Public Key:</font></strong></td><td>
 		<textarea name="frompublickey" rows="6" cols="62"></textarea>
 		</td></tr>
 		<tr><td><input type="submit" name="Submit" value="Save Generation Key" /></td><td></td></tr></table>
