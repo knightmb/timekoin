@@ -458,7 +458,7 @@ function call_script($script = "", $priority = 1, $plugin = FALSE, $web_server_c
 		}
 		else
 		{
-			exec("php $script &> /dev/null &"); // This will execute without waiting for it to finish
+			exec("php $script > /dev/null 2>/dev/null &"); // This will execute without waiting for it to finish
 		}
 	}
 	else if($plugin == TRUE)
@@ -470,7 +470,7 @@ function call_script($script = "", $priority = 1, $plugin = FALSE, $web_server_c
 		}
 		else
 		{
-			exec("php plugins/$script &> /dev/null &"); // This will execute without waiting for it to finish
+			exec("php plugins/$script > /dev/null 2>/dev/null &"); // This will execute without waiting for it to finish
 		}
 	}
 	else
@@ -482,7 +482,7 @@ function call_script($script = "", $priority = 1, $plugin = FALSE, $web_server_c
 		}
 		else
 		{
-			exec("nice php $script &> /dev/null &"); // This will execute without waiting for it to finish
+			exec("nice php $script > /dev/null 2>/dev/null &"); // This will execute without waiting for it to finish
 		}
 	}
 
