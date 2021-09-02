@@ -2,7 +2,7 @@
 // PLUGIN_NAME=Generation Standby---END
 // PLUGIN_TAB=Gen Standby---END
 // PLUGIN_SERVICE=Generation Standby---END
-define("AUTOCHECK","60"); // How Often in seconds to Check Database
+define("AUTOCHECK","30"); // How Often in seconds to Check Database
 set_time_limit(99); // How many seconds to wait until timeout
 session_name("timekoin"); // Continue Session Name, Default: [timekoin]
 session_start(); // Continue Session
@@ -12,12 +12,12 @@ function tk_online()
 	// Make DB Connection
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
-	$time_resolution = 10; // How many sleep cycle divisions of the AUTOCHECK interval
+	$time_resolution = 5; // How many sleep cycle divisions of the AUTOCHECK interval
 	$sleep_counter = intval(AUTOCHECK / $time_resolution);
 
 	while($time_resolution > 0)
 	{
-		set_time_limit(99); // Reset Timeout
+		set_time_limit(999); // Reset Timeout
 		// Are we to remain active?
 		$timekoin_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'main_heartbeat_active' LIMIT 1"));
 
@@ -116,7 +116,7 @@ if($_SESSION["valid_login"] == FALSE)
 
 						// Server public key is listed as a qualified generation server.
 						// Has the server submitted it's currency generation to the transaction queue?
-						$found_public_key_my_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `my_transaction_queue` WHERE `public_key` = '$my_public_key' AND `attribute` = 'G' LIMIT 1"));
+						$found_public_key_my_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'G' LIMIT 1"));
 						$found_public_key_trans_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_queue` WHERE `public_key` = '$my_public_key' AND `attribute` = 'G' LIMIT 1"));
 
 						if(empty($found_public_key_my_queue) == TRUE && empty($found_public_key_trans_queue) == TRUE)
@@ -140,6 +140,7 @@ if($_SESSION["valid_login"] == FALSE)
 							if(mysqli_query($db_connect, $sql) == TRUE)
 							{
 								write_log("Generation Standby [$generation_standby_description] Has Completed.","T");
+								break;
 							}
 						}
 
@@ -152,7 +153,13 @@ if($_SESSION["valid_login"] == FALSE)
 		} // Looping through all generation keys
 
 		unset($my_private_key); // Clear Private Key From RAM
-
+		unset($encryptedData1);
+		unset($encryptedData2);
+		unset($encryptedData3);
+		unset($encryptedData64_1);
+		unset($encryptedData64_2);
+		unset($encryptedData64_3);
+		unset($arr1);
 	} // Infinite Loop :)
 
 	exit;
