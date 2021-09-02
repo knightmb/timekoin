@@ -1571,6 +1571,10 @@ mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '2' WHER
 mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'genpeer_last_heartbeat' LIMIT 1");
 
 //***********************************************************************************
+// Memory Cleanup Before Sleep
+unset($sql_result);
+unset($poll_peer);
+//***********************************************************************************
 sleep(10);
 } // End Infinite Loop
 ?>

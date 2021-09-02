@@ -514,10 +514,6 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 //***********************************************************************************
 } // End transaction cycle allowed check
 
-// Unset variable to free up RAM
-	unset($sql_result);
-	unset($sql_result2);
-
 //***********************************************************************************
 //***********************************************************************************
 $loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,"field_data");
@@ -536,6 +532,10 @@ mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '2' WHER
 // Record when this script finished
 mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'foundation_last_heartbeat' LIMIT 1");
 
+//***********************************************************************************
+// Memory Cleanup Before Sleep
+unset($sql_result);
+unset($sql_result2);
 //***********************************************************************************
 sleep(10);
 } // End Infinite Loop

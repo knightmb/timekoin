@@ -725,7 +725,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 	} // Generation enabled check
 
 } // End Time allowed check
-unset($my_private_key);//Wipe from memory
+
 //***********************************************************************************
 //***********************************************************************************
 $loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,0);
@@ -744,6 +744,17 @@ mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '2' WHER
 // Record when this script finished
 mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'generation_last_heartbeat' LIMIT 1");
 
+//***********************************************************************************
+// Memory Cleanup Before Sleep
+unset($sql_result);
+unset($sql_result2);
+unset($my_private_key);
+unset($encryptedData1);
+unset($encryptedData2);
+unset($encryptedData3);
+unset($encryptedData64_1);
+unset($encryptedData64_2);
+unset($encryptedData64_3);
 //***********************************************************************************
 sleep(10);
 } // End Infinite Loop

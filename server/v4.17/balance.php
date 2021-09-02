@@ -134,7 +134,7 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 				if($balance_index == "")
 				{
 					// No index balance, go ahead and create one
-					write_log("Updating Balance Index For Transaction Queue", "BA");
+					write_log("Updating Balance Index From Transaction Queue", "BA");
 					check_crypt_balance($sql_row["public_key"]);
 					$queue_index_created = TRUE;
 				}
@@ -171,7 +171,7 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 				if($generation_records_total == "")
 				{
 					// No lifetime transaction index, go ahead and create one
-					write_log("Updating Lifetime Generation Index For Transaction Queue", "BA");
+					write_log("Updating Lifetime Generation Index From Transaction Queue", "BA");
 					gen_lifetime_transactions($sql_row["public_key"]);
 					$queue_index_created = TRUE;
 				}
@@ -230,6 +230,9 @@ mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '2' WHER
 // Record when this script finished
 mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'balance_last_heartbeat' LIMIT 1");
 
+//***********************************************************************************
+// Memory Cleanup Before Sleep
+unset($sql_result);
 //***********************************************************************************
 sleep(10);
 } // End Infinite Loop

@@ -565,7 +565,7 @@ if($active_peers == 0 && $new_peers == 0)
 		if(ipv6_test($peer_ip) == TRUE)
 		{
 			$peer_ip = ipv6_compress($peer_ip);
-		}		
+		}
 
 		// Insert into database as first contact server(s)
 		$sql = "INSERT INTO `active_peer_list` (`IP_Address` ,`domain` ,`subfolder` ,`port_number` ,`last_heartbeat`, `join_peer_list`, `failed_sent_heartbeat`)
@@ -1375,6 +1375,10 @@ mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '2' WHER
 // Record when this script finished
 mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'peerlist_last_heartbeat' LIMIT 1");
 
+//***********************************************************************************
+// Memory Cleanup Before Sleep
+unset($sql_result);
+unset($poll_peer);
 //***********************************************************************************
 sleep(10);
 } // End Infinite Loop

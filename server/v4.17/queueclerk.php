@@ -1154,6 +1154,11 @@ else
 	exit; // Exit Clone Process
 }
 //***********************************************************************************
+// Memory Cleanup Before Sleep
+unset($sql_result);
+unset($sql_result2);
+unset($poll_peer);
+//***********************************************************************************
 if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cycle) > 30)
 {
 	sleep(1);

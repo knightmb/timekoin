@@ -1307,9 +1307,6 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 	
 	//***********************************************************************************	
 
-	// Clear variable from RAM
-	unset($sql_result);
-
 } // End if/then time check
 
 //***********************************************************************************
@@ -1330,7 +1327,13 @@ mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '2' WHER
 // Record when this script finished
 mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'transclerk_last_heartbeat' LIMIT 1");
 
-//**********
+//***********************************************************************************
+// Memory Cleanup Before Sleep
+unset($sql_result);
+unset($poll_peer);
+unset($super_peer_insert);
+unset($super_peer_full_query);
+//***********************************************************************************
 // Start working right away when getting
 // transaction history in sync with the network
 if($transaction_multi == TRUE)

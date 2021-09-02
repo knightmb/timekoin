@@ -787,10 +787,6 @@ if(empty($current_hash) == TRUE)
 
 } // End Empty Hash Check
 
-// Clear variable from RAM
-unset($sql_result);
-unset($sql_result2);
-unset($payment_sql_result);
 //***********************************************************************************
 //***********************************************************************************
 $loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"));
@@ -809,6 +805,18 @@ mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = 2 WHERE 
 // Record when this script finished
 mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = " . time() . " WHERE `main_loop_status`.`field_name` = 'treasurer_last_heartbeat' LIMIT 1");
 
+//***********************************************************************************
+// Memory Cleanup Before Sleep
+unset($sql_result);
+unset($sql_result2);
+unset($payment_sql_result);
+unset($crypt1);
+unset($crypt2);
+unset($crypt3);
+unset($public_key_to_1);
+unset($public_key_to_2);
+unset($public_key_to);
+unset($public_key);
 //***********************************************************************************
 if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cycle) > 30)
 {
