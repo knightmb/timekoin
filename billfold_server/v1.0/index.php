@@ -188,6 +188,7 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 {
 	$http_username = $_POST["timekoin_username"];
 	$http_password = $_POST["timekoin_password"];
+	$use_mobile_theme = $_POST["use_mobile_theme"];
 
 	if(empty($http_username) == FALSE && empty($http_password) == FALSE)
 	{
@@ -277,6 +278,11 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 				$_SESSION["login_username"] = $http_username;
 				$_SESSION["valid_login"] = TRUE;
 
+				if($use_mobile_theme == 1)
+				{
+					$_SESSION["use_mobile_theme"] = TRUE;
+				}
+
 				// Create decrypting password for settings and other features that only exist for that user
 				$AES_SHA256_password = hash('sha256', $http_password . $password_SHA256);			
 				$_SESSION["decrypt_password"] = $AES_SHA256_password;
@@ -310,14 +316,14 @@ if($_SESSION["valid_login"] == TRUE)
 	}
 	//****************************************************************************
 	//
-	if(empty($_GET["menu"]) == TRUE)
+	if(empty($_GET["menu"]) == TRUE && $_SESSION["use_mobile_theme"] == FALSE)
 	{
 		// Build frame box with the bottom self-refreshing frame for task
 		?>
 		<!DOCTYPE html>		
 		<html>
 		  <head>
-			<title>Timekoin Client Billfold</title>			
+			<title>Timekoin Client Server Billfold</title>			
 			<link rel="icon" type="image/x-icon" href="img/favicon.ico" />
 			<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
 			<script type="text/javascript">
@@ -344,13 +350,27 @@ if($_SESSION["valid_login"] == TRUE)
 //****************************************************************************
 	if(($_GET["menu"] == "home" || empty($_GET["menu"]) == TRUE) && $_SESSION["admin_login"] != TRUE)
 	{
-		$body_string = '<strong>Last 20 <font color="green">Received</font> Transaction Amounts to My Billfold</strong><br><canvas id="recv_graph" width="690" height="300">Your Web Browser does not support HTML5 Canvas.</canvas>';
-		$body_string .= '<hr>';
-		$body_string .= '<strong>Last 20 <font color="blue">Sent</font> Transaction Amounts from My Billfold</strong><br><canvas id="sent_graph" width="690" height="300">Your Web Browser does not support HTML5 Canvas.</canvas>';
-		$body_string .= '<hr>';
-		$body_string .= '<strong>Timekoin Network - Total Transactions per Cycle (Last 25 Cycles)</strong><br><canvas id="trans_total" width="690" height="200">Your Web Browser does not support HTML5 Canvas.</canvas>';
-		$body_string .= '<hr>';
-		$body_string .= '<strong>Timekoin Network - Total Amounts Sent per Cycle (Last 20 Cycles)</strong><br><canvas id="amount_total" width="690" height="400">Your Web Browser does not support HTML5 Canvas.</canvas>';
+		if($_SESSION["use_mobile_theme"] == TRUE)
+		{
+			$show_last = 10;
+			$body_string = '<strong>Last ' . $show_last . ' <font color="green">Received</font> Amounts to My Billfold</strong><br><canvas id="recv_graph" width="320" height="200">Your Web Browser does not support HTML5 Canvas.</canvas>';
+			$body_string .= '<hr>';
+			$body_string .= '<strong>Last ' . $show_last . ' <font color="blue">Sent</font> Amounts from My Billfold</strong><br><canvas id="sent_graph" width="320" height="200">Your Web Browser does not support HTML5 Canvas.</canvas>';
+			$body_string .= '<hr>';
+			$body_string .= '<strong>Network Transactions per Cycle (Last ' . $show_last . ' Cycles)</strong><br><canvas id="trans_total" width="320" height="100">Your Web Browser does not support HTML5 Canvas.</canvas>';
+			$body_string .= '<hr>';
+			$body_string .= '<strong>Network Total Amounts Sent per Cycle (Last ' . $show_last . ' Cycles)</strong><br><canvas id="amount_total" width="320" height="200">Your Web Browser does not support HTML5 Canvas.</canvas>';			
+		}
+		else
+		{
+			$body_string = '<strong>Last 20 <font color="green">Received</font> Transaction Amounts to My Billfold</strong><br><canvas id="recv_graph" width="690" height="300">Your Web Browser does not support HTML5 Canvas.</canvas>';
+			$body_string .= '<hr>';
+			$body_string .= '<strong>Last 20 <font color="blue">Sent</font> Transaction Amounts from My Billfold</strong><br><canvas id="sent_graph" width="690" height="300">Your Web Browser does not support HTML5 Canvas.</canvas>';
+			$body_string .= '<hr>';
+			$body_string .= '<strong>Timekoin Network - Total Transactions per Cycle (Last 25 Cycles)</strong><br><canvas id="trans_total" width="690" height="200">Your Web Browser does not support HTML5 Canvas.</canvas>';
+			$body_string .= '<hr>';
+			$body_string .= '<strong>Timekoin Network - Total Amounts Sent per Cycle (Last 20 Cycles)</strong><br><canvas id="amount_total" width="690" height="400">Your Web Browser does not support HTML5 Canvas.</canvas>';			
+		}		
 
 		$display_balance = db_cache_balance(my_public_key($_SESSION["login_username"], $_SESSION["decrypt_password"]), 55, $_SESSION["login_username"]);
 		$home_update = default_settings($_SESSION["login_username"], $_SESSION["decrypt_password"], "refresh_realtime_home");
@@ -372,9 +392,16 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$text_bar = '<table border="0"><tr><td style="width:325px"><strong>Current Billfold Balance: <font color="green">' . $display_balance_GUI . '</font> TK</strong></td></tr></table>';
 
-		$quick_info = 'This section will contain helpful information about each tab in the software.';
-
-		home_screen("Home", $text_bar, $body_string, $quick_info , $home_update);
+		if($_SESSION["use_mobile_theme"] == TRUE)
+		{
+			$quick_info = 'This section will contain helpful information about each menu in the software.';
+			mobile_home_screen("Home", $text_bar, $body_string, $quick_info , $home_update);
+		}
+		else
+		{
+			$quick_info = 'This section will contain helpful information about each tab in the software.';
+			home_screen("Home", $text_bar, $body_string, $quick_info , $home_update);
+		}
 		exit;
 
 	}
@@ -567,22 +594,46 @@ if($_SESSION["valid_login"] == TRUE)
 				$counter++;
 			}
 
-			$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
+			if($_SESSION["use_mobile_theme"] == TRUE)
+			{
+				// Mobile Theme
+				$body_string = '<div class="table-wrapper"><table class="alt"><thead>
+				<tr><th>Address Name</th><th>Easy Key</th><th>Full Public Key</th><th></th><th></th><th></th></tr></thead><tbody>';
+
+				for ($i = 1; $i < $display_counter + 1; $i++)
+				{
+					$body_string .= '<tr><td>' . $address_book["name$i"] . 
+					' <a href="index.php?menu=history&amp;name_id=' . $address_book["id$i"] . '" title="' . $address_book["name$i"] . ' History"><img src="img/timekoin_history.png" style="float: right;"></a></td>
+					<td>' . $address_book["easy_key$i"] . '</td>
+					<td><p style="word-wrap:break-word; width:225px; font-size:' . $default_public_key_font . 'px;">' . $address_book["full_key$i"] . '</p></td>
+					<td><a href="index.php?menu=address&amp;task=delete&amp;name_id=' . $address_book["id$i"] . '" title="Delete ' . $address_book["name$i"] . '" onclick="return confirm(\'Delete ' . $address_book["name$i"] . '?\');"><img src="img/hr.gif"></a></td>
+					<td><a href="index.php?menu=address&amp;task=edit&amp;name_id=' . $address_book["id$i"] . '" title="Edit ' . $address_book["name$i"] . '"><img src="img/edit-icon.gif"></a></td>
+					<td><a href="index.php?menu=send&amp;name_id=' . $address_book["id$i"] . '" title="Send Koins to ' . $address_book["name$i"] . '"><img src="img/timekoin_send.png"></a></td></tr>';
+				}
+
+				$body_string .= '<tr><td colspan="6"><hr></td></tr><tr>
+				<td colspan="6"><FORM ACTION="index.php?menu=address&amp;task=new" METHOD="post"><input type="submit" value="Add New Address" /></FORM></td></tr></tbody></table></div>';
+			}
+			else
+			{
+				// Desktop Theme
+				$body_string = '<div class="table"><table class="listing" border="0" cellspacing="0" cellpadding="0" >
 				<tr><th>Address Name</th><th>Easy Key</th><th>Full Public Key</th><th></th><th></th><th></th></tr>';
 
-			for ($i = 1; $i < $display_counter + 1; $i++)
-			{
-				$body_string .= '<tr><td class="style2"><p style="word-wrap:break-word; width:175px; font-size:12px;">' . $address_book["name$i"] . 
-				' <a href="index.php?menu=history&amp;name_id=' . $address_book["id$i"] . '" title="' . $address_book["name$i"] . ' History"><img src="img/timekoin_history.png" style="float: right;"></a></p>
-				</td><td class="style1"><p style="word-wrap:break-word; width:175px; font-size:12px;">' . $address_book["easy_key$i"] . 
-				'</p></td><td class="style1"><p style="word-wrap:break-word; width:225px; font-size:' . $default_public_key_font . 'px;">' . $address_book["full_key$i"] . '</p></td>
-				<td><a href="index.php?menu=address&amp;task=delete&amp;name_id=' . $address_book["id$i"] . '" title="Delete ' . $address_book["name$i"] . '" onclick="return confirm(\'Delete ' . $address_book["name$i"] . '?\');"><img src="img/hr.gif"></a></td>
-				<td><a href="index.php?menu=address&amp;task=edit&amp;name_id=' . $address_book["id$i"] . '" title="Edit ' . $address_book["name$i"] . '"><img src="img/edit-icon.gif"></a></td>
-				<td><a href="index.php?menu=send&amp;name_id=' . $address_book["id$i"] . '" title="Send Koins to ' . $address_book["name$i"] . '"><img src="img/timekoin_send.png"></a></td></tr>';
-			}
+				for ($i = 1; $i < $display_counter + 1; $i++)
+				{
+					$body_string .= '<tr><td class="style2"><p style="word-wrap:break-word; width:175px; font-size:12px;">' . $address_book["name$i"] . 
+					' <a href="index.php?menu=history&amp;name_id=' . $address_book["id$i"] . '" title="' . $address_book["name$i"] . ' History"><img src="img/timekoin_history.png" style="float: right;"></a></p>
+					</td><td class="style1"><p style="word-wrap:break-word; width:175px; font-size:12px;">' . $address_book["easy_key$i"] . 
+					'</p></td><td class="style1"><p style="word-wrap:break-word; width:225px; font-size:' . $default_public_key_font . 'px;">' . $address_book["full_key$i"] . '</p></td>
+					<td><a href="index.php?menu=address&amp;task=delete&amp;name_id=' . $address_book["id$i"] . '" title="Delete ' . $address_book["name$i"] . '" onclick="return confirm(\'Delete ' . $address_book["name$i"] . '?\');"><img src="img/hr.gif"></a></td>
+					<td><a href="index.php?menu=address&amp;task=edit&amp;name_id=' . $address_book["id$i"] . '" title="Edit ' . $address_book["name$i"] . '"><img src="img/edit-icon.gif"></a></td>
+					<td><a href="index.php?menu=send&amp;name_id=' . $address_book["id$i"] . '" title="Send Koins to ' . $address_book["name$i"] . '"><img src="img/timekoin_send.png"></a></td></tr>';
+				}
 
-			$body_string .= '<tr><td colspan="6"><hr></td></tr><tr>
-			<td colspan="6"><FORM ACTION="index.php?menu=address&amp;task=new" METHOD="post"><input type="submit" value="Add New Address" onclick="showWait()"/></FORM></td></tr></table></div>';
+				$body_string .= '<tr><td colspan="6"><hr></td></tr><tr>
+				<td colspan="6"><FORM ACTION="index.php?menu=address&amp;task=new" METHOD="post"><input type="submit" value="Add New Address" onclick="showWait()"/></FORM></td></tr></table></div>';
+			}
 		}
 
 		if($_GET["task"] != "new" && $easy_key_fail == FALSE && $easy_key_edit_fail == FALSE) // Default View
@@ -598,10 +649,17 @@ if($_SESSION["valid_login"] == TRUE)
 			If no Easy Key is known or needed, just enter the full Public Key instead.";
 		}
 
-		$text_bar = '<FORM ACTION="index.php?menu=address&amp;font=public_key" METHOD="post">
-		<table border="0" cellspacing="4"><tr><td><strong>Default Public Key Font Size</strong></td><td><input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" /><input type="submit" name="Submit3" value="Save" onclick="showWait()" /></td></tr></table></FORM>';
+		if($_SESSION["use_mobile_theme"] == TRUE)
+		{
+			mobile_home_screen("Address Book", $text_bar . $server_message, $body_string, $quick_info);
+		}
+		else
+		{
+			$text_bar = '<FORM ACTION="index.php?menu=address&amp;font=public_key" METHOD="post">
+			<table border="0" cellspacing="4"><tr><td><strong>Default Public Key Font Size</strong></td><td><input type="text" size="2" name="font_size" value="' . $default_public_key_font .'" /><input type="submit" name="Submit3" value="Save" onclick="showWait()" /></td></tr></table></FORM>';
 
-		home_screen("Address Book", $text_bar . $server_message, $body_string, $quick_info);
+			home_screen("Address Book", $text_bar . $server_message, $body_string, $quick_info);
+		}
 		exit;
 	}	
 //****************************************************************************
@@ -742,7 +800,14 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$home_update = default_settings($_SESSION["login_username"], $_SESSION["decrypt_password"], "refresh_realtime_home");
 
-		home_screen('Transactions in Network Queue', $text_bar, $body_string , $quick_info, $home_update);
+		if($_SESSION["use_mobile_theme"] == TRUE)
+		{
+			mobile_home_screen('Transactions in Network Queue', $text_bar, $body_string , $quick_info, $home_update);
+		}
+		else
+		{
+			home_screen('Transactions in Network Queue', $text_bar, $body_string , $quick_info, $home_update);
+		}
 		exit;
 	}
 //****************************************************************************
@@ -1134,7 +1199,14 @@ if($_SESSION["valid_login"] == TRUE)
 		<textarea id="current_public_key" readonly="readonly" rows="6" style="width: 100%; max-width: 100%;">' . base64_encode($my_public_key) . '</textarea><br>
 		<button title="Copy Public Key to Clipboard" onclick="myPublicKey()"><span id="myTooltip2">Copy Public Key</span></button><br>' . $easy_key_list;
 
-		home_screen('Send / Receive Timekoins', $text_bar, $body_string , $quick_info);
+		if($_SESSION["use_mobile_theme"] == TRUE)
+		{
+			mobile_home_screen('Send / Receive Timekoins', $text_bar, $body_string , $quick_info);
+		}
+		else
+		{
+			home_screen('Send / Receive Timekoins', $text_bar, $body_string , $quick_info);
+		}
 		exit;
 	}
 //****************************************************************************	
@@ -1362,8 +1434,14 @@ if($_SESSION["valid_login"] == TRUE)
 		The larger the number, the more time that all the peers have examined it and agree that it is a valid transaction.<br><br>
 		You can view up to 100 past transactions that have been <u>sent from</u> or <u>sent to</u> your Billfold.';
 
-		home_screen('Transaction History', $text_bar, $body_string , $quick_info);
-
+		if($_SESSION["use_mobile_theme"] == TRUE)
+		{
+			mobile_home_screen('Transaction History', $text_bar, $body_string , $quick_info);
+		}
+		else
+		{
+			home_screen('Transaction History', $text_bar, $body_string , $quick_info);
+		}
 		exit;
 	}
 //****************************************************************************
@@ -1692,7 +1770,14 @@ if($_SESSION["valid_login"] == TRUE)
 			exit;
 		}
 
-		home_screen("Options &amp; Personal Settings", options_screen(), $body_text , $quick_info);
+		if($_SESSION["use_mobile_theme"] == TRUE)
+		{
+			mobile_home_screen("Options &amp; Personal Settings", options_screen(), $body_text , $quick_info);
+		}
+		else
+		{
+			home_screen("Options &amp; Personal Settings", options_screen(), $body_text , $quick_info);
+		}
 		exit;
 	}	
 //****************************************************************************
@@ -1835,7 +1920,14 @@ if($_SESSION["valid_login"] == TRUE)
 		<strong><font color="blue">Download Keys</font></strong> will create a text file that can be used to restore the keys on this or a different client.<br><br>
 		Save both keys in a password protected document or external device that you can secure (CD, Flash Drive, Printed Paper, etc.)';
 
-		home_screen('Backup &amp; Restore Keys', $clipboard_copy . $text_bar, $body_string , $quick_info);
+		if($_SESSION["use_mobile_theme"] == TRUE)
+		{
+			mobile_home_screen('Backup &amp; Restore Keys', $clipboard_copy . $text_bar, $body_string , $quick_info);
+		}
+		else
+		{
+			home_screen('Backup &amp; Restore Keys', $clipboard_copy . $text_bar, $body_string , $quick_info);
+		}
 		exit;		
 	}
 //****************************************************************************

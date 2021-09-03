@@ -52,9 +52,11 @@ function login_screen($error_message = "")
 	<FORM ACTION="index.php?action=login" METHOD="post">
 	<table border="0"><tr><td align="right">
 	Username: <input type="text" name="timekoin_username" /><br>
-	Password: <input type="password" name="timekoin_password" />	
+	Password: <input type="password" name="timekoin_password" />
 	</td><td>
-	<input type="submit" name="Submit" value="Login" onclick="showWait()" /></td></tr></table>
+	<input type="submit" name="Submit" value="Login" onclick="showWait()" /></td></tr>
+	<tr><td></td><td>	<input type="checkbox" name="use_mobile_theme" value="1">Use Mobile Theme </td></tr>
+	</table>
 	</FORM>
 	</div><font color="red"><strong><?PHP echo $error_message; ?></strong></font>
 	<FORM ACTION="index.php?action=create_account" METHOD="post">
@@ -169,6 +171,245 @@ function create_account_screen($error_message = "", $no_error = FALSE)
 } 
 //***********************************************************
 //***********************************************************
+function chart_script_headers($username_hash = "", $user_public_key = "", $last = 20, $total_trans_last = 25, $total_network_amounts_last = 20, $mobile_verion = FALSE)
+{
+	$largest_sent = 10;
+	$largest_recv = 10;
+	$cache_refresh_time = 60; // How many seconds for cache to remain valid before refresh is required
+
+	$graph_data_range_recv = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `data_cache` WHERE `username` = '$username_hash' AND `field_name` = 'graph_data_range_recv' LIMIT 1"));
+	$timestamp_cache = intval(find_string("---time=", "---max", $graph_data_range_recv));
+
+	if(time() - $cache_refresh_time > $timestamp_cache) // Cache TTL
+	{
+		// Old data needs to be refreshed
+		$history_data_to = transaction_history_query(1, $last, $username_hash, $user_public_key);
+		$counter = 1;
+		$graph_data_range_recv = NULL;
+		while($counter <= $last) // History Limit
+		{
+			$amount = find_string("---AMOUNT$counter=", "---VERIFY", $history_data_to);					
+
+			if($amount == "")
+			{
+				// No more data to search
+				break;
+			}
+
+			$counter++;
+			if($counter <= $last + 1)
+			{
+				if($amount > $largest_recv)
+				{
+					$largest_recv = $amount + 2;
+				}
+				$graph_data_range_recv .= ",$amount";
+			}
+		}
+		// Update data cache
+		if(empty($graph_data_range_recv) == FALSE)
+		{
+			mysqli_query($db_connect, "UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---max=$largest_recv---data=$graph_data_range_recv---end' WHERE `data_cache`.`username` = '$username_hash' AND `data_cache`.`field_name` = 'graph_data_range_recv' LIMIT 1");
+		}
+	}
+	else
+	{
+		// Use cached data
+		$largest_recv = find_string("---max=", "---data", $graph_data_range_recv);
+		$graph_data_range_recv = find_string("---data=", "---end", $graph_data_range_recv);
+	}
+
+	$graph_data_range_sent = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `data_cache` WHERE `username` = '$username_hash' AND `field_name` = 'graph_data_range_sent' LIMIT 1"));
+	$timestamp_cache = intval(find_string("---time=", "---max", $graph_data_range_sent));
+
+	if(time() - $cache_refresh_time > $timestamp_cache)// Cache TTL
+	{
+		// Old data needs to be refreshed
+		$history_data_to = transaction_history_query(2, $last, $username_hash, $user_public_key);
+		$counter = 1;			
+		$graph_data_range_sent = NULL;
+		while($counter <= $last) // History Limit
+		{
+			$amount = find_string("---AMOUNT$counter=", "---VERIFY", $history_data_to);					
+
+			if($amount == "")
+			{
+				// No more data to search
+				break;
+			}
+			
+			$counter++;
+			if($counter <= $last + 1)
+			{
+				if($amount > $largest_sent)
+				{
+					$largest_sent = $amount + 2;
+				}
+
+				$graph_data_range_sent .= ",$amount";
+			}
+		}
+		// Update data cache
+		if(empty($graph_data_range_sent) == FALSE)
+		{
+			mysqli_query($db_connect, "UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---max=$largest_sent---data=$graph_data_range_sent---end' WHERE `data_cache`.`username` = '$username_hash' AND `data_cache`.`field_name` = 'graph_data_range_sent' LIMIT 1");
+		}
+	}
+	else
+	{
+		// Use cached data
+		$largest_sent = find_string("---max=", "---data", $graph_data_range_sent);
+		$graph_data_range_sent = find_string("---data=", "---end", $graph_data_range_sent);
+	}
+
+	$graph_data_trans_total = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `data_cache` WHERE `username` = '$username_hash' AND `field_name` = 'graph_data_trans_total' LIMIT 1"));
+	$graph_data_amount_total = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `data_cache` WHERE `username` = '$username_hash' AND `field_name` = 'graph_data_amount_total' LIMIT 1"));
+
+	$timestamp_cache = intval(find_string("---time=", "---max", $graph_data_trans_total));
+
+	if(time() - $cache_refresh_time > $timestamp_cache)// Cache TTL
+	{
+		// Old data needs to be refreshed
+		$tk_trans_total_data = tk_trans_total($total_trans_last);
+		$counter = 1;			
+		$graph_data_trans_total = NULL;
+		$graph_data_amount_total = NULL;
+		$max_amount = 10;
+		$max_transactions = 10;
+
+		while($counter <= $total_trans_last) // History Limit
+		{
+			$timestamp = find_string("---TIMESTAMP$counter=", "---NUM$counter", $tk_trans_total_data);
+			$total_transactions = find_string("---NUM$counter=", "---AMOUNT$counter", $tk_trans_total_data);
+			$total_amount = find_string("---AMOUNT$counter=", "---END$counter", $tk_trans_total_data);
+
+			if(empty($timestamp) == TRUE)
+			{
+				// No more data to search
+				break;
+			}
+
+			$counter++;
+			if($counter <= $total_trans_last + 1)
+			{
+				if($total_transactions > $max_transactions)
+				{
+					$max_transactions = $total_transactions + 2;
+				}
+
+				$graph_data_trans_total .= ",$total_transactions";
+			}
+
+			if($counter <= $total_network_amounts_last + 1)
+			{
+				if($total_amount > $max_amount)
+				{
+					$max_amount = $total_amount + 2;
+				}						
+				
+				$graph_data_amount_total .= ",$total_amount";
+			}
+
+		}
+		// Update data cache
+		if(empty($graph_data_trans_total) == FALSE && empty($graph_data_amount_total) == FALSE)
+		{
+			mysqli_query($db_connect, "UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---max=$max_transactions---data=$graph_data_trans_total---end' WHERE `data_cache`.`username` = '$username_hash' AND `data_cache`.`field_name` = 'graph_data_trans_total' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---max=$max_amount---data=$graph_data_amount_total---end' WHERE `data_cache`.`username` = '$username_hash' AND `data_cache`.`field_name` = 'graph_data_amount_total' LIMIT 1");
+		}
+	}
+	else
+	{
+		// Use cached data
+		$max_transactions = find_string("---max=", "---data", $graph_data_trans_total);
+		$graph_data_trans_total = find_string("---data=", "---end", $graph_data_trans_total);
+
+		$max_amount = find_string("---max=", "---data", $graph_data_amount_total);
+		$graph_data_amount_total = find_string("---data=", "---end", $graph_data_amount_total);				
+	}
+
+	// Cap largest chart values
+	if($largest_recv > 5999) { $largest_recv = 5999; }
+	if($largest_sent > 5999) { $largest_sent = 5999; }
+	if($max_transactions > 999) { $max_transactions = 999; }
+	if($max_amount > 7999) { $max_amount = 7999; }
+
+	// Cap ranges
+	if($mobile_verion == FALSE)
+	{
+		// Desktop verion chart grids
+		$largest_recv_grid = $largest_recv * 0.1;
+		if($largest_recv_grid > 300) { $largest_recv_grid = 300; }
+
+		$largest_sent_grid = $largest_sent * 0.1;
+		if($largest_sent_grid > 300) { $largest_sent_grid = 300; }
+
+		$max_transactions_grid = $max_transactions * 0.12;
+
+		$max_amount_grid = $max_amount * 0.07;
+		if($max_amount_grid > 300) { $max_amount_grid = 300; }	
+	}
+	else
+	{
+		// Mobile version chart grids
+		$largest_recv_grid = $largest_recv * 0.14;
+		$largest_sent_grid = $largest_sent * 0.14;
+		$max_transactions_grid = $max_transactions * 0.3;
+		$max_amount_grid = $max_amount * 0.135;
+	}
+
+
+	$script_headers = '<script type="text/javascript" src="js/tkgraph.js"></script>
+	<script type="text/javascript">
+	window.onload = function() {
+		
+	g_graph = new Graph(
+	{
+	\'id\': "recv_graph",
+	\'strokeStyle\': "#FFA500",
+	\'fillStyle\': "rgba(0,127,0,0.20)",
+	\'grid\': [' . $largest_recv_grid . ',10],
+	\'range\': [0,' . $largest_recv . '],
+	\'data\': [' . $graph_data_range_recv . ']
+	});
+
+	g_graph = new Graph(
+	{
+	\'id\': "sent_graph",
+	\'strokeStyle\': "#FFA500",
+	\'fillStyle\': "rgba(0,0,255,0.20)",
+	\'grid\': [' . $largest_sent_grid . ',10],
+	\'range\': [0,' . $largest_sent . '],
+	\'data\': [' . $graph_data_range_sent . ']
+	});
+
+	g_graph = new Graph(
+	{
+	\'id\': "trans_total",
+	\'strokeStyle\': "#FFA500",
+	\'fillStyle\': "rgba(187,217,238,0.65)",
+	\'grid\': [' . $max_transactions_grid . ',10],
+	\'range\': [0,' . $max_transactions . '],
+	\'data\': [' . $graph_data_trans_total . ']
+	});
+
+	g_graph = new Graph(
+	{
+	\'id\': "amount_total",
+	\'strokeStyle\': "#FFA500",
+	\'fillStyle\': "rgba(130,127,0,0.20)",
+	\'grid\': [' . $max_amount_grid . ',10],
+	\'range\': [0,' . $max_amount . '],
+	\'data\': [' . $graph_data_amount_total . ']
+	});
+
+	}
+	</script>';
+
+	return $script_headers;
+}
+//***********************************************************
+//***********************************************************
 function home_screen($contents = "", $select_bar = "", $body = "", $quick_info = "", $refresh = 0, $plugin_reference = FALSE, $plugin_tab_name = "")
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
@@ -183,17 +424,6 @@ function home_screen($contents = "", $select_bar = "", $body = "", $quick_info =
 	$history;
 	$queue;
 	$script_headers;
-	$balance_history;
-	$counter;
-	$amount;
-	$graph_data_range_sent;
-	$graph_data_range_recv;
-	$graph_data_trans_total;
-	$graph_data_amount_total;	
-	$largest_sent = 10;
-	$largest_recv = 10;
-	$last = 20;
-	$cache_refresh_time = 60; // How many seconds for cache to remain valid before refresh is required
 
 	if($refresh != 0)
 	{
@@ -210,223 +440,7 @@ function home_screen($contents = "", $select_bar = "", $body = "", $quick_info =
 	{
 		case "home":
 			$home = 'class="active"';
-			$graph_data_range_recv = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `data_cache` WHERE `username` = '$username_hash' AND `field_name` = 'graph_data_range_recv' LIMIT 1"));
-			$timestamp_cache = intval(find_string("---time=", "---max", $graph_data_range_recv));
-
-			if(time() - $cache_refresh_time > $timestamp_cache) // Cache TTL
-			{
-				// Old data needs to be refreshed
-				$history_data_to = transaction_history_query(1, $last, $username_hash, $user_public_key);
-				$counter = 1;
-				$graph_data_range_recv = NULL;
-				while($counter <= $last) // History Limit
-				{
-					$amount = find_string("---AMOUNT$counter=", "---VERIFY", $history_data_to);					
-
-					if($amount == "")
-					{
-						// No more data to search
-						break;
-					}
-
-					$counter++;
-					if($counter <= $last + 1)
-					{
-						if($amount > $largest_recv)
-						{
-							$largest_recv = $amount + 2;
-						}
-						$graph_data_range_recv .= ",$amount";
-					}
-				}
-				// Update data cache
-				if(empty($graph_data_range_recv) == FALSE)
-				{
-					mysqli_query($db_connect, "UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---max=$largest_recv---data=$graph_data_range_recv---end' WHERE `data_cache`.`username` = '$username_hash' AND `data_cache`.`field_name` = 'graph_data_range_recv' LIMIT 1");
-				}
-			}
-			else
-			{
-				// Use cached data
-				$largest_recv = find_string("---max=", "---data", $graph_data_range_recv);
-				$graph_data_range_recv = find_string("---data=", "---end", $graph_data_range_recv);
-			}
-
-			$graph_data_range_sent = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `data_cache` WHERE `username` = '$username_hash' AND `field_name` = 'graph_data_range_sent' LIMIT 1"));
-			$timestamp_cache = intval(find_string("---time=", "---max", $graph_data_range_sent));
-
-			if(time() - $cache_refresh_time > $timestamp_cache)// Cache TTL
-			{
-				// Old data needs to be refreshed
-				$history_data_to = transaction_history_query(2, $last, $username_hash, $user_public_key);
-				$counter = 1;			
-				$graph_data_range_sent = NULL;
-				while($counter <= $last) // History Limit
-				{
-					$amount = find_string("---AMOUNT$counter=", "---VERIFY", $history_data_to);					
-
-					if($amount == "")
-					{
-						// No more data to search
-						break;
-					}
-					
-					$counter++;
-					if($counter <= $last + 1)
-					{
-						if($amount > $largest_sent)
-						{
-							$largest_sent = $amount + 2;
-						}
-
-						$graph_data_range_sent .= ",$amount";
-					}
-				}
-				// Update data cache
-				if(empty($graph_data_range_sent) == FALSE)
-				{
-					mysqli_query($db_connect, "UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---max=$largest_sent---data=$graph_data_range_sent---end' WHERE `data_cache`.`username` = '$username_hash' AND `data_cache`.`field_name` = 'graph_data_range_sent' LIMIT 1");
-				}
-			}
-			else
-			{
-				// Use cached data
-				$largest_sent = find_string("---max=", "---data", $graph_data_range_sent);
-				$graph_data_range_sent = find_string("---data=", "---end", $graph_data_range_sent);
-			}
-
-			$graph_data_trans_total = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `data_cache` WHERE `username` = '$username_hash' AND `field_name` = 'graph_data_trans_total' LIMIT 1"));
-			$graph_data_amount_total = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `data_cache` WHERE `username` = '$username_hash' AND `field_name` = 'graph_data_amount_total' LIMIT 1"));
-		
-			$timestamp_cache = intval(find_string("---time=", "---max", $graph_data_trans_total));
-
-			if(time() - $cache_refresh_time > $timestamp_cache)// Cache TTL
-			{
-				// Old data needs to be refreshed
-				$total_trans_last = 25;
-				$total_network_amounts_last = 20;
-				$tk_trans_total_data = tk_trans_total($total_trans_last);
-				$counter = 1;			
-				$graph_data_trans_total = NULL;
-				$graph_data_amount_total = NULL;
-				$max_amount = 10;
-				$max_transactions = 10;
-
-				while($counter <= $total_trans_last) // History Limit
-				{
-					$timestamp = find_string("---TIMESTAMP$counter=", "---NUM$counter", $tk_trans_total_data);
-					$total_transactions = find_string("---NUM$counter=", "---AMOUNT$counter", $tk_trans_total_data);
-					$total_amount = find_string("---AMOUNT$counter=", "---END$counter", $tk_trans_total_data);
-
-					if(empty($timestamp) == TRUE)
-					{
-						// No more data to search
-						break;
-					}
-
-					$counter++;
-					if($counter <= $total_trans_last + 1)
-					{
-						if($total_transactions > $max_transactions)
-						{
-							$max_transactions = $total_transactions + 2;
-						}
-
-						$graph_data_trans_total .= ",$total_transactions";
-					}
-
-					if($counter <= $total_network_amounts_last + 1)
-					{
-						if($total_amount > $max_amount)
-						{
-							$max_amount = $total_amount + 2;
-						}						
-						
-						$graph_data_amount_total .= ",$total_amount";
-					}
-
-				}
-				// Update data cache
-				if(empty($graph_data_trans_total) == FALSE && empty($graph_data_amount_total) == FALSE)
-				{
-					mysqli_query($db_connect, "UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---max=$max_transactions---data=$graph_data_trans_total---end' WHERE `data_cache`.`username` = '$username_hash' AND `data_cache`.`field_name` = 'graph_data_trans_total' LIMIT 1");
-					mysqli_query($db_connect, "UPDATE `data_cache` SET `field_data` = '---time=" . time() . "---max=$max_amount---data=$graph_data_amount_total---end' WHERE `data_cache`.`username` = '$username_hash' AND `data_cache`.`field_name` = 'graph_data_amount_total' LIMIT 1");
-				}
-			}
-			else
-			{
-				// Use cached data
-				$max_transactions = find_string("---max=", "---data", $graph_data_trans_total);
-				$graph_data_trans_total = find_string("---data=", "---end", $graph_data_trans_total);
-
-				$max_amount = find_string("---max=", "---data", $graph_data_amount_total);
-				$graph_data_amount_total = find_string("---data=", "---end", $graph_data_amount_total);				
-			}
-
-			// Cap largest chart values
-			if($largest_recv > 5999) { $largest_recv = 5999; }
-			if($largest_sent > 5999) { $largest_sent = 5999; }
-			if($max_transactions > 999) { $max_transactions = 999; }
-			if($max_amount > 7999) { $max_amount = 7999; }
-
-			// Cap ranges
-			$largest_recv_grid = $largest_recv * 0.1;
-			if($largest_recv_grid > 300) { $largest_recv_grid = 300; }
-
-			$largest_sent_grid = $largest_sent * 0.1;
-			if($largest_sent_grid > 300) { $largest_sent_grid = 300; }
-
-			$max_transactions_grid = $max_transactions * 0.12;
-
-			$max_amount_grid = $max_amount * 0.07;
-			if($max_amount_grid > 300) { $max_amount_grid = 300; }
-
-			$script_headers = '<script type="text/javascript" src="js/tkgraph.js"></script>
-			<script type="text/javascript">
-			window.onload = function() {
-				
-			g_graph = new Graph(
-			{
-			\'id\': "recv_graph",
-			\'strokeStyle\': "#FFA500",
-			\'fillStyle\': "rgba(0,127,0,0.20)",
-			\'grid\': [' . $largest_recv_grid . ',10],
-			\'range\': [0,' . $largest_recv . '],
-			\'data\': [' . $graph_data_range_recv . ']
-			});
-
-			g_graph = new Graph(
-			{
-			\'id\': "sent_graph",
-			\'strokeStyle\': "#FFA500",
-			\'fillStyle\': "rgba(0,0,255,0.20)",
-			\'grid\': [' . $largest_sent_grid . ',10],
-			\'range\': [0,' . $largest_sent . '],
-			\'data\': [' . $graph_data_range_sent . ']
-			});
-
-			g_graph = new Graph(
-			{
-			\'id\': "trans_total",
-			\'strokeStyle\': "#FFA500",
-			\'fillStyle\': "rgba(187,217,238,0.65)",
-			\'grid\': [' . $max_transactions_grid . ',10],
-			\'range\': [0,' . $max_transactions . '],
-			\'data\': [' . $graph_data_trans_total . ']
-			});
-
-			g_graph = new Graph(
-			{
-			\'id\': "amount_total",
-			\'strokeStyle\': "#FFA500",
-			\'fillStyle\': "rgba(130,127,0,0.20)",
-			\'grid\': [' . $max_amount_grid . ',10],
-			\'range\': [0,' . $max_amount . '],
-			\'data\': [' . $graph_data_amount_total . ']
-			});
-
-			}
-			</script>';
+			$script_headers = chart_script_headers($username_hash, $user_public_key);
 			break;
 
 		case "address":
@@ -465,7 +479,6 @@ function home_screen($contents = "", $select_bar = "", $body = "", $quick_info =
 			$backup = 'class="active"';
 			break;			
 	}
-
 
 	if($_SESSION["admin_login"] != TRUE && $_SESSION["login_username"] != "")
 	{
@@ -657,6 +670,100 @@ function home_screen($contents = "", $select_bar = "", $body = "", $quick_info =
 	<?PHP
 }
 //***********************************************************
+function mobile_home_screen($contents = "", $select_bar = "", $body = "", $quick_info = "", $refresh = 0, $plugin_reference = FALSE, $plugin_tab_name = "")
+{
+	if($refresh != 0)
+	{
+		$refresh_header = '<meta http-equiv="refresh" content="' . $refresh . '" />';
+	}
+
+	if($_SESSION["admin_login"] != TRUE && $_SESSION["login_username"] != "")
+	{
+		$username_hash = hash('sha256', $_SESSION["login_username"]);
+		$user_public_key = my_public_key($_SESSION["login_username"], $_SESSION["decrypt_password"]);
+	}
+
+	if($_GET["menu"] == "home")
+	{
+		$script_headers = chart_script_headers($username_hash, $user_public_key, 10, 10, 10, TRUE);
+	}
+
+	?>
+	<!DOCTYPE HTML>
+	<html>
+	<head>
+	<title>Timekoin Client Server Billfold</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="assets/css/main.css" />
+	<?PHP echo $refresh_header; ?>
+	<?PHP echo $script_headers; ?>
+	</head>
+	<body class="landing is-preload">
+	<div id="page-wrapper">
+	<!-- Home Menu -->
+	<header id="header" class="alt">
+	<nav id="nav">
+	<ul>
+	<li><a href="index.php?menu=home" onclick="showWait()">Home</a></li>
+	<li>
+	<a href="#" class="icon solid fa-angle-down">Menu</a>
+	<ul>
+	<li><a href="index.php?menu=address">Address Book</a></li>
+	<li><a href="index.php?menu=queue">Queue</a></li>
+	<li><a href="index.php?menu=send">Send</a></li>
+	<li><a href="index.php?menu=history">History</a></li>
+	<li><a href="index.php?menu=options">Options</a></li>
+	<li><a href="index.php?menu=backup">Backup</a></li>
+	<li><a href="index.php?menu=logoff">Log Out</a></li>
+	</ul>
+	</li>
+	</ul>
+	</nav>
+	</header>
+	<!-- Home Menu -->
+	<!-- Text Bar -->
+	<section id="banner">
+	<h2><?PHP echo $contents; ?></h2>
+	<p><?PHP echo $select_bar; ?></p>
+	</section>
+	<!-- Text Bar -->
+	<!-- Main -->
+	<section id="main" class="container">
+	<section class="box special">
+	<header class="major">
+	<?PHP echo $body; ?>
+	</header>
+	</section>
+	</section>
+	<!-- Main -->
+	<!-- Quick Info -->
+	<section id="cta">
+	<h2><?PHP echo $quick_info; ?></h2>
+	</section>
+	<!-- Quick Info -->
+	<!-- Footer -->
+	<footer id="footer">
+	<ul class="copyright">
+	<li><p>Timekoin Cryptocurrency Client Billfold Server v<?PHP echo TIMEKOIN_VERSION; ?><br><a href="http://timekoin.net">http://timekoin.net</a> &copy; 2010&mdash;<?PHP echo date('Y'); ?><br><br>( You are logged in as <strong><?PHP echo $_SESSION["login_username"]; ?></strong> )</p></li>
+	</ul>
+	</footer>
+	<!-- Footer -->
+	</div>
+
+	<!-- Scripts -->
+	<script src="assets/js/jquery.min.js"></script>
+	<script src="assets/js/jquery.dropotron.min.js"></script>
+	<script src="assets/js/jquery.scrollex.min.js"></script>
+	<script src="assets/js/browser.min.js"></script>
+	<script src="assets/js/breakpoints.min.js"></script>
+	<script src="assets/js/util.js"></script>
+	<script src="assets/js/main.js"></script>
+	<!-- Scripts -->
+	</body>
+	</html>
+	<?PHP
+}
 //***********************************************************
 function options_screen()
 {
