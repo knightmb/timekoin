@@ -384,7 +384,7 @@ if($sql_num_results > 0)
 
 							if($gen_ip_counter1 > 1 || $gen_ip_counter2 > 1)
 							{
-								// More than one IP is an issue
+								// More than one IP for different public keys is not allowed
 								$gen_ip_counter1 = 2;
 							}
 						}
@@ -501,7 +501,7 @@ if($sql_num_results > 0)
 						else if($gen_ip_counter1 > 1)
 						{
 							// Duplicate generation IP already exist
-							write_log("Generation Duplicate IP Address [$gen_ip_address1 $gen_ip_address2] With Key:<br>" . base64_encode($public_key), "G");
+							write_log("Generation Conflicting IP Address [$gen_ip_address1 $gen_ip_address2] With Key:<br>" . base64_encode($public_key), "G");
 							$record_failure_counter++;
 						}
 						else
