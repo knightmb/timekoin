@@ -351,34 +351,49 @@ if($sql_num_results > 0)
 			// Random generation time that can be duplicated across all servers
 			if($generation_cycle == TRUE)
 			{
-				// Generating Peers are limited to 100,000 transactions lifetime per public key
-				$generation_records_total = gen_lifetime_transactions($public_key, TRUE);
+				// Is this public key allowed to generate currency?
+				$generation_public_key = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"));
 
-				if($generation_records_total >= 100000)
+				if(empty($generation_public_key) == TRUE)
 				{
-					write_log("Public Key Has Reached the 100,000 Generating Transaction Lifetime Limit:<BR>" . base64_encode($public_key), "G");
+					//Not allowed to generate currency
+					write_log("Key Not in Generation Peer List: " . base64_encode($public_key), "G");
+					$record_failure_counter++;
 				}
 				else
 				{
-					// Is this public key allowed to generate currency?
-					$generation_public_key = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),0,0);			
+					// Generating Peers are limited to 100,000 transactions lifetime per public key
+					$generation_records_total = gen_lifetime_transactions($public_key, TRUE);
 					
-					if(empty($generation_public_key) == TRUE)
+					if($generation_records_total >= 100000)
 					{
-						//Not allowed to generate currency
-						write_log("Key Not in Generation Peer List: " . base64_encode($public_key), "G");
-						$record_failure_counter++;
+						write_log("Public Key Has Reached the 100,000 Generating Transaction Lifetime Limit:<BR>" . base64_encode($public_key), "G");
 					}
 					else
 					{
 						// Check to make sure there is not a duplicate generation transaction already
 						$found_public_key_queue = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY timestamp FROM `transaction_history` WHERE `timestamp` >= $previous_transaction_cycle AND `timestamp` < $current_transaction_cycle AND `public_key_from` = '$public_key' AND `attribute` = 'G' LIMIT 1"));
+						$gen_ip_address1 = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY IP_Address FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),0,0);
+						$gen_ip_address2 = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY IP_Address FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),1,0);
+						$gen_ip_counter1 = intval(mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY COUNT(*) FROM `generating_peer_list` WHERE `IP_Address` = '$gen_ip_address1'")));
+					
+						if(empty($gen_ip_address2) == FALSE)
+						{
+							// This Public Key has two IP address from both the ipv4 and ipv6 range
+							$gen_ip_counter2 = intval(mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY COUNT(*) FROM `generating_peer_list` WHERE `IP_Address` = '$gen_ip_address2'")));
 
-						if(empty($found_public_key_queue) == TRUE)
+							if($gen_ip_counter1 > 1 || $gen_ip_counter2 > 1)
+							{
+								// More than one IP is an issue
+								$gen_ip_counter1 = 2;
+							}
+						}
+
+						if(empty($found_public_key_queue) == TRUE && $gen_ip_counter1 == 1)
 						{
 							// Check to make sure enough time has passed since this public key joined the network to allow currency generation
 							// Default is 1 Hour or 3600 seconds
-							$join_peer_list = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),0,0);
+							$join_peer_list = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),0,0);
 							$join_peer_list2 = mysql_result(mysqli_query($db_connect, "SELECT HIGH_PRIORITY join_peer_list FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),1,0);
 
 							if(empty($join_peer_list2) == TRUE)
@@ -483,6 +498,12 @@ if($sql_num_results > 0)
 								$record_failure_counter++;
 							}
 						}
+						else if($gen_ip_counter1 > 1)
+						{
+							// Duplicate generation IP already exist
+							write_log("Generation Duplicate IP Address [$gen_ip_address1 $gen_ip_address2] With Key:<br>" . base64_encode($public_key), "G");
+							$record_failure_counter++;
+						}
 						else
 						{
 							// Duplicate generation transaction already exist
@@ -490,9 +511,9 @@ if($sql_num_results > 0)
 							$record_failure_counter++;
 						}
 
-					}// End key allowed check
+					}// End 100,000 Generation Limit Check
 
-				}// End 100,000 Generation Limit Check
+				}// End key allowed check
 
 			} // End generation allowed check
 			else

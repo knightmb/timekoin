@@ -1574,6 +1574,7 @@ mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . tim
 // Memory Cleanup Before Sleep
 unset($sql_result);
 unset($poll_peer);
+unset($arr1);
 //***********************************************************************************
 sleep(10);
 } // End Infinite Loop

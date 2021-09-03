@@ -3531,7 +3531,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 				$body_string .= '<tr>
 				<td class="style2"><p style="width:162px;">[ ' . $sql_row["timestamp"] . ' ]<br>' . unix_timestamp_to_human($sql_row["timestamp"], $user_timezone) . '</p></td>
-				<td class="style2"><p style="word-wrap:break-word; width:425px;">' . $sql_row["log"] . '</p></td>
+				<td class="style2"><p style="word-wrap:break-word; width:450px;">' . $sql_row["log"] . '</p></td>
 				<td class="style2">' . $sql_row["attribute"] . '</td></tr>';
 			}
 

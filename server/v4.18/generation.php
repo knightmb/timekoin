@@ -143,30 +143,30 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 	} // End results check
 	//***********************************************************************************	
 	// Generation Check
-	$generation_option = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generate_currency' LIMIT 1"),0,0));
+	$generation_option = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generate_currency' LIMIT 1")));
 
 	if($generation_option == TRUE) // Generation Enabled
 	{
 		// Check to see if we are in the allowed generation peer list
 		$my_public_key = my_public_key();
-		$network_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
+		$network_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1")));
 //***********************************************************************************		
 		if($network_mode == 1 || $network_mode == 2)// Generation IPv4 Enabled Check
 		{
 			// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
 			$gen_peers_total = num_gen_peers(TRUE);
 
-			// IPv4 Generation
+			// Does a Generation IPv4 Address Exist for this public key?
 			$found_public_key = find_v4_gen_key($my_public_key);
 
-			// Check that the IP address for generation is up to date
+			// What is the Generation IP address for this public key?
 			$my_peer_generation_IP = find_v4_gen_IP($my_public_key);
 
 			// My Own IPv4 Address
-			$my_generation_IP = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"),0,0);
+			$my_generation_IP = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP' LIMIT 1"));
 
-			// What Public Key is using my IPv4 Address?			
-			$key_generation_IP = mysql_result(mysqli_query($db_connect, "SELECT public_key FROM `generating_peer_list` WHERE `IP_Address` = '$my_generation_IP' LIMIT 1"),0,0);
+			// What Generation Public Key is using my IPv4 Address?
+			$key_generation_IP = mysql_result(mysqli_query($db_connect, "SELECT public_key FROM `generating_peer_list` WHERE `IP_Address` = '$my_generation_IP' LIMIT 1"));
 
 			if($my_generation_IP != $my_peer_generation_IP && empty($found_public_key) == FALSE && empty($my_generation_IP) == FALSE)
 			{
@@ -174,7 +174,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 				// Use an election request to update all the peers to the new address.
 				$update_generation_IP = TRUE;
 			}
-			else if($key_generation_IP != $my_public_key && $gen_peers_total > 0)
+			else if(empty($key_generation_IP) == FALSE && $key_generation_IP != $my_public_key && $gen_peers_total > 0)
 			{
 				// Someone else is using my IP address to generate currency.
 				// Submit a delete request to have this key removed from the list.
@@ -198,7 +198,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 					election_cycle(6) == TRUE) // Check 1-6 cycles ahead (30 minutes)
 				{			
 					// Check to see if this request is already in my transaction queue.
-					$found_public_trans_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'R' LIMIT 1"),0,0);				
+					$found_public_trans_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'R' LIMIT 1"));				
 
 					if(empty($found_public_trans_queue) == TRUE)
 					{
@@ -208,7 +208,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						$generation_request = ARBITRARY_KEY . mt_rand(1, 999999);
 
 						// Update Reverse Crypto Testing Data
-						$generation_key_crypt = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_key_crypt' LIMIT 1"),0,0);
+						$generation_key_crypt = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_key_crypt' LIMIT 1"));
 
 						if(empty($generation_key_crypt) == TRUE)
 						{
@@ -267,7 +267,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 					// Check your server balance to make sure server can afford to create these transactions
 					$current_balance = db_cache_balance($my_public_key);
 
-					if($current_balance >= $gen_peers_total_for_fee * $gen_group_peers_total)
+					if($current_balance >= ($gen_peers_total_for_fee * $gen_group_peers_total))
 					{
 						$sql = "SELECT public_key FROM `generating_peer_list` GROUP BY `public_key`";
 						$sql2 = "SELECT crypt_data1, crypt_data2 FROM `my_transaction_queue`";						
@@ -287,7 +287,6 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 							for ($i2 = 0; $i2 < $sql_num_results2; $i2++)
 							{
 								$sql_row2 = mysqli_fetch_array($sql_result2);
-
 								$public_key_to_1 = tk_decrypt($my_public_key, base64_decode($sql_row2["crypt_data1"]));
 								$public_key_to_2 = tk_decrypt($my_public_key, base64_decode($sql_row2["crypt_data2"]));
 								$public_key_to = $public_key_to_1 . $public_key_to_2;
@@ -387,8 +386,8 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 
 					// Server public key is listed as a qualified generation server.
 					// Has the server submitted it's currency generation to the transaction queue?
-					$found_public_key_my_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'G' LIMIT 1"),0,0);
-					$found_public_key_trans_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_queue` WHERE `public_key` = '$my_public_key' AND `attribute` = 'G' LIMIT 1"),0,0);
+					$found_public_key_my_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `my_transaction_queue` WHERE `attribute` = 'G' LIMIT 1"));
+					$found_public_key_trans_queue = mysql_result(mysqli_query($db_connect, "SELECT timestamp FROM `transaction_queue` WHERE `public_key` = '$my_public_key' AND `attribute` = 'G' LIMIT 1"));
 					$join_peer_list = find_v4_gen_join($my_public_key);
 					$join_peer_list2 = find_v6_gen_join($my_public_key);
 
@@ -441,17 +440,17 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 			// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
 			$gen_peers_total = num_gen_peers(TRUE);
 
-			// IPv6 Generation
+			// Does a Generation IPv6 Address Exist for this public key?
 			$found_public_key = find_v6_gen_key($my_public_key);
 
-			// Check that the IP address for generation is up to date
+			// What is the Generation IP address for this public key?
 			$my_peer_generation_IP = find_v6_gen_IP($my_public_key);
 
 			// My Own IPv6 Address
-			$my_generation_IP = ipv6_compress(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP_v6' LIMIT 1"),0,0));
+			$my_generation_IP = ipv6_compress(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generation_IP_v6' LIMIT 1")));
 
-			// What Public Key is using my IPv6 Address?			
-			$key_generation_IP = mysql_result(mysqli_query($db_connect, "SELECT public_key FROM `generating_peer_list` WHERE `IP_Address` = '$my_generation_IP' LIMIT 1"),0,0);
+			// What Generation Public Key is using my IPv6 Address?
+			$key_generation_IP = mysql_result(mysqli_query($db_connect, "SELECT public_key FROM `generating_peer_list` WHERE `IP_Address` = '$my_generation_IP' LIMIT 1"));
 
 			if($my_generation_IP != $my_peer_generation_IP && empty($found_public_key) == FALSE && empty($my_generation_IP) == FALSE)
 			{
@@ -459,7 +458,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 				// Use an election request to update all the peers to the new address.
 				$update_generation_IP = TRUE;
 			}
-			else if($key_generation_IP != $my_public_key && $gen_peers_total > 0)
+			else if(empty($key_generation_IP) == FALSE && $key_generation_IP != $my_public_key && $gen_peers_total > 0)
 			{
 				// Someone else is using my IP address to generate currency.
 				// Submit a delete request to have this key removed from the list.
@@ -552,7 +551,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 					// Check your server balance to make sure server can afford to create these transactions
 					$current_balance = db_cache_balance($my_public_key);
 
-					if($current_balance >= $gen_peers_total_for_fee * $gen_group_peers_total)
+					if($current_balance >= ($gen_peers_total_for_fee * $gen_group_peers_total))
 					{
 						$sql = "SELECT public_key FROM `generating_peer_list` GROUP BY `public_key`";
 						$sql2 = "SELECT crypt_data1, crypt_data2 FROM `my_transaction_queue`";
@@ -632,7 +631,7 @@ if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycl
 						if(empty($generation_key_crypt) == TRUE)
 						{
 							// Reverse Crypto Test is empty, create a new one.
-							// This is just the first 181 characters of the public key encrypted via the private key.
+							// This is just the first half characters of the public key encrypted via the private key.
 							// This is then stored as a data field that is easy to access and quickly output to any
 							// peer that is going to query this one as a potential generating peer.
 							$arr1 = str_split($my_public_key, round(strlen($my_public_key) / 2));
@@ -755,6 +754,7 @@ unset($encryptedData3);
 unset($encryptedData64_1);
 unset($encryptedData64_2);
 unset($encryptedData64_3);
+unset($arr1);
 //***********************************************************************************
 sleep(10);
 } // End Infinite Loop
