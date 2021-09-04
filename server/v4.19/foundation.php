@@ -388,7 +388,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 				{
 					// Don't do a history walk if the transclerk is currently working on the
 					// transaction database
-					$transclerk_block_check = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'block_check_start' LIMIT 1"),0,"field_data");				
+					$transclerk_block_check = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'block_check_start' LIMIT 1"));				
 
 					if($transclerk_block_check < ($i + 1) * 500 && $transclerk_block_check != "0")
 					{
@@ -516,7 +516,7 @@ if(($next_generation_cycle - time()) > 60 && (time() - $current_generation_cycle
 
 //***********************************************************************************
 //***********************************************************************************
-$loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,"field_data");
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"));
 
 // Check script status
 if($loop_active == 3)

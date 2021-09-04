@@ -67,7 +67,7 @@ if($_GET["action"] == "tk_start_stop")
 				// Set loop at active now
 				mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1");
 
-				activate(TIMEKOINSYSTEM, 1); // In case this was disabled from a emergency stop call in the server GUI
+				activate("TIMEKOINSYSTEM", 1); // In case this was disabled from a emergency stop call in the server GUI
 
 				// CLI Mode selection
 				$cli_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
@@ -172,14 +172,14 @@ if($_GET["action"] == "tk_start_stop")
 						mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active' LIMIT 1");						
 
 						// Stop all other script activity
-						activate(FOUNDATION_DISABLED, 0);
-						activate(GENERATION_DISABLED, 0);
-						activate(GENPEER_DISABLED, 0);
-						activate(PEERLIST_DISABLED, 0);
-						activate(QUEUECLERK_DISABLED, 0);
-						activate(TRANSCLERK_DISABLED, 0);
-						activate(TREASURER_DISABLED, 0);
-						activate(BALANCE_DISABLED, 0);
+						activate("FOUNDATION", 0);
+						activate("GENERATION", 0);
+						activate("GENPEER", 0);
+						activate("PEERLIST", 0);
+						activate("QUEUECLERK", 0);
+						activate("TRANSCLERK", 0);
+						activate("TREASURER", 0);
+						activate("BALANCE", 0);
 
 						echo 1;
 					}
@@ -209,14 +209,14 @@ if($_GET["action"] == "tk_start_stop")
 						mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active' LIMIT 1");
 						
 						// Stop all other script activity
-						activate(FOUNDATION_DISABLED, 0);
-						activate(GENERATION_DISABLED, 0);
-						activate(GENPEER_DISABLED, 0);
-						activate(PEERLIST_DISABLED, 0);
-						activate(QUEUECLERK_DISABLED, 0);
-						activate(TRANSCLERK_DISABLED, 0);
-						activate(TREASURER_DISABLED, 0);
-						activate(BALANCE_DISABLED, 0);
+						activate("FOUNDATION", 0);
+						activate("GENERATION", 0);
+						activate("GENPEER", 0);
+						activate("PEERLIST", 0);
+						activate("QUEUECLERK", 0);
+						activate("TRANSCLERK", 0);
+						activate("TREASURER", 0);
+						activate("BALANCE", 0);
 
 						echo 1;
 					}

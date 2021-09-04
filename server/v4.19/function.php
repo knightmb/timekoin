@@ -19,7 +19,7 @@ use mersenne_twister\twister;
 //***********************************************************************************
 if(function_exists('mysql_result') == FALSE)
 {
-	function mysql_result($result = "", $number = 0, $field = 0)
+	function mysql_result($result, $number = 0, $field = 0)
 	{
 		$sql_num_results = mysqli_num_rows($result);
 
@@ -2792,7 +2792,7 @@ function update_windows_port($new_port = "")
 	{
 		//Previous port number
 		$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-		$old_port = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,"field_data");
+		$old_port = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"));
 
 		if($old_port != $new_port)// Don't change unless different than before
 		{

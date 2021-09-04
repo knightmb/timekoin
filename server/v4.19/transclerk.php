@@ -187,7 +187,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 				{
 					write_log("Provenance Transaction Created","TC");
 					// Lock the System to prevent transaction processing during the initial phase
-					activate(TIMEKOINSYSTEM, 0);
+					activate("TIMEKOINSYSTEM", 0);
 				}
 				else
 				{
@@ -246,7 +246,7 @@ if(($next_generation_cycle - time()) > 30 && (time() - $current_generation_cycle
 			{
 				// Passed final hash checking.
 				// Unlock System to allow live processing
-				activate(TIMEKOINSYSTEM, 1);
+				activate("TIMEKOINSYSTEM", 1);
 				
 				// Start a transaction history rebuild from this since a new database is going to be far
 				// behind the history of the other active peers

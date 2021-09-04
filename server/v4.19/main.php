@@ -34,7 +34,7 @@ if($_GET["action"] == "begin_main")
 		// Set loop at active now
 		mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'main_heartbeat_active' LIMIT 1");
 
-		activate(TIMEKOINSYSTEM, 1); // In case this was disabled from a emergency stop call in the server GUI
+		activate("TIMEKOINSYSTEM", 1); // In case this was disabled from a emergency stop call in the server GUI
 
 		// CLI Mode selection
 		$cli_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));

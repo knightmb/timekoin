@@ -64,7 +64,7 @@ if($_SESSION["valid_session"] == TRUE && $_GET["action"] == "login")
 				{
 					// Stop all other script activity until the user actually starts the system.
 					// This is useful when recoving from an unknown error or crash.
-					activate(TIMEKOINSYSTEM, 0);
+					activate("TIMEKOINSYSTEM", 0);
 				}
 				
 				// All match, set login variable and store username in cookie
@@ -144,8 +144,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<td><strong>Main Program Offline</strong></td></tr>';
 		}
 
-		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'treasurer_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"));
+		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_last_heartbeat' LIMIT 1"));
 
 		if($script_loop_active == 1)
 		{
@@ -178,8 +178,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
-		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'peerlist_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"));
+		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_last_heartbeat' LIMIT 1"));
 
 		if($script_loop_active == 1)
 		{
@@ -212,8 +212,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
-		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'queueclerk_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_heartbeat_active' LIMIT 1"));
+		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'queueclerk_last_heartbeat' LIMIT 1"));
 
 		if($script_loop_active == 1)
 		{
@@ -246,8 +246,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
-		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'genpeer_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"));
+		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'genpeer_last_heartbeat' LIMIT 1"));
 
 		if($script_loop_active == 1)
 		{
@@ -280,8 +280,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
-		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'generation_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_heartbeat_active' LIMIT 1"));
+		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_last_heartbeat' LIMIT 1"));
 
 		if($script_loop_active == 1)
 		{
@@ -315,8 +315,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
-		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'transclerk_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_heartbeat_active' LIMIT 1"));
+		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'transclerk_last_heartbeat' LIMIT 1"));
 
 		if($script_loop_active == 1)
 		{
@@ -350,8 +350,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
-		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'foundation_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1"));
+		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_last_heartbeat' LIMIT 1"));
 
 		if($script_loop_active == 1)
 		{
@@ -385,8 +385,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
-		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'balance_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'balance_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'balance_heartbeat_active' LIMIT 1"));
+		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'balance_last_heartbeat' LIMIT 1"));
 
 		if($script_loop_active == 1)
 		{
@@ -420,8 +420,8 @@ if($_SESSION["valid_login"] == TRUE)
 				<td><strong>OFFLINE</strong></td></tr>';
 		}
 
-		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"),0,"field_data");
-		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'watchdog_last_heartbeat' LIMIT 1"),0,"field_data");
+		$script_loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_heartbeat_active' LIMIT 1"));
+		$script_last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'watchdog_last_heartbeat' LIMIT 1"));
 
 		if($script_loop_active > 0)
 		{
@@ -447,7 +447,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$display_balance = db_cache_balance($my_public_key);
 
-		$firewall_blocked = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'firewall_blocked_peer' LIMIT 1"),0,"field_data");
+		$firewall_blocked = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'firewall_blocked_peer' LIMIT 1"));
 
 		if($firewall_blocked == TRUE)
 		{
@@ -458,7 +458,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$firewall_blocked = NULL;
 		}
 
-		$time_sync_error = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'time_sync_error' LIMIT 1"),0,"field_data");
+		$time_sync_error = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'time_sync_error' LIMIT 1"));
 
 		if($time_sync_error == TRUE)
 		{
@@ -469,7 +469,7 @@ if($_SESSION["valid_login"] == TRUE)
 			$time_sync_error = NULL;
 		}
 
-		$update_available = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'update_available' LIMIT 1"),0,"field_data");
+		$update_available = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'update_available' LIMIT 1"));
 
 		if($update_available == TRUE)
 		{
@@ -501,7 +501,7 @@ if($_SESSION["valid_login"] == TRUE)
 				$plugins_active_bar = TRUE;
 				
 				// Does Plugin Service Report Any Status?
-				$plugin_active = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = '$plugin_file' LIMIT 1"),0,"field_data");
+				$plugin_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = '$plugin_file' LIMIT 1"));
 
 				if($plugin_active == "")
 				{
@@ -556,7 +556,7 @@ if($_SESSION["valid_login"] == TRUE)
 		<strong>Peer Time:</strong> The current clock shared by all servers.<br><br>
 		<strong>Generations:</strong> The number of currency creation events this server has generated before it hits the lifetime limit of 100,000 transactions.';
 
-		$home_update = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"),0,"field_data");
+		$home_update = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'refresh_realtime_home' LIMIT 1"));
 
 		home_screen("Realtime Server Status", $text_bar, $body_string, $quick_info , $home_update);
 		exit;
@@ -1025,8 +1025,8 @@ if($_SESSION["valid_login"] == TRUE)
 				$sql_num_results = mysqli_num_rows(mysqli_query($db_connect, $sql));
 			}
 
-			$peer_transaction_start_blocks = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_start_blocks' LIMIT 1"),0,"field_data");
-			$peer_transaction_performance = mysql_result(mysqli_query($db_connect, "SELECT * FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_performance' LIMIT 1"),0,"field_data");
+			$peer_transaction_start_blocks = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_start_blocks' LIMIT 1"));
+			$peer_transaction_performance = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peer_transaction_performance' LIMIT 1"));
 
 			$peer_number_bar = '<table border="0" cellspacing="0" cellpadding="0"><tr><td style="width:125px"><strong>Active Peers: <font color="green">' . $sql_num_results . '</font></strong></td>
 			<td style="width:175px"><strong>Peers in Reserve: <font color="blue">' . $new_peers . '</font></strong></td>
@@ -1043,7 +1043,7 @@ if($_SESSION["valid_login"] == TRUE)
 			<br><br><strong>Group Response</strong> is a sample average of all peers and how long it took the group to respond to a 10 second task.
 			<br>Less than 10 seconds increases peer speed by +1 and longer than 10 seconds decreases peer speed by -1.';
 
-			$peerlist_update = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_peerlist' LIMIT 1"),0,"field_data");
+			$peerlist_update = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'refresh_realtime_peerlist' LIMIT 1"));
 
 			if($_GET["show"] == "reserve")
 			{
@@ -1190,7 +1190,7 @@ if($_SESSION["valid_login"] == TRUE)
 						mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active' LIMIT 1");						
 
 						// Stop all other script activity
-						activate(TIMEKOINSYSTEM, 0);
+						activate("TIMEKOINSYSTEM", 0);
 					}
 				}
 				else
@@ -1213,7 +1213,7 @@ if($_SESSION["valid_login"] == TRUE)
 						mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'transclerk_heartbeat_active' LIMIT 1");
 						mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '3' WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active' LIMIT 1");
 						// Stop all other script activity
-						activate(TIMEKOINSYSTEM, 0);
+						activate("TIMEKOINSYSTEM", 0);
 
 						header("Location: index.php?menu=home");
 						exit;
@@ -1227,7 +1227,7 @@ if($_SESSION["valid_login"] == TRUE)
 				mysqli_query($db_connect, "TRUNCATE TABLE `transaction_queue`");
 
 				// Stop all other script activity
-				activate(TIMEKOINSYSTEM, 0);				
+				activate("TIMEKOINSYSTEM", 0);				
 			}
 		}
 
@@ -1294,7 +1294,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 			if(empty($_POST["current_password"]) == FALSE && empty($_POST["new_password"]) == FALSE && empty($_POST["confirm_password"]) == FALSE)
 			{
-				$password_hash = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'password' LIMIT 1"),0,"field_data");
+				$password_hash = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'password' LIMIT 1"));
 				$current_password_hash = hash('sha256', $_POST["current_password"]);
 				$new_password_hash = hash('sha256', $_POST["new_password"]);
 
@@ -1436,9 +1436,9 @@ if($_SESSION["valid_login"] == TRUE)
 
 			while($counter <= 5)
 			{
-				$hashcode = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'hashcode$counter' LIMIT 1"),0,"field_data");
-				$hashcode_name = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'hashcode" . $counter . "_name' LIMIT 1"),0,"field_data");
-				$hashcode_permissions = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'hashcode" . $counter . "_permissions' LIMIT 1"),0,"field_data");
+				$hashcode = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'hashcode$counter' LIMIT 1"));
+				$hashcode_name = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'hashcode" . $counter . "_name' LIMIT 1"));
+				$hashcode_permissions = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'hashcode" . $counter . "_permissions' LIMIT 1"));
 
 				$body_text .= '<tr><td valign="bottom" align="right"><strong>Name: <input type="text" name="name'. $counter . '" size="15" value="' . $hashcode_name . '"/>
 				<br>Hashcode: <input type="text" name="hashcode'. $counter . '" size="15" value="' . $hashcode . '"/></strong></td><td>
@@ -1537,7 +1537,7 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			// Disable selected plugin, search for script file name in database
 			$plugin_filename = $_POST["pluginfile"];
-			$installed_plugins = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+			$installed_plugins = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"));
 
 			// Rewrite String to Disable plugin
 			$new_disable_string = str_replace("enable=1", "enable=0", $installed_plugins);
@@ -1553,7 +1553,7 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			// Enable selected plugin, search for script file name in database
 			$plugin_filename = $_POST["pluginfile"];
-			$installed_plugins = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+			$installed_plugins = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"));
 
 			// Rewrite String to Enable plugin
 			$new_disable_string = str_replace("enable=0", "enable=1", $installed_plugins);
@@ -1569,7 +1569,7 @@ if($_SESSION["valid_login"] == TRUE)
 		{
 			// Enable selected plugin, search for script file name in database
 			$plugin_filename = $_POST["pluginfile"];
-			$installed_plugins = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+			$installed_plugins = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"));
 
 			// Find the file name for the plugin
 			$plugin_file = find_string("---file=", "---enable", $installed_plugins);
@@ -1639,7 +1639,7 @@ if($_SESSION["valid_login"] == TRUE)
 						if($show_status == TRUE)
 						{
 							// Show Plugin Tab
-							$installed_plugins = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+							$installed_plugins = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"));
 
 							// Rewrite String to Show Plugin Tab
 							$new_disable_string = str_replace("show=0", "show=1", $installed_plugins);
@@ -1650,7 +1650,7 @@ if($_SESSION["valid_login"] == TRUE)
 						else
 						{
 							// Hide Plugin Tab
-							$installed_plugins = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"),0,"field_data");
+							$installed_plugins = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` LIKE 'installed_plugins%' AND `field_data` LIKE '%$plugin_filename%' LIMIT 1"));
 
 							// Rewrite String to Show Plugin Tab
 							$new_disable_string = str_replace("show=1", "show=0", $installed_plugins);
@@ -2108,7 +2108,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["generate"] == "showlist")
 		{
-			$default_public_key_font = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
+			$default_public_key_font = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"));
 			$my_public_key = my_public_key();
 			$ip_mode;
 
@@ -2154,7 +2154,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		if($_GET["generate"] == "showqueue")
 		{
-			$default_public_key_font = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
+			$default_public_key_font = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"));
 			$my_public_key = my_public_key();
 			$ip_mode;
 
@@ -2923,7 +2923,7 @@ if($_SESSION["valid_login"] == TRUE)
 			}
 			else
 			{
-				$default_public_key_font = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
+				$default_public_key_font = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"));
 			}
 
 			if($hide_receive == FALSE)
@@ -3122,7 +3122,7 @@ if($_SESSION["valid_login"] == TRUE)
 		}
 		else
 		{
-			$default_public_key_font = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"),0,"field_data");
+			$default_public_key_font = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'public_key_font_size' LIMIT 1"));
 		}
 
 		$my_public_key = my_public_key();
@@ -3211,7 +3211,7 @@ if($_SESSION["valid_login"] == TRUE)
 
 		$quick_info = 'This section contains all the network transactions that are queued to be stored in the transaction history.';
 		
-		$queue_update = mysql_result(mysqli_query($db_connect, "SELECT * FROM `options` WHERE `field_name` = 'refresh_realtime_queue' LIMIT 1"),0,"field_data");
+		$queue_update = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'refresh_realtime_queue' LIMIT 1"));
 
 		home_screen('Realtime Transactions in Network Queue', $text_bar, $body_string , $quick_info, $queue_update);
 		exit;
