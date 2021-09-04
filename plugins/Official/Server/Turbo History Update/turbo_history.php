@@ -109,7 +109,7 @@ if($_SESSION["valid_login"] == TRUE) // Make Sure Login is Still Valid
 
 	if($_GET["task"] == "start_transfer")
 	{
-		if($task_level == "")
+		if($task_level == 0)
 		{
 			$trans_record_count = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_history`"),0);
 
