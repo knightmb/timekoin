@@ -41,7 +41,9 @@ else
 	// was already running.
 	exit;
 }
+//***********************************************************************************
 
+$uptime = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'timekoin_start_time' LIMIT 1"));
 while(1) // Begin Infinite Loop
 {
 set_time_limit(300);	
@@ -78,11 +80,20 @@ else
 // Generation IP Auto Update Detection
 	$auto_update_generation_IP = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1")));
 
-	if(mt_rand(1,50) == 25 && $auto_update_generation_IP == 1) // Randomize to avoid spamming
+	if(mt_rand(1,100) == 25 && $auto_update_generation_IP == 1) // Randomize to avoid spamming
 	{
 		auto_update_IP_address();
 	}
 //***********************************************************************************	
+// The uptime variable adds a delay before this starts doing election work in case of long
+// time gaps between starting and stopping the server
+	if($uptime != FALSE)
+	{
+		if(time() - $uptime > 240) // 4 Minute Delay
+		{
+			$uptime = FALSE;
+		}
+	}
 //***********************************************************************************
 // Is generation turned on for our server key?
 $treasurer_status = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1")));
@@ -92,7 +103,7 @@ $current_generation_cycle = transaction_cycle(0);
 
 // Can we work on the transactions in the database?
 // Not allowed 120 seconds before and 35 seconds after generation cycle.
-if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycle) > 35 && $treasurer_status == 2)
+if(($next_generation_cycle - time()) > 120 && (time() - $current_generation_cycle) > 35 && $treasurer_status == 2 && $uptime == FALSE)
 {
 	// Generation Peer Check	
 	$peer_purge = FALSE;
