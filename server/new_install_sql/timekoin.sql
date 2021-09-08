@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS `activity_logs` (
 
 CREATE TABLE IF NOT EXISTS `balance_index` (
   `block` bigint(20) unsigned NOT NULL,
-  `public_key_hash` varchar(32) NOT NULL,
+  `public_key_hash` varchar(64) NOT NULL,
   `balance` bigint(20) unsigned NOT NULL
 ) ENGINE=MEMORY DEFAULT CHARSET=utf8;
 
@@ -229,7 +229,7 @@ INSERT INTO `options` (`field_name`, `field_data`) VALUES
 --
 
 CREATE TABLE IF NOT EXISTS `quantum_balance_index` (
-  `public_key_hash` varchar(32) NOT NULL,
+  `public_key_hash` varchar(64) NOT NULL,
   `max_foundation` bigint(20) unsigned NOT NULL,
   `balance` bigint(20) unsigned NOT NULL,
   KEY `qbi_index` (`public_key_hash`(4))
