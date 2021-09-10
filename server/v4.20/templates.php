@@ -598,7 +598,7 @@ function options_screen6()
 function options_screen7()
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-	$hash_index_name = mysql_result(mysqli_query($db_connect, "SHOW INDEX FROM transaction_history FROM timekoin"),3,4);		
+	$hash_index_name = mysql_result(mysqli_query($db_connect, "SHOW INDEX FROM transaction_history FROM timekoin"),3,4);
 	$hash_index_size = intval(mysql_result(mysqli_query($db_connect, "SHOW INDEX FROM transaction_history FROM timekoin"),3,7));
 
 	if($hash_index_name == "hash" && $hash_index_size >= 8)
@@ -612,12 +612,38 @@ function options_screen7()
 		$db_update_exist = '<strong><font color="red">INDEX SIZE UNCHANGED</font></strong><br>';
 	}
 
+	$index_test = "123456789012345678901234567890123";
+	$sql = "INSERT INTO `balance_index` (`block`, `public_key_hash`, `balance`) VALUES ('0', '$index_test', '0')";
+	$sql2 = "INSERT INTO `quantum_balance_index` (`public_key_hash`, `max_foundation`, `balance`) VALUES ('$index_test', '0', '0')";
+
+	if(mysqli_query($db_connect, $sql) == TRUE && mysqli_query($db_connect, $sql2) == TRUE)
+	{
+		// Test Passes
+		$db_update_exist2 = '<strong><font color="green">INDEX INCREASE INSTALLED</font></strong><br>';
+		$disable_update2 = 'DISABLED';
+
+		// Remove Test Records
+		$sql = "DELETE FROM `quantum_balance_index` WHERE `quantum_balance_index`.`public_key_hash` = '$index_test'";
+		mysqli_query($db_connect, $sql);
+
+		$sql = "DELETE FROM `balance_index` WHERE `balance_index`.`public_key_hash` = '$index_test'";
+		mysqli_query($db_connect, $sql);
+	}
+	else
+	{
+		// Test Failed
+		$db_update_exist2 = '<strong><font color="red">INDEX SIZE UNCHANGED</font></strong><br>';
+	}
+
 	return '<table border="1"><tr>
 	<td style="width:250px" align="right"><FORM ACTION="index.php?menu=options&amp;db_update=home&amp;install=1" METHOD="post">' . $db_update_exist . '
 	Username: <input type="text" name="root_username" size="16" value="root" /><br>
 	Password: <input type="password" name="root_password" size="16" value="" /><br><br>
-	<input type="submit" name="submit" value="Increase Index Size" ' . $disable_update . ' /></FORM></td>
-	</tr>
+	<input type="submit" name="submit" value="Increase Transaction Index Size" ' . $disable_update . ' /></FORM></td></tr><tr><td></td></tr>
+	<td style="width:250px" align="right"><FORM ACTION="index.php?menu=options&amp;db_update=home&amp;install=2" METHOD="post">' . $db_update_exist2 . '
+	Username: <input type="text" name="root_username" size="16" value="root" /><br>
+	Password: <input type="password" name="root_password" size="16" value="" /><br><br>
+	<input type="submit" name="submit" value="Increase Balance Index Size" ' . $disable_update2 . ' /></FORM></td></tr>
 	</table>';
 } 
 //***********************************************************

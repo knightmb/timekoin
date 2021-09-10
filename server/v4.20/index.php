@@ -1684,8 +1684,8 @@ if($_SESSION["valid_login"] == TRUE)
 				$admin_username = $_POST["root_username"];
 				$admin_password = $_POST["root_password"];
 
-				$sql = "ALTER TABLE `timekoin`.`transaction_history` DROP INDEX `hash`, ADD INDEX `hash` (`hash`(8)) USING BTREE;";
-				$sql2 = "ALTER TABLE `timekoin`.`transaction_history` DROP INDEX `attribute`, ADD INDEX `attribute` (`attribute`(1)) USING BTREE;";
+				$sql = "ALTER TABLE `transaction_history` DROP INDEX `hash`, ADD INDEX `hash` (`hash`(8)) USING BTREE;";
+				$sql2 = "ALTER TABLE `transaction_history` DROP INDEX `attribute`, ADD INDEX `attribute` (`attribute`(1)) USING BTREE;";
 
 				$admin_db_connect = mysqli_connect(MYSQL_IP,$admin_username,$admin_password,MYSQL_DATABASE);
 
@@ -1710,6 +1710,47 @@ if($_SESSION["valid_login"] == TRUE)
 				home_screen("Database Update", $text_bar, $body_text , $quick_info);
 				exit;
 			}
+			else if($_GET["install"] == "2")
+			{
+				set_time_limit(999);
+
+				$text_bar = '<strong><font color="blue">Administrator Username & Password for Database Server Needed to Update</font></strong>';
+				$quick_info = 'Update your Timekoin Database to use new features.<br><br><strong><font color="red">WARNING:</font></strong><br>
+				Always make sure you are connected to the server via SSL or Local Network to avoid sending any username or password info in the clear over the Internet.';
+
+				$admin_username = $_POST["root_username"];
+				$admin_password = $_POST["root_password"];
+
+				$sql = "ALTER TABLE `balance_index` CHANGE `public_key_hash` `public_key_hash` VARCHAR(64);";
+				$sql2 = "ALTER TABLE `quantum_balance_index` CHANGE `public_key_hash` `public_key_hash` VARCHAR(64);";
+				$sql3 = "ALTER TABLE `quantum_balance_index` DROP INDEX `qbi_index`, ADD INDEX `qbi_index` (`public_key_hash`(8)) USING BTREE;";
+
+				$admin_db_connect = mysqli_connect(MYSQL_IP,$admin_username,$admin_password,MYSQL_DATABASE);
+
+				if($admin_db_connect == FALSE)
+				{
+					$body_text = '<font color="red"><strong>Could Not Connect To Database!</strong></font>';
+				}
+				else
+				{
+					if(mysqli_query($admin_db_connect, $sql) == TRUE && mysqli_query($admin_db_connect, $sql2) == TRUE && mysqli_query($admin_db_connect, $sql3) == TRUE)
+					{
+						$sql = "OPTIMIZE TABLE `quantum_balance_index`";
+						mysqli_query($admin_db_connect, $sql);
+						
+						$body_text = '<font color="green"><strong>Balance Index Size Increase Complete!</strong></font>';
+					}
+					else
+					{
+						$body_text = '<font color="red"><strong>FAILED: Balance Index Size Increase</strong></font>';
+					}
+				}
+				
+				$body_text.= '<br><br><FORM ACTION="index.php?menu=options&amp;db_update=home" METHOD="post"><input type="submit" name="submit" value="Database Update" /></FORM>';
+
+				home_screen("Database Update", $text_bar, $body_text , $quick_info);
+				exit;
+			}
 			else
 			{
 				$text_bar = '<strong><font color="blue">Administrator Username & Password for Database Server Needed to Update</font><br>
@@ -1717,9 +1758,12 @@ if($_SESSION["valid_login"] == TRUE)
 				This update can take a very long time on slower systems, expect a browser timeout.<br>
 				If that happens, the update will continue in the background as long as you do not reboot the system or database server.<br>
 				You can leave and return to this Database Update page to check on the status of the install.<br>
-				<font color="red">Do Not Start Another Install if the first one has not finished!</font><br><br>
-				This update increases the index size for the Transaction History.<br>
-				This will speed up processing very large batches of transactions from the network queue.</strong>';
+				<font color="red">Do Not Start Another Install if the previous has not finished!</font><br><br>
+				The first update increases the index size for the Transaction History.<br>
+				This will speed up processing very large batches of transactions from the network queue.<br><br>
+				The second update increases the hash sizes for balance and QBI indexes from 32 to 64 characters.<br>
+				This is prepare for future updates that will switch to SHA256 index hashes from the old MD5 index hashes.</strong>';
+				
 				$quick_info = 'Update your Timekoin Database to use new features.<br><br><strong><font color="red">WARNING:</font></strong><br>
 				Always make sure you are connected to the server via SSL or Local Network to avoid sending any username or password info in the clear over the Internet.';
 
