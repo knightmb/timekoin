@@ -1274,7 +1274,7 @@ function TKRandom($range_start = 0, $range_end = 1, $custom_seed = "")
 	if($require_mersenne_twister == FALSE)
 	{
 		// Standard PHP v7.1.0 or higher
-		mt_srand($custom_seed);
+		mt_srand(intval($custom_seed));
 		$tk_random_number = mt_rand($range_start, $range_end);
 	}
 	else
@@ -1303,7 +1303,7 @@ function scorePublicKey($public_key = "", $score_key = FALSE)
 	}
 	else
 	{
-		mt_srand(TKFoundationSeed() + $current_generation_block);
+		mt_srand(intval(TKFoundationSeed() + $current_generation_block));
 	}
 
 	$public_key_score = 0;
@@ -1447,7 +1447,7 @@ function election_cycle($when = 0, $ip_type = 1, $gen_peers_total = 0, $plugin_s
 		}
 		else
 		{
-			mt_srand($TKFoundationSeed + $current_generation_block);
+			mt_srand(intval($TKFoundationSeed + $current_generation_block));
 		}
 
 		if($mersenne_twister == FALSE)
@@ -1524,7 +1524,7 @@ function election_cycle($when = 0, $ip_type = 1, $gen_peers_total = 0, $plugin_s
 		}
 		else
 		{		
-			mt_srand($TKFoundationSeed + $current_generation_block);
+			mt_srand(intval($TKFoundationSeed + $current_generation_block));
 		}
 
 		if($mersenne_twister == FALSE)
