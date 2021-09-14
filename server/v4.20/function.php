@@ -3477,7 +3477,7 @@ function find_v6_gen_join($my_public_key = "")
 //***********************************************************************************
 function create_new_easy_key($my_private_key = "", $my_public_key = "", $new_easy_key = "")
 {
-	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);	
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
 
 	// Check the electoin schedule, current genreating peers and calculate
 	// how long it will take to create the easy key shortcut.
@@ -3609,5 +3609,78 @@ function create_new_easy_key($my_private_key = "", $my_public_key = "", $new_eas
 
 	return 0; // Unknown Error
 }
+//***********************************************************************************
+//***********************************************************************************
+function update_gen_IP($public_key = "", $new_IP = "", $ip_type = 1)
+{
+	if($public_key == "" || $new_IP == "") { return; }
+
+	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);	
+	$public_key_IP1 = mysql_result(mysqli_query($db_connect, "SELECT IP_Address FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 1"),0,0);
+	$public_key_IP2 = mysql_result(mysqli_query($db_connect, "SELECT IP_Address FROM `generating_peer_list` WHERE `public_key` = '$public_key' LIMIT 2"),1,0);
+	$replacement_IP;
+
+	if($ip_type == 1)
+	{
+		// ipv4
+		// Ignore IPv6 Address
+		if(ipv6_test($public_key_IP1) == FALSE)
+		{
+			// This is the ipv4 address
+			$replacement_IP = $public_key_IP1;
+		}
+		else if(ipv6_test($public_key_IP2) == FALSE)
+		{
+			// This is the ipv4 address
+			$replacement_IP = $public_key_IP2;
+		}
+		else
+		{
+			write_log("Could Not Find IPv4 to Update for Public Key: " . base64_encode($public_key), "GP");
+			return;
+		}
+
+		$sql = "UPDATE `generating_peer_list` SET `IP_Address` = '$new_IP' WHERE `generating_peer_list`.`public_key` = '$public_key' AND `IP_Address` = '$replacement_IP' LIMIT 1";
+
+		if(mysqli_query($db_connect, $sql) == TRUE)
+		{
+			write_log("IPv4 New Generation Peer IP Address ($new_IP) was updated for Public Key: " . base64_encode($public_key), "GP");
+		}
+
+		return;
+	}
+	else if($ip_type == 2)
+	{
+		// ipv6
+		if(ipv6_test($public_key_IP1) == TRUE)
+		{
+			// This is the ipv6 address
+			$replacement_IP = $public_key_IP1;
+		}
+		else if(ipv6_test($public_key_IP2) == TRUE)
+		{
+			// This is the ipv6 address
+			$replacement_IP = $public_key_IP2;
+		}
+		else
+		{
+			write_log("Could Not Find IPv6 to Update for Public Key: " . base64_encode($public_key), "GP");
+			return;
+		}
+
+		$sql = "UPDATE `generating_peer_list` SET `IP_Address` = '$new_IP' WHERE `generating_peer_list`.`public_key` = '$public_key' AND `IP_Address` = '$replacement_IP' LIMIT 1";
+
+		if(mysqli_query($db_connect, $sql) == TRUE)
+		{
+			write_log("IPv6 New Generation Peer IP Address ($new_IP) was updated for Public Key: " . base64_encode($public_key), "GP");
+		}
+
+		return;
+	}
+
+	write_log("Unknown ERROR Updating IP for Public Key: " . base64_encode($public_key), "GP");
+	return;
+}
+//***********************************************************************************
 //***********************************************************************************
 ?>

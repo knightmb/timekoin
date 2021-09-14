@@ -890,13 +890,13 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						else
 						{
 							write_log("IPv4 Decrypting Election Request Data: [$crypt3_data] for Public Key: " . base64_encode($public_key),"GP");
-							$ipv6_peer = FALSE;							
+							$ipv6_peer = FALSE;
 						}
 
 						if($ipv6_peer == FALSE)//IPv4 Peer Test
 						{
 							// Check if IP is already in the generation peer list
-							$IP_exist1 = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,1);
+							$IP_exist1 = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"));
 
 							// Calculate public key half-crypt-hash
 							$arr1 = str_split($public_key, round(strlen($public_key) / 2));
@@ -1007,9 +1007,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								}
 								else
 								{
-									// My server has moved to another IP, update the list
-									mysqli_query($db_connect, "UPDATE `generating_peer_list` SET `IP_Address` = '$peer_ip' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
-									write_log("IPv4 New Generation Peer IP Address ($peer_ip) was updated for Public Key: " . base64_encode($public_key), "GP");
+									// Server has moved to another IP, update the list
+									update_gen_IP($public_key, $peer_ip, 1);
 								}
 							}
 							else if($my_public_key == $public_key) // This is my own public key, automatic update
@@ -1018,8 +1017,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								{
 									if(empty($IP_exist1) == TRUE && empty($peer_ip) == FALSE)// Check to make sure this isn't already in the database
 									{
-										mysqli_query($db_connect, "UPDATE `generating_peer_list` SET `IP_Address` = '$peer_ip' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
-										write_log("IPv4 Generation Peer List was updated with My New IP Address ($peer_ip)", "GP");
+										// My Server has moved to another IP, update the list
+										update_gen_IP($public_key, $peer_ip, 1);
 									}
 								}
 							}
@@ -1386,7 +1385,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 						if($ipv6_peer == TRUE)//IPv6 Peer Test
 						{
 							// Check if IP is already in the generation peer list
-							$IP_exist1 = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"),0,1);
+							$IP_exist1 = mysql_result(mysqli_query($db_connect, "SELECT join_peer_list FROM `generating_peer_list` WHERE `IP_Address` = '$peer_ip' LIMIT 1"));
 
 							// Calculate public key half-crypt-hash
 							$arr1 = str_split($public_key, round(strlen($public_key) / 2));
@@ -1497,9 +1496,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								}
 								else
 								{
-									// My server has moved to another IP, update the list
-									mysqli_query($db_connect, "UPDATE `generating_peer_list` SET `IP_Address` = '$peer_ip' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
-									write_log("IPv6 New Generation Peer IP Address ($peer_ip) was updated for Public Key: " . base64_encode($public_key), "GP");
+									// Server has moved to another IP, update the list
+									update_gen_IP($public_key, $peer_ip, 2);
 								}
 							}
 							else if($my_public_key == $public_key) // This is my own public key, automatic update
@@ -1508,8 +1506,8 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								{
 									if(empty($IP_exist1) == TRUE && empty($peer_ip) == FALSE)// Check to make sure this isn't already in the database
 									{
-										mysqli_query($db_connect, "UPDATE `generating_peer_list` SET `IP_Address` = '$peer_ip' WHERE `generating_peer_list`.`public_key` = '$public_key' LIMIT 1");
-										write_log("IPv6 Generation Peer List was updated with My New IP Address ($peer_ip)", "GP");
+										// My server has moved to another IP, update the list
+										update_gen_IP($public_key, $peer_ip, 2);										
 									}
 								}
 							}
