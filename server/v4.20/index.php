@@ -1684,7 +1684,7 @@ if($_SESSION["valid_login"] == TRUE)
 				$admin_username = $_POST["root_username"];
 				$admin_password = $_POST["root_password"];
 
-				$sql = "ALTER TABLE `transaction_history` DROP INDEX `hash`, ADD INDEX `hash` (`hash`(8)) USING BTREE;";
+				$sql = "ALTER TABLE `transaction_history` DROP INDEX `hash`, ADD INDEX `hash` (`hash`(6)) USING BTREE;";
 				$sql2 = "ALTER TABLE `transaction_history` DROP INDEX `attribute`, ADD INDEX `attribute` (`attribute`(1)) USING BTREE;";
 
 				$admin_db_connect = mysqli_connect(MYSQL_IP,$admin_username,$admin_password,MYSQL_DATABASE);

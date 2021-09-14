@@ -272,7 +272,7 @@ CREATE TABLE IF NOT EXISTS `transaction_history` (
   KEY `timestamp` (`timestamp`),
   KEY `public_key_from` (`public_key_from`(74)),
   KEY `public_key_to` (`public_key_to`(74)),
-  KEY `hash` (`hash`(8)),
+  KEY `hash` (`hash`(6)),
   KEY `attribute` (`attribute`(1))
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 

@@ -601,7 +601,7 @@ function options_screen7()
 	$hash_index_name = mysql_result(mysqli_query($db_connect, "SHOW INDEX FROM transaction_history FROM timekoin"),3,4);
 	$hash_index_size = intval(mysql_result(mysqli_query($db_connect, "SHOW INDEX FROM transaction_history FROM timekoin"),3,7));
 
-	if($hash_index_name == "hash" && $hash_index_size >= 8)
+	if($hash_index_name == "hash" && $hash_index_size >= 6)
 	{
 		// Hash index increase exist
 		$db_update_exist = '<strong><font color="green">INDEX INCREASE INSTALLED</font></strong><br>';
