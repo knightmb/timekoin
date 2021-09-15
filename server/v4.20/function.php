@@ -221,7 +221,7 @@ function foundation_cycle($past_or_future = 0, $foundation_cycles_only = 0)
 function transaction_history_hash()
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-	$hash = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_history`"),0);
+	$hash = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_history`"));
 
 	$previous_foundation_block = foundation_cycle(-1, TRUE);
 	$current_foundation_cycle = foundation_cycle(0);
@@ -627,7 +627,7 @@ function count_transaction_hash($cache_timeout = 300)
 		mysqli_query($db_connect, "INSERT INTO `balance_index` (`block` ,`public_key_hash` ,`balance`) VALUES ('0', 'count_transaction_hash', '0')");
 
 		// Update record with the latest total
-		$total_trans_hash = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_history` USE INDEX(attribute) WHERE `attribute` = 'H'"));
+		$total_trans_hash = mysql_result(mysqli_query($db_connect, "SELECT COUNT(attribute) FROM `transaction_history` USE INDEX(attribute) WHERE `attribute` = 'H'"));
 		mysqli_query($db_connect, "UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$total_trans_hash' WHERE `balance_index`.`public_key_hash` = 'count_transaction_hash' LIMIT 1");
 	}
 	else
@@ -635,7 +635,7 @@ function count_transaction_hash($cache_timeout = 300)
 		if(time() - $count_transaction_hash_last > $cache_timeout) // 300s cache time default
 		{
 			// Update new hash count and cache time
-			$total_trans_hash = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_history` USE INDEX(attribute) WHERE `attribute` = 'H'"));
+			$total_trans_hash = mysql_result(mysqli_query($db_connect, "SELECT COUNT(attribute) FROM `transaction_history` USE INDEX(attribute) WHERE `attribute` = 'H'"));
 			mysqli_query($db_connect, "UPDATE `balance_index` SET `block` = '" . time() . "' , `balance` = '$total_trans_hash' WHERE `balance_index`.`public_key_hash` = 'count_transaction_hash' LIMIT 1");
 		}
 		else
@@ -881,7 +881,7 @@ function check_crypt_balance($public_key = "")
 	}
 
 	// Do we already have an index to reference for faster access?
-	$public_key_hash = hash('md5', $public_key);
+	$public_key_hash = hash('sha256', $public_key);
 	$current_transaction_block = transaction_cycle(0, TRUE);
 	$current_foundation_block = foundation_cycle(0, TRUE);
 
@@ -906,8 +906,8 @@ function check_crypt_balance($public_key = "")
 	if(empty($sql_row["block"]) == TRUE)// No index exist yet, so after the balance check is complete, record the result for later use
 	{
 		// Check if a Quantum Balance Index exist to shorten database access time
-		$pk_md5 = hash('md5', $public_key);
-		$sql2 = "SELECT max_foundation, balance FROM `quantum_balance_index` WHERE `public_key_hash` = '$pk_md5' LIMIT 1";
+		$pk_sha256 = hash('sha256', $public_key);
+		$sql2 = "SELECT max_foundation, balance FROM `quantum_balance_index` WHERE `public_key_hash` = '$pk_sha256' LIMIT 1";
 		$sql_result2 = mysqli_query($db_connect, $sql2);
 		$sql_row2 = mysqli_fetch_array($sql_result2);
 
@@ -919,7 +919,7 @@ function check_crypt_balance($public_key = "")
 			$qbi_max_foundation = (intval($current_foundation_block / 500)) * 500;
 
 			// Does this many Transaction Foundations even exist to index against?
-			$total_foundations = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_foundation`"),0);
+			$total_foundations = mysql_result(mysqli_query($db_connect, "SELECT COUNT(*) FROM `transaction_foundation`"));
 
 			if($total_foundations > $qbi_max_foundation)
 			{
@@ -929,7 +929,7 @@ function check_crypt_balance($public_key = "")
 
 				// Store QBI in database for more permanent future access
 				mysqli_query($db_connect, "INSERT INTO `quantum_balance_index` (`public_key_hash` ,`max_foundation` ,`balance`)
-					VALUES ('$pk_md5', '$qbi_max_foundation', '$qbi_balance')");
+					VALUES ('$pk_sha256', '$qbi_max_foundation', '$qbi_balance')");
 			}
 			else
 			{
@@ -1198,13 +1198,12 @@ function peer_gen_amount($public_key = "")
 }
 //***********************************************************************************
 //***********************************************************************************
-function gen_lifetime_transactions($public_key = "", $high_priority = FALSE)
+function gen_lifetime_transactions($public_key = "", $high_priority = FALSE, $exact_number = TRUE)
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);	
 
-	// Double md5 to keep key balances and lifetime transaction counts separate
+	// Md5 to keep key balances and lifetime transaction counts separate
 	$public_key_hash = hash('md5', $public_key);
-	$public_key_hash = hash('md5', $public_key_hash);
 	$previous_foundation_block = foundation_cycle(0, TRUE);
 	$previous_foundation_block_time = foundation_cycle(0);
 
@@ -1228,14 +1227,25 @@ function gen_lifetime_transactions($public_key = "", $high_priority = FALSE)
 		// Insert new Cache Total
 		$sql = "INSERT $high_priority INTO `balance_index` (`block`, `public_key_hash`, `balance`) VALUES ('$previous_foundation_block', '$public_key_hash', '$generation_records_total')";
 		mysqli_query($db_connect, $sql);
+	}
 
+	if($exact_number == TRUE)
+	{
 		// Find the remaining transaction counts
 		$generation_records_total2 = mysql_result(mysqli_query($db_connect, "SELECT $high_priority COUNT(*) FROM `transaction_history` WHERE `timestamp` > $previous_foundation_block_time AND `public_key_to` = '$public_key' AND `attribute` = 'G'"));
 	}
 	else
 	{
-		// Use recent cache to speed up count
-		$generation_records_total2 = mysql_result(mysqli_query($db_connect, "SELECT $high_priority COUNT(*) FROM `transaction_history` WHERE `timestamp` > $previous_foundation_block_time AND `public_key_to` = '$public_key' AND `attribute` = 'G'"));
+		if($generation_records_total < 99500)
+		{
+			// Only a general number is needed
+			$generation_records_total2 = 0;
+		}
+		else
+		{
+			// Closer to the Lifetime Limit, an exact number is needed
+			$generation_records_total2 = mysql_result(mysqli_query($db_connect, "SELECT $high_priority COUNT(*) FROM `transaction_history` WHERE `timestamp` > $previous_foundation_block_time AND `public_key_to` = '$public_key' AND `attribute` = 'G'"));
+		}
 	}
 
 	return $generation_records_total + $generation_records_total2;

@@ -103,7 +103,7 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 	}	
 	
 	// Build self balance index first
-	$public_key_hash = hash('md5', my_public_key());
+	$public_key_hash = hash('sha256', my_public_key());
 	$balance_index = mysql_result(mysqli_query($db_connect, "SELECT block FROM `balance_index` WHERE `public_key_hash` = '$public_key_hash' AND `block` = $cache_block LIMIT 1"),0,0);
 
 	if($balance_index == "")
@@ -126,7 +126,7 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 			if(($next_transaction_cycle - time()) > 120)// Keep looping until time runs out, then stop early
 			{
 				$sql_row = mysqli_fetch_array($sql_result);
-				$public_key_hash = hash('md5', $sql_row["public_key"]);
+				$public_key_hash = hash('sha256', $sql_row["public_key"]);
 
 				// Run a balance index if one does not already exist
 				$balance_index = mysql_result(mysqli_query($db_connect, "SELECT block FROM `balance_index` WHERE `public_key_hash` = '$public_key_hash' AND `block` = $cache_block LIMIT 1"),0,0);
@@ -163,9 +163,8 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 			{
 				$sql_row = mysqli_fetch_array($sql_result);
 
-				// Double md5 to keep key balances and lifetime transaction counts separate
+				// md5 to keep key balances and lifetime transaction counts separate
 				$public_key_hash = hash('md5', $sql_row["public_key"]);
-				$public_key_hash = hash('md5', $public_key_hash);
 				$generation_records_total = mysql_result(mysqli_query($db_connect, "SELECT balance FROM `balance_index` WHERE `public_key_hash` = '$public_key_hash' AND `block` = '$previous_foundation_block' LIMIT 1"));
 
 				if($generation_records_total == "")
@@ -200,7 +199,7 @@ if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cy
 		}
 		else
 		{
-			$public_key_hash = hash('md5', $public_key_from); // MD5 Conversion
+			$public_key_hash = hash('sha256', $public_key_from); // SHA256 Conversion
 			$balance_index = mysql_result(mysqli_query($db_connect, "SELECT block FROM `balance_index` WHERE `public_key_hash` = '$public_key_hash' AND `block` = $cache_block LIMIT 1"),0,0);
 
 			if($balance_index == "")
