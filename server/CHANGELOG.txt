@@ -1,5 +1,16 @@
 Timekoin Server - Change Log
 
+Timekoin Server - 4.20 (Released 2021-9-17)
+============================================
+- More speed optimizations for transaction processing
+- Fixed Generation Peer Manager bug that can update the wrong IP field for the same public key that is dual-generating, resulting in a key that has the same IP twice under rare circumstances
+- Function update for PHP v8.x compatibility
+- Added GUI database upgrade for larger balance index field sizes to use future SHA256 balance index hashes instead of the old MD5 balance index hashes
+- Generation Manager has a few minutes delay after server start before processing generation or election request to prevent a long time gap from stopping and starting; making it think it needs to request election again
+- Update TK Server to work with PHP v8.x and Arch Linux (and others using PHP v8.x or higher)
+- Update code for compatibility with PHP v8.x with Zend OPCache performance improvements enabled
+- Better error log messages for generation keys that share IP address
+
 Timekoin Server - 4.16 (Released 2021-8-26)
 ============================================
 - Complete code audit to increase system performance and check code security against exploits
