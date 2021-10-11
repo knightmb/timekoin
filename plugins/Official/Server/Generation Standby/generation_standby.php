@@ -94,7 +94,7 @@ if($_SESSION["valid_login"] == FALSE)
 			$generation_standby1_db = find_string("---key1=", "---key2", $sql_row["field_data"]); // Private Key
 			$generation_standby2_db = find_string("---key2=", "---end", $sql_row["field_data"]); // Public Key
 
-			if($generation_standby_enable == TRUE)
+			if($generation_standby_enable == TRUE && rand(1,2) == 2)// Randomize in case of large list
 			{
 				// How long since the Generation Key created currency last?
 				$my_public_key = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `my_keys` WHERE `field_name` = '$generation_standby2_db' LIMIT 1"));
@@ -106,7 +106,7 @@ if($_SESSION["valid_login"] == FALSE)
 					$last_generation = time();
 				}
 
-				if(time() - $last_generation > 18000)// Create minimum needed after 5 Hours (18,000 Seconds)
+				if(time() - $last_generation > 14400)// Create minimum needed after 4 Hours (14,400 Seconds)
 				{
 					// More than 5 Hours has passed,
 					// schedule generation creation if it will happen in the next cycle
