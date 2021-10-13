@@ -788,7 +788,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 							{
 								// Did this Public Key pay the minimum fee to enter election
 								$pre_transaction_cycle = transaction_cycle(-10); // Check within the previous 45 minutes
-								
+
 								$payment_sql = "SELECT public_key FROM `generating_peer_list` GROUP BY `public_key`";
 								$payment_sql_result = mysqli_query($db_connect, $payment_sql);
 								$payment_sql_num_results = mysqli_num_rows($payment_sql_result);
@@ -810,7 +810,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 										break;
 									}
 								}
-								
+
 								if($all_generating_peers_paid == TRUE)
 								{
 									mysqli_query($db_connect, "INSERT INTO `generating_peer_queue` (`timestamp` ,`public_key`, `IP_Address`) VALUES ('$timestamp', '$public_key', '$peer_ip')");
@@ -861,7 +861,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 					} // Valid Crypt2 field check
 
 				} // Check for existing public key
-				
+
 				if(empty($public_key_found_peer) == FALSE)
 				{
 					// This peer is already in the generation list, so normally it would
@@ -1063,7 +1063,6 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 
 	// Total Servers that have been Generating for at least 24 hours previous, excluding those that have just joined recently
 	$gen_peers_total = num_gen_peers(TRUE);
-	$gen_peers_total_payment = num_gen_peers();//ipv6 uses a different generation peers total
 
 	if(election_cycle(1, 2, $gen_peers_total) == TRUE ||
 		election_cycle(2, 2, $gen_peers_total) == TRUE ||
@@ -1072,6 +1071,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 		election_cycle(5, 2, $gen_peers_total) == TRUE ||
 		election_cycle(6, 2, $gen_peers_total) == TRUE) // Don't queue election request until 1-6 cycles before election (30 minutes)
 	{
+		$gen_peers_total_payment = num_gen_peers();//ipv6 uses a different generation peers total
 		$network_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
 		$my_public_key = my_public_key();
 		$sql = "SELECT * FROM `transaction_queue` WHERE `attribute` = 'R'";
@@ -1283,7 +1283,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 								$payment_sql_result = mysqli_query($db_connect, $payment_sql);
 								$payment_sql_num_results = mysqli_num_rows($payment_sql_result);
 								$all_generating_peers_paid = TRUE;
-								
+
 								for ($i_pay = 0; $i_pay < $payment_sql_num_results; $i_pay++)
 								{
 									$payment_sql_row = mysqli_fetch_array($payment_sql_result);
@@ -1350,7 +1350,7 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 					} // Valid Crypt2 field check
 
 				} // Check for existing public key
-				
+
 				if(empty($public_key_found_peer) == FALSE)
 				{
 					// This peer is already in the generation list, so normally it would
@@ -1549,7 +1549,19 @@ if(($next_generation_cycle - time()) > 35 && (time() - $current_generation_cycle
 	} // Election Cycle Check IPv6 Peers
 //***********************************************************************************
 } // End If/then Time Check
+else
+{
+	// Memory Management Check
+	$low_memory_mode = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'low_memory_mode' LIMIT 1"));
 
+	if($low_memory_mode == 1)
+	{
+		// Exit to release any RAM being held, the Main Program will restart this script afterwards
+		mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'genpeer_heartbeat_active'");
+		mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'genpeer_last_heartbeat' LIMIT 1");
+		exit;
+	}
+}
 //***********************************************************************************
 //***********************************************************************************
 $loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'genpeer_heartbeat_active' LIMIT 1"),0,0);

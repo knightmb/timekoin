@@ -1093,7 +1093,10 @@ if($_SESSION["valid_login"] == TRUE)
 			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '$perm_peer_priority' WHERE `options`.`field_name` = 'perm_peer_priority' LIMIT 1");
 			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '$perm_peer_priority' WHERE `main_loop_status`.`field_name` = 'perm_peer_priority' LIMIT 1");			
 			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["auto_update_IP"] . "' WHERE `options`.`field_name` = 'auto_update_generation_IP' LIMIT 1");
-			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["auto_update_IP"] . "' WHERE `main_loop_status`.`field_name` = 'auto_update_generation_IP' LIMIT 1");			
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["auto_update_IP"] . "' WHERE `main_loop_status`.`field_name` = 'auto_update_generation_IP' LIMIT 1");
+
+			mysqli_query($db_connect, "UPDATE `options` SET `field_data` = '" . $_POST["low_memory_mode"] . "' WHERE `options`.`field_name` = 'low_memory_mode' LIMIT 1");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . $_POST["low_memory_mode"] . "' WHERE `main_loop_status`.`field_name` = 'low_memory_mode' LIMIT 1");
 
 			if($_POST["port"] < 1 || $_POST["port"] > 65535)
 			{
@@ -1251,13 +1254,14 @@ if($_SESSION["valid_login"] == TRUE)
 		$body_string = system_screen();
 
 		$quick_info = '<strong>Start</strong> will activate all Timekoin Processing.<br><br>
-		<strong>Stop</strong> will halt Timekoin from further processing.<br><br>
+		<strong>Stop</strong> will halt Timekoin from further processing and block all inbound traffic.<br><br>
 		<strong>Max Peer Query</strong> is the per 10 seconds limit imposed on each individual peer before being banned for 24 hours. A value of <strong>0</strong> means no limit.<br><br>
 		<strong>Local Server Port</strong> is the real port used by the web server when running CLI mode disabled. This should be blank unless the local server port is different from the public server port.<br><br>
 		<strong>CLI Mode</strong> controls if the Timekoin processing is run within the web server (disable) or independently via the command line interface (enable).<br><br>
 		<strong>Allow LAN Peers</strong> controls if LAN peers will be allowed to populate the peer list.<br><br>
 		<strong>Allow Ambient Peer Restarts</strong> controls if other peers can restart Timekoin from unknown failures.<br><br>
-		<strong>Super Peer</strong> will enable peers to download bulk transactions from your server.<br><br>';
+		<strong>Super Peer</strong> will enable peers to download bulk transactions from your server.<br><br>
+		<strong>Low Memory Mode</strong> will shutdown idle processes to save memory for small devices.<br>';
 
 		home_screen('System Settings', system_service_bar() . $server_code, $body_string , $quick_info);
 		exit;

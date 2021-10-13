@@ -200,6 +200,7 @@ INSERT INTO `options` (`field_name`, `field_data`) VALUES
 ('generation_IP', ''),
 ('generation_IP_v6', ''),
 ('generation_key_crypt', ''),
+('low_memory_mode', '0'),
 ('max_active_peers', '8'),
 ('max_new_peers', '15'),
 ('network_mode', '1'),

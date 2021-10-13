@@ -44,6 +44,7 @@ else
 ini_set('user_agent', 'Timekoin Server (Treasurer) v' . TIMEKOIN_VERSION);
 ini_set('default_socket_timeout', 3); // Timeout for request in seconds
 $sql_max_allowed_packet = intval(mysql_result(mysqli_query($db_connect, "SHOW VARIABLES LIKE 'max_allowed_packet'"),0,1));
+$easy_key_public_key = base64_decode(EASY_KEY_PUBLIC_KEY);
 
 while(1) // Begin Infinite Loop
 {
@@ -55,7 +56,7 @@ $loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `m
 if($loop_active == "")
 {
 	// Time to exit
-	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
+	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '0' WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active' LIMIT 1");
 	exit;
 }
 else if($loop_active == 0)
@@ -88,7 +89,7 @@ $next_transaction_cycle = transaction_cycle(1);
 // Check my transaction queue and copy pending transaction to the main transaction queue, giving priority
 // to self created transactions over 3rd party submitted transactions
 $my_public_key = my_public_key();
-$easy_key_public_key = base64_decode(EASY_KEY_PUBLIC_KEY);
+
 $sql = "(SELECT * FROM `my_transaction_queue` WHERE `public_key` = '$my_public_key' AND `timestamp` < '" . time() . "' ORDER BY `my_transaction_queue`.`timestamp` ASC) 
 	UNION (SELECT * FROM `my_transaction_queue` WHERE `public_key` != '$my_public_key' AND `timestamp` < '" . time() . "' ORDER BY `my_transaction_queue`.`timestamp` ASC)";
 
@@ -812,6 +813,19 @@ if($processed_transactions == TRUE)
 	mysqli_query($db_connect, "OPTIMIZE TABLE `my_transaction_queue`");
 	mysqli_query($db_connect, "OPTIMIZE TABLE `transaction_queue`");	
 }
+else
+{
+	if(rand(1,10) == 5)
+	{
+		// Clear old Transaction were never processed earlier
+		$sql = "DELETE QUICK FROM `transaction_queue` WHERE `transaction_queue`.`timestamp` < $current_transaction_cycle";
+		if(mysqli_query($db_connect, $sql) == FALSE)
+		{
+			//Something didn't work
+			write_log("Could NOT Delete Old Transactions from the Transaction Queue!", "TR");
+		}
+	}
+}
 //***********************************************************************************	
 
 // Check to see if it is time to write a hash of the last cycle transactions
@@ -856,6 +870,19 @@ if(empty($current_hash) == TRUE)
 
 } // End Empty Hash Check
 
+if(rand(1,200) == 100)
+{
+	// Memory Management Check
+	$low_memory_mode = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'low_memory_mode' LIMIT 1"));
+
+	if($low_memory_mode == 1)
+	{
+		// Exit to release any RAM being held, the Main Program will restart this script afterwards
+		mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active'");
+		mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'treasurer_last_heartbeat' LIMIT 1");
+		exit;
+	}
+}
 //***********************************************************************************
 //***********************************************************************************
 $loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"));
@@ -889,6 +916,7 @@ unset($public_key_to_2);
 unset($public_key_to);
 unset($public_key);
 //***********************************************************************************
+
 if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cycle) > 30)
 {
 	sleep(10);

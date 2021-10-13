@@ -651,27 +651,37 @@ function options_screen7()
 function system_screen()
 {
 	$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
-	$max = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,0);
-	$new = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'max_new_peers' LIMIT 1"),0,0);
-	$domain = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"),0,0);
-	$subfolder = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'server_subfolder' LIMIT 1"),0,0);
-	$port = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"),0,0);
-	$gen_hash = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generating_peers_hash' LIMIT 1"),0,0);
-	$trans_history_hash = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'transaction_history_hash' LIMIT 1"),0,0);
-	$trans_queue_hash = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'transaction_queue_hash' LIMIT 1"),0,0);
-	$block_check_start = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'block_check_start' LIMIT 1"),0,0);
-	$uptime = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'timekoin_start_time' LIMIT 1"),0,0);
-	$request_max = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'server_request_max' LIMIT 1"),0,0);
-	$allow_lan_peers = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,0));
-	$allow_ambient_peer_restart = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'allow_ambient_peer_restart' LIMIT 1"),0,0));
-	$trans_history_check = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'trans_history_check' LIMIT 1"),0,0));
-	$gen_list_no_sync = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_peer_list_no_sync' LIMIT 1"),0,0);
-	$super_peer_mode = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'super_peer' LIMIT 1"),0,0);
-	$perm_peer_priority = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'perm_peer_priority' LIMIT 1"),0,0);
-	$auto_update_generation_IP = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,0));
-	$cli_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1"),0,0));
-	$cli_port = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'cli_port' LIMIT 1"),0,0);
-	$network_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0));
+	$max = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'max_active_peers' LIMIT 1"));
+	$new = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'max_new_peers' LIMIT 1"));
+	$domain = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'server_domain' LIMIT 1"));
+	$subfolder = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'server_subfolder' LIMIT 1"));
+	$port = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'server_port_number' LIMIT 1"));
+	$gen_hash = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'generating_peers_hash' LIMIT 1"));
+	$trans_history_hash = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'transaction_history_hash' LIMIT 1"));
+	$trans_queue_hash = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'transaction_queue_hash' LIMIT 1"));
+	$block_check_start = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'block_check_start' LIMIT 1"));
+	$uptime = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'timekoin_start_time' LIMIT 1"));
+	$request_max = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'server_request_max' LIMIT 1"));
+	$allow_lan_peers = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1")));
+	$allow_ambient_peer_restart = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'allow_ambient_peer_restart' LIMIT 1")));
+	$trans_history_check = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'trans_history_check' LIMIT 1")));
+	$gen_list_no_sync = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'generation_peer_list_no_sync' LIMIT 1"));
+	$super_peer_mode = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'super_peer' LIMIT 1"));
+	$perm_peer_priority = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'perm_peer_priority' LIMIT 1"));
+	$auto_update_generation_IP = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1")));
+	$cli_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'cli_mode' LIMIT 1")));
+	$cli_port = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'cli_port' LIMIT 1"));
+	$network_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1")));
+	$low_memory_mode = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'low_memory_mode' LIMIT 1")));
+
+	if($low_memory_mode == 1)
+	{
+		$low_memory_mode_1 = "SELECTED";
+	}
+	else
+	{
+		$low_memory_mode_0 = "SELECTED";
+	}
 
 	if($network_mode == 3)
 	{
@@ -828,6 +838,7 @@ function system_screen()
 	Permanent Peer Priority: <select name="perm_peer_priority"><option value="0" ' . $perm_peer_priority_0 . '>Disable</option><option value="1" ' . $perm_peer_priority_1 . '>Enable</option></select><br><br>
 	Auto Generation IP Update: <select name="auto_update_IP"><option value="0" ' . $auto_update_generation_IP_0 . '>Disable</option><option value="1" ' . $auto_update_generation_IP_1 . '>Enable</option></select><br><br>
 	Transaction History Checks: <select name="trans_history_check"><option value="0" ' . $trans_history_check_0 . '>Rare</option><option value="1" ' . $trans_history_check_1 . '>Normal</option><option value="2" ' . $trans_history_check_2 . '>Frequent</option></select><br><br>
+	Low Memory Mode: <select name="low_memory_mode"><option value="0" ' . $low_memory_mode_0 . '>Disable</option><option value="1" ' . $low_memory_mode_1 . '>Enable</option><br><br>
 	</td></tr></table><input type="submit" name="submit_server" value="Update System Settings" /></FORM>
 	<hr>
 	<table border="0"><tr><td align="right">
@@ -886,7 +897,7 @@ function generation_body($generate_currency = "")
 		$return_html .= '<br><strong>How Generation Works</strong><br><ol>
 		<li>The server must be accessible from the Internet and be able to accept and respond to HTTP requests on the port designated in the System tab. 
 		This allows peer servers to validate the existence of your server. 
-		You may test you router/firewall settings using the <a href="index.php?menu=generation&amp;firewall=tool"><font color="blue"><strong>Firewall Tool</strong></font></a>. 
+		You may test your router/firewall settings using the <a href="index.php?menu=generation&amp;firewall=tool"><font color="blue"><strong>Firewall Tool</strong></font></a>. 
 		If your server fails this test, you must modify your router or firewall settings to allow inbound TCP connections on your chosen port.</li>
 		<li>A single server key is chosen randomly for generation during an election cycle. Elections are pseudo-randomized and seeded by the Transaction History. 
 		You may use the <a href="index.php?menu=generation&amp;elections=show"><font color="blue"><strong>Election Calendar</strong></font></a> to see upcoming elections in the next 48 hours.</li>

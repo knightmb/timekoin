@@ -860,10 +860,10 @@ function check_crypt_balance_range($public_key = "", $block_start = 0, $block_en
 		}
 
 		// Empty $transaction_info to avoid false matches if next decrypt is blank
-		$transaction_info = NULL;
+		$transaction_info = "";
 	}
 
-	// Unset variable to free up RAM
+	// Clear variable to free up RAM
 	unset($sql_result);
 	return $crypto_balance;
 }
@@ -2188,7 +2188,18 @@ function initialization_database()
 	// Truncate to Free RAM
 	mysqli_query($db_connect, "TRUNCATE TABLE `main_loop_status`");
 	$time = time();
+
 	//**************************************
+	// Upgrade Options from Previous Versions
+	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'low_memory_mode' LIMIT 1"));
+	
+	if($db_to_RAM == "")
+	{
+		// Create New Entry in Options
+		mysqli_query($db_connect, "INSERT INTO `options` (`field_name` ,`field_data`)VALUES ('low_memory_mode', '0')");
+	}
+	//**************************************
+	// Create RAM Options
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('balance_last_heartbeat', '1')");	
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('foundation_last_heartbeat', '1')");
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('generation_last_heartbeat', '1')");
@@ -2217,38 +2228,41 @@ function initialization_database()
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('TKFoundationSeed', '0')");
 	//**************************************
 	// Copy values from Database to RAM Database
-	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'allow_ambient_peer_restart' LIMIT 1"),0,0);
+	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'allow_ambient_peer_restart' LIMIT 1"));
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('allow_ambient_peer_restart', '$db_to_RAM')");
 
-	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"),0,0);
+	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'allow_LAN_peers' LIMIT 1"));
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('allow_LAN_peers', '$db_to_RAM')");
 
-	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'server_request_max' LIMIT 1"),0,0);
+	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'server_request_max' LIMIT 1"));
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('server_request_max', '$db_to_RAM')");
 
-	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'max_active_peers' LIMIT 1"),0,0);
+	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'max_active_peers' LIMIT 1"));
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('max_active_peers', '$db_to_RAM')");
 
-	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'max_new_peers' LIMIT 1"),0,0);
+	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'max_new_peers' LIMIT 1"));
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('max_new_peers', '$db_to_RAM')");
 
-	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'trans_history_check' LIMIT 1"),0,0);
+	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'trans_history_check' LIMIT 1"));
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('trans_history_check', '$db_to_RAM')");
 
-	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'super_peer' LIMIT 1"),0,0);
+	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'super_peer' LIMIT 1"));
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('super_peer', '$db_to_RAM')");
 
-	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'perm_peer_priority' LIMIT 1"),0,0);
+	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'perm_peer_priority' LIMIT 1"));
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('perm_peer_priority', '$db_to_RAM')");
 
-	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"),0,0);
+	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'auto_update_generation_IP' LIMIT 1"));
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('auto_update_generation_IP', '$db_to_RAM')");
 	
-	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"),0,0);
+	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'peer_failure_grade' LIMIT 1"));
 	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('peer_failure_grade', '$db_to_RAM')");
 
-	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1"),0,0);
-	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('network_mode', '$db_to_RAM')");	
+	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'network_mode' LIMIT 1"));
+	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('network_mode', '$db_to_RAM')");
+
+	$db_to_RAM = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `options` WHERE `field_name` = 'low_memory_mode' LIMIT 1"));
+	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('low_memory_mode', '$db_to_RAM')");
 	//***********************************************************************************
 	// Create the TK Foundation Seed in memory
 	TK_foundation_seed();
