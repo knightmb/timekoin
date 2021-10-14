@@ -80,7 +80,7 @@ if($_SESSION["valid_login"] == FALSE)
 			exit;
 		}
 
-		$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'generation_standby_%' ORDER BY `options`.`field_name` ASC";
+		$sql = "SELECT * FROM `options` WHERE `field_name` LIKE 'generation_standby_%' ORDER BY RAND()";// Randomize in case of large list
 		$sql_result = mysqli_query($db_connect, $sql);
 		$sql_num_results = mysqli_num_rows($sql_result);
 		$current_generation_cycle = transaction_cycle(0);
@@ -94,7 +94,7 @@ if($_SESSION["valid_login"] == FALSE)
 			$generation_standby1_db = find_string("---key1=", "---key2", $sql_row["field_data"]); // Private Key
 			$generation_standby2_db = find_string("---key2=", "---end", $sql_row["field_data"]); // Public Key
 
-			if($generation_standby_enable == TRUE && rand(1,2) == 2)// Randomize in case of large list
+			if($generation_standby_enable == TRUE)
 			{
 				// How long since the Generation Key created currency last?
 				$my_public_key = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `my_keys` WHERE `field_name` = '$generation_standby2_db' LIMIT 1"));
