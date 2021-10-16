@@ -1,0 +1,252 @@
+<?PHP
+include 'configuration.php';
+include 'function.php';
+//***********************************************************************************
+//***********************************************************************************
+if(BALANCE_DISABLED == TRUE || TIMEKOIN_DISABLED == TRUE)
+{
+	// This has been disabled
+	exit;
+}
+//***********************************************************************************
+//***********************************************************************************
+// Check for banned IP address
+if(ip_banned($_SERVER['REMOTE_ADDR']) == TRUE)
+{
+	// Sorry, your IP address has been banned :(
+	exit;
+}
+
+// Open persistent connection to database
+$db_connect = mysqli_connect(MYSQL_IP,MYSQL_USERNAME,MYSQL_PASSWORD,MYSQL_DATABASE);
+//***********************************************************************************
+// External Flood Protection
+log_ip("BA", scale_trigger(4));
+//***********************************************************************************
+// First time run check
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'balance_heartbeat_active' LIMIT 1"),0,0);
+$last_heartbeat = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'balance_last_heartbeat' LIMIT 1"),0,0);
+
+if($loop_active == "" && $last_heartbeat == 1)
+{
+	// Create record to begin loop
+	mysqli_query($db_connect, "INSERT INTO `main_loop_status` (`field_name` ,`field_data`)VALUES ('balance_heartbeat_active', '0')");
+	// Update timestamp for starting
+	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'balance_last_heartbeat' LIMIT 1");
+}
+else
+{
+	// Record already exist, called while another process of this script
+	// was already running.
+	exit;
+}
+
+while(1) // Begin Infinite Loop
+{
+set_time_limit(300);	
+//***********************************************************************************
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'balance_heartbeat_active' LIMIT 1"),0,0);
+
+// Check script status
+if($loop_active == "")
+{
+	// Time to exit
+	exit;
+}
+else if($loop_active == 0)
+{
+	// Set the working status of 1
+	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
+}
+else if($loop_active == 2) // Wake from sleep
+{
+	// Set the working status of 1
+	mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
+}
+else if($loop_active == 3) // Shutdown
+{
+	mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active'");
+	exit;
+}
+else
+{
+	// Script called while still working
+	exit;
+}
+//***********************************************************************************
+//***********************************************************************************
+$current_transaction_cycle = transaction_cycle(0);
+$next_transaction_cycle = transaction_cycle(1);
+
+$treasurer_status = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1")));
+$foundation_status = intval(mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'foundation_heartbeat_active' LIMIT 1")));
+
+// Can we work on the key balances in the database?
+// Not allowed 120 seconds before and 40 seconds after transaction cycle.
+// Don't run if the Foundation Manager is busy (idle = 2)
+if(($next_transaction_cycle - time()) > 120 && (time() - $current_transaction_cycle) > 40 && $foundation_status == 2 && $treasurer_status == 2)
+{
+	$current_transaction_block = transaction_cycle(0, TRUE);
+	$current_foundation_block = foundation_cycle(0, TRUE);
+
+	// Check to make sure enough lead time exist in advance to building
+	// another balance index. (60 cycles) or 5 hours
+	if($current_transaction_block - ($current_foundation_block * 500) > 60)
+	{
+		// -1 Foundation Blocks (Standard)
+		$cache_block = foundation_cycle(-1, TRUE);
+	}
+	else
+	{
+		// -2 Foundation Blocks - Buffers 5 hours after the newest foundation block
+		$cache_block = foundation_cycle(-2, TRUE);
+	}	
+	
+	// Build self balance index first
+	$public_key_hash = hash('sha256', my_public_key());
+	$balance_index = mysql_result(mysqli_query($db_connect, "SELECT block FROM `balance_index` WHERE `public_key_hash` = '$public_key_hash' AND `block` = $cache_block LIMIT 1"),0,0);
+
+	if($balance_index == "")
+	{
+		// Create self first :)
+		write_log("Updating Balance Index For Self", "BA");
+		check_crypt_balance(my_public_key());
+	}	
+
+	// Build Balance Index for Transactions about to be Processed in the Queue
+	$sql = "SELECT public_key FROM `transaction_queue` WHERE `attribute` = 'T'";
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
+	$queue_index_created = FALSE;
+
+	if($sql_num_results > 0)
+	{
+		for ($i = 0; $i < $sql_num_results; $i++)
+		{
+			if(($next_transaction_cycle - time()) > 120)// Keep looping until time runs out, then stop early
+			{
+				$sql_row = mysqli_fetch_array($sql_result);
+				$public_key_hash = hash('sha256', $sql_row["public_key"]);
+
+				// Run a balance index if one does not already exist
+				$balance_index = mysql_result(mysqli_query($db_connect, "SELECT block FROM `balance_index` WHERE `public_key_hash` = '$public_key_hash' AND `block` = $cache_block LIMIT 1"),0,0);
+
+				if($balance_index == "")
+				{
+					// No index balance, go ahead and create one
+					write_log("Updating Balance Index From Transaction Queue", "BA");
+					check_crypt_balance($sql_row["public_key"]);
+					$queue_index_created = TRUE;
+				}
+			}
+			else
+			{
+				$queue_index_created = TRUE;
+				break; // Break from loop early
+			}
+		}
+	}
+
+	// Build Balance Index for Generation Transactions about to be Processed in the Queue
+	$sql = "SELECT public_key FROM `transaction_queue` WHERE `attribute` = 'G'";
+	$sql_result = mysqli_query($db_connect, $sql);
+	$sql_num_results = mysqli_num_rows($sql_result);
+
+	if($sql_num_results > 0)
+	{
+		$previous_foundation_block = foundation_cycle(0, TRUE);
+		$previous_foundation_block_time = foundation_cycle(0);
+
+		for ($i = 0; $i < $sql_num_results; $i++)
+		{
+			if(($next_transaction_cycle - time()) > 120)// Keep looping until time runs out, then stop early
+			{
+				$sql_row = mysqli_fetch_array($sql_result);
+
+				// md5 to keep key balances and lifetime transaction counts separate
+				$public_key_hash = hash('md5', $sql_row["public_key"]);
+				$generation_records_total = mysql_result(mysqli_query($db_connect, "SELECT balance FROM `balance_index` WHERE `public_key_hash` = '$public_key_hash' AND `block` = '$previous_foundation_block' LIMIT 1"));
+
+				if($generation_records_total == "")
+				{
+					// No lifetime transaction index, go ahead and create one
+					write_log("Updating Lifetime Generation Index From Transaction Queue", "BA");
+					gen_lifetime_transactions($sql_row["public_key"]);
+					$queue_index_created = TRUE;
+				}
+			}
+			else
+			{
+				$queue_index_created = TRUE;
+				break; // Break from loop early
+			}
+		}
+	}
+
+	// Normal, none transaction queue balance index query
+	if($queue_index_created == FALSE) // Only do one or the other at a time
+	{
+		// 500 Transaction Cycles Back in time to index
+		$time_back = transaction_cycle(-500);
+
+		// Pick a Random Transaction from the Past
+		$public_key_from = mysql_result(mysqli_query($db_connect, "SELECT public_key_to FROM `transaction_history` WHERE `public_key_to` != '" . base64_decode(EASY_KEY_PUBLIC_KEY) . "' AND `timestamp` > $time_back AND `attribute` = 'T' GROUP BY `public_key_to` ORDER BY RAND() LIMIT 1"),0,0);
+
+		// Run a balance index if one does not already exist
+		if($public_key_from == "")
+		{
+			write_log("No Recent Transactions Exist To Update Balance Index", "BA");
+		}
+		else
+		{
+			$public_key_hash = hash('sha256', $public_key_from); // SHA256 Conversion
+			$balance_index = mysql_result(mysqli_query($db_connect, "SELECT block FROM `balance_index` WHERE `public_key_hash` = '$public_key_hash' AND `block` = $cache_block LIMIT 1"),0,0);
+
+			if($balance_index == "")
+			{
+				// No index balance, go ahead and create one
+				write_log("Updating Balance Index From Transaction History", "BA");
+				check_crypt_balance($public_key_from);
+			}
+		}
+	}
+}
+else
+{
+	// Memory Management Check
+	$low_memory_mode = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'low_memory_mode' LIMIT 1"));
+
+	if($low_memory_mode == 1)
+	{
+		// Exit to release any RAM being held, the Main Program will restart this script afterwards
+		mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active'");
+		mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'balance_last_heartbeat' LIMIT 1");
+		exit;
+	}
+}
+//***********************************************************************************
+//***********************************************************************************
+$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'balance_heartbeat_active' LIMIT 1"),0,0);
+
+// Check script status
+if($loop_active == 3)
+{
+	// Time to exit
+	mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active'");
+	exit;
+}
+
+// Script finished, set standby status to 2
+mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '2' WHERE `main_loop_status`.`field_name` = 'balance_heartbeat_active' LIMIT 1");
+
+// Record when this script finished
+mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '" . time() . "' WHERE `main_loop_status`.`field_name` = 'balance_last_heartbeat' LIMIT 1");
+
+//***********************************************************************************
+// Memory Cleanup Before Sleep
+unset($sql_result);
+//***********************************************************************************
+
+sleep(10);
+} // End Infinite Loop
+?>
