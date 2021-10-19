@@ -1358,6 +1358,20 @@ if($new_peers_numbers < $max_new_peers && mt_rand(1,3) == 2)//Randomize a little
 	mysqli_query($db_connect, "DELETE QUICK FROM `new_peers_list` WHERE `poll_failures` > $peer_failure_grade");
 
 //***********************************************************************************	
+if(rand(1,500) == 100)
+{
+	// Memory Management Check
+	$low_memory_mode = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'low_memory_mode' LIMIT 1"));
+
+	if($low_memory_mode == 1)
+	{
+write_log("Peer List Shutdown for Low Memory Mode","PL");
+		// Exit to release any RAM being held, the Main Program will restart this script afterwards
+		mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'peerlist_heartbeat_active'");
+		mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'peerlist_last_heartbeat' LIMIT 1");
+		exit;
+	}
+}
 //***********************************************************************************
 $loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'peerlist_heartbeat_active' LIMIT 1"),0,0);
 

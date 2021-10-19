@@ -870,19 +870,6 @@ if(empty($current_hash) == TRUE)
 
 } // End Empty Hash Check
 
-if(rand(1,200) == 100)
-{
-	// Memory Management Check
-	$low_memory_mode = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'low_memory_mode' LIMIT 1"));
-
-	if($low_memory_mode == 1)
-	{
-		// Exit to release any RAM being held, the Main Program will restart this script afterwards
-		mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active'");
-		mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'treasurer_last_heartbeat' LIMIT 1");
-		exit;
-	}
-}
 //***********************************************************************************
 //***********************************************************************************
 $loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"));
@@ -916,9 +903,23 @@ unset($public_key_to_2);
 unset($public_key_to);
 unset($public_key);
 //***********************************************************************************
-
 if(($next_transaction_cycle - time()) > 30 && (time() - $current_transaction_cycle) > 30)
 {
+	if(rand(1,500) == 100)
+	{
+		// Memory Management Check
+		$low_memory_mode = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'low_memory_mode' LIMIT 1"));
+
+		if($low_memory_mode == 1)
+		{
+	write_log("Treasurer Shutdown for Low Memory Mode","TR");
+			// Exit to release any RAM being held, the Main Program will restart this script afterwards
+			mysqli_query($db_connect, "DELETE FROM `main_loop_status` WHERE `main_loop_status`.`field_name` = 'treasurer_heartbeat_active'");
+			mysqli_query($db_connect, "UPDATE `main_loop_status` SET `field_data` = '1' WHERE `main_loop_status`.`field_name` = 'treasurer_last_heartbeat' LIMIT 1");
+			exit;
+		}
+	}	
+	
 	sleep(10);
 
 	$loop_active = mysql_result(mysqli_query($db_connect, "SELECT field_data FROM `main_loop_status` WHERE `field_name` = 'treasurer_heartbeat_active' LIMIT 1"));
